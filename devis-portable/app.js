@@ -65,6 +65,7 @@
     taxRate: 8.1,
     taxMode: "included",
     showFamilyPrices: false,
+    familyFooterCollapsed: false,
     skipTariffChangeConfirmation: false,
     visibleFamilies: [],
     conditions: "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.",
@@ -555,6 +556,7 @@
     $("#familyList").innerHTML = groups || `<div class="family-no-results"><svg><use href="#icon-search"></use></svg><strong>Aucun soin trouvé</strong><small>Essayez un autre terme.</small></div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
     renderFamilyPriceToggle();
+    renderFamilyFooterToggle();
   }
 
   function renderFamilyPriceToggle() {
@@ -568,6 +570,15 @@
     $("#familyPriceToggleState").textContent = visible ? "Affichés" : "Masqués";
   }
 
+  function renderFamilyFooterToggle() {
+    const collapsed = Boolean(db.settings.familyFooterCollapsed);
+    const footer = $("#familyFooter");
+    const toggle = $("#familyFooterToggle");
+    if (!footer || !toggle) return;
+    footer.classList.toggle("is-collapsed", collapsed);
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+    $("#familyFooterToggleLabel").textContent = collapsed ? "Afficher les actions" : "Réduire les actions";
+  }
   function renderCatalog() {
     renderOfferMode();
     renderFamilies();
@@ -940,6 +951,35 @@
     window.setTimeout(() => window.print(), 80);
   }
 
+  function shareQuoteViaWhatsApp() {
+    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    saveQuote();
+    const totals = calculate(quote);
+    const clientName = String(quote.client?.name || "").trim();
+    const lines = quote.lines.map((line) => {
+      const quantity = line.offerType === "pack"
+        ? `${line.quantity} payée${line.quantity > 1 ? "s" : ""}${line.freeQuantity ? ` + ${line.freeQuantity} offerte${line.freeQuantity > 1 ? "s" : ""}` : ""}`
+        : `${line.quantity} ×`;
+      return `• ${line.name} — ${quantity} · ${money(line.price * line.quantity)}`;
+    });
+    const message = [
+      `Bonjour${clientName ? ` ${clientName}` : ""},`,
+      "",
+      `Voici votre devis ${quote.number}, émis le ${formatDate(quote.date)}.`,
+      "",
+      ...lines,
+      "",
+      `Total : ${money(totals.total)}`,
+      `Valable jusqu’au ${formatDate(quote.validUntil)}.`,
+      "",
+      "Le PDF peut être joint à ce message depuis le bouton Imprimer / PDF."
+    ].join("\n");
+    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const popup = window.open(url, "_blank", "noopener");
+    if (!popup) window.location.assign(url);
+    toast("Devis préparé pour WhatsApp");
+  }
+
   function switchMobilePanel(id) {
     if (id !== "checkoutPanel") setCheckoutFocus(false);
     $("#familyPanel").classList.toggle("active-panel", id === "familyPanel");
@@ -992,6 +1032,11 @@
   });
   $("#checkoutFocusToggle").addEventListener("click", () => {
     setCheckoutFocus(!$("#checkoutPanel").classList.contains("is-full-height"));
+  });
+  $("#familyFooterToggle").addEventListener("click", () => {
+    db.settings.familyFooterCollapsed = !Boolean(db.settings.familyFooterCollapsed);
+    saveLocal(false);
+    renderFamilyFooterToggle();
   });
   $("#offerModeSelector").addEventListener("click", (event) => {
     const button = event.target.closest("[data-offer-mode]");
@@ -1113,6 +1158,7 @@
   });
   $("#saveButton").addEventListener("click", saveQuote);
   $("#printButton").addEventListener("click", printQuote);
+  $("#whatsAppButton").addEventListener("click", shareQuoteViaWhatsApp);
   $("#historyButton").addEventListener("click", () => { renderHistory(); openLayer("historyLayer"); });
   $("#historyList").addEventListener("click", (event) => { const button = event.target.closest("[data-quote-id]"); if (button) loadHistoryQuote(button.dataset.quoteId); });
   $("#settingsButton").addEventListener("click", () => { pendingTheme = currentTheme(); fillSettingsForm(); openLayer("settingsLayer"); });

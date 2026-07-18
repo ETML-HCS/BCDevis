@@ -555,6 +555,7 @@
     <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
     <symbol id="icon-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
@@ -602,11 +603,13 @@
           <label class="family-search" id="catalogSearchPanel" for="catalogSearch" hidden><svg><use href="#icon-search"></use></svg><input id="catalogSearch" type="search" autocomplete="off" placeholder="Rechercher un soin…"></label>
         </div>
         <nav class="family-list" id="familyList" aria-label="Familles de prestations"></nav>
-        <div class="family-footer">
-          <button class="family-price-toggle" id="familyPriceToggle" type="button" aria-pressed="false"><svg><use href="#icon-eye"></use></svg><span>Prix sur les boutons</span><small id="familyPriceToggleState">Masqués</small></button>
-          <button class="family-custom" id="customItemButton" type="button"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span></button>
-          <button class="family-price-toggle checkout-focus-toggle" id="checkoutFocusToggle" type="button" aria-pressed="false" title="Afficher la caisse sur toute la hauteur"><svg><use href="#icon-scan"></use></svg><span class="checkout-focus-label">Caisse plein écran</span><small id="checkoutFocusState">Plein écran</small></button>
-
+        <div class="family-footer" id="familyFooter">
+          <button class="family-footer-toggle" id="familyFooterToggle" type="button" aria-expanded="true"><span id="familyFooterToggleLabel">Réduire les actions</span><svg><use href="#icon-chevron"></use></svg></button>
+          <div class="family-footer-actions" id="familyFooterActions">
+            <button class="family-price-toggle" id="familyPriceToggle" type="button" aria-pressed="false"><svg><use href="#icon-eye"></use></svg><span>Prix sur les boutons</span><small id="familyPriceToggleState">Masqués</small></button>
+            <button class="family-custom" id="customItemButton" type="button"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span></button>
+            <button class="family-price-toggle checkout-focus-toggle" id="checkoutFocusToggle" type="button" aria-pressed="false" title="Afficher la caisse sur toute la hauteur"><svg><use href="#icon-scan"></use></svg><span class="checkout-focus-label">Caisse plein écran</span><small id="checkoutFocusState">Plein écran</small></button>
+          </div>
         </div>
       </aside>
 
@@ -642,7 +645,7 @@
             </dl>
             <details class="installments" id="installmentsDetails"><summary><span><small>Simulation</small>Paiement échelonné</span><svg><use href="#icon-chevron"></use></svg></summary><div class="installment-meta"><p class="installment-note">Montants mensuels indicatifs, basés sur le total du devis. L’échelonnement reste soumis à l’accord du partenaire financier.</p></div><div class="installment-grid" id="installmentGrid"></div></details>
           </div>
-          <div class="checkout-actions"><button class="button secondary" id="saveButton" type="button"><svg><use href="#icon-save"></use></svg>Enregistrer</button><button class="button primary" id="printButton" type="button"><svg><use href="#icon-print"></use></svg>Imprimer / PDF</button></div>
+          <div class="checkout-actions"><button class="button secondary" id="saveButton" type="button"><svg><use href="#icon-save"></use></svg>Enregistrer</button><div class="quote-output-actions"><button class="button primary" id="printButton" type="button"><svg><use href="#icon-print"></use></svg>Imprimer</button><button class="button whatsapp-button" id="whatsAppButton" type="button" aria-label="Transférer le devis via WhatsApp" title="Transférer le devis via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg><span>WhatsApp</span></button></div></div>
         </div>
       </aside>
     </main>

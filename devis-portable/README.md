@@ -4,8 +4,8 @@ Application autonome de création de devis pour Clinique Bellecour. Elle fonctio
 
 ## Lancer l’application
 
-- Double-cliquer sur `Lancer Bellecour Devis.cmd`.
-- Ou ouvrir directement `index.html` dans Edge, Chrome ou Firefox.
+- Double-cliquer sur `Lancer Bellecour Devis.cmd` : c’est l’unique fichier à exécuter.
+- Le lanceur ouvre l’application avec son propre profil local, stocké dans `data/browser-profile`. Les préférences, le brouillon et l’historique restent donc disponibles après redémarrage, sans dépendre du navigateur personnel.
 
 ## Interface tactile
 
@@ -42,10 +42,14 @@ Application autonome de création de devis pour Clinique Bellecour. Elle fonctio
 
 ## Données et portabilité
 
-Toutes les données restent dans le stockage local du navigateur utilisé sur l’ordinateur. Les données créées avec les versions précédentes sont reprises automatiquement.
+Toutes les données restent dans le profil local créé à côté de l’application. Les données créées avec les versions précédentes sont reprises automatiquement lors du lancement avec le même navigateur.
 
 Pour déplacer les données vers un autre ordinateur, utiliser `Devis` > `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive peut être copiée sur une clé USB et ne dépend pas d’Internet.
 
 ## Créer un PDF
 
 Dans la caisse, cliquer sur `Imprimer / PDF`, puis choisir `Enregistrer au format PDF` dans la fenêtre d’impression.
+
+## Transférer un devis
+
+Le bouton WhatsApp prépare un message avec les références, les prestations, le total et la date de validité du devis. Pour joindre le document complet, créer d’abord le PDF puis l’ajouter au message WhatsApp.

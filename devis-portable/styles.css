@@ -377,6 +377,17 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 /* Keep toast notifications close to the bottom edge without touching it. */
 .toast-region{bottom:24px}
 
+/* Export du devis : PDF majoritaire, transfert WhatsApp à portée directe. */
+.checkout-actions>.button,.checkout-actions>.quote-output-actions{flex:1;min-width:0}
+.quote-output-actions{display:grid;min-width:0;grid-template-columns:minmax(0,2fr) minmax(58px,1fr);gap:7px}
+.checkout-actions .quote-output-actions .button{min-width:0}
+.whatsapp-button{color:#fff;border-color:#1cae57;background:#25d366}
+.whatsapp-button:hover{border-color:#159447;background:#1fbd5b}
+.whatsapp-button svg{flex:0 0 auto}
+.whatsapp-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media screen and (max-width:1180px){.quote-output-actions{gap:8px}}
+@media screen and (max-width:520px){.whatsapp-button span{display:none}.quote-output-actions{grid-template-columns:minmax(0,2fr) minmax(54px,1fr)}}
+
 /* V4.12 — coupon à la demande et actions de caisse toujours accessibles */
 .coupon-toggle{display:inline-flex;min-height:34px;padding:0 2px;align-items:center;gap:6px;border:0;color:#666;background:transparent;font-size:11px;font-weight:800;cursor:pointer}
 .coupon-toggle:hover{color:#111}
@@ -390,8 +401,16 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 .offer-mode-selector button.tariff-locked:hover{transform:none;box-shadow:none}
 
 /* V4.14 — affichage facultatif des prix dans les familles */
-.family-footer{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.family-footer>button{min-width:0;min-height:48px}
+.family-footer{display:block}
+.family-footer-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.family-footer-actions>button{min-width:0;min-height:48px}
+.family-footer-toggle{display:flex;width:100%;min-height:30px;margin:0 0 7px;padding:0 8px;align-items:center;justify-content:space-between;border:0;border-radius:8px;color:#888;background:transparent;font-size:10px;font-weight:750;cursor:pointer}
+.family-footer-toggle:hover{color:#fff;background:#202020}
+.family-footer-toggle svg{width:15px;height:15px;transition:transform .15s}
+.family-footer.is-collapsed{padding-top:7px}
+.family-footer.is-collapsed .family-footer-toggle{margin-bottom:0}
+.family-footer.is-collapsed .family-footer-toggle svg{transform:rotate(180deg)}
+.family-footer.is-collapsed .family-footer-actions{display:none}
 .family-price-toggle{display:grid;width:100%;min-height:38px;padding:7px 9px;align-items:center;text-align:left;border:1px solid #343434;border-radius:10px;color:#aaa;background:transparent;grid-template-columns:18px minmax(0,1fr) auto;gap:8px;transition:.15s}
 .family-price-toggle:hover{color:#fff;border-color:#555;background:#202020}
 .family-price-toggle svg{width:17px;height:17px;color:var(--taupe)}
@@ -447,8 +466,8 @@ body.checkout-focus .family-panel{padding-right:calc(min(460px,100vw) + 20px)}
   body.checkout-focus .mobile-tabs{z-index:90}
 }
 @media screen and (max-width:760px){
-  .family-footer{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-  .family-footer>button{min-height:46px;padding-inline:7px}
+  .family-footer-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+  .family-footer-actions>button{min-height:46px;padding-inline:7px}
   .family-footer .family-price-toggle small,.family-footer .family-custom small{display:none}
 }
 @media screen and (max-width:520px){
