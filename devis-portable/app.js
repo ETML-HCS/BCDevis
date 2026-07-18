@@ -889,6 +889,8 @@
     const packSummary = document.querySelector('[data-summary="pack"]');
     if (packSummary) packSummary.textContent = totalPack > 0 ? `${paid} payée${paid > 1 ? "s" : ""} + ${free} offerte${free > 1 ? "s" : ""} = ${totalPack} séance${totalPack > 1 ? "s" : ""}${free > 0 ? ` (1 séance gratuite pour ${Math.round(totalPack / free)} achetées en moy.)` : ""}` : "";
     const student = Math.max(0, Math.min(100, Math.round(Number(form.elements.studentDiscount?.value) || 0)));
+    const studentOutput = form.querySelector("[data-student-discount]");
+    if (studentOutput) studentOutput.textContent = `${student} %`;
     const studentSummary = document.querySelector('[data-summary="student"]');
     if (studentSummary) studentSummary.textContent = student > 0 ? `Le client paie ${100 - student}% du prix séance${student >= 100 ? " (gratuit)" : ""}.` : "";
     const familySummary = document.querySelector('[data-summary="families"]');

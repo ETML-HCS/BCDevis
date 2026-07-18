@@ -522,6 +522,28 @@
   html[data-theme] .settings-section-head p,
   html[data-theme] .settings-modal-intro,
   html[data-theme] .settings-column-label{color:var(--muted)}
+  /* Tarification commerciale : hiérarchie et contraste des offres */
+  .settings-section--commercial{position:relative;overflow:hidden}
+  .settings-section--commercial .settings-section-head{padding-bottom:2px}
+  .settings-section--commercial .settings-section-head h3{letter-spacing:-.015em}
+  .settings-section--commercial .settings-grid-offer{gap:12px}
+  .settings-section--commercial .settings-offer-block{gap:12px;padding:15px;border-width:1px;box-shadow:0 3px 10px rgba(17,17,17,.04)}
+  .settings-section--commercial .settings-offer-tag{align-self:flex-start;margin:0;padding:5px 10px;line-height:1.1}
+  .settings-section--commercial .settings-offer-fields{gap:10px}
+  .settings-section--commercial .settings-offer-fields label>span:first-child{color:var(--ink);font-weight:600;line-height:1.25}
+  .settings-section--commercial .settings-offer-fields input{font-weight:700;text-align:center}
+  .settings-section--commercial .settings-offer-summary{min-height:31px;margin:0;padding:9px 10px 0;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);font-style:normal;font-size:11px;line-height:1.35}
+  html[data-theme] .settings-section--commercial .settings-offer-block{box-shadow:none}
+  html[data-theme] .settings-section--commercial .settings-offer-summary{border-top-color:var(--line)}
+  @media(max-width:620px){
+    .settings-section--commercial .settings-grid-offer{grid-template-columns:1fr}
+    .settings-section--commercial .settings-offer-fields{grid-template-columns:1fr 1fr}
+  }
+  .student-discount-control>span:first-child{display:flex!important;align-items:center;justify-content:space-between;gap:10px}
+  .student-discount-control output{flex:0 0 auto;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;line-height:1}
+  .student-discount-control input[type="range"]{width:100%;height:8px;margin:8px 0 2px;accent-color:var(--accent);cursor:pointer}
+  .student-discount-control input[type="range"]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:5px}
+  html[data-theme="night"] .student-discount-control output{color:var(--accent-ink)}
   </style>
 </head>
 <body>
@@ -721,11 +743,11 @@
             <label><span>Taux de TVA par défaut</span><span class="input-with-suffix"><input name="taxRate" type="number" min="0" max="100" step="0.1"><b>%</b></span></label><label><span>Mode de TVA</span><select name="taxMode"><option value="included">TVA incluse</option><option value="excluded">TVA en plus</option></select></label>
           </div>
         </section>
-        <section class="settings-section">
+        <section class="settings-section settings-section--commercial">
           <div class="settings-section-head"><span class="settings-section-index">05</span><div><h3>Tarification commerciale</h3><p>Configuration des offres Pack et Étudiant</p></div></div>
           <div class="settings-grid-offer">
             <div class="settings-offer-block pack"><span class="settings-offer-tag">Pack</span><div class="settings-offer-fields"><label><span>Séances payées</span><input name="packPaidDefault" type="number" min="1" max="24"></label><label><span>Séances offertes</span><input name="packFreeDefault" type="number" min="0" max="12"></label></div><p class="settings-offer-summary" data-summary="pack"></p></div>
-            <div class="settings-offer-block student"><span class="settings-offer-tag">Étudiant</span><div class="settings-offer-fields"><label><span>Tarif étudiant</span><span class="input-with-suffix"><input name="studentDiscount" type="number" min="0" max="100" step="1"><b>%</b></span></label></div><p class="settings-offer-summary" data-summary="student"></p></div>
+            <div class="settings-offer-block student"><span class="settings-offer-tag">Étudiant</span><div class="settings-offer-fields"><label class="student-discount-control"><span><span>Réduction appliquée</span><output data-student-discount>50 %</output></span><input name="studentDiscount" type="range" min="0" max="100" step="1" value="50" aria-label="Réduction étudiant en pourcentage"></label></div><p class="settings-offer-summary" data-summary="student"></p></div>
           </div>
         </section>
         <section class="settings-section">

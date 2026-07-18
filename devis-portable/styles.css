@@ -374,6 +374,8 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 @keyframes toast-out-soft{to{opacity:0;transform:translateY(5px)}}
 @media screen and (max-width:1180px){.toast-region{bottom:88px}}
 @media (prefers-reduced-motion:reduce){.toast,.toast.is-leaving{animation:none}}
+/* Keep toast notifications close to the bottom edge without touching it. */
+.toast-region{bottom:24px}
 
 /* V4.12 — coupon à la demande et actions de caisse toujours accessibles */
 .coupon-toggle{display:inline-flex;min-height:34px;padding:0 2px;align-items:center;gap:6px;border:0;color:#666;background:transparent;font-size:11px;font-weight:800;cursor:pointer}
