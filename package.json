@@ -1,6 +1,6 @@
 {
   "name": "bellecour-devis-portable",
-  "version": "4.20.1",
+  "version": "4.20.2",
   "private": true,
   "author": "Clinique Bellecour",
   "description": "Bellecour Devis, application Windows portable autonome.",
@@ -47,10 +47,10 @@
           ]
         }
       ],
-      "artifactName": "${productName}-${version}-portable.${ext}"
+          "artifactName": "BellecourDevis-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "${productName}-${version}-portable.${ext}"
+      "artifactName": "BellecourDevis-${version}.${ext}"
     },
     "mac": {
       "target": [
