@@ -553,7 +553,7 @@
     <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
     <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></symbol>
     <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
-    <symbol id="icon-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
@@ -580,7 +580,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-block">
-        <span class="brand-logo"><img src="assets/bellecour-logo.webp" alt="Clinique Bellecour"></span>
+        <span class="brand-logo"><img id="headerLogo" src="assets/bellecour-logo.webp" alt="Clinique Bellecour"></span>
         <div><p class="eyebrow">Clinique Bellecour</p><h1>Créateur de devis</h1></div>
       </div>
       <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="group" aria-label="Tarif appliqué aux soins">
@@ -620,10 +620,10 @@
             <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked><span class="switch"></span><span>Afficher TVA</span></label>
             <button class="round-button" id="moreQuoteButton" type="button" aria-label="Autres actions" aria-expanded="false"><svg><use href="#icon-more"></use></svg></button>
             <div class="action-menu" id="quoteActionMenu" hidden>
-              <button type="button" data-action="duplicate"><svg><use href="#icon-copy"></use></svg> Dupliquer</button>
-              <button type="button" data-action="export"><svg><use href="#icon-download"></use></svg> Exporter ce devis</button>
-              <button type="button" data-action="import"><svg><use href="#icon-upload"></use></svg> Importer un devis</button>
-              <button class="danger-text" type="button" data-action="clear"><svg><use href="#icon-trash"></use></svg> Vider la caisse</button>
+              <button type="button" data-action="duplicate" aria-label="Dupliquer le devis" title="Dupliquer le devis"><svg><use href="#icon-copy"></use></svg><span>Dupliquer le devis</span></button>
+              <button type="button" data-action="export" aria-label="Exporter ce devis" title="Exporter ce devis"><svg><use href="#icon-download"></use></svg><span>Exporter ce devis</span></button>
+              <button type="button" data-action="import" aria-label="Importer un devis" title="Importer un devis"><svg><use href="#icon-upload"></use></svg><span>Importer un devis</span></button>
+              <button class="danger-text" type="button" data-action="clear" aria-label="Vider la caisse" title="Vider la caisse"><svg><use href="#icon-trash"></use></svg><span>Vider la caisse</span></button>
             </div>
           </div>
           <div class="checkout-context">
@@ -634,7 +634,7 @@
           </div>
           <div class="cart-section"><div class="cart-section-title"><span id="cartItemCount">Aucune prestation</span></div><div class="cart-lines" id="cartLines"></div></div>
           <div class="totals-section">
-            <div class="discount-row"><button class="coupon-toggle" id="couponToggle" type="button" aria-expanded="false"><svg><use href="#icon-plus"></use></svg>Ajouter un coupon</button><div class="coupon-editor" id="couponEditor" hidden><div class="discount-row-head"><label for="couponCode">Coupon</label><small id="couponRule">Réduction en % ou en CHF</small></div><div class="discount-row-controls"><label class="coupon-code-field" for="couponCode"><span>Code</span><input id="couponCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="EX. BIENVENUE"></label><div class="segmented-control" aria-label="Type de réduction du coupon"><button class="active" type="button" data-discount-type="percent">%</button><button type="button" data-discount-type="fixed">CHF</button></div><label class="discount-input" for="discountValue"><input id="discountValue" type="number" min="0" step="0.01" value="0" aria-label="Valeur du coupon"><span id="discountSuffix">%</span></label></div></div></div>
+            <div class="discount-row"><button class="coupon-toggle icon-only" id="couponToggle" type="button" aria-label="Ajouter un coupon" title="Ajouter un coupon" aria-expanded="false"><svg><use href="#icon-plus"></use></svg></button><div class="coupon-editor" id="couponEditor" hidden><div class="discount-row-head"><label for="couponCode">Coupon</label><small id="couponRule">Réduction en % ou en CHF</small></div><div class="discount-row-controls"><label class="coupon-code-field" for="couponCode"><span>Code</span><input id="couponCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="EX. BIENVENUE"></label><div class="segmented-control" aria-label="Type de réduction du coupon"><button class="active" type="button" data-discount-type="percent">%</button><button type="button" data-discount-type="fixed">CHF</button></div><label class="discount-input" for="discountValue"><input id="discountValue" type="number" min="0" step="0.01" value="0" aria-label="Valeur du coupon"><span id="discountSuffix">%</span></label></div></div></div>
             <dl class="totals-list">
               <div><dt>Sous-total</dt><dd id="subtotalValue">CHF 0.00</dd></div>
               <div id="studentDiscountTotalRow" hidden><dt id="studentDiscountTotalLabel">Rabais étudiant</dt><dd class="negative" id="studentDiscountTotalValue">− CHF 0.00</dd></div>
@@ -643,9 +643,9 @@
               <div id="taxTotalRow" hidden><dt id="taxTotalLabel">TVA 8.1%</dt><dd id="taxTotalValue">CHF 0.00</dd></div>
               <div class="grand-total"><dt>Total</dt><dd id="grandTotalValue">CHF 0.00</dd></div>
             </dl>
-            <details class="installments" id="installmentsDetails"><summary><span><small>Simulation</small>Paiement échelonné</span><svg><use href="#icon-chevron"></use></svg></summary><div class="installment-meta"><p class="installment-note">Montants mensuels indicatifs, basés sur le total du devis. L’échelonnement reste soumis à l’accord du partenaire financier.</p></div><div class="installment-grid" id="installmentGrid"></div></details>
+            <details class="installments" id="installmentsDetails"><summary><span>Paiement échelonné (CHF)</span><svg><use href="#icon-chevron"></use></svg></summary><div class="installment-meta"><p class="installment-note">Montants mensuels indicatifs, basés sur le total du devis. L’échelonnement reste soumis à l’accord du partenaire financier.</p></div><div class="installment-grid" id="installmentGrid"></div></details>
           </div>
-          <div class="checkout-actions"><button class="button secondary" id="saveButton" type="button"><svg><use href="#icon-save"></use></svg>Enregistrer</button><div class="quote-output-actions"><button class="button primary" id="printButton" type="button"><svg><use href="#icon-print"></use></svg>Imprimer</button><button class="button whatsapp-button" id="whatsAppButton" type="button" aria-label="Transférer le devis via WhatsApp" title="Transférer le devis via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg><span>WhatsApp</span></button></div></div>
+          <div class="checkout-actions"><button class="button secondary icon-only" id="saveButton" type="button" aria-label="Enregistrer le devis" title="Enregistrer le devis"><img src="assets/icon-save.svg" alt="" aria-hidden="true"></button><div class="quote-output-actions"><button class="button primary icon-only" id="printButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis"><svg><use href="#icon-print"></use></svg></button><button class="button secondary icon-only" id="downloadPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF"><svg><use href="#icon-download"></use></svg></button><button class="button whatsapp-button icon-only" id="whatsAppButton" type="button" aria-label="Transférer le PDF via WhatsApp" title="Transférer le PDF via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg></button></div></div>
         </div>
       </aside>
     </main>
@@ -726,9 +726,22 @@
           <div class="settings-section-head"><span class="settings-section-index">02</span><div><h3>Votre entreprise</h3><p>Coordonnées affichées en haut du devis</p></div></div>
           <div class="form-grid">
             <label><span>Nom</span><input name="companyName" type="text"></label><label><span>Sous-titre</span><input name="companySubtitle" type="text"></label>
-            <label class="full-field"><span>Adresse</span><input name="companyAddress" type="text"></label><label><span>Téléphone</span><input name="companyPhone" type="text"></label>
-            <label><span>E-mail</span><input name="companyEmail" type="email"></label><label class="full-field"><span>UID / TVA</span><input name="companyUid" type="text"></label>
-          </div>
+             <label class="full-field"><span>Adresse</span><input name="companyAddress" type="text"></label><label><span>Téléphone</span><input name="companyPhone" type="text"></label>
+             <label><span>E-mail</span><input name="companyEmail" type="email"></label><label class="full-field"><span>UID / TVA</span><input name="companyUid" type="text"></label>
+             <div class="brand-assets-editor full-field">
+               <article class="brand-asset-card">
+                 <div class="brand-asset-preview brand-asset-preview--header"><img id="headerLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo de l’application"></div>
+                 <div class="brand-asset-copy"><strong>Logo de l’application</strong><small id="headerLogoStatus">Logo Bellecour par défaut</small><span>Préférez une version horizontale ou compacte, avec fond transparent.</span></div>
+                 <div class="brand-asset-actions"><label class="logo-upload-button"><svg><use href="#icon-upload"></use></svg>Choisir<input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="header" hidden></label><button class="logo-remove-button" type="button" data-remove-logo="header" hidden>Retirer</button></div>
+               </article>
+               <article class="brand-asset-card">
+                 <div class="brand-asset-preview brand-asset-preview--pdf"><img id="pdfLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo du PDF"></div>
+                 <div class="brand-asset-copy"><strong>Logo du PDF</strong><small id="pdfLogoStatus">Logo Bellecour par défaut</small><span>Laissez vide pour réutiliser automatiquement le logo de l’application.</span></div>
+                 <div class="brand-asset-actions"><label class="logo-upload-button"><svg><use href="#icon-upload"></use></svg>Choisir<input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="pdf" hidden></label><button class="logo-remove-button" type="button" data-remove-logo="pdf" hidden>Retirer</button></div>
+               </article>
+               <p class="brand-asset-hint">PNG transparent recommandé · JPG ou WebP acceptés · 4 Mo maximum. Les images sont optimisées et restent uniquement dans votre sauvegarde locale.</p>
+             </div>
+           </div>
         </section>
         <section class="settings-section">
           <div class="settings-section-head"><span class="settings-section-index">03</span><div><h3>Numérotation des devis</h3><p>Code unique de chaque devis</p></div></div>

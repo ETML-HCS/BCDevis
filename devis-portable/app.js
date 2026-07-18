@@ -3,10 +3,22 @@
 
   const STORAGE_KEY = "bellecour-atelier-devis-v3";
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 15;
+  const APP_VERSION = 17;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
+  const DEFAULT_LOGO_PATH = "assets/bellecour-logo.webp";
+  const LOGO_FILE_MAX_BYTES = 4 * 1024 * 1024;
+  // Keep accepting older logo data so an update never drops a saved identity.
+  const LOGO_DATA_MAX_LENGTH = 1800000;
+  // New uploads are more compact, leaving ample room for the quote history in
+  // the portable Chromium profile.
+  const LOGO_UPLOAD_MAX_LENGTH = 800000;
+  const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+  const MAX_LINE_QUANTITY = 999;
+  const MAX_LINE_PRICE = 1000000;
+  const LEGACY_DEFAULT_PAYMENT_CONDITIONS = "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.";
+  const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -47,6 +59,23 @@
   })[char]);
   const normalize = (value = "") => String(value).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   const plural = (count, singular, pluralForm = `${singular}s`) => `${count} ${count === 1 ? singular : pluralForm}`;
+  const safeLogoDataUrl = (value = "") => {
+    const logo = String(value || "");
+    return logo.length <= LOGO_DATA_MAX_LENGTH && /^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=\s]+$/i.test(logo) ? logo : "";
+  };
+  const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  const boundedNumber = (value, minimum, maximum, fallback = minimum) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? clamp(number, minimum, maximum) : fallback;
+  };
+  const boundedInteger = (value, minimum, maximum, fallback = minimum) => Math.round(boundedNumber(value, minimum, maximum, fallback));
+  const validISODate = (value, fallback = todayISO()) => {
+    const candidate = String(value || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(candidate)) return fallback;
+    const date = new Date(`${candidate}T12:00:00`);
+    return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== candidate ? fallback : candidate;
+  };
+  const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
 
   const defaultSettings = {
     companyName: "Clinique Bellecour",
@@ -55,6 +84,8 @@
     companyPhone: "+41 78 669 63 44",
     companyEmail: "contact@cliniquebellecour.ch",
     companyUid: "CHE-244.490.739",
+    headerLogoDataUrl: "",
+    pdfLogoDataUrl: "",
     quotePrefix: "DEV",
     machineName: "A",
     theme: "light",
@@ -68,10 +99,17 @@
     familyFooterCollapsed: false,
     skipTariffChangeConfirmation: false,
     visibleFamilies: [],
-    conditions: "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.",
+    conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
     footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture."
   };
+
+  function packDefaults() {
+    return {
+      paid: Math.max(1, Math.round(Number(db.settings.packPaidDefault) || 6)),
+      free: Math.max(0, Math.round(Number(db.settings.packFreeDefault) || 0))
+    };
+  }
 
   function configuredTaxRate(settings = defaultSettings) {
     if (settings?.taxRate === "" || settings?.taxRate === null || settings?.taxRate === undefined) return defaultSettings.taxRate;
@@ -105,10 +143,22 @@
     return database;
   }
 
+  function updateDefaultPaymentWording(database) {
+    if (database.settings?.conditions === LEGACY_DEFAULT_PAYMENT_CONDITIONS) {
+      database.settings.conditions = DEFAULT_PAYMENT_CONDITIONS;
+    }
+    const records = [database.current, ...Object.values(database.quotes || {})].filter(Boolean);
+    records.forEach((record) => {
+      if (record.conditions === LEGACY_DEFAULT_PAYMENT_CONDITIONS) record.conditions = DEFAULT_PAYMENT_CONDITIONS;
+    });
+    return database;
+  }
+
   function migrateDatabase(database, sourceVersion) {
     const version = Number(sourceVersion || 0);
     if (version < 4) removeExampleQuote(database);
     if (version < 7) applyDefaultTax(database);
+    if (version < 17) updateDefaultPaymentWording(database);
     return database;
   }
 
@@ -126,6 +176,8 @@
         customServices: Array.isArray(parsed.customServices) ? parsed.customServices : [],
         quotes: parsed.quotes && typeof parsed.quotes === "object" ? parsed.quotes : {}
       };
+      database.settings.headerLogoDataUrl = safeLogoDataUrl(database.settings.headerLogoDataUrl);
+      database.settings.pdfLogoDataUrl = safeLogoDataUrl(database.settings.pdfLogoDataUrl);
       return migrateDatabase(database, parsed.version);
     } catch (error) {
       console.warn("Sauvegarde locale illisible", error);
@@ -143,6 +195,7 @@
   let toastTimer = null;
   let activeToast = null;
   let pendingTheme = "light";
+  let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
 
   function compactMachineCode(value) {
     const code = normalize(value || "A").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
@@ -239,7 +292,7 @@
   }
 
   function sanitizeQuote(source) {
-    if (!source || typeof source !== "object" || !Array.isArray(source.lines)) throw new Error("Format de devis non reconnu");
+    if (!isRecord(source) || !Array.isArray(source.lines)) throw new Error("Format de devis non reconnu");
     const date = todayISO();
     const base = {
       id: uid(), number: "", status: "draft", date,
@@ -250,39 +303,42 @@
       conditions: db.settings.conditions, note: "",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
     };
-    const quoteDate = String(source.date || base.date);
+    const quoteDate = validISODate(source.date, base.date);
+    const importedNumber = String(source.number || "").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 64);
     const sanitized = {
       ...base,
       ...source,
       id: source.id || uid(),
-      number: String(source.number || nextQuoteNumber(quoteDate)),
+      number: importedNumber || nextQuoteNumber(quoteDate),
       date: quoteDate,
       validUntil: addDaysISO(quoteDate, QUOTE_VALIDITY_DAYS),
-      client: { ...base.client, ...(source.client || {}) },
+      client: Object.fromEntries(Object.entries({ ...base.client, ...(isRecord(source.client) ? source.client : {}) }).map(([key, value]) => [key, String(value || "").trim().slice(0, 500)])),
       discount: {
         code: String(source.discount?.code || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24),
         type: source.discount?.type === "fixed" ? "fixed" : "percent",
         value: Math.max(0, Number(source.discount?.value) || 0)
       },
-      tax: { ...base.tax, ...(source.tax || {}) },
-      lines: source.lines.map((line) => {
+      tax: { ...base.tax, ...(isRecord(source.tax) ? source.tax : {}) },
+      lines: source.lines.filter(isRecord).map((line) => {
         const offerType = ["single", "pack", "student"].includes(line.offerType) ? line.offerType : "single";
-        const price = Math.max(0, Number(line.price ?? line.unit_price) || 0);
-        const basePrice = Math.max(0, Number(line.basePrice ?? price) || 0);
+        const price = boundedNumber(line.price ?? line.unit_price, 0, MAX_LINE_PRICE, 0);
+        const basePrice = boundedNumber(line.basePrice ?? price, 0, MAX_LINE_PRICE, 0);
         return {
           id: line.id || uid(),
           serviceId: line.serviceId ?? null,
-          name: String(line.name || line.description || "Prestation"),
+          name: String(line.name || line.description || "Prestation").trim().slice(0, 240) || "Prestation",
           categoryId: Number(line.categoryId) || 0,
-          duration: Math.max(0, Number(line.duration) || 0),
+          duration: boundedInteger(line.duration, 0, 1440, 0),
           offerType,
           basePrice,
           studentDiscount: clamp(line.studentDiscount ?? db.settings.studentDiscount, 0, 100),
           price: offerType === "student" ? basePrice : price,
-          quantity: Math.max(1, Math.round(Number(line.quantity) || 1)),
-          freeQuantity: offerType === "pack" ? Math.max(0, Math.round(Number(line.freeQuantity) || 0)) : 0
+          quantity: boundedInteger(line.quantity, 1, MAX_LINE_QUANTITY, 1),
+          freeQuantity: offerType === "pack" ? boundedInteger(line.freeQuantity, 0, MAX_LINE_QUANTITY, 0) : 0
         };
-      }),      updatedAt: new Date().toISOString()
+      }),
+      createdAt: validTimestamp(source.createdAt, base.createdAt),
+      updatedAt: validTimestamp(source.updatedAt, base.updatedAt)
     };
     const hasStudentLines = sanitized.lines.some((line) => line.offerType === "student");
     const hasStandardLines = sanitized.lines.some((line) => line.offerType !== "student");
@@ -330,7 +386,8 @@
       }
       return true;
     } catch (error) {
-      toast("Le stockage local du navigateur est indisponible.", "error");
+      const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
+      toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de l’application est indisponible.", "error");
       console.error(error);
       return false;
     }
@@ -632,12 +689,15 @@
     container.innerHTML = quote.lines.map((line) => {
       const category = categoryFor(line.categoryId);
       const isPack = line.offerType === "pack";
+      const pack = packDefaults();
+      const canAddPackOffer = line.offerType === "single" && pack.free > 0 && line.quantity >= pack.paid;
       const nameSize = Math.min(28, Math.max(8, Array.from(line.name).length + 1));
       const categoryLabel = category.short.toLocaleLowerCase("fr-CH");
       const paidControl = `<span class="quantity-group quantity-group-inline${isPack ? " is-pack" : ""}">${isPack ? "<small>Payées</small>" : ""}<button class="quantity-value" type="button" data-quantity-gesture="paid" aria-label="${line.quantity} séance${line.quantity > 1 ? "s" : ""} payée${line.quantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.quantity}</button></span>`;
       const freeControl = isPack ? `<span class="quantity-group quantity-group-inline is-pack free"><small>Offertes</small><button class="quantity-value" type="button" data-quantity-gesture="free" aria-label="${line.freeQuantity} séance${line.freeQuantity > 1 ? "s" : ""} offerte${line.freeQuantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.freeQuantity}</button></span>` : "";
+      const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
-        <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" size="${nameSize}" aria-label="Nom de la prestation"></span></div>
+        <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" size="${nameSize}" aria-label="Nom de la prestation"></span>${packOfferAction}</div>
         <div class="cart-line-inline-controls"><span class="cart-line-category">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price">${money(line.price)}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
       </article>`;
     }).join("");
@@ -668,6 +728,11 @@
 
   function renderHeader() {
     $(".brand-block .eyebrow").textContent = db.settings.companyName;
+    const logo = $("#headerLogo");
+    const customLogo = safeLogoDataUrl(db.settings.headerLogoDataUrl);
+    logo.src = customLogo || DEFAULT_LOGO_PATH;
+    logo.alt = `Logo ${db.settings.companyName || "de l’entreprise"}`;
+    logo.closest(".brand-logo").classList.toggle("has-custom-logo", Boolean(customLogo));
     const clientName = String(quote.client?.name || "").trim();
     document.title = clientName || "Devis";
   }
@@ -726,9 +791,9 @@
     if (!line) return;
     const field = input.dataset.lineField;
     if (field === "name") line.name = input.value.trim() || "Prestation";
-    if (field === "quantity") line.quantity = Math.max(1, Math.round(Number(input.value) || 1));
-    if (field === "price") line.price = Math.max(0, Number(input.value) || 0);
-    if (field === "freeQuantity") line.freeQuantity = Math.max(0, Math.round(Number(input.value) || 0));
+    if (field === "quantity") line.quantity = boundedInteger(input.value, 1, MAX_LINE_QUANTITY, 1);
+    if (field === "price") line.price = boundedNumber(input.value, 0, MAX_LINE_PRICE, 0);
+    if (field === "freeQuantity") line.freeQuantity = boundedInteger(input.value, 0, MAX_LINE_QUANTITY, 0);
     saveLocal();
     renderCart();
     renderTotals();
@@ -841,7 +906,22 @@
     const file = input.files?.[0];
     input.value = "";
     if (!file) return null;
+    if (file.size > MAX_IMPORT_BYTES) throw new Error("Le fichier dépasse 10 Mo et ne peut pas être restauré en toute sécurité.");
     return JSON.parse(await file.text());
+  }
+
+  function quoteNumberAlreadyUsed(number, quoteId) {
+    return Object.values(db.quotes || {}).some((saved) => saved?.id !== quoteId && saved?.number === number);
+  }
+
+  function giveImportedQuoteANewIdentityIfNeeded(importedQuote) {
+    if (!db.quotes?.[importedQuote.id] && !quoteNumberAlreadyUsed(importedQuote.number, importedQuote.id)) return importedQuote;
+    importedQuote.id = uid();
+    importedQuote.number = nextQuoteNumber(importedQuote.date);
+    importedQuote.status = "draft";
+    importedQuote.createdAt = new Date().toISOString();
+    importedQuote.updatedAt = importedQuote.createdAt;
+    return importedQuote;
   }
 
   function exportQuote() {
@@ -870,9 +950,68 @@
   function fillSettingsForm() {
     const form = $("#settingsForm");
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
+    pendingLogos = {
+      headerLogoDataUrl: safeLogoDataUrl(db.settings.headerLogoDataUrl),
+      pdfLogoDataUrl: safeLogoDataUrl(db.settings.pdfLogoDataUrl)
+    };
+    renderLogoPreviews();
     buildFamilyVisibilityGrid();
     refreshSettingsPreview();
     syncThemePicker(currentTheme());
+  }
+
+  function readLogoFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { resolve(""); return; }
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+        reject(new Error("Format non pris en charge. Utilisez un fichier PNG, JPG ou WebP."));
+        return;
+      }
+      if (file.size > LOGO_FILE_MAX_BYTES) {
+        reject(new Error("Le logo dépasse 4 Mo. Choisissez une image plus légère."));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Le fichier n’a pas pu être lu."));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("L’image semble endommagée ou illisible."));
+        image.onload = () => {
+          const maxWidth = 1200;
+          const maxHeight = 600;
+          const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+          const optimized = canvas.toDataURL("image/webp", 0.92);
+           if (optimized.length > LOGO_UPLOAD_MAX_LENGTH || !safeLogoDataUrl(optimized)) {
+            reject(new Error("Le logo reste trop volumineux après optimisation."));
+            return;
+          }
+          resolve(optimized);
+        };
+        image.src = String(reader.result || "");
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderLogoPreviews() {
+    const headerLogo = safeLogoDataUrl(pendingLogos.headerLogoDataUrl);
+    const pdfLogo = safeLogoDataUrl(pendingLogos.pdfLogoDataUrl);
+    const headerPreview = $("#headerLogoPreview");
+    const pdfPreview = $("#pdfLogoPreview");
+    if (headerPreview) headerPreview.src = headerLogo || DEFAULT_LOGO_PATH;
+    if (pdfPreview) pdfPreview.src = pdfLogo || headerLogo || DEFAULT_LOGO_PATH;
+    const headerStatus = $("#headerLogoStatus");
+    const pdfStatus = $("#pdfLogoStatus");
+    if (headerStatus) headerStatus.textContent = headerLogo ? "Logo personnalisé prêt" : "Logo Bellecour par défaut";
+    if (pdfStatus) pdfStatus.textContent = pdfLogo ? "Logo PDF personnalisé prêt" : headerLogo ? "Logo de l’application réutilisé" : "Logo Bellecour par défaut";
+    const removeHeader = $('[data-remove-logo="header"]');
+    const removePdf = $('[data-remove-logo="pdf"]');
+    if (removeHeader) removeHeader.hidden = !headerLogo;
+    if (removePdf) removePdf.hidden = !pdfLogo;
   }
 
   function syncThemePicker(activeTheme) {
@@ -914,6 +1053,27 @@
     }
   }
 
+  function printLayoutClass(totals, months, studentConditions) {
+    const conditions = String(quote.conditions || db.settings.conditions || "").trim();
+    const footerNote = String(db.settings.footerNote || "").trim();
+    const conditionsLength = conditions.length + footerNote.length + studentConditions.length;
+    const adjustmentRows = 2
+      + (totals.studentDiscount > 0 ? 1 : 0)
+      + (totals.discount > 0 ? 1 : 0)
+      + (quote.tax.enabled ? 2 : 0);
+    const longLineCount = quote.lines.filter((line) => String(line.name || "").length > 44).length;
+    const singlePageEligible = quote.lines.length <= 5
+      && longLineCount <= 2
+      && conditionsLength <= 620
+      && studentConditions.length <= 240
+      && adjustmentRows <= 5
+      && months.length <= 5;
+
+    if (singlePageEligible) return "print-layout-single";
+    if (quote.lines.length <= 8 && conditionsLength <= 900) return "print-layout-balanced";
+    return "print-layout-extended";
+  }
+
   function renderPrint() {
     const totals = calculate(quote);
     const settings = db.settings;
@@ -928,20 +1088,39 @@
     }).join("");
     const couponName = quote.discount.code ? `Coupon ${quote.discount.code}` : "Coupon";
     const discountLabel = quote.discount.type === "percent" ? `${couponName} (${Number(quote.discount.value) || 0} %)` : couponName;
-    const savingsMessages = [];
-    if (totals.studentDiscount > 0) savingsMessages.push(`Le rabais étudiant de ${totals.studentRate}% vous fait économiser ${money(totals.studentDiscount)}.`);
-    if (totals.discount > 0) savingsMessages.push(`Le coupon${quote.discount.code ? ` ${escapeHTML(quote.discount.code)}` : ""} réduit encore le devis de ${money(totals.discount)}.`);
-    const savingsTitle = savingsMessages.length ? "Votre économie" : "Votre devis personnalisé";
-    const savingsSummary = savingsMessages.join(" ") || "Les prestations et quantités ci-dessus ont été préparées selon vos besoins.";
     const studentConditions = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
-    $("#printQuote").innerHTML = `
-      <header class="print-header"><div class="print-brand"><div class="print-brand-mark">${escapeHTML((settings.companyName || "B")[0])}</div><div><div class="print-company-kicker">${escapeHTML(settings.companySubtitle)}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div><div class="print-company-lines">${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>UID : ${escapeHTML(settings.companyUid)}` : ""}</div></div></div><div class="print-document-title"><h1>Devis</h1><strong>${escapeHTML(quote.number)}</strong><span>Émis le ${formatDate(quote.date)}</span></div></header>
-      <div class="print-overview"><div class="print-card"><div class="print-label">Client</div><div class="print-client-name">${escapeHTML(client.name || "Client à compléter")}</div><div class="print-muted">${escapeHTML(clientContact || "Coordonnées à compléter")}${client.address ? `<br>${escapeHTML(client.address)}` : ""}</div></div><div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div></div>
-      <div class="print-section-title">Prestations sélectionnées</div><table class="print-table"><thead><tr><th>Prestation</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
-      <div class="print-summary"><div class="print-note-card"><strong>${savingsTitle}</strong>${savingsSummary}</div><table class="print-totals"><tr><td>Sous-total</td><td>${money(totals.subtotal)}</td></tr>${totals.studentDiscount > 0 ? `<tr class="discount"><td>Rabais étudiant (${totals.studentRate}%)</td><td>− ${money(totals.studentDiscount)}</td></tr>` : ""}${totals.discount > 0 ? `<tr class="discount"><td>${escapeHTML(discountLabel)}</td><td>− ${money(totals.discount)}</td></tr>` : ""}${quote.tax.enabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate}%${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>Total</td><td>${money(totals.total)}</td></tr></table></div>
-      ${totals.total > 0 ? `<div class="print-section-title">Options de paiement échelonné</div><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} mois</b><span>${money(totals.total / month)}</span></div>`).join("")}</div>` : ""}
-      <div class="print-conditions"><div><strong>Conditions de paiement</strong>${escapeHTML(quote.conditions || settings.conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>Conditions tarif étudiant</strong>${escapeHTML(studentConditions)}</div>` : ""}</div><div><strong>Remarques</strong>${escapeHTML(settings.footerNote)}\n\nCe devis reste valable jusqu’au ${formatDate(quote.validUntil)}.</div></div>
-      <div class="print-signature"><div>Date et lieu</div><div>Signature du client · Bon pour accord</div></div><footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>Document généré avec Bellecour Devis</span></footer>`;
+    const logoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl) || DEFAULT_LOGO_PATH;
+    const totalLabel = quote.tax.enabled ? "Total TTC" : "Total";
+    const printRoot = $("#printQuote");
+    const layoutClass = printLayoutClass(totals, months, studentConditions);
+    printRoot.className = `print-quote ${layoutClass}`;
+    printRoot.dataset.printLayout = layoutClass.replace("print-layout-", "");
+    printRoot.innerHTML = `
+      <header class="print-header">
+        <div class="print-brand"><img class="print-logo" src="${escapeHTML(logoSource)}" alt=""><div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || "Établissement")}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div></div>
+        <div class="print-company-lines">${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>IDE : ${escapeHTML(settings.companyUid)}` : ""}</div>
+      </header>
+      <section class="print-hero"><div><h1>Devis</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
+      <div class="print-overview">
+        <div class="print-card print-client-card"><div class="print-label">Destinataire</div><div class="print-client-name">${escapeHTML(client.name || "Destinataire non renseigné")}</div><div class="print-muted">${escapeHTML(clientContact || "Coordonnées non renseignées")}${client.address ? `<br>${escapeHTML(client.address)}` : ""}</div></div>
+        <div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div>
+      </div>
+      <section class="print-services">
+        <div class="print-section-heading"><div><strong>Détail des prestations</strong></div></div>
+        <table class="print-table"><thead><tr><th>Prestation</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
+      </section>
+      <div class="print-closing">
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>Sous-total</td><td>${money(totals.subtotal)}</td></tr>${totals.studentDiscount > 0 ? `<tr class="discount"><td>Rabais étudiant (${totals.studentRate} %)</td><td>− ${money(totals.studentDiscount)}</td></tr>` : ""}${totals.discount > 0 ? `<tr class="discount"><td>${escapeHTML(discountLabel)}</td><td>− ${money(totals.discount)}</td></tr>` : ""}${quote.tax.enabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
+        <section class="print-followup">
+          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>Modalités de paiement</strong></div></div><p class="print-installment-intro">Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier.</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} mois</b><span>${money(totals.total / month)}</span><small>mensualité indicative</small></div>`).join("")}</div>` : ""}
+          <div class="print-legal-block">
+            <div class="print-section-heading print-legal-heading"><div><strong>Conditions et acceptation</strong></div></div>
+            <div class="print-conditions print-conditions-single"><div><strong>Conditions de règlement</strong>${escapeHTML(quote.conditions || settings.conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>Conditions du tarif étudiant</strong>${escapeHTML(studentConditions)}</div>` : ""}${settings.footerNote ? `<div class="print-legal-note">${escapeHTML(settings.footerNote)}</div>` : ""}</div></div>
+            <div class="print-signature"><div><span>Date et lieu</span></div><div><span>Signature du client et mention « Bon pour accord »</span></div></div>
+          </div>
+        </section>
+        <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>Valable jusqu’au ${formatDate(quote.validUntil)}</span></footer>
+      </div>`;
   }
 
   function printQuote() {
@@ -951,7 +1130,53 @@
     window.setTimeout(() => window.print(), 80);
   }
 
-  function shareQuoteViaWhatsApp() {
+  async function waitForPdfLayout() {
+    if (document.fonts?.ready) await document.fonts.ready;
+    const images = $$("img", $("#printQuote"));
+    await Promise.all(images.map(async (image) => {
+      if (image.complete && image.naturalWidth) return;
+      if (typeof image.decode === "function") {
+        try {
+          await image.decode();
+          return;
+        } catch (_) {
+          // The PDF can still be generated when an optional logo cannot load.
+        }
+      }
+      await new Promise((resolve) => {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+      });
+    }));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  }
+
+  async function downloadPdf() {
+    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le téléchargement.", "error"); return; }
+    saveQuote();
+    renderPrint();
+    if (typeof window.bellecourDesktop?.savePdf !== "function") {
+      printQuote();
+      toast("Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression.");
+      return;
+    }
+    const button = $("#downloadPdfButton");
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    try {
+      await waitForPdfLayout();
+      const result = await window.bellecourDesktop.savePdf(`${quote.number}.pdf`);
+      if (result?.saved) toast(`PDF téléchargé : ${result.fileName || `${quote.number}.pdf`}`);
+    } catch (error) {
+      console.error(error);
+      toast("Le PDF n’a pas pu être enregistré.", "error");
+    } finally {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+    }
+  }
+
+  async function shareQuoteViaWhatsApp() {
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
     saveQuote();
     const totals = calculate(quote);
@@ -975,9 +1200,17 @@
       "Le PDF peut être joint à ce message depuis le bouton Imprimer / PDF."
     ].join("\n");
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    const popup = window.open(url, "_blank", "noopener");
-    if (!popup) window.location.assign(url);
-    toast("Devis préparé pour WhatsApp");
+    try {
+      if (typeof window.bellecourDesktop?.openExternal === "function") await window.bellecourDesktop.openExternal(url);
+      else {
+        const popup = window.open(url, "_blank", "noopener");
+        if (!popup) window.location.assign(url);
+      }
+      toast("Devis préparé pour WhatsApp");
+    } catch (error) {
+      console.error(error);
+      toast("WhatsApp n’a pas pu être ouvert.", "error");
+    }
   }
 
   function switchMobilePanel(id) {
@@ -1080,6 +1313,16 @@
     const line = lineFromElement(actionButton);
     if (!line) return;
     const action = actionButton.dataset.lineAction;
+    if (action === "add-pack-free") {
+      const pack = packDefaults();
+      if (line.offerType !== "single" || pack.free <= 0 || line.quantity < pack.paid) return;
+      line.offerType = "pack";
+      line.freeQuantity = pack.free;
+      selectedOfferMode = "pack";
+      saveLocal(); renderCatalog(); renderCheckout();
+      toast(`${line.name} · ${line.quantity} payées + ${line.free} offerte${line.free > 1 ? "s" : ""}`);
+      return;
+    }
     if (action === "increase") line.quantity += 1;
     if (action === "decrease") line.quantity = Math.max(1, line.quantity - 1);
     if (action === "increase-free") line.freeQuantity += 1;
@@ -1158,6 +1401,12 @@
   });
   $("#saveButton").addEventListener("click", saveQuote);
   $("#printButton").addEventListener("click", printQuote);
+  $("#downloadPdfButton").addEventListener("click", downloadPdf);
+  if (typeof window.bellecourDesktop?.savePdf !== "function") {
+    const button = $("#downloadPdfButton");
+    button.title = "Ouvrir l’impression pour enregistrer au format PDF";
+    button.setAttribute("aria-label", "Imprimer ou enregistrer au format PDF");
+  }
   $("#whatsAppButton").addEventListener("click", shareQuoteViaWhatsApp);
   $("#historyButton").addEventListener("click", () => { renderHistory(); openLayer("historyLayer"); });
   $("#historyList").addEventListener("click", (event) => { const button = event.target.closest("[data-quote-id]"); if (button) loadHistoryQuote(button.dataset.quoteId); });
@@ -1174,6 +1423,26 @@
     if (["quotePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
     if (name === "visibleFamilies") refreshSettingsPreview();
   });
+  $$("[data-logo-input]").forEach((input) => input.addEventListener("change", async (event) => {
+    const target = event.currentTarget;
+    const kind = target.dataset.logoInput;
+    const key = kind === "pdf" ? "pdfLogoDataUrl" : "headerLogoDataUrl";
+    try {
+      const value = await readLogoFile(target.files?.[0]);
+      if (value) pendingLogos[key] = value;
+      renderLogoPreviews();
+      toast(kind === "pdf" ? "Logo du PDF prêt à être enregistré" : "Logo de l’application prêt à être enregistré");
+    } catch (error) {
+      toast(error.message || "Impossible d’ajouter ce logo.", "error");
+    } finally {
+      target.value = "";
+    }
+  }));
+  $$("[data-remove-logo]").forEach((button) => button.addEventListener("click", () => {
+    const key = button.dataset.removeLogo === "pdf" ? "pdfLogoDataUrl" : "headerLogoDataUrl";
+    pendingLogos[key] = "";
+    renderLogoPreviews();
+  }));
   $("#settingsForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -1182,6 +1451,8 @@
       companyName: String(data.get("companyName") || "").trim() || defaultSettings.companyName,
       companySubtitle: String(data.get("companySubtitle") || "").trim(), companyAddress: String(data.get("companyAddress") || "").trim(),
       companyPhone: String(data.get("companyPhone") || "").trim(), companyEmail: String(data.get("companyEmail") || "").trim(), companyUid: String(data.get("companyUid") || "").trim(),
+      headerLogoDataUrl: safeLogoDataUrl(pendingLogos.headerLogoDataUrl),
+      pdfLogoDataUrl: safeLogoDataUrl(pendingLogos.pdfLogoDataUrl),
       quotePrefix: String(data.get("quotePrefix") || "DEV").trim().toUpperCase(), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName, validityDays: QUOTE_VALIDITY_DAYS,
       taxRate: configuredTaxRate({ taxRate: data.get("taxRate") }),
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
@@ -1213,7 +1484,7 @@
   document.addEventListener("click", (event) => { if (!event.target.closest("#moreQuoteButton") && !event.target.closest("#quoteActionMenu")) $("#quoteActionMenu").hidden = true; });
 
   $("#quoteImportInput").addEventListener("change", async (event) => {
-    try { const payload = await readJSONFile(event.target); if (!payload) return; quote = sanitizeQuote(payload.quote || payload); if (db.quotes[quote.id]) quote.id = uid(); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); saveLocal(); renderAll(); toast("Devis importé"); }
+    try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); saveLocal(); renderAll(); toast("Devis importé"); }
     catch (error) { toast(error.message || "Import impossible", "error"); }
   });
   $("#exportBackupButton").addEventListener("click", exportBackup);

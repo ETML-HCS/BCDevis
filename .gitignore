@@ -3,3 +3,5 @@
 output/
 tmp/
 devis-portable/data/
+node_modules/
+devis-portable/dist/

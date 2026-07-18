@@ -341,6 +341,7 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 /* V4.10 — contrôles compacts sur la ligne de prestation */
 .cart-line{display:grid;min-width:0;align-items:center;grid-template-columns:minmax(0,1fr) auto;gap:9px}
 .cart-line-info{min-width:0;grid-column:1;grid-row:1}
+.cart-line-info{display:flex;align-items:flex-start;flex-direction:column;gap:4px}
 .cart-line-name-row{overflow:hidden}
 .cart-line-inline-controls{display:flex;min-width:0;grid-column:2;grid-row:1;align-items:center;gap:6px}
 .cart-line-inline-controls .quantity-group{display:flex;align-items:center;flex-direction:row;gap:4px}
@@ -352,6 +353,9 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 .cart-line-inline-controls .cart-line-price{display:inline-flex;min-height:34px;align-items:center;color:#222;font-size:13px;font-weight:800;white-space:nowrap}
 .cart-line-inline-controls .remove-line{width:34px;height:34px;margin-left:0;border:1px solid #ead8d5;border-radius:10px;color:var(--danger);background:#fff7f6}
 .cart-line-inline-controls .remove-line svg{width:16px;height:16px}
+.pack-offer-action{min-height:24px;padding:3px 7px;border:1px solid #d8cdbd;border-radius:7px;color:#5f5648;background:var(--taupe-light);font-size:8px;font-weight:800;cursor:pointer}
+.pack-offer-action:hover{border-color:var(--taupe-dark);color:#111;background:var(--taupe)}
+.pack-offer-action:focus-visible{outline:2px solid #111;outline-offset:1px}
 @media screen and (max-width:700px){
   .cart-line{gap:6px}
   .cart-line-inline-controls{gap:4px}
@@ -377,16 +381,22 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 /* Keep toast notifications close to the bottom edge without touching it. */
 .toast-region{bottom:24px}
 
+.checkout-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.checkout-actions>.quote-output-actions{display:contents}
+.checkout-actions>.button,.checkout-actions .quote-output-actions .button{width:100%;min-width:0;height:48px;flex:none}
+.checkout-actions .icon-only svg{display:block;width:21px;height:21px;color:currentColor;fill:none;stroke:currentColor;stroke-width:1.8}
+.checkout-actions #saveButton img{display:block!important;width:21px!important;height:21px!important;visibility:visible!important;opacity:1!important}
 /* Export du devis : PDF majoritaire, transfert WhatsApp à portée directe. */
-.checkout-actions>.button,.checkout-actions>.quote-output-actions{flex:1;min-width:0}
-.quote-output-actions{display:grid;min-width:0;grid-template-columns:minmax(0,2fr) minmax(58px,1fr);gap:7px}
+.checkout-actions{flex-wrap:nowrap}
+.checkout-actions>.button,.checkout-actions>.quote-output-actions{flex:1 1 0;width:0;min-width:0}
+.quote-output-actions{display:grid;min-width:0;width:0;grid-template-columns:minmax(0,2fr) repeat(2,minmax(48px,1fr));gap:7px}
 .checkout-actions .quote-output-actions .button{min-width:0}
 .whatsapp-button{color:#fff;border-color:#1cae57;background:#25d366}
 .whatsapp-button:hover{border-color:#159447;background:#1fbd5b}
 .whatsapp-button svg{flex:0 0 auto}
 .whatsapp-button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media screen and (max-width:1180px){.quote-output-actions{gap:8px}}
-@media screen and (max-width:520px){.whatsapp-button span{display:none}.quote-output-actions{grid-template-columns:minmax(0,2fr) minmax(54px,1fr)}}
+@media screen and (max-width:520px){.whatsapp-button span{display:none}.quote-output-actions{grid-template-columns:minmax(0,2fr) repeat(2,minmax(44px,1fr))}}
 
 /* V4.12 — coupon à la demande et actions de caisse toujours accessibles */
 .coupon-toggle{display:inline-flex;min-height:34px;padding:0 2px;align-items:center;gap:6px;border:0;color:#666;background:transparent;font-size:11px;font-weight:800;cursor:pointer}
@@ -477,3 +487,298 @@ body.checkout-focus .family-panel{padding-right:calc(min(460px,100vw) + 20px)}
   .checkout-panel.is-full-height #moreQuoteButton{grid-column:2;grid-row:1}
 }
 @media (prefers-reduced-motion:reduce){.checkout-panel.is-full-height{animation:none}}
+
+/* V4.17 — identité visuelle personnalisable */
+.brand-logo{
+  display:grid;
+  width:68px;
+  height:48px;
+  padding:0;
+  place-items:center;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.brand-logo img,.brand-logo.has-custom-logo img{
+  display:block;
+  width:100%;
+  height:100%;
+  max-height:none;
+  object-fit:contain;
+  background:transparent;
+  filter:none;
+}
+.brand-assets-editor{display:grid;gap:10px;margin-top:3px}
+.brand-asset-card{
+  display:grid;
+  min-width:0;
+  padding:12px;
+  align-items:center;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--surface-soft,#fafafa);
+  grid-template-columns:76px minmax(0,1fr) auto;
+  gap:12px;
+}
+.brand-asset-preview{
+  display:grid;
+  width:76px;
+  height:58px;
+  padding:8px;
+  place-items:center;
+  overflow:hidden;
+  border:1px solid #ded8cc;
+  border-radius:10px;
+  background:
+    linear-gradient(45deg,#f0ede7 25%,transparent 25%),
+    linear-gradient(-45deg,#f0ede7 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#f0ede7 75%),
+    linear-gradient(-45deg,transparent 75%,#f0ede7 75%) #fff;
+  background-position:0 0,0 5px,5px -5px,-5px 0;
+  background-size:10px 10px;
+}
+.brand-asset-preview img{display:block;width:100%;height:100%;object-fit:contain}
+.brand-asset-copy{display:flex;min-width:0;flex-direction:column}
+.brand-asset-copy strong{color:var(--ink);font-family:var(--serif);font-size:13px;font-weight:600}
+.brand-asset-copy small{margin-top:3px;color:var(--taupe-dark);font-size:10px;font-weight:800}
+.brand-asset-copy span{margin-top:4px;color:var(--muted);font-size:10px;line-height:1.35}
+.brand-asset-actions{display:flex;align-items:center;gap:6px}
+.logo-upload-button,.logo-remove-button{
+  display:inline-flex;
+  min-height:38px;
+  padding:0 11px;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  color:var(--ink);
+  background:var(--surface,#fff);
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+.logo-upload-button:hover,.logo-remove-button:hover{border-color:var(--taupe-dark)}
+.logo-upload-button svg{width:14px;height:14px}
+.logo-remove-button{color:var(--danger);background:transparent}
+.brand-asset-hint{margin:0;padding:0 2px;color:var(--muted);font-size:9px;line-height:1.45}
+@media screen and (max-width:760px){
+  .brand-asset-card{grid-template-columns:64px minmax(0,1fr)}
+  .brand-asset-preview{width:64px;height:54px}
+  .brand-asset-actions{grid-column:1/-1}
+  .logo-upload-button,.logo-remove-button{flex:1}
+}
+
+/* V4.18 — devis A4 haute couture, avec ruptures de page maîtrisées */
+@page{size:A4;margin:13mm 14mm 18mm}
+@media print{
+  html,body{width:210mm;height:auto;overflow:visible;background:#fff}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body>*{display:none!important}
+  body>.print-quote{display:block!important}
+  .print-quote{
+    width:100%;
+    color:#171613;
+    font-family:Roboto,Arial,sans-serif;
+    font-size:9.5pt;
+    line-height:1.45;
+  }
+  .print-header{
+    display:grid;
+    min-height:23mm;
+    padding:0 0 5mm;
+    align-items:start;
+    border:0;
+    border-bottom:0;
+    grid-template-columns:minmax(0,1fr) 72mm;
+    gap:10mm;
+    break-after:avoid;
+  }
+  .print-brand{display:flex;min-width:0;align-items:center;gap:5mm}
+  .print-logo{display:block;width:34mm;height:16mm;object-fit:contain;object-position:left center}
+  .print-brand-copy{min-width:0;padding-left:5mm;border-left:.25mm solid #d9d1c4}
+  .print-company-kicker{
+    color:#8d7b60;
+    font-size:8pt;
+    font-weight:700;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+  }
+  .print-company-name{
+    margin:1.2mm 0 0;
+    font-family:"Roboto Slab",Georgia,serif;
+    font-size:15pt;
+    font-weight:500;
+    letter-spacing:.01em;
+  }
+  .print-company-lines{align-self:center;color:#6f6a60;font-size:8.5pt;line-height:1.5;text-align:right}
+  .print-hero{
+    display:flex;
+    min-height:38mm;
+    padding:8mm 0 6mm;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:12mm;
+    break-inside:avoid;
+  }
+  .print-edition{display:block;margin-bottom:2mm;color:#9a8767;font-size:8pt;font-weight:750;letter-spacing:.18em;text-transform:uppercase}
+  .print-hero h1{margin:0;font-family:"Roboto Slab",Georgia,serif;font-size:32pt;font-weight:350;letter-spacing:-.035em;line-height:.95}
+  .print-document-meta{text-align:right}
+  .print-document-meta strong{display:block;font-size:10pt;font-weight:750;letter-spacing:.04em}
+  .print-document-meta span{display:block;margin-top:2mm;color:#817c72;font-size:8.4pt}
+  .print-overview{
+    display:grid;
+    margin:0 0 8mm;
+    grid-template-columns:minmax(0,1.45fr) minmax(48mm,.8fr);
+    gap:10mm;
+    break-inside:avoid;
+  }
+  .print-card{
+    min-height:22mm;
+    padding:2mm 0;
+    border:0;
+    border-radius:0;
+    background:#fff;
+  }
+  .print-client-card{border-left:0}
+  .print-overview .print-card:last-child{padding-left:8mm;border-left:.18mm solid #ded8ce}
+  .print-label{margin-bottom:2.2mm;color:#8d7b60;font-size:8pt;font-weight:750;letter-spacing:.13em;text-transform:uppercase}
+  .print-client-name{margin-bottom:1.4mm;font-family:"Roboto Slab",Georgia,serif;font-size:14pt;font-weight:500}
+  .print-muted{color:#6f6a60;font-size:8.6pt;line-height:1.5}
+  .print-reference-grid{display:grid;grid-template-columns:1fr auto;gap:1.4mm 5mm;font-size:8.4pt}
+  .print-reference-grid span:nth-child(odd){color:#888176}
+  .print-reference-grid span:nth-child(even){text-align:right;font-weight:750}
+  .print-services{break-before:auto}
+  .print-section-heading{
+    display:flex;
+    margin:0 0 3mm;
+    align-items:center;
+    gap:0;
+    break-after:avoid;
+  }
+  .print-section-heading strong{display:block;font-family:"Roboto Slab",Georgia,serif;font-size:12pt;font-weight:550}
+  .print-section-heading small{display:block;margin-top:.4mm;color:#8a847a;font-size:8pt;letter-spacing:.07em;text-transform:uppercase}
+  .print-table{width:100%;border-collapse:collapse}
+  .print-table thead{display:table-header-group}
+  .print-table th{
+    padding:2.5mm 2.7mm;
+    border-top:.25mm solid #28251f;
+    border-bottom:.25mm solid #28251f;
+    color:#70685b;
+    background:#fff;
+    font-size:8pt;
+    font-weight:750;
+    letter-spacing:.1em;
+    text-align:left;
+    text-transform:uppercase;
+  }
+  .print-table th:not(:first-child),.print-table td:not(:first-child){text-align:right}
+  .print-table td{padding:3.2mm 2.7mm;border-bottom:.18mm solid #ded8ce;font-size:9pt;vertical-align:top}
+  .print-table tbody tr:nth-child(even) td{background:#fff}
+  .print-table tr{break-inside:avoid;page-break-inside:avoid}
+  .print-item-name{display:block;font-family:"Roboto Slab",Georgia,serif;font-size:9.7pt;font-weight:550}
+  .print-item-meta{display:block;margin-top:.8mm;color:#878076;font-size:8pt}
+  .print-summary{
+    display:grid;
+    margin-top:6mm;
+    align-items:start;
+    grid-template-columns:minmax(0,1fr) 70mm;
+    gap:12mm;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .print-summary-totals-only{grid-template-columns:86mm;justify-content:end}
+  .print-note-card{padding:4mm 5mm;border:.18mm solid #ded8ce;border-left:.8mm solid #b6a583;border-radius:0;color:#655d50;background:#fff;font-size:8.2pt;line-height:1.5}
+  .print-note-card>span{display:block;margin-bottom:1.2mm;color:#8d7b60;font-size:8pt;font-weight:750;letter-spacing:.1em;text-transform:uppercase}
+  .print-note-card strong{display:block;margin-bottom:1.3mm;color:#1c1a17;font-family:"Roboto Slab",Georgia,serif;font-size:10pt;font-weight:550}
+  .print-note-card p{margin:0}
+  .print-totals{width:100%;border-collapse:collapse}
+  .print-totals td{padding:1.5mm 0;color:#746e65;font-size:9pt}
+  .print-totals td:last-child{text-align:right;color:#211f1b;font-weight:750}
+  .print-totals .discount td{color:#8c4e45}
+  .print-totals .total td{padding:3.3mm 3mm;border:0;border-top:.35mm solid #201e1a;border-bottom:.35mm solid #201e1a;color:#201e1a;background:#fff;font-family:"Roboto Slab",Georgia,serif;font-size:13pt;font-weight:550;white-space:nowrap}
+  .print-totals .total td:first-child{padding-left:4mm}
+  .print-totals .total td:last-child{padding-right:4mm;padding-left:6mm}
+  .print-followup{margin-top:8mm;break-inside:avoid;page-break-inside:avoid}
+  .print-installment-intro{width:100%;max-width:none;margin:0 0 3.5mm;color:#716b61;font-size:8.6pt;line-height:1.5}
+  .print-installments{display:grid;grid-template-columns:repeat(auto-fit,minmax(27mm,1fr));gap:0;border-top:.18mm solid #ded8ce;border-bottom:.18mm solid #ded8ce;break-inside:avoid;page-break-inside:avoid}
+  .print-installment{padding:3.4mm 2.5mm;text-align:center;border:0;border-left:.18mm solid #ded8ce;border-radius:0;background:#fff}
+  .print-installment:first-child{border-left:0}
+  .print-installment b{display:block;color:#806e52;font-size:8pt;letter-spacing:.06em;text-transform:uppercase}
+  .print-installment span{display:block;margin-top:1.3mm;color:#201e1a;font-family:"Roboto Slab",Georgia,serif;font-size:10pt;font-weight:600}
+  .print-installment small{display:block;margin-top:.5mm;color:#918b80;font-size:8pt}
+  .print-legal-heading{margin-top:8mm}
+  .print-legal-block{break-inside:avoid;page-break-inside:avoid}
+  .print-conditions{display:grid;margin-top:0;grid-template-columns:1.25fr .75fr;gap:3mm;break-inside:avoid;page-break-inside:avoid}
+  .print-conditions-single{grid-template-columns:1fr}
+  .print-conditions>div{padding:4mm 0 0;border:0;border-top:.25mm solid #a9a196;border-radius:0;color:#716b61;background:#fff;font-size:8.5pt;line-height:1.5;white-space:pre-line}
+  .print-conditions>div:first-child{border-top:.25mm solid #a9a196}
+  .print-conditions strong{display:block;margin-bottom:2mm;color:#201e1a;font-size:8pt;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+  .print-student-conditions{margin-top:3mm;padding-top:3mm;border-top:.2mm solid #ded8ce}
+  .print-legal-note{margin-top:3mm;padding-top:3mm;border-top:.2mm solid #ded8ce;color:#817b71;font-size:8pt}
+  .print-signature{display:grid;margin-top:13mm;grid-template-columns:1fr 1.35fr;gap:15mm;break-inside:avoid;page-break-inside:avoid}
+  .print-signature div{height:18mm;padding-top:2mm;border-top:.2mm solid #918b80;color:#777168;font-size:8pt}
+  .print-signature span{display:block}
+  .print-footer{
+    display:flex;
+    margin:10mm 0 0;
+    padding-top:2.5mm;
+    justify-content:space-between;
+    border-top:.18mm solid #ded8ce;
+    color:#928b80;
+    background:#fff;
+    font-size:8pt;
+    letter-spacing:.04em;
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+  .print-closing{break-inside:auto;page-break-inside:auto}
+  .print-layout-single .print-closing,.print-layout-balanced .print-closing{break-inside:avoid;page-break-inside:avoid}
+  .print-layout-extended .print-closing{break-before:page;page-break-before:always}
+  .print-layout-single .print-header{min-height:18mm;padding-bottom:3mm}
+  .print-layout-single .print-logo{width:30mm;height:13mm}
+  .print-layout-single .print-hero{min-height:27mm;padding:4.5mm 0 3.5mm}
+  .print-layout-single .print-hero h1{font-size:29pt}
+  .print-layout-single .print-overview{margin-bottom:4.5mm}
+  .print-layout-single .print-card{min-height:18mm;padding:1mm 0}
+  .print-layout-single .print-label{margin-bottom:1.4mm}
+  .print-layout-single .print-table th{padding-top:1.8mm;padding-bottom:1.8mm}
+  .print-layout-single .print-table td{padding-top:2mm;padding-bottom:2mm}
+  .print-layout-single .print-item-meta{margin-top:.4mm}
+  .print-layout-single .print-summary{margin-top:3.5mm}
+  .print-layout-single .print-totals td{padding-top:.8mm;padding-bottom:.8mm}
+  .print-layout-single .print-totals .total td{padding-top:2mm;padding-bottom:2mm}
+  .print-layout-single .print-followup{margin-top:4mm}
+  .print-layout-single .print-section-heading{margin-bottom:1.8mm}
+  .print-layout-single .print-installment-intro{margin-bottom:2mm;line-height:1.35}
+  .print-layout-single .print-installment{padding-top:2mm;padding-bottom:2mm}
+  .print-layout-single .print-installment span{margin-top:.7mm}
+  .print-layout-single .print-installment small{margin-top:.2mm}
+  .print-layout-single .print-legal-heading{margin-top:4mm}
+  .print-layout-single .print-conditions>div{padding-top:2.5mm;line-height:1.35}
+  .print-layout-single .print-conditions strong{margin-bottom:1mm}
+  .print-layout-single .print-legal-note{margin-top:1.5mm;padding-top:1.5mm}
+  .print-layout-single .print-signature{margin-top:6mm}
+  .print-layout-single .print-signature div{height:12mm}
+  .print-layout-single .print-footer{margin-top:4mm}
+  .print-services,.print-summary,.print-followup,.print-legal-block,.print-conditions,.print-signature{orphans:3;widows:3}
+}
+
+/* V4.19 — impression sans aucun aplat de couleur */
+@media print{
+  html,body,.print-quote{
+    background:#fff!important;
+    -webkit-print-color-adjust:economy!important;
+    print-color-adjust:economy!important;
+  }
+  .print-quote *{
+    background-color:transparent!important;
+    background-image:none!important;
+    box-shadow:none!important;
+  }
+}
+/* Les quatre actions de caisse restent strictement identiques et centrées. */
+.checkout-actions{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:stretch;justify-content:stretch}
+.checkout-actions>.quote-output-actions{display:contents!important;width:auto!important;min-width:0!important}
+.checkout-actions>.button,.checkout-actions .quote-output-actions>.button{display:inline-flex;width:100%!important;min-width:0!important;height:54px!important;padding:0!important;align-items:center;justify-content:center}
