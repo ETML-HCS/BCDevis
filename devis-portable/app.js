@@ -17,6 +17,7 @@
   const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
   const MAX_LINE_QUANTITY = 999;
   const MAX_LINE_PRICE = 1000000;
+  const MAX_CUSTOM_SERVICES = 500;
   const LEGACY_DEFAULT_PAYMENT_CONDITIONS = "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.";
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -121,6 +122,27 @@
     return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], quotes: {}, current: null };
   }
 
+  function sanitizeCustomServices(items) {
+    if (!Array.isArray(items)) return [];
+    const knownIds = new Set();
+    return items.filter(isRecord).map((item) => {
+      const name = String(item.name || "").trim().slice(0, 240);
+      if (!name) return null;
+      const providedId = String(item.id || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+      let id = providedId.startsWith("custom-") ? providedId : `custom-${providedId || uid()}`;
+      while (knownIds.has(id)) id = `custom-${uid()}`;
+      knownIds.add(id);
+      return {
+        id,
+        name,
+        price: boundedNumber(item.price, 0, MAX_LINE_PRICE, 0),
+        duration: boundedInteger(item.duration, 0, 1440, 0),
+        categoryId: boundedInteger(item.categoryId, 0, 99999, 0),
+        custom: true
+      };
+    }).filter(Boolean).slice(0, MAX_CUSTOM_SERVICES);
+  }
+
   function removeExampleQuote(database) {
     Object.entries(database.quotes || {}).forEach(([id, item]) => {
       if (item?.number === EXAMPLE_QUOTE_NUMBER) delete database.quotes[id];
@@ -173,8 +195,8 @@
         version: APP_VERSION,
         settings: { ...defaultSettings, ...(parsed.settings || {}) },
         quoteCounters: parsed.quoteCounters && typeof parsed.quoteCounters === "object" && !Array.isArray(parsed.quoteCounters) ? parsed.quoteCounters : {},
-        customServices: Array.isArray(parsed.customServices) ? parsed.customServices : [],
-        quotes: parsed.quotes && typeof parsed.quotes === "object" ? parsed.quotes : {}
+        customServices: sanitizeCustomServices(parsed.customServices),
+        quotes: isRecord(parsed.quotes) ? parsed.quotes : {}
       };
       database.settings.headerLogoDataUrl = safeLogoDataUrl(database.settings.headerLogoDataUrl);
       database.settings.pdfLogoDataUrl = safeLogoDataUrl(database.settings.pdfLogoDataUrl);
@@ -308,7 +330,7 @@
     const sanitized = {
       ...base,
       ...source,
-      id: source.id || uid(),
+      id: String(source.id || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96) || uid(),
       number: importedNumber || nextQuoteNumber(quoteDate),
       date: quoteDate,
       validUntil: addDaysISO(quoteDate, QUOTE_VALIDITY_DAYS),
@@ -318,7 +340,11 @@
         type: source.discount?.type === "fixed" ? "fixed" : "percent",
         value: Math.max(0, Number(source.discount?.value) || 0)
       },
-      tax: { ...base.tax, ...(isRecord(source.tax) ? source.tax : {}) },
+      tax: {
+        enabled: source.tax?.enabled !== false,
+        rate: boundedNumber(source.tax?.rate, 0, 100, base.tax.rate),
+        mode: source.tax?.mode === "excluded" ? "excluded" : "included"
+      },
       lines: source.lines.filter(isRecord).map((line) => {
         const offerType = ["single", "pack", "student"].includes(line.offerType) ? line.offerType : "single";
         const price = boundedNumber(line.price ?? line.unit_price, 0, MAX_LINE_PRICE, 0);
@@ -337,6 +363,8 @@
           freeQuantity: offerType === "pack" ? boundedInteger(line.freeQuantity, 0, MAX_LINE_QUANTITY, 0) : 0
         };
       }),
+      conditions: String(source.conditions ?? base.conditions).trim().slice(0, 5000),
+      note: String(source.note ?? base.note).trim().slice(0, 2000),
       createdAt: validTimestamp(source.createdAt, base.createdAt),
       updatedAt: validTimestamp(source.updatedAt, base.updatedAt)
     };
@@ -352,6 +380,30 @@
     }
     return sanitized;
   }
+
+  function normalizeSavedQuotes() {
+    const normalized = {};
+    Object.values(isRecord(db.quotes) ? db.quotes : {}).forEach((record) => {
+      try {
+        const saved = sanitizeQuote(record);
+        while (normalized[saved.id]) saved.id = uid();
+        normalized[saved.id] = saved;
+      } catch (error) {
+        console.warn("Devis enregistré ignoré car illisible", error);
+      }
+    });
+    db.quotes = normalized;
+    db.customServices = sanitizeCustomServices(db.customServices);
+    if (!db.current) return;
+    try {
+      db.current = sanitizeQuote(db.current);
+    } catch (error) {
+      console.warn("Brouillon local ignoré car illisible", error);
+      db.current = null;
+    }
+  }
+
+  normalizeSavedQuotes();
 
   let quote;
   try {
@@ -386,6 +438,11 @@
       }
       return true;
     } catch (error) {
+      if (showState) {
+        const saveState = $("#saveState");
+        saveState.textContent = "Sauvegarde impossible";
+        saveState.className = "save-state error";
+      }
       const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
       toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de l’application est indisponible.", "error");
       console.error(error);
@@ -819,12 +876,22 @@
   }
 
   function saveQuote() {
+    const previousStatus = quote.status;
+    const previousSaved = db.quotes[quote.id];
     quote.status = "saved";
     quote.updatedAt = new Date().toISOString();
     db.quotes[quote.id] = clone(quote);
-    saveLocal();
+    if (!saveLocal()) {
+      quote.status = previousStatus;
+      if (previousSaved) db.quotes[quote.id] = previousSaved;
+      else delete db.quotes[quote.id];
+      db.current = clone(quote);
+      renderHistory();
+      return false;
+    }
     renderHistory();
     toast(`${quote.number} enregistré dans Mes devis`);
+    return true;
   }
 
   function createNewQuote(force = false) {
@@ -1468,7 +1535,8 @@
     if (visibleIds.has(activeFamily)) expandedFamily = activeFamily;
     else { const first = visibleFamilies()[0]; activeFamily = first?.id || "all"; expandedFamily = first?.id || "all"; }
     applyTheme(db.settings.theme);
-    saveLocal(); renderAll(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
+    if (!saveLocal()) return;
+    renderAll(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
   });
 
   $("#moreQuoteButton").addEventListener("click", (event) => { event.stopPropagation(); const menu = $("#quoteActionMenu"); menu.hidden = !menu.hidden; event.currentTarget.setAttribute("aria-expanded", String(!menu.hidden)); });
@@ -1484,7 +1552,7 @@
   document.addEventListener("click", (event) => { if (!event.target.closest("#moreQuoteButton") && !event.target.closest("#quoteActionMenu")) $("#quoteActionMenu").hidden = true; });
 
   $("#quoteImportInput").addEventListener("change", async (event) => {
-    try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); saveLocal(); renderAll(); toast("Devis importé"); }
+    try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); if (!saveLocal()) return; renderAll(); toast("Devis importé"); }
     catch (error) { toast(error.message || "Import impossible", "error"); }
   });
   $("#exportBackupButton").addEventListener("click", exportBackup);
@@ -1494,8 +1562,30 @@
       const payload = await readJSONFile(event.target);
       if (!payload?.database || payload.type !== "atelier-devis-backup") throw new Error("Cette sauvegarde n’est pas compatible");
       if (!window.confirm("Restaurer cette sauvegarde remplacera les données locales actuelles. Continuer ?")) return;
-      db = migrateDatabase({ ...freshDatabase(), ...payload.database, version: APP_VERSION, settings: { ...defaultSettings, ...(payload.database.settings || {}) } }, payload.database.version);
-      quote = db.current ? sanitizeQuote(db.current) : newQuote(); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); saveLocal(); renderAll(); renderHistory(); closeLayer("historyLayer"); toast("Sauvegarde restaurée");
+      const previousDatabase = db;
+      const previousQuote = quote;
+      const previousCouponOpen = couponOpen;
+      db = migrateDatabase({
+        ...freshDatabase(),
+        ...payload.database,
+        version: APP_VERSION,
+        settings: { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
+        quoteCounters: isRecord(payload.database.quoteCounters) ? payload.database.quoteCounters : {},
+        customServices: sanitizeCustomServices(payload.database.customServices),
+        quotes: isRecord(payload.database.quotes) ? payload.database.quotes : {}
+      }, payload.database.version);
+      normalizeSavedQuotes();
+      quote = db.current ? sanitizeQuote(db.current) : newQuote();
+      couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
+      if (!saveLocal()) {
+        db = previousDatabase;
+        quote = previousQuote;
+        couponOpen = previousCouponOpen;
+        renderAll();
+        renderHistory();
+        return;
+      }
+      renderAll(); renderHistory(); closeLayer("historyLayer"); toast("Sauvegarde restaurée");
     } catch (error) { toast(error.message || "Restauration impossible", "error"); }
   });
 

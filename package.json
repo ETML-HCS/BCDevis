@@ -1,16 +1,18 @@
 {
   "name": "bellecour-devis-portable",
-  "version": "4.20.0",
+  "version": "4.20.1",
   "private": true,
   "author": "Clinique Bellecour",
   "description": "Bellecour Devis, application Windows portable autonome.",
   "main": "devis-portable/main.cjs",
   "scripts": {
-    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/pdf-main.test.cjs",
+    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/persistence-smoke.cjs",
     "check": "node --check devis-portable/app.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && npm test",
     "start": "electron .",
     "exe": "npm run check && npm run build:portable",
-    "build:portable": "electron-builder --win portable --x64"
+    "build:portable": "electron-builder --win portable --x64",
+    "mac": "npm run check && electron-builder --mac dmg --universal",
+    "linux": "npm run check && electron-builder --linux AppImage --x64"
   },
   "devDependencies": {
     "electron": "43.1.1",
@@ -19,6 +21,7 @@
   "build": {
     "appId": "ch.cliniquebellecour.devis",
     "productName": "Bellecour Devis",
+    "icon": "devis-portable/assets/bellecour.ico",
     "asar": true,
     "directories": {
       "output": "devis-portable/dist"
@@ -35,6 +38,7 @@
       "!devis-portable/index-*.html"
     ],
     "win": {
+      "signExecutable": false,
       "target": [
         {
           "target": "portable",
@@ -47,6 +51,29 @@
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-mac.${ext}"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "category": "Office"
     }
   }
 }

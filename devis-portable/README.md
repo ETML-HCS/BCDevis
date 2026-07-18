@@ -1,10 +1,10 @@
-# Bellecour Devis — version portable 4.20
+# Bellecour Devis — version portable 4.20.1
 
 Application autonome de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur, sans compte et sans installation.
 
 ## Lancer l’application
 
-- Distribuer uniquement `Bellecour Devis-4.20.0-portable.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `Bellecour Devis-4.20.1-portable.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de Bellecour Devis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -66,13 +66,36 @@ Les formats PNG, JPG et WebP sont acceptés jusqu’à 4 Mo. Un PNG transparent 
 
 Le bouton WhatsApp prépare un message avec les références, les prestations, le total et la date de validité du devis. Pour joindre le document complet, créer d’abord le PDF puis l’ajouter au message WhatsApp.
 
-## Générer l’EXE portable
+## Générer les applications de distribution
 
 Sur un poste de préparation avec Node.js installé :
 
 ```powershell
 npm install
+```
+
+Sous Windows, pour l’EXE portable :
+
+```powershell
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/Bellecour Devis-4.20.0-portable.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/Bellecour Devis-4.20.1-portable.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+
+L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
+
+Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
+
+```zsh
+npm run mac
+```
+
+Le fichier à distribuer est `devis-portable/dist/Bellecour Devis-4.20.1-mac.dmg`. Il doit être fabriqué depuis un Mac ; une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+
+Sous Linux x64, pour une application portable AppImage :
+
+```bash
+npm run linux
+```
+
+Le fichier à distribuer est `devis-portable/dist/Bellecour Devis-4.20.1-linux-x86_64.AppImage`. Il doit être fabriqué depuis Linux, puis rendu exécutable avec `chmod +x` avant son premier lancement.
