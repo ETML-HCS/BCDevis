@@ -991,7 +991,6 @@
   $("#checkoutFocusToggle").addEventListener("click", () => {
     setCheckoutFocus(!$("#checkoutPanel").classList.contains("is-full-height"));
   });
-  $("#checkoutFocusExitButton").addEventListener("click", () => setCheckoutFocus(false));
   $("#offerModeSelector").addEventListener("click", (event) => {
     const button = event.target.closest("[data-offer-mode]");
     if (!button) return;
