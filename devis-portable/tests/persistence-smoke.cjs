@@ -6,7 +6,7 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
-const TEST_ENV = "BELLECOUR_DESKTOP_PERSISTENCE_SMOKE";
+const TEST_ENV = "BCDEVIS_DESKTOP_PERSISTENCE_SMOKE";
 
 if (process.env[TEST_ENV] !== "1") {
   const electron = require("electron");
@@ -27,7 +27,7 @@ if (process.env[TEST_ENV] !== "1") {
 }
 
 const { app, BrowserWindow } = require("electron");
-const profileDirectory = path.join(os.tmpdir(), `bellecour-devis-smoke-${process.pid}-${Date.now()}`);
+const profileDirectory = path.join(os.tmpdir(), `bcdevis-smoke-${process.pid}-${Date.now()}`);
 
 function reload(webContents) {
   return new Promise((resolve, reject) => {

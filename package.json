@@ -1,26 +1,27 @@
 {
-  "name": "bellecour-devis-portable",
+  "name": "bcdevis-portable",
   "version": "4.20.2",
   "private": true,
+  "desktopName": "bcdevis",
   "author": "Clinique Bellecour",
-  "description": "Bellecour Devis, application Windows portable autonome.",
+  "description": "BCDevis, application Windows portable autonome.",
   "main": "devis-portable/main.cjs",
   "scripts": {
-    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/persistence-smoke.cjs",
-    "check": "node --check devis-portable/app.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && npm test",
+    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/keyboard-accessibility.test.cjs && node devis-portable/tests/persistence-smoke.cjs",
+    "check": "node --check devis-portable/app.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && node --check scripts/require-build-platform.cjs && npm test",
     "start": "electron .",
     "exe": "npm run check && npm run build:portable",
     "build:portable": "electron-builder --win portable --x64",
-    "mac": "npm run check && electron-builder --mac dmg --universal",
-    "linux": "npm run check && electron-builder --linux AppImage --x64"
+    "mac": "npm run check && node scripts/require-build-platform.cjs darwin && electron-builder --mac dmg --universal",
+    "linux": "npm run check && node scripts/require-build-platform.cjs linux && electron-builder --linux AppImage --x64"
   },
   "devDependencies": {
     "electron": "43.1.1",
     "electron-builder": "26.15.3"
   },
   "build": {
-    "appId": "ch.cliniquebellecour.devis",
-    "productName": "Bellecour Devis",
+    "appId": "ch.cliniquebellecour.bcdevis",
+    "productName": "BCDevis",
     "icon": "devis-portable/assets/bellecour.ico",
     "asar": true,
     "directories": {
@@ -33,7 +34,7 @@
       "!devis-portable/tests/**",
       "!devis-portable/captures/**",
       "!devis-portable/tmp/**",
-      "!devis-portable/Lancer Bellecour Devis.cmd",
+      "!devis-portable/Lancer BCDevis.cmd",
       "!devis-portable/README.md",
       "!devis-portable/index-*.html"
     ],
@@ -47,12 +48,13 @@
           ]
         }
       ],
-          "artifactName": "BellecourDevis-${version}.${ext}"
+          "artifactName": "BCDevis-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "BellecourDevis-${version}.${ext}"
+      "artifactName": "BCDevis-${version}.${ext}"
     },
     "mac": {
+      "icon": "devis-portable/assets/bcdevis.png",
       "target": [
         {
           "target": "dmg",
@@ -64,6 +66,8 @@
       "artifactName": "${productName}-${version}-mac.${ext}"
     },
     "linux": {
+      "icon": "devis-portable/assets/bcdevis.png",
+      "syncDesktopName": true,
       "target": [
         {
           "target": "AppImage",

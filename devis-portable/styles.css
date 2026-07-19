@@ -1,5 +1,6 @@
 @font-face{font-family:Roboto;src:url("assets/roboto-latin.woff2") format("woff2");font-display:swap;font-weight:100 900}
 @font-face{font-family:"Roboto Slab";src:url("assets/roboto-slab-latin.woff2") format("woff2");font-display:swap;font-weight:100 900}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[role="radio"]:focus-visible{outline:3px solid var(--taupe-dark);outline-offset:3px}
 :root{--black:#0e0e0e;--black-2:#171717;--black-3:#242424;--white:#fff;--paper:#f5f5f3;--soft:#ececea;--line:#deded9;--line-dark:#333;--taupe:#b4a996;--taupe-light:#eeeae3;--taupe-dark:#756b5a;--ink:#111;--muted:#74746f;--danger:#9d4039;--success:#365c4d;--shadow:0 20px 60px rgba(0,0,0,.12);--sans:Roboto,Arial,sans-serif;--serif:"Roboto Slab",Georgia,serif}
 *{box-sizing:border-box}html,body{height:100%;margin:0}body{overflow:hidden;color:var(--ink);background:var(--paper);font-family:var(--sans);font-size:14px}button,input,select,textarea{font:inherit}button{cursor:pointer}svg{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.7}.svg-sprite{position:absolute;width:0;height:0;overflow:hidden}[hidden]{display:none!important}
 .app-shell{display:grid;height:100%;grid-template-rows:78px minmax(0,1fr)}

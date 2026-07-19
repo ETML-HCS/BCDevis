@@ -46,7 +46,7 @@ try {
 }
 
 (async () => {
-  const result = await handlers.get("bellecour:save-pdf")({
+  const result = await handlers.get("bcdevis:save-pdf")({
     sender: {
       printToPDF: async (options) => {
         assert.deepEqual(options, { pageSize: "A4", printBackground: true, preferCSSPageSize: true });
@@ -60,6 +60,10 @@ try {
   assert.equal(result.filePath, path.join("C:\\Downloads", "DEV-000001.pdf"));
   assert.equal(writes.length, 1);
   assert.equal(writes[0].contents.toString(), "%PDF-test");
+  const shareResult = await handlers.get("bcdevis:save-pdf-for-share")({
+    sender: { printToPDF: async () => Buffer.from("%PDF-share") }
+  }, "DEV-000001.pdf");
+  assert.equal(shareResult.contentBase64, Buffer.from("%PDF-share").toString("base64"));
   console.log("PDF_MAIN_TESTS_OK");
 })().catch((error) => {
   console.error(error);

@@ -1,8 +1,9 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "bellecour-atelier-devis-v3";
-  const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
+  const STORAGE_KEY = "bcdevis-v1";
+  // Keep the former names here so an update retains every existing quote.
+  const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
   const APP_VERSION = 17;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
@@ -218,6 +219,8 @@
   let activeToast = null;
   let pendingTheme = "light";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
+  let activeLayerId = "";
+  const layerReturnFocus = new Map();
 
   function compactMachineCode(value) {
     const code = normalize(value || "A").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16);
@@ -444,7 +447,7 @@
         saveState.className = "save-state error";
       }
       const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
-      toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de l’application est indisponible.", "error");
+      toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de BCDevis est indisponible.", "error");
       console.error(error);
       return false;
     }
@@ -624,8 +627,8 @@
     $$("[data-offer-mode]").forEach((button) => {
       const active = button.dataset.offerMode === selectedOfferMode;
       button.classList.toggle("active", active);
-      button.setAttribute("aria-pressed", String(active));
-      button.removeAttribute("aria-disabled");
+      button.setAttribute("aria-checked", String(active));
+      button.tabIndex = active ? 0 : -1;
       button.title = "";
     });
     $("[data-offer-mode=\"pack\"] small").textContent = `${paid} + ${free} offerte${free === 1 ? "" : "s"}`;
@@ -791,7 +794,7 @@
     logo.alt = `Logo ${db.settings.companyName || "de l’entreprise"}`;
     logo.closest(".brand-logo").classList.toggle("has-custom-logo", Boolean(customLogo));
     const clientName = String(quote.client?.name || "").trim();
-    document.title = clientName || "Devis";
+    document.title = clientName ? `${clientName} — BCDevis` : "BCDevis";
   }
 
   const KNOWN_THEMES = ["light", "night", "forest"];
@@ -859,14 +862,56 @@
   function openLayer(id) {
     const layer = $(`#${id}`);
     if (!layer) return;
+    const previousFocus = document.activeElement;
+    if (previousFocus instanceof HTMLElement) layerReturnFocus.set(id, previousFocus);
     layer.hidden = false;
-    const autofocus = $("[autofocus]", layer);
-    if (autofocus) window.setTimeout(() => autofocus.focus(), 50);
+    activeLayerId = id;
+    [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = true; });
+    const initialFocus = $("[autofocus], [data-initial-focus], .history-list button, button[data-close]", layer);
+    if (initialFocus) window.setTimeout(() => initialFocus.focus(), 50);
   }
 
   function closeLayer(id) {
     const layer = $(`#${id}`);
-    if (layer) layer.hidden = true;
+    if (!layer || layer.hidden) return;
+    layer.hidden = true;
+    if (activeLayerId === id) activeLayerId = "";
+    const remainingLayer = $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").at(-1);
+    if (remainingLayer) {
+      activeLayerId = remainingLayer.id;
+      return;
+    }
+    [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = false; });
+    const previousFocus = layerReturnFocus.get(id);
+    layerReturnFocus.delete(id);
+    if (previousFocus?.isConnected) window.setTimeout(() => previousFocus.focus(), 0);
+  }
+
+  function focusableElements(container) {
+    return $$('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', container)
+      .filter((element) => !element.closest("[hidden]") && element.getClientRects().length);
+  }
+
+  function trapLayerFocus(event, layer) {
+    const items = focusableElements(layer);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
+  function isTextEntryTarget(target) {
+    return target instanceof HTMLElement && (target.matches("input, textarea, select") || target.isContentEditable);
+  }
+
+  function moveRadioSelection(group, selector, current, activate) {
+    const options = $$(selector, group).filter((item) => !item.disabled);
+    const index = options.indexOf(current);
+    if (index < 0 || !options.length) return;
+    const next = options[(index + activate + options.length) % options.length];
+    next.focus();
+    next.click();
   }
 
   function openClient() {
@@ -1085,6 +1130,7 @@
     $$("#themePicker .theme-card").forEach((card) => {
       const isActive = card.dataset.theme === activeTheme;
       card.setAttribute("aria-checked", String(isActive));
+      card.tabIndex = isActive ? 0 : -1;
       const icon = card.querySelector(".theme-card-check use");
       if (icon) icon.setAttribute("href", isActive ? "#icon-check" : "");
       card.querySelector(".theme-card-check svg").style.display = isActive ? "" : "none";
@@ -1222,7 +1268,7 @@
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le téléchargement.", "error"); return; }
     saveQuote();
     renderPrint();
-    if (typeof window.bellecourDesktop?.savePdf !== "function") {
+    if (typeof window.bcdevisDesktop?.savePdf !== "function") {
       printQuote();
       toast("Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression.");
       return;
@@ -1232,7 +1278,7 @@
     button.setAttribute("aria-busy", "true");
     try {
       await waitForPdfLayout();
-      const result = await window.bellecourDesktop.savePdf(`${quote.number}.pdf`);
+      const result = await window.bcdevisDesktop.savePdf(`${quote.number}.pdf`);
       if (result?.saved) toast(`PDF téléchargé : ${result.fileName || `${quote.number}.pdf`}`);
     } catch (error) {
       console.error(error);
@@ -1243,9 +1289,8 @@
     }
   }
 
-  async function shareQuoteViaWhatsApp() {
+  function whatsAppMessage() {
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
-    saveQuote();
     const totals = calculate(quote);
     const clientName = String(quote.client?.name || "").trim();
     const lines = quote.lines.map((line) => {
@@ -1264,19 +1309,59 @@
       `Total : ${money(totals.total)}`,
       `Valable jusqu’au ${formatDate(quote.validUntil)}.`,
       "",
-      "Le PDF peut être joint à ce message depuis le bouton Imprimer / PDF."
+      "Vous trouverez le devis en pièce jointe."
     ].join("\n");
+    return message;
+  }
+
+  function fileFromBase64(base64, name) {
+    const bytes = Uint8Array.from(atob(String(base64 || "")), (character) => character.charCodeAt(0));
+    return new File([bytes], name, { type: "application/pdf" });
+  }
+
+  async function shareQuoteViaWhatsApp() {
+    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    saveQuote();
+    renderPrint();
+    const button = $("#whatsAppButton");
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    const message = whatsAppMessage();
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     try {
-      if (typeof window.bellecourDesktop?.openExternal === "function") await window.bellecourDesktop.openExternal(url);
+      await waitForPdfLayout();
+      const result = await window.bcdevisDesktop?.savePdfForShare?.(`${quote.number}.pdf`);
+      const file = result?.contentBase64 ? fileFromBase64(result.contentBase64, result.fileName || `${quote.number}.pdf`) : null;
+      const shareData = file ? { title: `BCDevis ${quote.number}`, text: message, files: [file] } : null;
+      if (shareData && typeof navigator.share === "function" && (!navigator.canShare || navigator.canShare(shareData))) {
+        try {
+          await navigator.share(shareData);
+          toast("PDF prêt à être envoyé via WhatsApp");
+          return;
+        } catch (error) {
+          if (error?.name === "AbortError") {
+            toast("Partage annulé");
+            return;
+          }
+          // Some Chromium hosts refuse file sharing after PDF rendering. Keep
+          // the useful WhatsApp fallback available in that case.
+          console.warn("Partage natif indisponible", error);
+        }
+      }
+      // The browser-only launcher has no native file-share API. The PDF is
+      // still saved in the desktop app before WhatsApp opens as a fallback.
+      if (typeof window.bcdevisDesktop?.openExternal === "function") await window.bcdevisDesktop.openExternal(url);
       else {
         const popup = window.open(url, "_blank", "noopener");
         if (!popup) window.location.assign(url);
       }
-      toast("Devis préparé pour WhatsApp");
+      toast(result?.saved ? "PDF créé ; WhatsApp ouvert" : "WhatsApp ouvert");
     } catch (error) {
       console.error(error);
       toast("WhatsApp n’a pas pu être ouvert.", "error");
+    } finally {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
     }
   }
 
@@ -1343,6 +1428,13 @@
     if (!button) return;
     requestOfferMode(button.dataset.offerMode);
   });
+  $("#offerModeSelector").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) return;
+    const button = event.target.closest("[data-offer-mode]");
+    if (!button) return;
+    event.preventDefault();
+    moveRadioSelection(event.currentTarget, "[data-offer-mode]", button, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
+  });
   $("#familyList").addEventListener("click", (event) => {
     const serviceButton = event.target.closest("[data-family-service-id]");
     if (serviceButton) {
@@ -1366,11 +1458,14 @@
   function changeQuantityFromGesture(control, increase) {
     const line = lineFromElement(control);
     if (!line) return;
-    if (control.dataset.quantityGesture === "free") line.freeQuantity = Math.max(0, line.freeQuantity + (increase ? 1 : -1));
+    const kind = control.dataset.quantityGesture;
+    if (kind === "free") line.freeQuantity = Math.max(0, line.freeQuantity + (increase ? 1 : -1));
     else line.quantity = Math.max(1, line.quantity + (increase ? 1 : -1));
     saveLocal(); renderCatalog(); renderCheckout();
-    const quantity = control.dataset.quantityGesture === "free" ? line.freeQuantity : line.quantity;
-    toast(`${control.dataset.quantityGesture === "free" ? "Séances offertes" : "Quantité"} : ${quantity}`);
+    const quantity = kind === "free" ? line.freeQuantity : line.quantity;
+    const restoredControl = $(`[data-line-id="${line.id}"] [data-quantity-gesture="${kind}"]`);
+    if (restoredControl) window.setTimeout(() => restoredControl.focus(), 0);
+    toast(`${kind === "free" ? "Séances offertes" : "Quantité"} : ${quantity}`);
   }
   $("#cartLines").addEventListener("click", (event) => {
     const quantityGesture = event.target.closest("[data-quantity-gesture]");
@@ -1404,7 +1499,15 @@
     changeQuantityFromGesture(quantityGesture, true);
   });
   $("#cartLines").addEventListener("change", (event) => { if (event.target.matches("[data-line-field]")) updateLineInput(event.target); });
-  $("#cartLines").addEventListener("keydown", (event) => { if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); } });
+  $("#cartLines").addEventListener("keydown", (event) => {
+    const quantityGesture = event.target.closest("[data-quantity-gesture]");
+    if (quantityGesture && ["ArrowUp", "ArrowRight", "+", "=", "ArrowDown", "ArrowLeft", "-"].includes(event.key)) {
+      event.preventDefault();
+      changeQuantityFromGesture(quantityGesture, ["ArrowUp", "ArrowRight", "+", "="].includes(event.key));
+      return;
+    }
+    if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); }
+  });
   $("#quoteDate").addEventListener("change", (event) => {
     const previousDate = quote.date;
     quote.date = boundedQuoteDate(event.target.value);
@@ -1469,7 +1572,7 @@
   $("#saveButton").addEventListener("click", saveQuote);
   $("#printButton").addEventListener("click", printQuote);
   $("#downloadPdfButton").addEventListener("click", downloadPdf);
-  if (typeof window.bellecourDesktop?.savePdf !== "function") {
+  if (typeof window.bcdevisDesktop?.savePdf !== "function") {
     const button = $("#downloadPdfButton");
     button.title = "Ouvrir l’impression pour enregistrer au format PDF";
     button.setAttribute("aria-label", "Imprimer ou enregistrer au format PDF");
@@ -1478,12 +1581,20 @@
   $("#historyButton").addEventListener("click", () => { renderHistory(); openLayer("historyLayer"); });
   $("#historyList").addEventListener("click", (event) => { const button = event.target.closest("[data-quote-id]"); if (button) loadHistoryQuote(button.dataset.quoteId); });
   $("#settingsButton").addEventListener("click", () => { pendingTheme = currentTheme(); fillSettingsForm(); openLayer("settingsLayer"); });
+  $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
   $("#themePicker").addEventListener("click", (event) => {
     const card = event.target.closest(".theme-card");
     if (!card) return;
     pendingTheme = card.dataset.theme;
     applyTheme(pendingTheme);
     syncThemePicker(pendingTheme);
+  });
+  $("#themePicker").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) return;
+    const card = event.target.closest(".theme-card");
+    if (!card) return;
+    event.preventDefault();
+    moveRadioSelection(event.currentTarget, ".theme-card", card, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   });
   $("#settingsForm").addEventListener("input", (event) => {
     const name = event.target?.name;
@@ -1504,6 +1615,9 @@
     } finally {
       target.value = "";
     }
+  }));
+  $$("[data-logo-picker]").forEach((button) => button.addEventListener("click", () => {
+    $(`[data-logo-input="${button.dataset.logoPicker}"]`)?.click();
   }));
   $$("[data-remove-logo]").forEach((button) => button.addEventListener("click", () => {
     const key = button.dataset.removeLogo === "pdf" ? "pdfLogoDataUrl" : "headerLogoDataUrl";
@@ -1592,13 +1706,26 @@
   $$('[data-close]').forEach((button) => button.addEventListener("click", () => closeLayer(button.dataset.close)));
   $$(".mobile-tabs [data-panel]").forEach((button) => button.addEventListener("click", () => switchMobilePanel(button.dataset.panel)));
   document.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") { event.preventDefault(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); }
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); saveQuote(); }
+    const layer = activeLayerId ? $(`#${activeLayerId}`) : null;
+    if (event.key === "Tab" && layer && !layer.hidden) { trapLayerFocus(event, layer); return; }
     if (event.key === "Escape") {
+      if (layer && !layer.hidden) { event.preventDefault(); closeLayer(layer.id); return; }
       if ($("#checkoutPanel").classList.contains("is-full-height")) { event.preventDefault(); setCheckoutFocus(false); return; }
       if (!$("#catalogSearchPanel").hidden) { event.preventDefault(); setCatalogSearchOpen(false); }
       else $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").forEach((layer) => closeLayer(layer.id));
+      return;
     }
+    if (layer && !layer.hidden) return;
+    const command = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (command && key === "k") { event.preventDefault(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
+    if (command && key === "s" && !event.shiftKey) { event.preventDefault(); saveQuote(); return; }
+    if (command && key === "n") { event.preventDefault(); createNewQuote(); return; }
+    if (command && key === "p") { event.preventDefault(); printQuote(); return; }
+    if (command && event.shiftKey && key === "s") { event.preventDefault(); downloadPdf(); return; }
+    if (command && event.key === ",") { event.preventDefault(); pendingTheme = currentTheme(); fillSettingsForm(); openLayer("settingsLayer"); return; }
+    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "/") { event.preventDefault(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
+    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "?") { event.preventDefault(); openLayer("shortcutHelpLayer"); }
   });
   window.addEventListener("beforeprint", renderPrint);
   window.addEventListener("beforeunload", () => saveLocal(false));

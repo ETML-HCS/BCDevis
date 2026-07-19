@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0e0e0e">
-  <title>Devis</title>
+  <title>BCDevis</title>
   <link rel="icon" href="assets/bellecour-logo.webp" type="image/webp">
   <link rel="stylesheet" href="styles.css">
   <style>
@@ -545,6 +545,7 @@
   .student-discount-control input[type="range"]{width:100%;height:8px;margin:8px 0 2px;accent-color:var(--accent);cursor:pointer}
   .student-discount-control input[type="range"]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:5px}
   html[data-theme="night"] .student-discount-control output{color:var(--accent-ink)}
+  .shortcut-list{display:grid;margin:4px 0 0;gap:6px}.shortcut-list>div{display:grid;min-height:42px;padding:8px 10px;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface-soft,#fafafa);grid-template-columns:minmax(150px,auto) 1fr;gap:14px}.shortcut-list dt,.shortcut-list dd{margin:0}.shortcut-list dt{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.shortcut-list dt span{color:var(--muted);font-size:11px}.shortcut-list dd{color:var(--ink);font-size:13px;font-weight:650}.shortcut-list kbd,.shortcut-help-note kbd{display:inline-block;min-width:24px;padding:3px 6px;border:1px solid var(--line-dark);border-bottom-width:2px;border-radius:5px;color:var(--ink);background:var(--surface,#fff);font-family:var(--sans);font-size:11px;font-weight:750;text-align:center}.shortcut-help-note{margin:15px 0 0;color:var(--muted);font-size:12px;line-height:1.5}@media(max-width:520px){.shortcut-list>div{grid-template-columns:1fr;gap:4px}}
   </style>
 </head>
 <body>
@@ -559,6 +560,7 @@
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
+    <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h6M16 14h1"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
      <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
@@ -578,29 +580,30 @@
     <symbol id="icon-empty" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7Z"></path><path d="M9 10V6a3 3 0 0 1 6 0v4"></path></symbol>
   </svg>
 
-  <div class="app-shell">
+  <div class="app-shell" id="appShell">
     <header class="topbar">
       <div class="brand-block">
         <span class="brand-logo"><img id="headerLogo" src="assets/bellecour-logo.webp" alt="Clinique Bellecour"></span>
-        <div><p class="eyebrow">Clinique Bellecour</p><h1>Créateur de devis</h1></div>
+        <div><p class="eyebrow">Clinique Bellecour</p><h1>BCDevis</h1></div>
       </div>
-      <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="group" aria-label="Tarif appliqué aux soins">
-        <button class="active" type="button" data-offer-mode="single" aria-pressed="true"><span class="offer-mode-symbol" aria-hidden="true">1×</span><span class="offer-mode-copy">Séance <small>À l’unité</small></span></button>
-        <button type="button" data-offer-mode="pack" aria-pressed="false"><span class="offer-mode-symbol" aria-hidden="true">⋯</span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
-        <button type="button" data-offer-mode="student" aria-pressed="false"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
+      <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="radiogroup" aria-label="Tarif appliqué aux soins">
+        <button class="active" type="button" data-offer-mode="single" role="radio" aria-checked="true"><span class="offer-mode-symbol" aria-hidden="true">1×</span><span class="offer-mode-copy">Séance <small>À l’unité</small></span></button>
+        <button type="button" data-offer-mode="pack" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true">⋯</span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
+        <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
       </div></div>
       <div class="topbar-status"><span class="local-badge"><span></span> 100% local</span><span class="save-state" id="saveState">Prêt</span></div>
       <nav class="top-actions" aria-label="Actions générales">
-        <button class="icon-button" id="newQuoteButton" type="button" title="Nouveau devis"><svg><use href="#icon-plus"></use></svg><span>Nouveau</span></button>
+        <button class="icon-button" id="newQuoteButton" type="button" title="Nouveau devis (Ctrl/Cmd+N)" aria-keyshortcuts="Control+N Meta+N"><svg><use href="#icon-plus"></use></svg><span>Nouveau</span></button>
         <button class="icon-button" id="historyButton" type="button" title="Historique des devis"><svg><use href="#icon-history"></use></svg><span>Devis</span></button>
-        <button class="icon-button" id="settingsButton" type="button" title="Réglages"><svg><use href="#icon-settings"></use></svg><span>Réglages</span></button>
+        <button class="icon-button" id="settingsButton" type="button" title="Réglages (Ctrl/Cmd+,)" aria-keyshortcuts="Control+Comma Meta+Comma"><svg><use href="#icon-settings"></use></svg><span>Réglages</span></button>
+        <button class="icon-button" id="shortcutHelpButton" type="button" title="Raccourcis clavier (?)" aria-keyshortcuts="?" aria-haspopup="dialog"><svg><use href="#icon-keyboard"></use></svg><span>Aide</span></button>
       </nav>
     </header>
 
     <main class="workspace">
       <aside class="family-panel active-panel" id="familyPanel" aria-labelledby="familyNavTitle">
         <div class="family-head">
-          <div class="family-title-row"><div class="family-title-actions"><h2 id="familyNavTitle"><span class="step-number">01</span> Prestations</h2><button class="family-search-toggle" id="catalogSearchToggle" type="button" aria-label="Rechercher une prestation" aria-controls="catalogSearchPanel" aria-expanded="false" title="Rechercher une prestation"><svg><use href="#icon-search"></use></svg></button></div><strong id="activeOfferHint">Prix par séance</strong></div>
+          <div class="family-title-row"><div class="family-title-actions"><h2 id="familyNavTitle"><span class="step-number">01</span> Prestations</h2><button class="family-search-toggle" id="catalogSearchToggle" type="button" aria-label="Rechercher une prestation" aria-controls="catalogSearchPanel" aria-expanded="false" title="Rechercher une prestation (Ctrl/Cmd+K ou /)" aria-keyshortcuts="Control+K Meta+K /"><svg><use href="#icon-search"></use></svg></button></div><strong id="activeOfferHint">Prix par séance</strong></div>
           <label class="family-search" id="catalogSearchPanel" for="catalogSearch" hidden><svg><use href="#icon-search"></use></svg><input id="catalogSearch" type="search" autocomplete="off" placeholder="Rechercher un soin…"></label>
         </div>
         <nav class="family-list" id="familyList" aria-label="Familles de prestations"></nav>
@@ -646,20 +649,20 @@
             </dl>
             <details class="installments" id="installmentsDetails"><summary><span>Paiement échelonné (CHF)</span><svg><use href="#icon-chevron"></use></svg></summary><div class="installment-meta"><p class="installment-note">Montants mensuels indicatifs, basés sur le total du devis. L’échelonnement reste soumis à l’accord du partenaire financier.</p></div><div class="installment-grid" id="installmentGrid"></div></details>
           </div>
-          <div class="checkout-actions"><button class="button secondary icon-only" id="saveButton" type="button" aria-label="Enregistrer le devis" title="Enregistrer le devis"><img src="assets/icon-save.svg" alt="" aria-hidden="true"></button><div class="quote-output-actions"><button class="button primary icon-only" id="printButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis"><svg><use href="#icon-print"></use></svg></button><button class="button secondary icon-only" id="downloadPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF"><svg><use href="#icon-download"></use></svg></button><button class="button whatsapp-button icon-only" id="whatsAppButton" type="button" aria-label="Transférer le PDF via WhatsApp" title="Transférer le PDF via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg></button></div></div>
+          <div class="checkout-actions"><button class="button secondary icon-only" id="saveButton" type="button" aria-label="Enregistrer le devis" title="Enregistrer le devis (Ctrl/Cmd+S)" aria-keyshortcuts="Control+S Meta+S"><img src="assets/icon-save.svg" alt="" aria-hidden="true"></button><div class="quote-output-actions"><button class="button primary icon-only" id="printButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg><use href="#icon-print"></use></svg></button><button class="button secondary icon-only" id="downloadPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg><use href="#icon-download"></use></svg></button><button class="button whatsapp-button icon-only" id="whatsAppButton" type="button" aria-label="Transférer le PDF via WhatsApp" title="Transférer le PDF via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg></button></div></div>
         </div>
       </aside>
     </main>
 
-    <nav class="mobile-tabs" aria-label="Navigation mobile">
+    <nav class="mobile-tabs" id="mobileTabs" aria-label="Navigation mobile">
       <button class="active" type="button" data-panel="familyPanel"><svg><use href="#icon-sparkles"></use></svg>Prestations</button>
       <button type="button" data-panel="checkoutPanel"><span class="mobile-cart-icon"><svg><use href="#icon-empty"></use></svg><b id="mobileCartCount">0</b></span>Caisse<strong id="mobileTotal">CHF 0.00</strong></button>
     </nav>
   </div>
 
   <div class="drawer-layer" id="historyLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="historyLayer" aria-label="Fermer"></button>
-    <aside class="drawer" aria-labelledby="historyTitle">
+    <button class="layer-backdrop" type="button" data-close="historyLayer" aria-label="Fermer" tabindex="-1"></button>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
       <div class="modal-head"><div><p class="section-kicker">Archives locales</p><h2 id="historyTitle">Mes devis</h2></div><button class="round-button" type="button" data-close="historyLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <div class="history-list" id="historyList"></div>
       <div class="drawer-footer"><button class="button secondary" id="exportBackupButton" type="button"><svg><use href="#icon-download"></use></svg>Sauvegarde complète</button><button class="button secondary" id="importBackupButton" type="button"><svg><use href="#icon-upload"></use></svg>Restaurer</button></div>
@@ -667,7 +670,7 @@
   </div>
 
   <div class="modal-layer" id="clientLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="clientLayer" aria-label="Fermer"></button>
+    <button class="layer-backdrop" type="button" data-close="clientLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
       <div class="modal-head"><div><p class="section-kicker">Destinataire</p><h2 id="clientModalTitle">Coordonnées du client</h2></div><button class="round-button" type="button" data-close="clientLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <form id="clientForm" class="form-grid">
@@ -681,7 +684,7 @@
   </div>
 
   <div class="modal-layer" id="customItemLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="customItemLayer" aria-label="Fermer"></button>
+    <button class="layer-backdrop" type="button" data-close="customItemLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="customItemTitle">
       <div class="modal-head"><div><p class="section-kicker">Prestation libre</p><h2 id="customItemTitle">Créer un objet sur mesure</h2></div><button class="round-button" type="button" data-close="customItemLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <form id="customItemForm" class="form-grid">
@@ -696,7 +699,7 @@
   </div>
 
   <div class="modal-layer" id="tariffChangeLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="tariffChangeLayer" aria-label="Annuler le changement de tarif"></button>
+    <button class="layer-backdrop" type="button" data-close="tariffChangeLayer" aria-label="Annuler le changement de tarif" tabindex="-1"></button>
     <section class="modal-card compact-modal tariff-change-modal" role="dialog" aria-modal="true" aria-labelledby="tariffChangeTitle" aria-describedby="tariffChangeMessage">
       <div class="modal-head"><div><p class="section-kicker">Modification du devis</p><h2 id="tariffChangeTitle">Changer de tarif ?</h2></div><button class="round-button" type="button" data-close="tariffChangeLayer" aria-label="Annuler"><svg><use href="#icon-x"></use></svg></button></div>
       <form id="tariffChangeForm" class="form-grid">
@@ -708,7 +711,7 @@
   </div>
 
   <div class="modal-layer" id="settingsLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="settingsLayer" aria-label="Fermer"></button>
+    <button class="layer-backdrop" type="button" data-close="settingsLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
       <div class="modal-head"><div><p class="section-kicker">Personnalisation</p><h2 id="settingsTitle">Réglages du document</h2><p class="settings-modal-intro">Interface, identité, fiscalité et règles tarifaires.</p></div><button class="round-button" type="button" data-close="settingsLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <form id="settingsForm" class="settings-layout">
@@ -733,12 +736,12 @@
                <article class="brand-asset-card">
                  <div class="brand-asset-preview brand-asset-preview--header"><img id="headerLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo de l’application"></div>
                  <div class="brand-asset-copy"><strong>Logo de l’application</strong><small id="headerLogoStatus">Logo Bellecour par défaut</small><span>Préférez une version horizontale ou compacte, avec fond transparent.</span></div>
-                 <div class="brand-asset-actions"><label class="logo-upload-button"><svg><use href="#icon-upload"></use></svg>Choisir<input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="header" hidden></label><button class="logo-remove-button" type="button" data-remove-logo="header" hidden>Retirer</button></div>
+                 <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="header"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="header" hidden><button class="logo-remove-button" type="button" data-remove-logo="header" hidden>Retirer</button></div>
                </article>
                <article class="brand-asset-card">
                  <div class="brand-asset-preview brand-asset-preview--pdf"><img id="pdfLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo du PDF"></div>
                  <div class="brand-asset-copy"><strong>Logo du PDF</strong><small id="pdfLogoStatus">Logo Bellecour par défaut</small><span>Laissez vide pour réutiliser automatiquement le logo de l’application.</span></div>
-                 <div class="brand-asset-actions"><label class="logo-upload-button"><svg><use href="#icon-upload"></use></svg>Choisir<input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="pdf" hidden></label><button class="logo-remove-button" type="button" data-remove-logo="pdf" hidden>Retirer</button></div>
+                 <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="pdf"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="pdf" hidden><button class="logo-remove-button" type="button" data-remove-logo="pdf" hidden>Retirer</button></div>
                </article>
                <p class="brand-asset-hint">PNG transparent recommandé · JPG ou WebP acceptés · 4 Mo maximum. Les images sont optimisées et restent uniquement dans votre sauvegarde locale.</p>
              </div>
@@ -782,6 +785,23 @@
        </div>
         <div class="form-actions settings-actions"><button class="button ghost" type="button" data-close="settingsLayer">Annuler</button><button class="button primary" type="submit">Enregistrer les réglages</button></div>
       </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="shortcutHelpLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="shortcutHelpLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal shortcut-help-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle">
+      <div class="modal-head"><div><p class="section-kicker">Utilisation rapide</p><h2 id="shortcutHelpTitle">Raccourcis clavier</h2></div><button class="round-button" type="button" data-close="shortcutHelpLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <dl class="shortcut-list">
+        <div><dt><kbd>Ctrl</kbd><kbd>N</kbd></dt><dd>Nouveau devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Enregistrer le devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>K</kbd> <span>ou</span> <kbd>/</kbd></dt><dd>Rechercher une prestation</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>P</kbd></dt><dd>Imprimer le devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>S</kbd></dt><dd>Créer le PDF</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>,</kbd></dt><dd>Ouvrir les réglages</dd></div>
+        <div><dt><kbd>Échap</kbd></dt><dd>Fermer une fenêtre ou la recherche</dd></div>
+      </dl>
+      <p class="shortcut-help-note">Sur Mac, remplacez <kbd>Ctrl</kbd> par <kbd>⌘</kbd>. Dans les choix de tarif et de thème, utilisez les flèches pour passer d’une option à l’autre.</p>
     </section>
   </div>
 

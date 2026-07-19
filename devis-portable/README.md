@@ -1,14 +1,16 @@
-# Bellecour Devis — version portable 4.20.2
+# BCDevis — version portable 4.20.2
 
 Application autonome de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur, sans compte et sans installation.
 
+Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md).
+
 ## Lancer l’application
 
-- Distribuer uniquement `BellecourDevis-4.20.2.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
-- Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de Bellecour Devis : préférences, brouillon et historique restent disponibles après redémarrage.
+- Distribuer uniquement `BCDevis-4.20.2.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
-`Lancer Bellecour Devis.cmd` reste disponible comme solution de secours pour ouvrir les sources HTML avec Edge/Chrome ; il n’est pas destiné à la distribution.
+`Lancer BCDevis.cmd` reste disponible comme solution de secours pour ouvrir les sources HTML avec Edge/Chrome ; il n’est pas destiné à la distribution.
 
 ## Interface tactile
 
@@ -62,9 +64,16 @@ Dans `Réglages` > `Votre entreprise`, deux logos peuvent être configurés :
 
 Les formats PNG, JPG et WebP sont acceptés jusqu’à 4 Mo. Un PNG transparent donne généralement le résultat le plus élégant. Les logos sont optimisés avant d’être conservés dans la sauvegarde locale.
 
+## Raccourcis clavier
+
+- `Ctrl` / `⌘` + `N` : nouveau devis ; `S` : enregistrer ; `K` ou `/` : rechercher une prestation.
+- `Ctrl` / `⌘` + `P` : imprimer ; `Maj` + `S` : créer le PDF ; `,` : ouvrir les réglages.
+- `?` ouvre cette aide dans l’application ; `Échap` ferme une fenêtre ou la recherche.
+- Dans les choix de tarif et de thème, les flèches gauche/droite ou haut/bas sélectionnent directement l’option suivante.
+
 ## Transférer un devis
 
-Le bouton WhatsApp prépare un message avec les références, les prestations, le total et la date de validité du devis. Pour joindre le document complet, créer d’abord le PDF puis l’ajouter au message WhatsApp.
+Le bouton WhatsApp génère le PDF puis ouvre le partage natif avec le document déjà joint. Sélectionner WhatsApp dans la fenêtre de partage pour choisir le destinataire et confirmer l’envoi. Si le navigateur de secours ne propose pas le partage de fichiers, le bouton crée le PDF et ouvre WhatsApp avec le message préparé.
 
 ## Générer les applications de distribution
 
@@ -80,7 +89,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BellecourDevis-4.20.2.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-4.20.2.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -90,7 +99,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BellecourDevis-4.20.2-mac.dmg`. Il doit être fabriqué depuis un Mac ; une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-4.20.2-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -98,4 +107,4 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BellecourDevis-4.20.2-linux-x86_64.AppImage`. Il doit être fabriqué depuis Linux, puis rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-4.20.2-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.

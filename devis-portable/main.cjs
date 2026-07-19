@@ -7,7 +7,7 @@ const path = require("node:path");
 const portableDirectory = process.env.PORTABLE_EXECUTABLE_DIR || (app.isPackaged ? path.dirname(process.execPath) : path.join(__dirname, "data"));
 const userDataDirectory = path.join(portableDirectory, "data");
 
-app.setName("Bellecour Devis");
+app.setName("BCDevis");
 app.setPath("userData", userDataDirectory);
 
 let mainWindow;
@@ -66,14 +66,24 @@ function createWindow() {
   });
 }
 
-ipcMain.handle("bellecour:save-pdf", async (event, requestedName) => {
+async function savePdf(event, requestedName, includeContents = false) {
   const filePath = await availablePdfPath(app.getPath("downloads"), requestedName);
   const pdf = await event.sender.printToPDF({ pageSize: "A4", printBackground: true, preferCSSPageSize: true });
   await fs.writeFile(filePath, pdf);
-  return { saved: true, fileName: path.basename(filePath), filePath };
-});
+  return {
+    saved: true,
+    fileName: path.basename(filePath),
+    filePath,
+    // The renderer only receives the contents for the native share operation.
+    // Keeping this opt-in avoids transferring a PDF for a regular download.
+    contentBase64: includeContents ? pdf.toString("base64") : undefined
+  };
+}
 
-ipcMain.handle("bellecour:open-external", async (_event, url) => {
+ipcMain.handle("bcdevis:save-pdf", (event, requestedName) => savePdf(event, requestedName));
+ipcMain.handle("bcdevis:save-pdf-for-share", (event, requestedName) => savePdf(event, requestedName, true));
+
+ipcMain.handle("bcdevis:open-external", async (_event, url) => {
   const target = new URL(String(url));
   if (target.protocol !== "https:") throw new Error("Lien externe non autorisé.");
   await shell.openExternal(target.toString());
