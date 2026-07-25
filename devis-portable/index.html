@@ -3,118 +3,121 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0e0e0e">
+  <meta id="themeColorMeta" name="theme-color" content="#171512">
   <title>BCDevis</title>
-  <link rel="icon" href="assets/bellecour-logo.webp" type="image/webp">
+  <link rel="icon" href="assets/pwa-icon-192.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="stylesheet" href="styles.css">
   <style>
-  /* === Système de thèmes (3 palettes) === */
-  /* Thème 1 — Lumière (défaut, vient de styles.css :root) */
+  /* === Système de thèmes (4 palettes) === */
+  /* Thème 1 — Lumière : crème chaud, encre et champagne */
   html[data-theme="light"]{
-    --black:#0e0e0e;--black-2:#171717;--black-3:#242424;
-    --paper:#f5f5f3;--soft:#ececea;--line:#deded9;--line-dark:#333;
-    --taupe:#b4a996;--taupe-light:#eeeae3;--taupe-dark:#756b5a;
-    --ink:#111;--muted:#74746f;
-    --topbar-bg:var(--black);--topbar-fg:#fff;--topbar-border:#292929;
-    --panel-bg:var(--black-2);--panel-border:#2c2c2c;
-    --accent:#b4a996;--accent-ink:#111;--contrast:#0e0e0e;--contrast-ink:#fff;
-    --surface:#fff;--surface-raised:#fff;--surface-soft:#fafafa;
+    --black:#171512;--black-2:#1e1c19;--black-3:#2b2824;
+    --paper:#f4f1eb;--soft:#e9e5dd;--line:#d8d1c5;--line-dark:#464039;
+    --taupe:#b69c78;--taupe-light:#eee5d8;--taupe-dark:#725d43;
+    --ink:#191714;--muted:#716c64;
+    --topbar-bg:#171512;--topbar-fg:#fffaf2;--topbar-border:#342f29;
+    --panel-bg:#1e1c19;--panel-border:#37322c;
+    --accent:#b69c78;--accent-ink:#211b14;--contrast:#171512;--contrast-ink:#fffaf2;
+    --surface:#fffdfa;--surface-raised:#fffefa;--surface-soft:#f8f5ef;
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
   /* Thème 2 — Nuit : miroir sombre élégant, accents taupe doré */
   html[data-theme="night"]{
-    --black:#e8e2d6;--black-2:#1a1814;--black-3:#262320;
-    --paper:#15130f;--soft:#1c1a16;--line:#2f2c27;--line-dark:#3a3631;
-    --taupe:#c9a86a;--taupe-light:#2a2418;--taupe-dark:#d4b67a;
-    --ink:#f0eadc;--muted:#9b958a;
-    --topbar-bg:#0a0907;--topbar-fg:#f5ead4;--topbar-border:#2a2418;
-    --panel-bg:#121110;--panel-border:#241f1a;
-    --accent:#c9a86a;--accent-ink:#17130f;--contrast:#0a0907;--contrast-ink:#f5ead4;
-    --surface:#1f1c17;--surface-raised:#1f1c17;--surface-soft:#1a1814;
+    --black:#ece4d5;--black-2:#171612;--black-3:#29261f;
+    --paper:#11110f;--soft:#181713;--line:#3a362e;--line-dark:#4c463b;
+    --taupe:#d0aa67;--taupe-light:#30291d;--taupe-dark:#e0bd7b;
+    --ink:#f3ecdf;--muted:#aaa295;
+    --topbar-bg:#090906;--topbar-fg:#fff1d9;--topbar-border:#30291d;
+    --panel-bg:#13120f;--panel-border:#302b23;
+    --accent:#d0aa67;--accent-ink:#20170b;--contrast:#080806;--contrast-ink:#fff3df;
+    --surface:#201e19;--surface-raised:#25221c;--surface-soft:#1a1814;
     --settings-bar-bg:var(--surface-raised);--settings-bar-border:var(--line);
   }
   /* Thème 3 — Forêt : ivoire, vert sapin */
   html[data-theme="forest"]{
-    --black:#1f3a2e;--black-2:#243b2c;--black-3:#2c4a38;
-    --paper:#fbf8f0;--soft:#eee9da;--line:#d8d2bf;--line-dark:#5a7560;
-    --taupe:#5a7560;--taupe-light:#e7ede2;--taupe-dark:#2f5740;
-    --ink:#171a14;--muted:#6a7567;
-    --topbar-bg:#1f3a2e;--topbar-fg:#f3f0e2;--topbar-border:#13241c;
-    --panel-bg:#243b2c;--panel-border:#1a2e22;
-    --accent:#5a7560;--accent-ink:#f3f0e2;--contrast:#1f3a2e;--contrast-ink:#f3f0e2;
-    --surface:#fffef9;--surface-raised:#fffefb;--surface-soft:#f7f8ef;
+    --black:#1c3429;--black-2:#223a2e;--black-3:#315041;
+    --paper:#f3f1e8;--soft:#e4e7da;--line:#cdd4c5;--line-dark:#55705e;
+    --taupe:#78947d;--taupe-light:#e1e9df;--taupe-dark:#3d654b;
+    --ink:#172019;--muted:#667268;
+    --topbar-bg:#1c3429;--topbar-fg:#f8f5e9;--topbar-border:#11241b;
+    --panel-bg:#223a2e;--panel-border:#183025;
+    --accent:#78947d;--accent-ink:#102017;--contrast:#1c3429;--contrast-ink:#f8f5e9;
+    --surface:#fffef9;--surface-raised:#fffffb;--surface-soft:#f4f7f0;
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
-  /* Rendu dynamique : surfaces qui utilisent des couleurs codées en dur */
-  html:not([data-theme="light"]) .topbar{background:var(--topbar-bg);color:var(--topbar-fg);border-bottom-color:var(--topbar-border)}
-  html:not([data-theme="light"]) .brand-logo img{filter:invert(1) brightness(2)}
-  html:not([data-theme="light"]) .family-panel{background:var(--panel-bg);border-right-color:var(--panel-border);color:var(--topbar-fg)}
-  html:not([data-theme="light"]) .topbar-context{border-left-color:var(--panel-border)}
-  html:not([data-theme="light"]) .family-button-icon{background:var(--black-3);color:var(--taupe)}
-  html:not([data-theme="light"]) .modal-card,
-  html:not([data-theme="light"]) .drawer,
-  html:not([data-theme="light"]) .checkout-card,
-  html:not([data-theme="light"]) .catalog-panel,
-  html:not([data-theme="light"]) .service-card{background:var(--paper);color:var(--ink)}
-  /* Thème Nuit : surfaces claires -> sombres */
-  html[data-theme="night"] body{background:var(--paper);color:var(--ink)}
-  html[data-theme="night"] .checkout-panel{background:var(--soft)}
-  html[data-theme="night"] .catalog-panel,
-  html[data-theme="night"] .service-card,
-  html[data-theme="night"] .modal-card,
-  html[data-theme="night"] .drawer,
-  html[data-theme="night"] .checkout-card{background:#1f1c17;border-color:var(--line)}
-  html[data-theme="night"] .icon-button:hover{background:#2a2620}
-  html[data-theme="night"] .family-button{color:var(--muted)}
-  html[data-theme="night"] .family-button:hover{color:var(--taupe-dark);border-color:var(--line-dark);background:#221f1a}
-  html[data-theme="night"] .family-button.active{color:#15130f;background:var(--taupe-dark);border-color:var(--taupe-dark)}
-  html[data-theme="night"] .family-button.active .family-button-icon{color:var(--taupe-dark);background:#15130f}
-  html[data-theme="night"] .family-button-icon{background:#2a2620;color:var(--taupe)}
-  html[data-theme="night"] .local-badge>span{background:var(--taupe)}
-  html[data-theme="night"] input,html[data-theme="night"] select,html[data-theme="night"] textarea{background:#1a1814;color:var(--ink);border-color:var(--line)}
-  html[data-theme="night"] .input-with-suffix{background:#1a1814}
-  /* Thème Forêt : tons verts */
-  html[data-theme="forest"] .checkout-panel{background:var(--soft)}
-  html[data-theme="forest"] .local-badge>span{background:var(--taupe)}
-
+  /* Thème 4 — Bordeaux : ivoire rosé, lie-de-vin et cuivre */
+  html[data-theme="bordeaux"]{
+    --black:#4a1f2b;--black-2:#3b1b25;--black-3:#572a36;
+    --paper:#f7f0ed;--soft:#eadfdb;--line:#d9c9c5;--line-dark:#81515d;
+    --taupe:#c08e79;--taupe-light:#f1dfd8;--taupe-dark:#7d4050;
+    --ink:#24181b;--muted:#78676b;
+    --topbar-bg:#411923;--topbar-fg:#fff5ef;--topbar-border:#602b38;
+    --panel-bg:#4a1f2b;--panel-border:#693441;
+    --accent:#c08e79;--accent-ink:#2c171c;--contrast:#4a1f2b;--contrast-ink:#fff7f2;
+    --surface:#fffbf8;--surface-raised:#fffdfa;--surface-soft:#faf3f0;
+    --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
+  }
   /* === Sélecteur de thèmes === */
-  .theme-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-  .theme-card{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fafafa;text-align:left;transition:.15s}
-  .theme-card:hover{border-color:#aaa}
-  .theme-card[aria-checked="true"]{border-color:var(--black);box-shadow:0 0 0 3px rgba(0,0,0,.05);background:#fff}
-  .theme-card-swatch{position:relative;display:grid;height:78px;overflow:hidden;border-radius:10px;grid-template-columns:48px 1fr;grid-template-rows:22px 1fr}
+  .theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .theme-card{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fafafa;text-align:left;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+  .theme-card:hover{border-color:var(--accent);box-shadow:0 8px 18px rgba(22,18,14,.08);transform:translateY(-1px)}
+  .theme-card[aria-checked="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 8px 18px rgba(22,18,14,.08);background:var(--taupe-light)}
+  .theme-card-swatch{position:relative;display:grid;height:78px;overflow:hidden;border:1px solid rgba(30,24,20,.1);border-radius:10px;grid-template-columns:48px 1fr;grid-template-rows:22px 1fr;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
   .ts-top{grid-column:1/-1;border-bottom:1px solid rgba(0,0,0,.1)}
   .ts-panel{}
   .ts-accent{width:18px;height:18px;margin:8px 0 0 8px;border-radius:50%;align-self:start;justify-self:start;grid-column:2;grid-row:2}
   /* Swatch Lumière */
-  .theme-card-swatch.light{background:#f5f5f3}
-  .theme-card-swatch.light .ts-top{background:#0e0e0e}
-  .theme-card-swatch.light .ts-panel{background:#171717}
-  .theme-card-swatch.light .ts-accent{background:#b4a996}
+  .theme-card-swatch.light{background:#f4f1eb}
+  .theme-card-swatch.light .ts-top{background:#171512}
+  .theme-card-swatch.light .ts-panel{background:#1e1c19}
+  .theme-card-swatch.light .ts-accent{background:#b69c78}
   /* Swatch Nuit */
-  .theme-card-swatch.night{background:#15130f}
-  .theme-card-swatch.night .ts-top{background:#0a0907}
-  .theme-card-swatch.night .ts-panel{background:#121110;border-right:1px solid #241f1a}
-  .theme-card-swatch.night .ts-accent{background:#c9a86a}
+  .theme-card-swatch.night{background:#11110f}
+  .theme-card-swatch.night .ts-top{background:#090906}
+  .theme-card-swatch.night .ts-panel{background:#13120f;border-right:1px solid #302b23}
+  .theme-card-swatch.night .ts-accent{background:#d0aa67}
   /* Swatch Forêt */
-  .theme-card-swatch.forest{background:#fbf8f0}
-  .theme-card-swatch.forest .ts-top{background:#1f3a2e}
-  .theme-card-swatch.forest .ts-panel{background:#243b2c}
-  .theme-card-swatch.forest .ts-accent{background:#5a7560}
+  .theme-card-swatch.forest{background:#f3f1e8}
+  .theme-card-swatch.forest .ts-top{background:#1c3429}
+  .theme-card-swatch.forest .ts-panel{background:#223a2e}
+  .theme-card-swatch.forest .ts-accent{background:#78947d}
+  /* Swatch Bordeaux */
+  .theme-card-swatch.bordeaux{background:#f7f0ed}
+  .theme-card-swatch.bordeaux .ts-top{background:#411923}
+  .theme-card-swatch.bordeaux .ts-panel{background:#4a1f2b;border-right:1px solid #693441}
+  .theme-card-swatch.bordeaux .ts-accent{background:#c08e79}
   .theme-card-copy{display:flex;flex-direction:column;gap:3px}
   .theme-card-copy strong{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink)}
   .theme-card-copy small{color:var(--muted);font-size:11px;line-height:1.3}
-  .theme-card-check{display:none;align-self:flex-start;margin-top:-4px;color:#365c4d}
+  .theme-card-check{display:none;align-self:flex-start;margin-top:-4px;color:var(--taupe-dark)}
   .theme-card-check svg{width:16px;height:16px;stroke-width:2.4}
-  .theme-card[aria-checked="true"] .theme-card-check{display:block;color:var(--success,#365c4d)}
-  html[data-theme="night"] .theme-card[aria-checked="true"] .theme-card-check{color:#7fb287}
-  html[data-theme="forest"] .theme-card[aria-checked="true"] .theme-card-check{color:#2f5740}
-  @media(max-width:760px){.theme-picker{grid-template-columns:1fr}}
+  .theme-card[aria-checked="true"] .theme-card-check{display:block;color:var(--taupe-dark)}
+  .settings-subheading{margin:22px 0 10px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+  .font-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .font-card{display:grid;min-width:0;min-height:74px;padding:10px;align-items:center;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:transparent;text-align:left;grid-template-columns:48px minmax(0,1fr) 18px;gap:10px;transition:border-color .16s ease,background .16s ease}
+  .font-card:hover{border-color:var(--line-dark);background:var(--surface-soft)}
+  .font-card[aria-checked="true"]{border-color:var(--line);background:var(--surface-raised);box-shadow:inset 3px 0 0 var(--accent)}
+  .font-card-sample{display:grid;width:48px;height:48px;place-items:center;border:1px solid var(--line);border-radius:7px;color:var(--ink);background:var(--surface-soft);font-size:22px;font-weight:700}
+  .font-card-copy{display:flex;min-width:0;flex-direction:column;gap:3px}
+  .font-card-copy strong{overflow:hidden;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+  .font-card-copy small{color:var(--muted);font-size:9px;line-height:1.25}
+  .font-card-check{display:none;width:18px;height:18px;place-items:center;color:var(--taupe-dark)}
+  .font-card-check svg{width:15px;height:15px;stroke-width:2.4}
+  .font-card[aria-checked="true"] .font-card-check{display:grid}
+  .font-card[data-font="red-hat"] .font-card-sample{font-family:"Red Hat Display","Roboto",Arial,sans-serif}
+  .font-card[data-font="roboto"] .font-card-sample{font-family:"Roboto","Red Hat Display",Arial,sans-serif}
+  .font-card[data-font="roboto-slab"] .font-card-sample{font-family:"Roboto Slab","Roboto",serif}
+  .font-card[data-font="system"] .font-card-sample{font-family:"Segoe UI",Arial,sans-serif}
+  @media(max-width:760px){.theme-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:440px){.theme-picker,.font-picker{grid-template-columns:1fr}}
   @media screen and (pointer:coarse){
     .theme-card{padding:16px;border-width:2px;border-radius:16px}
     .theme-card-swatch{height:88px}
     .theme-card-copy strong{font-size:16px}
     .theme-card-copy small{font-size:13px}
+    .font-card{min-height:80px}
   }
   /* === Personnalisation : refonte de la modale Réglages === */
   .settings-modal{width:min(1080px,100%)!important;display:flex;flex-direction:column;max-height:calc(100vh - 48px)!important;padding:0!important;overflow:hidden}
@@ -135,7 +138,6 @@
   .settings-section--mentions .form-grid{gap:14px}
   .settings-section--mentions textarea{min-height:100px}
   .settings-section-head{display:flex;align-items:center;gap:14px;margin:0 0 18px}
-  .settings-section-index{display:grid;width:34px;height:34px;flex:0 0 34px;place-items:center;border-radius:50%;color:var(--taupe-dark);background:var(--taupe-light);font-family:var(--serif);font-size:14px;font-weight:600;letter-spacing:.02em}
   .settings-section-head h3{margin:0;font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:-.01em}
   .settings-section-head p{margin:3px 0 0;color:var(--muted);font-size:12px}
   .settings-layout .form-grid{grid-template-columns:1fr 1fr;gap:14px}
@@ -195,7 +197,6 @@
   /* Touch / grosses cibles */
   @media screen and (pointer:coarse){
     .settings-modal{width:min(1180px,100%)!important}
-    .settings-section-index{width:42px;height:42px;flex-basis:42px;font-size:17px}
     .settings-section-head h3{font-size:19px}
     .settings-section-head p{font-size:13px}
     .settings-offer-block{padding:18px 16px 16px;border-width:2px;border-radius:16px}
@@ -215,7 +216,6 @@
   .settings-col>.settings-section:first-child,
   .settings-col>.settings-section:last-child{margin:0;padding:17px;border:1px solid var(--line);border-radius:15px;background:var(--settings-bar-bg,#fff)}
   .settings-section-head{min-height:38px;margin-bottom:14px;align-items:flex-start;gap:11px}
-  .settings-section-index{width:32px;height:32px;flex-basis:32px;font-size:13px}
   .settings-section-head h3{font-size:15px;line-height:1.2}
   .settings-section-head p{font-size:11px;line-height:1.35}
   .settings-layout .form-grid{gap:12px}
@@ -303,6 +303,13 @@
   }
   html[data-theme="night"]{color-scheme:dark;--shadow-soft:0 8px 22px rgba(0,0,0,.28)}
   html[data-theme] body{background:var(--paper);color:var(--ink)}
+  html[data-theme] body,
+  html[data-theme] .topbar,
+  html[data-theme] .family-panel,
+  html[data-theme] .catalog-panel,
+  html[data-theme] .checkout-panel,
+  html[data-theme] .checkout-card,
+  html[data-theme] .service-card{transition:background-color .18s ease,color .18s ease,border-color .18s ease}
   html[data-theme] .topbar{background:var(--topbar-bg);color:var(--topbar-fg);border-bottom-color:var(--topbar-border)}
   html[data-theme] .workspace{background:var(--paper)}
   html[data-theme] .family-panel{background:var(--panel-bg);border-right-color:var(--panel-border)}
@@ -355,16 +362,11 @@
   html[data-theme] button.family-price-toggle.active{border-color:var(--accent);color:var(--ink);background:var(--taupe-light)}
   html[data-theme] button.family-price-toggle small{color:var(--muted);background:var(--black-3)}
   html[data-theme] button.family-price-toggle.active small{color:var(--ink);background:color-mix(in srgb,var(--surface) 55%,transparent)}
-  html[data-theme] button.checkout-focus-toggle[aria-pressed="true"]{color:var(--accent-ink);border-color:var(--accent);background:var(--accent)}
-  html[data-theme] button.checkout-focus-toggle[aria-pressed="true"] svg,
-  html[data-theme] button.checkout-focus-toggle[aria-pressed="true"] small{color:var(--accent-ink)}
-  html[data-theme] button.checkout-focus-toggle[aria-pressed="true"] small{background:color-mix(in srgb,var(--surface) 45%,transparent)}
   html[data-theme] .settings-col>.settings-section,
   html[data-theme] .theme-card,
   html[data-theme] .family-visibility-item{background:var(--surface-raised);border-color:var(--line)}
   html[data-theme] .theme-card[aria-checked="true"],
   html[data-theme] .family-visibility-item:has(input:checked){border-color:var(--accent);background:var(--taupe-light);box-shadow:inset 0 0 0 1px var(--accent)}
-  html[data-theme] .settings-section-index{color:var(--taupe-dark);background:var(--taupe-light)}
   html[data-theme] .settings-offer-block.student{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:var(--taupe-light)}
   html[data-theme] .settings-offer-block.student .settings-offer-tag{background:var(--taupe-dark)}
   html[data-theme] .toast{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
@@ -382,6 +384,7 @@
   html[data-theme] .topbar-context span,
   html[data-theme] .local-badge,
   html[data-theme] .save-state{color:color-mix(in srgb,var(--topbar-fg) 58%,transparent)}
+  html[data-theme] .local-badge>span{background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
   html[data-theme] .save-state.error{color:#ef9a91}
   html[data-theme] .topbar-context strong{color:var(--topbar-fg)}
   html[data-theme] .family-head>p:last-child,
@@ -545,7 +548,438 @@
   .student-discount-control input[type="range"]{width:100%;height:8px;margin:8px 0 2px;accent-color:var(--accent);cursor:pointer}
   .student-discount-control input[type="range"]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:5px}
   html[data-theme="night"] .student-discount-control output{color:var(--accent-ink)}
-  .shortcut-list{display:grid;margin:4px 0 0;gap:6px}.shortcut-list>div{display:grid;min-height:42px;padding:8px 10px;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface-soft,#fafafa);grid-template-columns:minmax(150px,auto) 1fr;gap:14px}.shortcut-list dt,.shortcut-list dd{margin:0}.shortcut-list dt{display:flex;align-items:center;flex-wrap:wrap;gap:4px}.shortcut-list dt span{color:var(--muted);font-size:11px}.shortcut-list dd{color:var(--ink);font-size:13px;font-weight:650}.shortcut-list kbd,.shortcut-help-note kbd{display:inline-block;min-width:24px;padding:3px 6px;border:1px solid var(--line-dark);border-bottom-width:2px;border-radius:5px;color:var(--ink);background:var(--surface,#fff);font-family:var(--sans);font-size:11px;font-weight:750;text-align:center}.shortcut-help-note{margin:15px 0 0;color:var(--muted);font-size:12px;line-height:1.5}@media(max-width:520px){.shortcut-list>div{grid-template-columns:1fr;gap:4px}}
+  .shortcut-list{display:grid;margin:4px 0 0;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}.shortcut-list>div{display:flex;min-width:0;min-height:46px;padding:8px 10px;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft,#fafafa)}.shortcut-list dt,.shortcut-list dd{margin:0}.shortcut-list dt{display:flex;flex:0 0 auto;align-items:center;flex-wrap:wrap;gap:4px}.shortcut-list dt span{color:var(--muted);font-size:10px}.shortcut-list dd{min-width:0;color:var(--muted);font-size:11px;font-weight:650;line-height:1.25;text-align:right}.shortcut-list kbd,.shortcut-help-note kbd{display:inline-grid;min-width:25px;min-height:24px;padding:3px 6px;place-items:center;border:1px solid var(--line-dark);border-bottom-width:2px;border-radius:6px;color:var(--ink);background:var(--surface,#fff);font:700 10px/1 var(--sans);text-align:center}.shortcut-help-note{margin:14px 0 0;color:var(--muted);font-size:11px;line-height:1.5}@media(max-width:640px){.shortcut-list{grid-template-columns:1fr}}
+
+  /* === Finition luxe : hiérarchie calme, surfaces ouvertes et accents rares === */
+  @media screen{
+    /* Trio tarifaire : trois tickets issus du même système graphique */
+    html[data-theme] .topbar-context .offer-mode-selector{
+      padding:0;
+      gap:0;
+      overflow:visible;
+      border:0;
+      border-radius:0;
+      background:transparent;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button{
+      min-height:50px;
+      padding:7px 15px;
+      gap:9px;
+      border:0;
+      border-left:1px solid var(--panel-border);
+      border-radius:0;
+      color:color-mix(in srgb,var(--topbar-fg) 72%,transparent);
+      background:transparent;
+      box-shadow:none;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button:first-child{border-left:0}
+    html[data-theme] .topbar-context .offer-mode-selector button::after{content:none}
+    html[data-theme] .topbar-context .offer-mode-selector button:hover{
+      color:var(--topbar-fg);
+      border-color:var(--panel-border);
+      background:color-mix(in srgb,var(--topbar-fg) 5%,transparent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button.active,
+    html[data-theme] .topbar-context .offer-mode-selector button[data-offer-mode="pack"].active,
+    html[data-theme] .topbar-context .offer-mode-selector button[data-offer-mode="student"].active{
+      color:var(--topbar-fg);
+      border-color:var(--panel-border);
+      background:transparent;
+      box-shadow:inset 0 -2px 0 var(--accent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol{
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+      border:1px solid color-mix(in srgb,var(--topbar-fg) 34%,transparent);
+      border-radius:50%;
+      background:transparent;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button.active .offer-mode-symbol{
+      color:var(--accent-ink);
+      border-color:var(--accent);
+      background:var(--accent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{
+      width:16px;
+      height:16px;
+      stroke-width:1.45;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy{
+      font-size:12px;
+      font-weight:600;
+      letter-spacing:.01em;
+      text-transform:none;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small,
+    html[data-theme] .topbar-context .offer-mode-selector button.active .offer-mode-copy small{
+      color:color-mix(in srgb,var(--topbar-fg) 48%,transparent);
+      font-size:8px;
+      font-weight:500;
+      letter-spacing:.025em;
+    }
+
+    /* Graisses : conserver la force sur les montants et les actions seulement */
+    .eyebrow,.section-kicker,.settings-column-label,
+    .cart-section-title,.receipt-meta span,.form-grid label>span{
+      font-weight:600;
+    }
+    .family-title-row h2,.checkout-panel h2,.modal-head h2{
+      font-weight:600;
+      letter-spacing:-.025em;
+    }
+    .family-button strong,.family-option strong,.client-copy strong,
+    .service-name,.cart-line-name,.history-item-client,
+    .theme-card-copy strong,.settings-section-head h3{
+      font-weight:600;
+    }
+    .icon-button,.button,.action-menu button,.coupon-toggle,
+    .student-discount-button,.family-price-toggle,
+    .settings-offer-tag,.logo-upload-button,.logo-remove-button,
+    .discount-row-head>label,.coupon-code-field>span,
+    .brand-asset-copy small,.mobile-tabs button,
+    .price-option.selected::after{
+      font-weight:600;
+    }
+    .family-option-price,.coupon-code-field>input,
+    .cart-line-inline-controls .quantity-value,
+    .cart-line-inline-controls .cart-line-price{
+      font-weight:700;
+    }
+    .family-title-row>strong{
+      padding:0;
+      border-radius:0;
+      color:color-mix(in srgb,var(--topbar-fg) 54%,transparent);
+      background:transparent;
+      font-size:10px;
+      font-weight:500;
+      letter-spacing:.04em;
+    }
+    .quote-number,.catalog-count{
+      padding-inline:8px;
+      border-radius:3px;
+      background:transparent;
+      font-weight:600;
+    }
+
+    /* Moins de boîtes arrondies sur les surfaces principales */
+    html[data-theme] .family-button{border-radius:10px}
+    html[data-theme] .family-button-icon{border-radius:9px}
+    .family-group.open>.family-button{border-radius:10px 10px 5px 5px}
+    .family-option{border-radius:7px}
+    .family-search,.search-field{border-radius:8px}
+    .checkout-card{border-radius:12px}
+    .client-card,.installments{border-radius:8px}
+    .round-button,.button,.action-menu{border-radius:7px}
+    .action-menu button{border-radius:4px}
+    .family-custom,.family-price-toggle,.student-discount-button,
+    .coupon-code-field,.discount-input,.segmented-control,
+    .installment-option,.installment-empty,.history-item,
+    .checkbox-field,.toast{border-radius:7px}
+    .modal-card{border-radius:12px}
+    .history-status{border-radius:4px}
+    .family-price-toggle small{
+      padding-inline:0;
+      border-radius:0;
+      background:transparent!important;
+      font-weight:500;
+    }
+
+    /* Réglages : sections ouvertes, séparateurs fins et respiration */
+    .settings-modal{
+      width:min(1160px,calc(100vw - 48px))!important;
+      border-radius:12px;
+    }
+    .settings-modal .modal-head{
+      padding:27px 34px 23px;
+    }
+    .settings-modal .modal-head h2{
+      font-size:27px;
+      font-weight:600;
+    }
+    .settings-modal-intro{
+      margin-top:7px;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .settings-columns{
+      grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);
+      gap:42px;
+      padding:30px 34px 38px;
+    }
+    .settings-col{gap:0}
+    .settings-col--right{
+      padding-left:42px;
+      border-left:1px solid var(--line);
+    }
+    .settings-column-label{
+      margin:0 0 26px;
+      font-size:9px;
+      letter-spacing:.17em;
+    }
+    .settings-col>.settings-section,
+    .settings-col>.settings-section:first-child,
+    .settings-col>.settings-section:last-child{
+      margin:0 0 30px!important;
+      padding:0 0 30px!important;
+      overflow:visible;
+      border:0!important;
+      border-bottom:1px solid var(--line)!important;
+      border-radius:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+    }
+    .settings-col>.settings-section:last-child{
+      margin-bottom:0!important;
+      padding-bottom:0!important;
+      border-bottom:0!important;
+    }
+    html[data-theme] .settings-section-head{
+      min-height:0;
+      margin:0 0 20px;
+      padding-left:0;
+      border-left:0;
+    }
+    html[data-theme] .settings-section-head h3{
+      font-size:18px;
+      font-weight:600;
+      letter-spacing:-.02em;
+    }
+    .settings-section-head p{
+      margin-top:5px;
+      font-size:12px;
+      line-height:1.45;
+    }
+    .theme-picker{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    html[data-theme] .theme-card{
+      padding:13px;
+      gap:10px;
+      border-radius:8px;
+      background:transparent;
+      box-shadow:none;
+      transform:none;
+    }
+    html[data-theme] .theme-card:hover{
+      border-color:var(--line-dark);
+      box-shadow:none;
+      transform:none;
+    }
+    html[data-theme] .theme-card[aria-checked="true"]{
+      border-color:var(--line);
+      background:var(--surface-raised);
+      box-shadow:inset 3px 0 0 var(--accent);
+    }
+    .theme-card-swatch{height:68px;border-radius:5px}
+    .theme-card[aria-checked="true"] .theme-card-check{
+      width:auto;
+      height:auto;
+      margin:-2px 0 0 auto;
+      border-radius:0;
+      color:var(--taupe-dark);
+      background:transparent!important;
+    }
+    .settings-layout .form-grid{gap:16px 14px}
+    .settings-layout .form-grid input,
+    .settings-layout .form-grid select,
+    .settings-layout .input-with-suffix{
+      height:46px;
+      border-radius:6px;
+    }
+    .settings-layout .input-with-suffix input{height:44px}
+    .settings-layout textarea{border-radius:6px}
+    .brand-assets-editor{gap:0}
+    .brand-asset-card{
+      padding:15px 0;
+      border:0;
+      border-top:1px solid var(--line);
+      border-radius:0;
+      background:transparent;
+    }
+    .brand-asset-card:first-child{border-top:0}
+    .brand-asset-preview{border-radius:6px}
+    .logo-upload-button,.logo-remove-button{border-radius:6px}
+    .hint-box{
+      padding:12px 0 12px 14px;
+      border:0;
+      border-left:2px solid var(--line);
+      border-radius:0;
+      background:transparent!important;
+    }
+    .settings-offer-block,
+    .settings-section--commercial .settings-offer-block{
+      padding:16px;
+      border-radius:7px;
+      background:var(--surface-soft)!important;
+      box-shadow:none;
+    }
+    .settings-offer-tag,
+    .settings-offer-block.student .settings-offer-tag{
+      margin:0 0 14px;
+      padding:0;
+      border-radius:0;
+      color:var(--ink)!important;
+      background:transparent!important;
+      font-size:10px;
+      font-weight:600;
+      letter-spacing:.13em;
+    }
+    .student-discount-control output{font-weight:700}
+    html[data-theme] .family-visibility-item{
+      min-height:56px;
+      padding:10px 11px;
+      border-radius:6px;
+      background:transparent;
+    }
+    html[data-theme] .family-visibility-item:has(input:checked){
+      border-color:var(--line);
+      background:var(--surface-raised);
+      box-shadow:inset 2px 0 0 var(--accent);
+    }
+    html[data-theme] .family-visibility-icon{border-radius:7px}
+    .checkbox-field{border-radius:6px}
+    .settings-actions{
+      padding:16px 34px;
+    }
+  }
+  @media screen and (max-width:900px){
+    .settings-modal{width:min(760px,calc(100vw - 24px))!important}
+    .settings-columns{grid-template-columns:1fr;gap:0;padding:24px 26px 32px}
+    .settings-col--right{padding:28px 0 0;border-top:1px solid var(--line);border-left:0}
+    .settings-column-label{margin-top:0}
+    .settings-col>.settings-section,
+    .settings-col>.settings-section:first-child,
+    .settings-col>.settings-section:last-child{
+      margin:0 0 26px!important;
+      padding:0 0 26px!important;
+      border:0!important;
+      border-bottom:1px solid var(--line)!important;
+      border-radius:0!important;
+    }
+    .settings-col>.settings-section:last-child{border-bottom:0!important}
+  }
+  @media screen and (max-width:760px){
+    html[data-theme] .topbar-context .offer-mode-selector button{
+      min-height:42px;
+      padding:5px 8px;
+      gap:5px;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol{
+      width:22px;
+      height:22px;
+      flex-basis:22px;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{width:13px;height:13px}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:10px}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small{font-size:7px}
+    .settings-modal .modal-head{padding:21px 20px 18px}
+    .settings-columns{padding:22px 20px 28px}
+    .settings-actions{padding:13px 20px}
+    .theme-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media screen and (max-width:440px){
+    .theme-picker{grid-template-columns:1fr}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
+  }
+  /* En-tête de caisse : actions essentielles sous forme d’icônes compactes. */
+  .family-title-row h2{font-size:18px}
+  .checkout-panel h2{font-size:22px}
+  .receipt-head{min-height:42px;gap:6px}
+  .quote-title-row{flex:0 0 auto}
+  .quote-head-actions{min-width:0;gap:5px}
+  .tax-header-toggle{min-height:38px;gap:5px;font-size:11px}
+  .tax-header-toggle .switch{width:38px;height:22px}
+  .tax-header-toggle .switch:after{width:16px;height:16px}
+  .tax-header-toggle input:checked+.switch:after{transform:translateX(16px)}
+  .quote-icon-button{
+    position:relative;
+    width:38px;
+    min-width:38px;
+    height:38px;
+    flex:0 0 38px;
+    border-width:1px;
+    border-radius:9px;
+  }
+  .quote-icon-button svg{width:17px;height:17px}
+  .quote-icon-button:hover,.quote-icon-button:focus-visible{
+    color:var(--ink);
+    border-color:var(--accent);
+    background:var(--taupe-light);
+  }
+  .quote-icon-button:disabled{cursor:not-allowed;opacity:.38}
+  .quote-icon-button::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    z-index:30;
+    top:calc(100% + 7px);
+    right:0;
+    padding:5px 8px;
+    visibility:hidden;
+    border-radius:5px;
+    color:var(--contrast-ink);
+    background:var(--contrast);
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+    font-size:10px;
+    font-weight:650;
+    line-height:1;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-2px);
+    transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+  }
+  .quote-icon-button:hover::after,.quote-icon-button:focus-visible::after{
+    visibility:visible;
+    opacity:1;
+    transform:translateY(0);
+  }
+  #moreQuoteButton[aria-expanded="true"]::after{visibility:hidden;opacity:0}
+  @media screen and (max-width:760px){
+    .checkout-panel h2{font-size:24px}
+  }
+  @media screen and (max-width:400px){
+    .tax-header-toggle>span:last-child{display:none}
+    .quote-head-actions{gap:4px}
+    .quote-icon-button{width:36px;min-width:36px;height:36px;flex-basis:36px}
+  }
+  /* Échelonnement : deux lignes directes, sans panneau ni texte auxiliaire. */
+  html[data-theme] .installments{
+    margin-top:4px;
+    padding:0;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--surface-raised);
+  }
+  html[data-theme] .installments[hidden]{display:none}
+  .installment-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    text-align:center;
+  }
+  .installment-table th,.installment-table td{
+    padding:4px 3px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .installment-table th{
+    color:var(--muted);
+    background:var(--surface-soft);
+    font-size:9px;
+    font-weight:700;
+  }
+  .installment-table td{
+    border-top:1px solid var(--line);
+    color:var(--ink);
+    font-size:10px;
+    font-weight:750;
+    font-variant-numeric:tabular-nums;
+  }
+  .installment-table th+th,.installment-table td+td{border-left:1px solid var(--line)}
   </style>
 </head>
 <body>
@@ -558,9 +992,12 @@
     <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2.4-7.6L3 11Z"></path><path d="m10.6 13.4 4.8-4.8"></path></symbol>
+    <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
     <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h6M16 14h1"></path></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
      <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
@@ -572,62 +1009,80 @@
     <symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.3 3.7L17 8l-3.7 1.3L12 13l-1.3-3.7L7 8l3.7-1.3L12 3ZM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"></path></symbol>
     <symbol id="icon-droplet" viewBox="0 0 24 24"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11Z"></path></symbol>
     <symbol id="icon-scan" viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4m0 6v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4"></path><circle cx="12" cy="12" r="3"></circle></symbol>
-    <symbol id="icon-face" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9 10h.01M15 10h.01M8.5 15c2 1.5 5 1.5 7 0"></path></symbol>
+    <symbol id="icon-session" viewBox="0 0 24 24"><rect x="6" y="4.5" width="12" height="15" rx="2.2"></rect><path d="M9 9h6M9 13h4.5"></path></symbol>
+    <symbol id="icon-pack" viewBox="0 0 24 24"><rect x="7" y="7" width="11" height="12" rx="2.2"></rect><path d="M5 16V6a2 2 0 0 1 2-2h9M10 10.5h5M10 14h5"></path></symbol>
+    <symbol id="icon-face" viewBox="0 0 24 24"><path d="M14.9 3.7c-4.3-.9-8.1 2.1-8.2 6.4 0 2.6 1.1 4.5 2.3 6.1.8 1.1 1 2.6.7 4.1"></path><path d="M14 6.4c.2 1.5.7 2.9 1.8 4.2l-1.7 1.5c.2.7.8 1.1 1.7 1.2-.2 2.4-1.8 3.8-4.6 3.8M11.2 8.7h.01M12 14.8c.8.3 1.6.3 2.4 0"></path></symbol>
+    <symbol id="icon-arms" viewBox="0 0 24 24"><path d="M9.2 5.2C7 6.3 5.5 8.4 5.1 11L3.8 20.2M14.8 5.2c2.2 1.1 3.7 3.2 4.1 5.8l1.3 9.2M9.2 5.2c.7 1.3 1.7 2 2.8 2s2.1-.7 2.8-2M9.7 10.3c1.5.7 3.1.7 4.6 0"></path><path d="M7.2 12.2 6 19.4M16.8 12.2l1.2 7.2" opacity=".55"></path></symbol>
+    <symbol id="icon-torso" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M9 11.3c2 1 4 1 6 0M12 6v12.5"></path></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><path d="M8.5 10.2c1.1.2 2.1.8 3.5 2 1.4-1.2 2.4-1.8 3.5-2M9.1 16.2c1.9.8 3.9.8 5.8 0" opacity=".65"></path></symbol>
+    <symbol id="icon-maillot" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path></symbol>
+    <symbol id="icon-legs" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><path d="M12 4v7.7" opacity=".55"></path></symbol>
+    <symbol id="icon-electrolysis" viewBox="0 0 24 24"><path d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0M10.4 20.5c.8-4.8.9-8.8.2-12.2-.4-1.9.5-3.8 2.2-4.8M20.5 4.1 13.7 14"></path><circle cx="12.9" cy="15" r="1.7"></circle></symbol>
+    <symbol id="icon-aesthetic" viewBox="0 0 24 24"><path d="M12.8 3.7C8.7 3.2 5.5 6.2 5.7 10.3c.1 2.4 1.2 4.2 2.4 5.8.8 1.1 1 2.5.7 4M12.1 6.6c.3 1.6.8 2.9 1.9 4l-1.6 1.5c.4.8 1 1.2 1.9 1.2-.2 2.2-1.7 3.5-4.3 3.7"></path><path d="m18.2 5 .7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"></path><circle cx="10.2" cy="8.8" r=".45" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-zones" viewBox="0 0 24 24"><path d="M9.1 4.2c.7 1.2 1.7 1.8 2.9 1.8s2.2-.6 2.9-1.8M9.1 4.2C6.8 6.5 6.1 9.5 6.8 12.7L8 21M14.9 4.2c2.3 2.3 3 5.3 2.3 8.5L16 21M12 6v15"></path><circle cx="8.2" cy="10.8" r="1.3"></circle><circle cx="15.2" cy="16.3" r="1.3"></circle></symbol>
+    <symbol id="icon-consultation" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3"></circle><path d="M3.8 19.5c.3-4 2-6 4.7-6 2.1 0 3.6 1.2 4.3 3.6M14 5h6.2v5.2h-2l-2.2 2v-2h-2z"></path></symbol>
+    <symbol id="icon-all" viewBox="0 0 24 24"><path d="M12 3.2c.5 4.7 2.1 6.3 6.8 6.8-4.7.5-6.3 2.1-6.8 6.8-.5-4.7-2.1-6.3-6.8-6.8 4.7-.5 6.3-2.1 6.8-6.8Z"></path><path d="M18.4 15.2c.2 2.2 1 3 3.2 3.2-2.2.2-3 1-3.2 3.2-.2-2.2-1-3-3.2-3.2 2.2-.2 3-1 3.2-3.2ZM5.3 16.2c.2 1.4.7 1.9 2.1 2.1-1.4.2-1.9.7-2.1 2.1-.2-1.4-.7-1.9-2.1-2.1 1.4-.2 1.9-.7 2.1-2.1Z" opacity=".72"></path></symbol>
     <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
     <symbol id="icon-zap" viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path></symbol>
-    <symbol id="icon-body" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"></circle><path d="M8 21c.6-4.5 1-7.4 1-9.5L7 14m9 7c-.6-4.5-1-7.4-1-9.5l2 2.5M9 10c1.8 1 4.2 1 6 0"></path></symbol>
-    <symbol id="icon-student" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Z"></path><path d="M7 12v4c2.6 2 7.4 2 10 0v-4M21 9v6"></path></symbol>
+    <symbol id="icon-body" viewBox="0 0 24 24"><circle cx="12" cy="4.2" r="2"></circle><path d="M9.2 7.2c-1.7 1.3-2.5 3.4-2.6 6.2L6.2 20M14.8 7.2c1.7 1.3 2.5 3.4 2.6 6.2l.4 6.6M9.2 7.2c1.8 1.2 3.8 1.2 5.6 0M12 8.1V20"></path></symbol>
+    <symbol id="icon-student" viewBox="0 0 24 24"><path d="M5 6.5h14v3a2.5 2.5 0 0 0 0 5v3H5v-3a2.5 2.5 0 0 0 0-5v-3Z"></path><circle cx="9" cy="10" r="1"></circle><circle cx="15" cy="14" r="1"></circle><path d="m9 15 6-6"></path></symbol>
     <symbol id="icon-empty" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7Z"></path><path d="M9 10V6a3 3 0 0 1 6 0v4"></path></symbol>
   </svg>
 
   <div class="app-shell" id="appShell">
     <header class="topbar">
       <div class="brand-block">
-        <span class="brand-logo"><img id="headerLogo" src="assets/bellecour-logo.webp" alt="Clinique Bellecour"></span>
         <div><p class="eyebrow">Clinique Bellecour</p><h1>BCDevis</h1></div>
       </div>
+      <div class="app-actions" id="appActions">
+        <button class="app-menu-trigger" id="appMenuButton" type="button" aria-label="Ouvrir le menu principal" aria-haspopup="menu" aria-controls="appActionsMenu" aria-expanded="false" aria-keyshortcuts="Alt+M" title="Menu principal (Alt+M)">
+          <svg aria-hidden="true"><use href="#icon-menu"></use></svg>
+        </button>
+        <div class="app-actions-menu" id="appActionsMenu" role="menu" aria-label="Menu principal" hidden>
+          <div class="app-menu-group" role="none">
+            <p role="presentation">Catalogue</p>
+            <button id="customItemButton" type="button" role="menuitem" data-app-action="custom" aria-keyshortcuts="Control+Shift+N Meta+Shift+N"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span><kbd>Ctrl Maj N</kbd></button>
+            <button id="familyPriceToggle" type="button" role="menuitemcheckbox" data-app-action="prices" aria-checked="false" aria-keyshortcuts="Alt+P"><svg><use href="#icon-eye"></use></svg><span><strong>Prix sur les boutons</strong><small id="familyPriceToggleState">Masqués</small></span><kbd>Alt P</kbd></button>
+          </div>
+          <div class="app-menu-group" role="none">
+            <p role="presentation">Application</p>
+            <button id="settingsButton" type="button" role="menuitem" data-app-action="settings" aria-keyshortcuts="Control+Comma Meta+Comma"><svg><use href="#icon-settings"></use></svg><span><strong>Réglages</strong><small>Entreprise, tarifs et apparence</small></span><kbd>Ctrl ,</kbd></button>
+            <button id="shortcutHelpButton" type="button" role="menuitem" data-app-action="shortcuts" aria-keyshortcuts="?" aria-haspopup="dialog"><svg><use href="#icon-keyboard"></use></svg><span><strong>Raccourcis clavier</strong><small>Afficher toutes les commandes rapides</small></span><kbd>?</kbd></button>
+          </div>
+        </div>
+      </div>
       <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="radiogroup" aria-label="Tarif appliqué aux soins">
-        <button class="active" type="button" data-offer-mode="single" role="radio" aria-checked="true"><span class="offer-mode-symbol" aria-hidden="true">1×</span><span class="offer-mode-copy">Séance <small>À l’unité</small></span></button>
-        <button type="button" data-offer-mode="pack" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true">⋯</span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
+        <button class="active" type="button" data-offer-mode="single" role="radio" aria-checked="true"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-session"></use></svg></span><span class="offer-mode-copy">Séance <small>À l’unité</small></span></button>
+        <button type="button" data-offer-mode="pack" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-pack"></use></svg></span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
         <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
       </div></div>
-      <div class="topbar-status"><span class="local-badge"><span></span> 100% local</span><span class="save-state" id="saveState">Prêt</span></div>
-      <nav class="top-actions" aria-label="Actions générales">
-        <button class="icon-button" id="newQuoteButton" type="button" title="Nouveau devis (Ctrl/Cmd+N)" aria-keyshortcuts="Control+N Meta+N"><svg><use href="#icon-plus"></use></svg><span>Nouveau</span></button>
-        <button class="icon-button" id="historyButton" type="button" title="Historique des devis"><svg><use href="#icon-history"></use></svg><span>Devis</span></button>
-        <button class="icon-button" id="settingsButton" type="button" title="Réglages (Ctrl/Cmd+,)" aria-keyshortcuts="Control+Comma Meta+Comma"><svg><use href="#icon-settings"></use></svg><span>Réglages</span></button>
-        <button class="icon-button" id="shortcutHelpButton" type="button" title="Raccourcis clavier (?)" aria-keyshortcuts="?" aria-haspopup="dialog"><svg><use href="#icon-keyboard"></use></svg><span>Aide</span></button>
-      </nav>
     </header>
 
     <main class="workspace">
       <aside class="family-panel active-panel" id="familyPanel" aria-labelledby="familyNavTitle">
         <div class="family-head">
-          <div class="family-title-row"><div class="family-title-actions"><h2 id="familyNavTitle"><span class="step-number">01</span> Prestations</h2><button class="family-search-toggle" id="catalogSearchToggle" type="button" aria-label="Rechercher une prestation" aria-controls="catalogSearchPanel" aria-expanded="false" title="Rechercher une prestation (Ctrl/Cmd+K ou /)" aria-keyshortcuts="Control+K Meta+K /"><svg><use href="#icon-search"></use></svg></button></div><strong id="activeOfferHint">Prix par séance</strong></div>
+          <div class="family-title-row"><div class="family-title-actions"><h2 id="familyNavTitle">Prestations</h2><button class="family-search-toggle" id="catalogSearchToggle" type="button" aria-label="Rechercher une prestation" aria-controls="catalogSearchPanel" aria-expanded="false" title="Rechercher une prestation (Ctrl/Cmd+K ou /)" aria-keyshortcuts="Control+K Meta+K /"><svg><use href="#icon-search"></use></svg></button></div><strong id="activeOfferHint">Prix par séance</strong></div>
           <label class="family-search" id="catalogSearchPanel" for="catalogSearch" hidden><svg><use href="#icon-search"></use></svg><input id="catalogSearch" type="search" autocomplete="off" placeholder="Rechercher un soin…"></label>
         </div>
         <nav class="family-list" id="familyList" aria-label="Familles de prestations"></nav>
-        <div class="family-footer" id="familyFooter">
-          <button class="family-footer-toggle" id="familyFooterToggle" type="button" aria-expanded="true"><span id="familyFooterToggleLabel">Réduire les actions</span><svg><use href="#icon-chevron"></use></svg></button>
-          <div class="family-footer-actions" id="familyFooterActions">
-            <button class="family-price-toggle" id="familyPriceToggle" type="button" aria-pressed="false"><svg><use href="#icon-eye"></use></svg><span>Prix sur les boutons</span><small id="familyPriceToggleState">Masqués</small></button>
-            <button class="family-custom" id="customItemButton" type="button"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span></button>
-            <button class="family-price-toggle checkout-focus-toggle" id="checkoutFocusToggle" type="button" aria-pressed="false" title="Afficher la caisse sur toute la hauteur"><svg><use href="#icon-scan"></use></svg><span class="checkout-focus-label">Caisse plein écran</span><small id="checkoutFocusState">Plein écran</small></button>
-          </div>
-        </div>
       </aside>
 
       <aside class="checkout-panel" id="checkoutPanel" aria-labelledby="checkoutTitle">
         <div class="checkout-card">
           <div class="receipt-head">
-            <div class="quote-title-row"><h2 id="checkoutTitle"><span class="step-number">02</span> Caisse</h2><span class="quote-number" id="quoteNumber">—</span></div>
-            <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked><span class="switch"></span><span>Afficher TVA</span></label>
-            <button class="round-button" id="moreQuoteButton" type="button" aria-label="Autres actions" aria-expanded="false"><svg><use href="#icon-more"></use></svg></button>
-            <div class="action-menu" id="quoteActionMenu" hidden>
-              <button type="button" data-action="duplicate" aria-label="Dupliquer le devis" title="Dupliquer le devis"><svg><use href="#icon-copy"></use></svg><span>Dupliquer le devis</span></button>
-              <button type="button" data-action="export" aria-label="Exporter ce devis" title="Exporter ce devis"><svg><use href="#icon-download"></use></svg><span>Exporter ce devis</span></button>
-              <button type="button" data-action="import" aria-label="Importer un devis" title="Importer un devis"><svg><use href="#icon-upload"></use></svg><span>Importer un devis</span></button>
-              <button class="danger-text" type="button" data-action="clear" aria-label="Vider la caisse" title="Vider la caisse"><svg><use href="#icon-trash"></use></svg><span>Vider la caisse</span></button>
+            <div class="quote-title-row"><h2 id="checkoutTitle">Caisse</h2></div>
+            <div class="quote-head-actions" id="quoteHeadActions">
+              <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked aria-label="TVA"><span class="switch"></span><span>TVA</span></label>
+              <button class="round-button quote-icon-button" id="newQuoteButton" type="button" aria-label="Nouveau devis" aria-keyshortcuts="Control+N Meta+N" data-tooltip="Nouveau devis"><svg aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+              <button class="round-button quote-icon-button" id="saveButton" type="button" aria-label="Enregistrer le devis" aria-keyshortcuts="Control+S Meta+S" data-tooltip="Enregistrer" disabled><svg aria-hidden="true"><use href="#icon-save"></use></svg></button>
+              <button class="round-button quote-icon-button" id="historyButton" type="button" aria-label="Ouvrir l’historique" aria-keyshortcuts="Control+H Meta+H" data-tooltip="Historique"><svg aria-hidden="true"><use href="#icon-history"></use></svg></button>
+              <button class="round-button quote-icon-button" id="moreQuoteButton" type="button" aria-label="Ouvrir les actions du devis" aria-haspopup="menu" aria-controls="quoteActionMenu" aria-expanded="false" data-tooltip="Actions du devis"><svg aria-hidden="true"><use href="#icon-more"></use></svg></button>
+              <div class="action-menu" id="quoteActionMenu" role="menu" aria-label="Actions du devis" hidden>
+                <button type="button" role="menuitem" data-action="duplicate" aria-label="Dupliquer le devis" title="Dupliquer le devis (Ctrl/Cmd+D)" aria-keyshortcuts="Control+D Meta+D"><svg><use href="#icon-copy"></use></svg><span>Dupliquer le devis</span><kbd>Ctrl D</kbd></button>
+                <button type="button" role="menuitem" data-action="export" aria-label="Exporter ce devis" title="Exporter ce devis (Ctrl/Cmd+E)" aria-keyshortcuts="Control+E Meta+E"><svg><use href="#icon-download"></use></svg><span>Exporter ce devis</span><kbd>Ctrl E</kbd></button>
+                <button type="button" role="menuitem" data-action="import" aria-label="Importer un devis" title="Importer un devis (Ctrl/Cmd+O)" aria-keyshortcuts="Control+O Meta+O"><svg><use href="#icon-upload"></use></svg><span>Importer un devis</span><kbd>Ctrl O</kbd></button>
+                <button class="danger-text" type="button" role="menuitem" data-action="clear" aria-label="Vider la caisse" title="Vider la caisse"><svg><use href="#icon-trash"></use></svg><span>Vider la caisse</span></button>
+              </div>
             </div>
           </div>
           <div class="checkout-context">
@@ -647,9 +1102,18 @@
               <div id="taxTotalRow" hidden><dt id="taxTotalLabel">TVA 8.1%</dt><dd id="taxTotalValue">CHF 0.00</dd></div>
               <div class="grand-total"><dt>Total</dt><dd id="grandTotalValue">CHF 0.00</dd></div>
             </dl>
-            <details class="installments" id="installmentsDetails"><summary><span>Paiement échelonné (CHF)</span><svg><use href="#icon-chevron"></use></svg></summary><div class="installment-meta"><p class="installment-note">Montants mensuels indicatifs, basés sur le total du devis. L’échelonnement reste soumis à l’accord du partenaire financier.</p></div><div class="installment-grid" id="installmentGrid"></div></details>
+            <div class="installments" id="installmentTableWrap" hidden><table class="installment-table" aria-label="Paiement échelonné indicatif en CHF"><tbody id="installmentGrid"></tbody></table></div>
           </div>
-          <div class="checkout-actions"><button class="button secondary icon-only" id="saveButton" type="button" aria-label="Enregistrer le devis" title="Enregistrer le devis (Ctrl/Cmd+S)" aria-keyshortcuts="Control+S Meta+S"><img src="assets/icon-save.svg" alt="" aria-hidden="true"></button><div class="quote-output-actions"><button class="button primary icon-only" id="printButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg><use href="#icon-print"></use></svg></button><button class="button secondary icon-only" id="downloadPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg><use href="#icon-download"></use></svg></button><button class="button whatsapp-button icon-only" id="whatsAppButton" type="button" aria-label="Transférer le PDF via WhatsApp" title="Transférer le PDF via WhatsApp"><svg><use href="#icon-whatsapp"></use></svg></button></div></div>
+          <div class="checkout-primary-actions" aria-label="Actions rapides du devis">
+            <button class="button secondary" id="checkoutPrintButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg aria-hidden="true"><use href="#icon-print"></use></svg><span>Imprimer</span></button>
+            <button class="button primary" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg aria-hidden="true"><use href="#icon-download"></use></svg><span>PDF</span></button>
+            <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment transmettre le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Transmettre le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Transmettre</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+            <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Transmettre le devis" hidden>
+              <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
+              <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis par e-mail" title="Préparer le devis par e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>E-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
+              <p class="transmission-note">Le PDF est préparé séparément et reste à joindre au message.</p>
+            </div>
+          </div>
         </div>
       </aside>
     </main>
@@ -719,28 +1183,36 @@
         <div class="settings-col settings-col--left">
         <p class="settings-column-label">Interface et identité</p>
         <section class="settings-section">
-          <div class="settings-section-head"><span class="settings-section-index">01</span><div><h3>Apparence</h3><p>Thème de l’interface</p></div></div>
+          <div class="settings-section-head"><div><h3>Apparence</h3><p>Thème et typographie de l’interface</p></div></div>
           <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
-            <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong><small>Papier crème, accents noirs</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-            <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong><small>Charbon élégant, accents dorés</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-            <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong><small>Ivoire, vert sapin apaisant</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong><small>Crème chaud, encre et champagne</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong><small>Charbon profond et or doux</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong><small>Ivoire naturel, sapin et sauge</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="theme-card" type="button" data-theme="bordeaux" role="radio" aria-checked="false"><span class="theme-card-swatch bordeaux"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Bordeaux</strong><small>Ivoire rosé, bordeaux et cuivre</small></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+          </div>
+          <p class="settings-subheading">Police de l’application et du PDF</p>
+          <div class="font-picker" id="fontPicker" role="radiogroup" aria-label="Choix de la police">
+            <button class="font-card" type="button" data-font="red-hat" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Red Hat Display</strong><small>Par défaut · nette et moderne</small></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="font-card" type="button" data-font="roboto" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto</strong><small>Neutre et très lisible</small></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="font-card" type="button" data-font="roboto-slab" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto Slab</strong><small>Éditoriale et affirmée</small></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+            <button class="font-card" type="button" data-font="system" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Système</strong><small>Native à votre appareil</small></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
           </div>
         </section>
         <section class="settings-section">
-          <div class="settings-section-head"><span class="settings-section-index">02</span><div><h3>Votre entreprise</h3><p>Coordonnées affichées en haut du devis</p></div></div>
+          <div class="settings-section-head"><div><h3>Votre entreprise</h3><p>Coordonnées affichées en haut du devis</p></div></div>
           <div class="form-grid">
             <label><span>Nom</span><input name="companyName" type="text"></label><label><span>Sous-titre</span><input name="companySubtitle" type="text"></label>
              <label class="full-field"><span>Adresse</span><input name="companyAddress" type="text"></label><label><span>Téléphone</span><input name="companyPhone" type="text"></label>
              <label><span>E-mail</span><input name="companyEmail" type="email"></label><label class="full-field"><span>UID / TVA</span><input name="companyUid" type="text"></label>
              <div class="brand-assets-editor full-field">
                <article class="brand-asset-card">
-                 <div class="brand-asset-preview brand-asset-preview--header"><img id="headerLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo de l’application"></div>
-                 <div class="brand-asset-copy"><strong>Logo de l’application</strong><small id="headerLogoStatus">Logo Bellecour par défaut</small><span>Préférez une version horizontale ou compacte, avec fond transparent.</span></div>
+                 <div class="brand-asset-preview brand-asset-preview--header"><img id="headerLogoPreview" src="assets/clinique-bellecour-logo-officiel.png" alt="Aperçu du logo principal"></div>
+                 <div class="brand-asset-copy"><strong>Logo principal</strong><small id="headerLogoStatus">Logo Bellecour par défaut</small><span>Logo de référence pour les devis, sans occuper l’en-tête de l’application.</span></div>
                  <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="header"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="header" hidden><button class="logo-remove-button" type="button" data-remove-logo="header" hidden>Retirer</button></div>
                </article>
                <article class="brand-asset-card">
-                 <div class="brand-asset-preview brand-asset-preview--pdf"><img id="pdfLogoPreview" src="assets/bellecour-logo.webp" alt="Aperçu du logo du PDF"></div>
-                 <div class="brand-asset-copy"><strong>Logo du PDF</strong><small id="pdfLogoStatus">Logo Bellecour par défaut</small><span>Laissez vide pour réutiliser automatiquement le logo de l’application.</span></div>
+                 <div class="brand-asset-preview brand-asset-preview--pdf"><img id="pdfLogoPreview" src="assets/clinique-bellecour-logo-officiel.png" alt="Aperçu du logo du PDF"></div>
+                 <div class="brand-asset-copy"><strong>Logo du PDF</strong><small id="pdfLogoStatus">Logo Bellecour par défaut</small><span>Laissez vide pour réutiliser automatiquement le logo principal.</span></div>
                  <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="pdf"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="pdf" hidden><button class="logo-remove-button" type="button" data-remove-logo="pdf" hidden>Retirer</button></div>
                </article>
                <p class="brand-asset-hint">PNG transparent recommandé · JPG ou WebP acceptés · 4 Mo maximum. Les images sont optimisées et restent uniquement dans votre sauvegarde locale.</p>
@@ -748,7 +1220,7 @@
            </div>
         </section>
         <section class="settings-section">
-          <div class="settings-section-head"><span class="settings-section-index">03</span><div><h3>Numérotation des devis</h3><p>Code unique de chaque devis</p></div></div>
+          <div class="settings-section-head"><div><h3>Numérotation des devis</h3><p>Code unique de chaque devis</p></div></div>
           <div class="form-grid">
             <label><span>Préfixe des devis</span><input name="quotePrefix" type="text" maxlength="8"></label><label><span>Nom de la machine</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"></label>
             <div class="hint-box full-field" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span><strong>Aperçu</strong> Le prochain devis prendra le numéro <code id="settingsQuotePreview">DEV-20260718A001</code></span></div>
@@ -758,27 +1230,28 @@
         <div class="settings-col settings-col--right">
         <p class="settings-column-label">Document et tarification</p>
         <section class="settings-section">
-          <div class="settings-section-head"><span class="settings-section-index">04</span><div><h3>Fiscalité</h3><p>Taux et méthode de calcul de la TVA</p></div></div>
+          <div class="settings-section-head"><div><h3>Fiscalité</h3><p>Taux et méthode de calcul de la TVA</p></div></div>
           <div class="form-grid">
             <label><span>Taux de TVA par défaut</span><span class="input-with-suffix"><input name="taxRate" type="number" min="0" max="100" step="0.1"><b>%</b></span></label><label><span>Mode de TVA</span><select name="taxMode"><option value="included">TVA incluse</option><option value="excluded">TVA en plus</option></select></label>
           </div>
         </section>
         <section class="settings-section settings-section--commercial">
-          <div class="settings-section-head"><span class="settings-section-index">05</span><div><h3>Tarification commerciale</h3><p>Configuration des offres Pack et Étudiant</p></div></div>
+          <div class="settings-section-head"><div><h3>Tarification commerciale</h3><p>Configuration des offres Pack et Étudiant</p></div></div>
           <div class="settings-grid-offer">
             <div class="settings-offer-block pack"><span class="settings-offer-tag">Pack</span><div class="settings-offer-fields"><label><span>Séances payées</span><input name="packPaidDefault" type="number" min="1" max="24"></label><label><span>Séances offertes</span><input name="packFreeDefault" type="number" min="0" max="12"></label></div><p class="settings-offer-summary" data-summary="pack"></p></div>
             <div class="settings-offer-block student"><span class="settings-offer-tag">Étudiant</span><div class="settings-offer-fields"><label class="student-discount-control"><span><span>Réduction appliquée</span><output data-student-discount>50 %</output></span><input name="studentDiscount" type="range" min="0" max="100" step="1" value="50" aria-label="Réduction étudiant en pourcentage"></label></div><p class="settings-offer-summary" data-summary="student"></p></div>
           </div>
         </section>
         <section class="settings-section">
-          <div class="settings-section-head"><span class="settings-section-index">06</span><div><h3>Familles de prestations</h3><p>Choisir les familles visibles dans le catalogue</p></div></div>
+          <div class="settings-section-head"><div><h3>Familles de prestations</h3><p>Choisir les familles visibles dans le catalogue</p></div></div>
           <div class="family-visibility-grid" id="familyVisibilityGrid" role="group" aria-label="Familles de prestations affichées"></div>
           <p class="settings-offer-summary" data-summary="families"></p>
         </section>
         <section class="settings-section settings-section--mentions">
-          <div class="settings-section-head"><span class="settings-section-index">07</span><div><h3>Mentions légales</h3><p>Textes repris au bas du devis imprimé</p></div></div>
+          <div class="settings-section-head"><div><h3>Mentions légales</h3><p>Textes repris au bas du devis imprimé</p></div></div>
           <div class="form-grid">
             <label class="full-field"><span>Conditions de paiement</span><textarea name="conditions" rows="5"></textarea></label><label class="full-field"><span>Conditions tarif étudiant</span><textarea name="studentConditions" rows="3"></textarea></label><label class="full-field"><span>Note de bas de page</span><textarea name="footerNote" rows="3"></textarea></label>
+            <label class="checkbox-field full-field"><input name="showSignatures" type="checkbox"><span><strong>Afficher les zones de signature</strong><small>Ajoute « Date et lieu » et « Bon pour accord » au PDF et à l’impression.</small></span></label>
           </div>
         </section>
         </div>
@@ -793,12 +1266,21 @@
     <section class="modal-card compact-modal shortcut-help-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle">
       <div class="modal-head"><div><p class="section-kicker">Utilisation rapide</p><h2 id="shortcutHelpTitle">Raccourcis clavier</h2></div><button class="round-button" type="button" data-close="shortcutHelpLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <dl class="shortcut-list">
+        <div><dt><kbd>Alt</kbd><kbd>M</kbd></dt><dd>Ouvrir le menu principal</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>N</kbd></dt><dd>Nouveau devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>N</kbd></dt><dd>Objet sur mesure</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Enregistrer le devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>H</kbd></dt><dd>Ouvrir l’historique</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>K</kbd> <span>ou</span> <kbd>/</kbd></dt><dd>Rechercher une prestation</dd></div>
+        <div><dt><kbd>Alt</kbd><kbd>P</kbd></dt><dd>Afficher ou masquer les prix</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>D</kbd></dt><dd>Dupliquer le devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>O</kbd></dt><dd>Importer un devis</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>E</kbd></dt><dd>Exporter le devis</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>P</kbd></dt><dd>Imprimer le devis</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>S</kbd></dt><dd>Créer le PDF</dd></div>
+        <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>W</kbd></dt><dd>Préparer via WhatsApp</dd></div>
         <div><dt><kbd>Ctrl</kbd><kbd>,</kbd></dt><dd>Ouvrir les réglages</dd></div>
+        <div><dt><kbd>?</kbd></dt><dd>Afficher cette aide</dd></div>
         <div><dt><kbd>Échap</kbd></dt><dd>Fermer une fenêtre ou la recherche</dd></div>
       </dl>
       <p class="shortcut-help-note">Sur Mac, remplacez <kbd>Ctrl</kbd> par <kbd>⌘</kbd>. Dans les choix de tarif et de thème, utilisez les flèches pour passer d’une option à l’autre.</p>

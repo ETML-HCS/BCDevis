@@ -6,6 +6,7 @@ const path = require("node:path");
 
 const handlers = new Map();
 const writes = [];
+const externalTargets = [];
 const originalLoad = Module._load;
 
 const fakeApp = {
@@ -26,7 +27,7 @@ Module._load = function loadWithElectronMocks(request, parent, isMain) {
       BrowserWindow: { fromWebContents() { return null; } },
       dialog: {},
       ipcMain: { handle(channel, handler) { handlers.set(channel, handler); } },
-      shell: {}
+      shell: { openExternal: async (target) => externalTargets.push(target) }
     };
   }
   if (request === "node:fs/promises") {
@@ -64,6 +65,16 @@ try {
     sender: { printToPDF: async () => Buffer.from("%PDF-share") }
   }, "DEV-000001.pdf");
   assert.equal(shareResult.contentBase64, Buffer.from("%PDF-share").toString("base64"));
+  await handlers.get("bcdevis:open-external")(null, "mailto:sophie@example.test?subject=Devis");
+  await handlers.get("bcdevis:open-external")(null, "https://wa.me/?text=Devis");
+  assert.deepEqual(externalTargets, [
+    "mailto:sophie@example.test?subject=Devis",
+    "https://wa.me/?text=Devis"
+  ]);
+  await assert.rejects(
+    handlers.get("bcdevis:open-external")(null, "file:///C:/Windows/System32"),
+    /Lien externe non autorisé/
+  );
   console.log("PDF_MAIN_TESTS_OK");
 })().catch((error) => {
   console.error(error);

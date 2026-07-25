@@ -2,18 +2,18 @@ window.QUOTE_CATEGORIES = [
   { id: 13, name: "Épilation laser", short: "Laser", icon: "zap", tone: "mint" },
   { id: 32, name: "Microneedling · Mésothérapie · Peelings", short: "Peau & cheveux", icon: "sparkles", tone: "sand" },
   { id: 7, name: "Première consultation", short: "Consultations", icon: "user", tone: "blue" },
-  { id: 16, name: "Traitements par injections", short: "Injections", icon: "droplet", tone: "rose" },
+  { id: 16, name: "Traitements par injections", short: "Injections", icon: "aesthetic", tone: "rose" },
   { id: 17, name: "Traitements par laser", short: "Laser médical", icon: "scan", tone: "violet" },
-  { id: 35, name: "Zones combinées · réservation par durée", short: "Zones combinées", icon: "clock", tone: "slate" },
-  { id: 15, name: "Épilation électrique · électrolyse", short: "Électrolyse", icon: "zap", tone: "amber" },
-  { id: 9, name: "Médecine esthétique avec Dr. Poiraud", short: "Médecine esthétique", icon: "sparkles", tone: "sand" },
+  { id: 35, name: "Zones combinées · réservation par durée", short: "Zones combinées", icon: "zones", tone: "slate" },
+  { id: 15, name: "Épilation électrique · électrolyse", short: "Électrolyse", icon: "electrolysis", tone: "amber" },
+  { id: 9, name: "Médecine esthétique avec Dr. Poiraud", short: "Médecine esthétique", icon: "aesthetic", tone: "sand" },
   { id: 20, name: "Visage", short: "Visage", icon: "face", tone: "rose" },
   { id: 8, name: "Épilation définitive", short: "Épilation définitive", icon: "zap", tone: "mint" },
-  { id: 21, name: "Poitrine et abdomen", short: "Poitrine & abdomen", icon: "body", tone: "blue" },
-  { id: 22, name: "Dos", short: "Dos", icon: "body", tone: "violet" },
-  { id: 23, name: "Bras", short: "Bras", icon: "body", tone: "mint" },
-  { id: 24, name: "Maillot (zone intime)", short: "Maillot", icon: "body", tone: "rose" },
-  { id: 25, name: "Jambes", short: "Jambes", icon: "body", tone: "blue" },
+  { id: 21, name: "Poitrine et abdomen", short: "Poitrine & abdomen", icon: "torso", tone: "blue" },
+  { id: 22, name: "Dos", short: "Dos", icon: "back", tone: "violet" },
+  { id: 23, name: "Bras", short: "Bras", icon: "arms", tone: "mint" },
+  { id: 24, name: "Maillot (zone intime)", short: "Maillot", icon: "maillot", tone: "rose" },
+  { id: 25, name: "Jambes", short: "Jambes", icon: "legs", tone: "blue" },
   { id: 36, name: "Étudiant·e·s", short: "Étudiant·e·s", icon: "student", tone: "amber" }
 ];
 
@@ -21,16 +21,16 @@ const service = (id, name, price, duration, categoryId) => ({ id, name, price, d
 
 window.QUOTE_FAMILIES = [
   { id: "visage", name: "Visage", description: "Lèvre, menton, joues, barbe et visage complet.", icon: "face", categoryIds: [20] },
-  { id: "bras", name: "Bras & aisselles", description: "Aisselles, bras, avant-bras, épaules, mains et doigts.", icon: "body", categoryIds: [23] },
-  { id: "torse", name: "Torse & ventre", description: "Torse, abdomen, aréoles et ligne blanche.", icon: "body", categoryIds: [21] },
-  { id: "dos", name: "Dos & nuque", description: "Nuque, haut du dos, bas du dos et dos complet.", icon: "body", categoryIds: [22] },
-  { id: "maillot", name: "Maillot", description: "Toutes les zones intimes et le SIF.", icon: "body", categoryIds: [24] },
-  { id: "jambes", name: "Jambes & pieds", description: "Cuisses, demi-jambes, jambes complètes, genoux et pieds.", icon: "body", categoryIds: [25] },
-  { id: "electrolyse", name: "Électrolyse", description: "Épilation électrique facturée selon la durée.", icon: "zap", categoryIds: [15] },
-  { id: "medecine", name: "Médecine esthétique", description: "Injections, lasers médicaux, peau et cheveux.", icon: "droplet", categoryIds: [16, 17, 32] },
-  { id: "combinees", name: "Zones combinées", description: "Réservations multi-zones organisées par durée.", icon: "clock", categoryIds: [35] },
-  { id: "consultations", name: "Consultations", description: "Premiers rendez-vous, consultations et retouches.", icon: "user", categoryIds: [7, 13] },
-  { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "sparkles", categoryIds: [] }
+  { id: "bras", name: "Bras & aisselles", description: "Aisselles, bras, avant-bras, épaules, mains et doigts.", icon: "arms", categoryIds: [23] },
+  { id: "torse", name: "Torse & ventre", description: "Torse, abdomen, aréoles et ligne blanche.", icon: "torso", categoryIds: [21] },
+  { id: "dos", name: "Dos & nuque", description: "Nuque, haut du dos, bas du dos et dos complet.", icon: "back", categoryIds: [22] },
+  { id: "maillot", name: "Maillot", description: "Toutes les zones intimes et le SIF.", icon: "maillot", categoryIds: [24] },
+  { id: "jambes", name: "Jambes & pieds", description: "Cuisses, demi-jambes, jambes complètes, genoux et pieds.", icon: "legs", categoryIds: [25] },
+  { id: "electrolyse", name: "Électrolyse", description: "Épilation électrique facturée selon la durée.", icon: "electrolysis", categoryIds: [15] },
+  { id: "medecine", name: "Médecine esthétique", description: "Injections, lasers médicaux, peau et cheveux.", icon: "aesthetic", categoryIds: [16, 17, 32] },
+  { id: "combinees", name: "Zones combinées", description: "Réservations multi-zones organisées par durée.", icon: "zones", categoryIds: [35] },
+  { id: "consultations", name: "Consultations", description: "Premiers rendez-vous, consultations et retouches.", icon: "consultation", categoryIds: [7, 13] },
+  { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "all", categoryIds: [] }
 ];
 window.QUOTE_SERVICES = [
   service(102, "Consultation offerte sans engagement", 0, 30, 13),

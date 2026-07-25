@@ -1,0 +1,69 @@
+name: Livrables BCDevis
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows portable
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run exe
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BCDevis-Windows
+          path: devis-portable/dist/BCDevis-*.exe
+          if-no-files-found: error
+
+  macos:
+    name: macOS universal
+    runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run mac
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BCDevis-macOS
+          path: devis-portable/dist/BCDevis-*-mac.dmg
+          if-no-files-found: error
+
+  chromeos:
+    name: ChromeOS PWA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Vérifier et assembler la PWA
+        run: xvfb-run -a npm run chromeos
+      - name: Contrôler le rendu ChromeOS et le PDF
+        run: xvfb-run -a npm run test:chromeos
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BCDevis-ChromeOS
+          path: |
+            devis-portable/dist/chromeos/BCDevis-*-chromeos.zip
+            devis-portable/dist/chromeos/BCDevis-*-chromeos.zip.sha256
+          if-no-files-found: error

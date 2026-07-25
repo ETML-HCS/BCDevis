@@ -4,13 +4,27 @@ const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
-const portableDirectory = process.env.PORTABLE_EXECUTABLE_DIR || (app.isPackaged ? path.dirname(process.execPath) : path.join(__dirname, "data"));
-const userDataDirectory = path.join(portableDirectory, "data");
-
 app.setName("BCDevis");
-app.setPath("userData", userDataDirectory);
+
+// electron-builder exposes PORTABLE_EXECUTABLE_DIR for the Windows portable
+// target. macOS app bundles and Linux/AppImage mounts must keep their data in
+// Electron's writable per-user directory instead of modifying the application.
+const windowsPortableDirectory = process.platform === "win32"
+  ? String(process.env.PORTABLE_EXECUTABLE_DIR || "").trim()
+  : "";
+if (windowsPortableDirectory) {
+  app.setPath("userData", path.join(windowsPortableDirectory, "data"));
+} else if (!app.isPackaged) {
+  app.setPath("userData", path.join(__dirname, "data"));
+}
 
 let mainWindow;
+
+function allowedExternalUrl(url) {
+  const target = new URL(String(url));
+  if (!["https:", "mailto:"].includes(target.protocol)) throw new Error("Lien externe non autorisé.");
+  return target.toString();
+}
 
 function safePdfName(requestedName) {
   const candidate = path.basename(String(requestedName || "devis.pdf")).trim() || "devis.pdf";
@@ -55,13 +69,17 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.loadFile(path.join(__dirname, "index.html"));
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https:\/\//i.test(url)) shell.openExternal(url);
+    try {
+      shell.openExternal(allowedExternalUrl(url)).catch((error) => console.error(error));
+    } catch {}
     return { action: "deny" };
   });
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (!url.startsWith("file:")) {
       event.preventDefault();
-      if (/^https:\/\//i.test(url)) shell.openExternal(url);
+      try {
+        shell.openExternal(allowedExternalUrl(url)).catch((error) => console.error(error));
+      } catch {}
     }
   });
 }
@@ -84,9 +102,8 @@ ipcMain.handle("bcdevis:save-pdf", (event, requestedName) => savePdf(event, requ
 ipcMain.handle("bcdevis:save-pdf-for-share", (event, requestedName) => savePdf(event, requestedName, true));
 
 ipcMain.handle("bcdevis:open-external", async (_event, url) => {
-  const target = new URL(String(url));
-  if (target.protocol !== "https:") throw new Error("Lien externe non autorisé.");
-  await shell.openExternal(target.toString());
+  const target = allowedExternalUrl(url);
+  await shell.openExternal(target);
   return true;
 });
 

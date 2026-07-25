@@ -178,6 +178,10 @@ a {
   color: #665d4e;
 }
 
+.page-break {
+  break-before: page;
+}
+
 @media print {
   body {
     max-width: none;
@@ -205,15 +209,17 @@ a {
 <div class="cover">
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
-  <p class="cover-subtitle">Guide utilisateur de l’application portable de création de devis.</p>
-  <p class="cover-version">Version 4.20.2 · Guide utilisateur</p>
+  <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
+  <p class="cover-version">Version 4.21.0 · Windows · macOS · ChromeOS</p>
 </div>
 
 ## À retenir
 
-BCDevis fonctionne localement, sans compte, sans serveur et sans connexion Internet. Les devis, réglages et prestations personnalisées restent enregistrés sur l’ordinateur utilisé.
+BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-Pour commencer, lancez `BCDevis-4.20.2.exe`. Au premier démarrage, l’application crée un dossier `data` à côté de l’EXE. Ce dossier contient les données locales : il doit rester avec l’EXE.
+- **Windows** : lancez `BCDevis-4.21.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **macOS** : ouvrez `BCDevis-4.21.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -229,12 +235,9 @@ Dans la barre supérieure :
 - **Séance** : tarif à l’unité ;
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
-- **Nouveau** : créer un devis ;
-- **Devis** : ouvrir l’historique local ;
-- **Réglages** : personnaliser l’application et les documents ;
-- **Aide** : afficher les raccourcis clavier.
+- **Actions** : regroupe le nouveau devis, l’enregistrement, l’historique, le catalogue, les réglages et les raccourcis.
 
-Sur un écran étroit, les onglets **Prestations** et **Caisse** en bas permettent de passer d’une zone à l’autre. Le bouton **Caisse plein écran** permet d’agrandir temporairement la caisse.
+Sur un écran étroit, les onglets **Prestations** et **Caisse** en bas permettent de passer d’une zone à l’autre. Sur ordinateur, la caisse occupe toute la hauteur de la fenêtre.
 
 ## 2. Créer un devis
 
@@ -258,7 +261,7 @@ Pour retrouver rapidement un soin, cliquez sur l’icône de recherche dans l’
 
 ### Étape 3 : Ajouter un objet sur mesure
 
-Utilisez **Objet sur mesure** en bas de la colonne Prestations pour créer une prestation libre. Renseignez :
+Utilisez **Actions** > **Objet sur mesure** pour créer une prestation libre. Renseignez :
 
 - le nom de la prestation ;
 - le prix unitaire en CHF ;
@@ -309,20 +312,24 @@ Ouvrez **Paiement échelonné (CHF)** pour afficher une simulation indicative. L
 
 ## 4. Enregistrer, imprimer et transmettre
 
-Les boutons d’action se trouvent en bas de la caisse.
+Les trois commandes de sortie restent visibles au bas de la caisse. L’enregistrement se trouve dans le menu **Actions** de l’en-tête.
 
-- **Enregistrer** : archive le devis dans **Devis > Mes devis**. Les modifications sont aussi sauvegardées localement en arrière-plan.
-- **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression Windows.
-- **Télécharger le PDF** : enregistre directement un PDF A4 dans le dossier Windows **Téléchargements**. Un nouveau téléchargement ne remplace pas le précédent : un suffixe numérique est ajouté au nom si nécessaire.
-- **WhatsApp** : génère le PDF et ouvre le partage natif avec le document joint lorsque celui-ci est disponible. Sinon, le PDF est créé et WhatsApp est ouvert avec un message prérempli.
+- **Enregistrer** : archive le devis dans **Actions > Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
+- **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
+- **Télécharger le PDF** : sous Windows et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression.
+- **Transmettre** : affiche deux choix :
+  - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
+  - **E-mail** prépare le PDF, puis ouvre la messagerie avec l’objet et le message préremplis. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
+
+WhatsApp et les logiciels de messagerie n’autorisent pas un simple lien à imposer une pièce jointe. Avant l’envoi, ajoutez manuellement le PDF préparé depuis **Téléchargements**. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**.
 
 Le PDF reprend le détail des prestations, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 
-Le bouton `…` en haut de la caisse donne accès à **Dupliquer le devis**, **Exporter ce devis**, **Importer un devis** et **Vider la caisse**.
+Le bouton `…` en haut de la caisse donne accès à **Dupliquer**, **Exporter ce devis**, **Importer un devis** et **Vider la caisse**.
 
 ## 5. Consulter l’historique et sauvegarder les données
 
-Cliquez sur **Devis** dans la barre supérieure pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de prestations et le total. Cliquez sur une carte pour rouvrir le devis.
+Cliquez sur **Actions** > **Historique** pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de prestations et le total. Cliquez sur une carte pour rouvrir le devis.
 
 En bas de l’historique :
 
@@ -331,7 +338,7 @@ En bas de l’historique :
 
 La restauration remplace les données locales actuelles après confirmation. Faites une sauvegarde complète avant de transférer l’application vers un autre ordinateur.
 
-Pour déplacer BCDevis, copiez **l’EXE et le dossier `data`** ensemble. Une sauvegarde complète constitue la méthode recommandée pour transférer uniquement les données.
+Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ensemble. Pour changer d’ordinateur, de Mac, de Chromebook ou de plateforme, utilisez toujours la sauvegarde complète JSON.
 
 ## 6. Personnaliser l’application
 
@@ -341,15 +348,15 @@ Ouvrez **Réglages**, puis cliquez sur **Enregistrer les réglages** après tout
 
 Les sections disponibles sont :
 
-- **Apparence** : thèmes Lumière, Nuit ou Forêt ;
+- **Apparence** : thèmes Lumière, Nuit, Forêt ou Bordeaux ;
 - **Votre entreprise** : nom, sous-titre, adresse, téléphone, e-mail et UID / TVA ;
-- **Logo de l’application** : logo affiché dans l’interface ;
+- **Logo de l’application** : identité utilisée comme base personnalisée ;
 - **Logo du PDF** : logo utilisé dans les documents imprimés. S’il est vide, le logo de l’application est réutilisé ;
 - **Numérotation des devis** : préfixe et nom de machine. Le format par défaut ressemble à `DEV-20260718A001` ;
 - **Fiscalité** : taux de TVA et choix TVA incluse ou TVA en plus ;
 - **Tarification commerciale** : nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
 - **Familles de prestations** : familles visibles dans le catalogue ;
-- **Mentions légales** : conditions de paiement, conditions du tarif étudiant et note de bas de page.
+- **Mentions légales** : conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
 
 Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés puis conservés uniquement dans les données locales.
 
@@ -364,10 +371,13 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 | `Ctrl` + `K` ou `/` | Rechercher une prestation |
 | `Ctrl` + `P` | Imprimer le devis |
 | `Ctrl` + `Maj` + `S` | Créer le PDF |
+| `Ctrl` + `Alt` + `W` | Préparer le devis via WhatsApp |
 | `Ctrl` + `,` | Ouvrir les réglages |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
 Sur Mac, remplacez `Ctrl` par `⌘`.
+
+<div class="page-break"></div>
 
 ## 8. Résoudre les situations courantes
 
@@ -377,7 +387,7 @@ Cliquez sur **Enregistrer**. Un brouillon peut être conservé localement sans a
 
 **Le PDF n’est pas visible.**
 
-Ouvrez le dossier Windows **Téléchargements**. Si un fichier du même nom existe déjà, BCDevis crée automatiquement une nouvelle version numérotée.
+Sous Windows et macOS, ouvrez **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
 
 **J’ai changé de tarif par erreur.**
 
@@ -385,8 +395,8 @@ Si la confirmation est encore ouverte, cliquez sur **Annuler**. Sinon, rechargez
 
 **Je change d’ordinateur.**
 
-Depuis **Devis**, cliquez sur **Sauvegarde complète**, copiez le fichier JSON sur le nouvel ordinateur, puis utilisez **Restaurer**. Conservez également l’EXE à jour.
+Depuis **Actions** > **Historique**, cliquez sur **Sauvegarde complète**, copiez le fichier JSON sur le nouvel appareil, puis utilisez **Restaurer**.
 
 **Les données semblent avoir disparu.**
 
-Vérifiez que l’EXE a été déplacé avec son dossier `data`. L’application ne stocke pas les données dans un compte en ligne ; un autre dossier `data` correspond à un autre profil local.
+Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. Sur macOS et ChromeOS, vérifiez que vous utilisez le même compte local ou profil Chrome. L’application ne stocke pas les données dans un compte en ligne.

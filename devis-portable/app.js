@@ -4,11 +4,11 @@
   const STORAGE_KEY = "bcdevis-v1";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 17;
+  const APP_VERSION = 18;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
-  const DEFAULT_LOGO_PATH = "assets/bellecour-logo.webp";
+  const DEFAULT_LOGO_PATH = "assets/clinique-bellecour-logo-officiel.png";
   const LOGO_FILE_MAX_BYTES = 4 * 1024 * 1024;
   // Keep accepting older logo data so an update never drops a saved identity.
   const LOGO_DATA_MAX_LENGTH = 1800000;
@@ -78,6 +78,7 @@
     return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== candidate ? fallback : candidate;
   };
   const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
+  const KNOWN_FONTS = ["red-hat", "roboto", "roboto-slab", "system"];
 
   const defaultSettings = {
     companyName: "Clinique Bellecour",
@@ -91,6 +92,7 @@
     quotePrefix: "DEV",
     machineName: "A",
     theme: "light",
+    fontFamily: "red-hat",
     validityDays: QUOTE_VALIDITY_DAYS,
     packPaidDefault: 6,
     packFreeDefault: 1,
@@ -98,12 +100,12 @@
     taxRate: 8.1,
     taxMode: "included",
     showFamilyPrices: false,
-    familyFooterCollapsed: false,
     skipTariffChangeConfirmation: false,
     visibleFamilies: [],
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
-    footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture."
+    footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.",
+    showSignatures: true
   };
 
   function packDefaults() {
@@ -214,10 +216,10 @@
   let selectedOfferMode = "single";
   let searchQuery = "";
   let couponOpen = false;
-  let saveTimer = null;
   let toastTimer = null;
   let activeToast = null;
   let pendingTheme = "light";
+  let pendingFont = "red-hat";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
   let activeLayerId = "";
   const layerReturnFocus = new Map();
@@ -417,35 +419,13 @@
   const quoteNumberPattern = /^[A-Z0-9-]+-\d{8}[A-Z0-9]+\d{3,}$/;
   if (!db.quotes[quote.id] && !quoteNumberPattern.test(quote.number)) quote.number = nextQuoteNumber(quote.date);
 
-  function saveLocal(showState = true) {
+  function saveLocal() {
     quote.updatedAt = new Date().toISOString();
     db.current = clone(quote);
-    if (showState) {
-      const saveState = $("#saveState");
-      saveState.textContent = "Sauvegarde…";
-      saveState.className = "save-state saving";
-    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-      if (showState) {
-        window.clearTimeout(saveTimer);
-        saveTimer = window.setTimeout(() => {
-          const saveState = $("#saveState");
-          saveState.textContent = "Sauvegardé";
-          saveState.className = "save-state saved";
-          window.setTimeout(() => {
-            saveState.textContent = "Prêt";
-            saveState.className = "save-state";
-          }, 1400);
-        }, 160);
-      }
       return true;
     } catch (error) {
-      if (showState) {
-        const saveState = $("#saveState");
-        saveState.textContent = "Sauvegarde impossible";
-        saveState.className = "save-state error";
-      }
       const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
       toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de BCDevis est indisponible.", "error");
       console.error(error);
@@ -673,7 +653,6 @@
     $("#familyList").innerHTML = groups || `<div class="family-no-results"><svg><use href="#icon-search"></use></svg><strong>Aucun soin trouvé</strong><small>Essayez un autre terme.</small></div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
     renderFamilyPriceToggle();
-    renderFamilyFooterToggle();
   }
 
   function renderFamilyPriceToggle() {
@@ -683,19 +662,16 @@
     if (!panel || !button) return;
     panel.classList.toggle("show-family-prices", visible);
     button.classList.toggle("active", visible);
-    button.setAttribute("aria-pressed", String(visible));
+    button.setAttribute("aria-checked", String(visible));
     $("#familyPriceToggleState").textContent = visible ? "Affichés" : "Masqués";
   }
 
-  function renderFamilyFooterToggle() {
-    const collapsed = Boolean(db.settings.familyFooterCollapsed);
-    const footer = $("#familyFooter");
-    const toggle = $("#familyFooterToggle");
-    if (!footer || !toggle) return;
-    footer.classList.toggle("is-collapsed", collapsed);
-    toggle.setAttribute("aria-expanded", String(!collapsed));
-    $("#familyFooterToggleLabel").textContent = collapsed ? "Afficher les actions" : "Réduire les actions";
+  function toggleFamilyPrices() {
+    db.settings.showFamilyPrices = !Boolean(db.settings.showFamilyPrices);
+    renderFamilyPriceToggle();
+    saveLocal(false);
   }
+
   function renderCatalog() {
     renderOfferMode();
     renderFamilies();
@@ -726,6 +702,9 @@
   }
   function renderClient() {
     const client = quote.client;
+    const clientEmail = String(client.email || "").trim();
+    const emailRecipient = $("#checkoutEmailRecipient");
+    if (emailRecipient) emailRecipient.textContent = clientEmail || "Destinataire à saisir";
     if (client.name) {
       const initials = client.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
       $("#clientInitials").textContent = initials || "C";
@@ -779,41 +758,52 @@
     $("#grandTotalValue").textContent = money(totals.total);
     $("#mobileTotal").textContent = money(totals.total);
     const months = installmentMonths(totals.total);
-    if (months.length > 0) {
-      $("#installmentGrid").innerHTML = months.map((month) => `<div class="installment-option"><b>${month} mois</b><span>${moneyValue(totals.total / month)}</span></div>`).join("");
-    } else {
-      $("#installmentGrid").innerHTML = `<div class="installment-empty">Ajoutez une prestation pour afficher la simulation de paiement échelonné.</div>`;
-    }
+    $("#installmentTableWrap").hidden = months.length === 0;
+    $("#installmentGrid").innerHTML = months.length === 0 ? "" : `
+      <tr class="installment-months">${months.map((month) => `<th scope="col">${month} mois</th>`).join("")}</tr>
+      <tr class="installment-amounts">${months.map((month) => `<td>${moneyValue(totals.total / month)}</td>`).join("")}</tr>`;
   }
 
   function renderHeader() {
     $(".brand-block .eyebrow").textContent = db.settings.companyName;
-    const logo = $("#headerLogo");
-    const customLogo = safeLogoDataUrl(db.settings.headerLogoDataUrl);
-    logo.src = customLogo || DEFAULT_LOGO_PATH;
-    logo.alt = `Logo ${db.settings.companyName || "de l’entreprise"}`;
-    logo.closest(".brand-logo").classList.toggle("has-custom-logo", Boolean(customLogo));
     const clientName = String(quote.client?.name || "").trim();
     document.title = clientName ? `${clientName} — BCDevis` : "BCDevis";
   }
 
-  const KNOWN_THEMES = ["light", "night", "forest"];
+  const KNOWN_THEMES = ["light", "night", "forest", "bordeaux"];
+  const THEME_BROWSER_COLORS = {
+    light: "#171512",
+    night: "#090906",
+    forest: "#1c3429",
+    bordeaux: "#411923"
+  };
   function currentTheme() { return KNOWN_THEMES.includes(db.settings.theme) ? db.settings.theme : "light"; }
   function applyTheme(theme) {
     const value = KNOWN_THEMES.includes(theme) ? theme : "light";
     document.documentElement.setAttribute("data-theme", value);
+    $("#themeColorMeta")?.setAttribute("content", THEME_BROWSER_COLORS[value]);
+  }
+  function currentFont() { return KNOWN_FONTS.includes(db.settings.fontFamily) ? db.settings.fontFamily : "red-hat"; }
+  function applyFont(font) {
+    const value = KNOWN_FONTS.includes(font) ? font : "red-hat";
+    document.documentElement.setAttribute("data-font", value);
   }
 
   function renderCheckout() {
     const previousCouponType = quote.discount.type;
     enforceStudentCouponRule();
     if (quote.discount.type !== previousCouponType) saveLocal(false);
-    $("#checkoutPanel").classList.toggle("is-empty", quote.lines.length === 0);
+    const hasLines = quote.lines.length > 0;
+    $("#checkoutPanel").classList.toggle("is-empty", !hasLines);
+    ["saveButton", "checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton", "checkoutEmailButton"].forEach((id) => {
+      const button = $(`#${id}`);
+      if (button) button.disabled = !hasLines;
+    });
+    if (!hasLines) setTransmissionMenuOpen(false);
     renderHeader();
     renderClient();
     renderCart();
     renderTotals();
-    $("#quoteNumber").textContent = quote.number;
     $("#quoteDate").value = quote.date;
     const { min: quoteDateMin, max: quoteDateMax } = quoteDateBounds();
     $("#quoteDate").min = quoteDateMin;
@@ -874,6 +864,12 @@
   function closeLayer(id) {
     const layer = $(`#${id}`);
     if (!layer || layer.hidden) return;
+    if (id === "settingsLayer") {
+      applyTheme(currentTheme());
+      syncThemePicker(currentTheme());
+      applyFont(currentFont());
+      syncFontPicker(currentFont());
+    }
     layer.hidden = true;
     if (activeLayerId === id) activeLayerId = "";
     const remainingLayer = $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").at(-1);
@@ -1062,6 +1058,7 @@
   function fillSettingsForm() {
     const form = $("#settingsForm");
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
+    if (form.elements.showSignatures) form.elements.showSignatures.checked = db.settings.showSignatures !== false;
     pendingLogos = {
       headerLogoDataUrl: safeLogoDataUrl(db.settings.headerLogoDataUrl),
       pdfLogoDataUrl: safeLogoDataUrl(db.settings.pdfLogoDataUrl)
@@ -1070,6 +1067,7 @@
     buildFamilyVisibilityGrid();
     refreshSettingsPreview();
     syncThemePicker(currentTheme());
+    syncFontPicker(currentFont());
   }
 
   function readLogoFile(file) {
@@ -1137,6 +1135,14 @@
     });
   }
 
+  function syncFontPicker(activeFont) {
+    $$("#fontPicker .font-card").forEach((card) => {
+      const isActive = card.dataset.font === activeFont;
+      card.setAttribute("aria-checked", String(isActive));
+      card.tabIndex = isActive ? 0 : -1;
+    });
+  }
+
   function refreshSettingsPreview() {
     const form = $("#settingsForm");
     if (!form) return;
@@ -1187,6 +1193,10 @@
     return "print-layout-extended";
   }
 
+  function defaultLogoForPrint() {
+    return DEFAULT_LOGO_PATH;
+  }
+
   function renderPrint() {
     const totals = calculate(quote);
     const settings = db.settings;
@@ -1197,12 +1207,18 @@
     const rows = quote.lines.map((line) => {
       const quantityLabel = line.offerType === "pack" ? `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}` : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
-      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${escapeHTML(offerLabel(line))} · ${escapeHTML(categoryFor(line.categoryId).name)}${line.duration ? ` · ${line.duration} min` : ""}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(unitPrice * line.quantity)}</td></tr>`;
+      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${escapeHTML(offerLabel(line))} · ${escapeHTML(categoryFor(line.categoryId).name)}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(unitPrice * line.quantity)}</td></tr>`;
     }).join("");
     const couponName = quote.discount.code ? `Coupon ${quote.discount.code}` : "Coupon";
     const discountLabel = quote.discount.type === "percent" ? `${couponName} (${Number(quote.discount.value) || 0} %)` : couponName;
     const studentConditions = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
-    const logoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl) || DEFAULT_LOGO_PATH;
+    const customLogoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl);
+    const logoSource = customLogoSource || defaultLogoForPrint();
+    const logoClass = customLogoSource ? "print-logo print-logo-custom" : "print-logo print-logo-official";
+    const brandCopy = customLogoSource ? `<div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || "Établissement")}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div>` : "";
+    const signatureBlock = settings.showSignatures !== false
+      ? `<div class="print-signature"><div><span>Date et lieu</span></div><div><span>Signature du client et mention « Bon pour accord »</span></div></div>`
+      : "";
     const totalLabel = quote.tax.enabled ? "Total TTC" : "Total";
     const printRoot = $("#printQuote");
     const layoutClass = printLayoutClass(totals, months, studentConditions);
@@ -1210,10 +1226,10 @@
     printRoot.dataset.printLayout = layoutClass.replace("print-layout-", "");
     printRoot.innerHTML = `
       <header class="print-header">
-        <div class="print-brand"><img class="print-logo" src="${escapeHTML(logoSource)}" alt=""><div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || "Établissement")}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div></div>
-        <div class="print-company-lines">${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>IDE : ${escapeHTML(settings.companyUid)}` : ""}</div>
+        <div class="print-brand"><img class="${logoClass}" src="${escapeHTML(logoSource)}" alt="">${brandCopy}</div>
+        <div class="print-company-lines"><span class="print-contact-label">Coordonnées</span>${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>IDE : ${escapeHTML(settings.companyUid)}` : ""}</div>
       </header>
-      <section class="print-hero"><div><h1>Devis</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
+      <section class="print-hero"><div><h1>DEVIS</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
       <div class="print-overview">
         <div class="print-card print-client-card"><div class="print-label">Destinataire</div><div class="print-client-name">${escapeHTML(client.name || "Destinataire non renseigné")}</div><div class="print-muted">${escapeHTML(clientContact || "Coordonnées non renseignées")}${client.address ? `<br>${escapeHTML(client.address)}` : ""}</div></div>
         <div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div>
@@ -1229,7 +1245,7 @@
           <div class="print-legal-block">
             <div class="print-section-heading print-legal-heading"><div><strong>Conditions et acceptation</strong></div></div>
             <div class="print-conditions print-conditions-single"><div><strong>Conditions de règlement</strong>${escapeHTML(quote.conditions || settings.conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>Conditions du tarif étudiant</strong>${escapeHTML(studentConditions)}</div>` : ""}${settings.footerNote ? `<div class="print-legal-note">${escapeHTML(settings.footerNote)}</div>` : ""}</div></div>
-            <div class="print-signature"><div><span>Date et lieu</span></div><div><span>Signature du client et mention « Bon pour accord »</span></div></div>
+            ${signatureBlock}
           </div>
         </section>
         <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>Valable jusqu’au ${formatDate(quote.validUntil)}</span></footer>
@@ -1273,9 +1289,11 @@
       toast("Choisissez « Enregistrer au format PDF » dans la fenêtre d’impression.");
       return;
     }
-    const button = $("#downloadPdfButton");
-    button.disabled = true;
-    button.setAttribute("aria-busy", "true");
+    const buttons = ["#downloadPdfButton", "#checkoutPdfButton"].map((selector) => $(selector)).filter(Boolean);
+    buttons.forEach((button) => {
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+    });
     try {
       await waitForPdfLayout();
       const result = await window.bcdevisDesktop.savePdf(`${quote.number}.pdf`);
@@ -1284,12 +1302,14 @@
       console.error(error);
       toast("Le PDF n’a pas pu être enregistré.", "error");
     } finally {
-      button.disabled = false;
-      button.removeAttribute("aria-busy");
+      buttons.forEach((button) => {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+      });
     }
   }
 
-  function whatsAppMessage() {
+  function transmissionMessage() {
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
     const totals = calculate(quote);
     const clientName = String(quote.client?.name || "").trim();
@@ -1309,83 +1329,186 @@
       `Total : ${money(totals.total)}`,
       `Valable jusqu’au ${formatDate(quote.validUntil)}.`,
       "",
-      "Vous trouverez le devis en pièce jointe."
+      "Bien cordialement,",
+      String(db.settings.companyName || "Clinique Bellecour").trim()
     ].join("\n");
     return message;
   }
 
-  function fileFromBase64(base64, name) {
-    const bytes = Uint8Array.from(atob(String(base64 || "")), (character) => character.charCodeAt(0));
-    return new File([bytes], name, { type: "application/pdf" });
+  async function prepareTransmissionPdf() {
+    if (typeof window.bcdevisDesktop?.savePdf !== "function") return null;
+    await waitForPdfLayout();
+    return window.bcdevisDesktop.savePdf(`${quote.number}.pdf`);
+  }
+
+  async function openExternalUrl(url) {
+    if (typeof window.bcdevisDesktop?.openExternal === "function") {
+      await window.bcdevisDesktop.openExternal(url);
+      return;
+    }
+    const popup = window.open(url, "_blank", "noopener");
+    if (!popup) window.location.assign(url);
+  }
+
+  function emailUrl(message) {
+    const recipient = String(quote.client?.email || "").trim();
+    const subject = `Votre devis ${quote.number} — ${String(db.settings.companyName || "Clinique Bellecour").trim()}`;
+    const parameters = new URLSearchParams({ subject, body: message });
+    return `mailto:${encodeURIComponent(recipient)}?${parameters.toString()}`;
+  }
+
+  function setTransmissionBusy(busy) {
+    ["#checkoutTransmitButton", "#checkoutWhatsAppButton", "#checkoutEmailButton"]
+      .map((selector) => $(selector))
+      .filter(Boolean)
+      .forEach((button) => {
+        button.disabled = busy;
+        if (busy) button.setAttribute("aria-busy", "true");
+        else button.removeAttribute("aria-busy");
+      });
   }
 
   async function shareQuoteViaWhatsApp() {
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
     saveQuote();
     renderPrint();
-    const button = $("#whatsAppButton");
-    button.disabled = true;
-    button.setAttribute("aria-busy", "true");
-    const message = whatsAppMessage();
+    setTransmissionMenuOpen(false);
+    setTransmissionBusy(true);
+    const message = transmissionMessage();
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     try {
-      await waitForPdfLayout();
-      const result = await window.bcdevisDesktop?.savePdfForShare?.(`${quote.number}.pdf`);
-      const file = result?.contentBase64 ? fileFromBase64(result.contentBase64, result.fileName || `${quote.number}.pdf`) : null;
-      const shareData = file ? { title: `BCDevis ${quote.number}`, text: message, files: [file] } : null;
-      if (shareData && typeof navigator.share === "function" && (!navigator.canShare || navigator.canShare(shareData))) {
-        try {
-          await navigator.share(shareData);
-          toast("PDF prêt à être envoyé via WhatsApp");
-          return;
-        } catch (error) {
-          if (error?.name === "AbortError") {
-            toast("Partage annulé");
-            return;
-          }
-          // Some Chromium hosts refuse file sharing after PDF rendering. Keep
-          // the useful WhatsApp fallback available in that case.
-          console.warn("Partage natif indisponible", error);
-        }
-      }
-      // The browser-only launcher has no native file-share API. The PDF is
-      // still saved in the desktop app before WhatsApp opens as a fallback.
-      if (typeof window.bcdevisDesktop?.openExternal === "function") await window.bcdevisDesktop.openExternal(url);
-      else {
-        const popup = window.open(url, "_blank", "noopener");
-        if (!popup) window.location.assign(url);
-      }
-      toast(result?.saved ? "PDF créé ; WhatsApp ouvert" : "WhatsApp ouvert");
+      const result = await prepareTransmissionPdf();
+      await openExternalUrl(url);
+      toast(result?.saved ? "PDF créé dans Téléchargements — joignez-le dans WhatsApp." : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
     } catch (error) {
       console.error(error);
       toast("WhatsApp n’a pas pu être ouvert.", "error");
     } finally {
-      button.disabled = false;
-      button.removeAttribute("aria-busy");
+      setTransmissionBusy(false);
+    }
+  }
+
+  async function shareQuoteViaEmail() {
+    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    saveQuote();
+    renderPrint();
+    setTransmissionMenuOpen(false);
+    setTransmissionBusy(true);
+    const message = transmissionMessage();
+    const recipient = String(quote.client?.email || "").trim();
+    try {
+      const result = await prepareTransmissionPdf();
+      await openExternalUrl(emailUrl(message));
+      if (result?.saved) {
+        toast(recipient
+          ? `E-mail préparé pour ${recipient} — joignez le PDF depuis Téléchargements.`
+          : "E-mail préparé — saisissez le destinataire et joignez le PDF depuis Téléchargements.");
+      } else {
+        toast(recipient
+          ? `E-mail préparé pour ${recipient} — créez puis joignez le PDF.`
+          : "E-mail préparé — saisissez le destinataire, puis créez et joignez le PDF.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast("Le message e-mail n’a pas pu être ouvert.", "error");
+    } finally {
+      setTransmissionBusy(false);
     }
   }
 
   function switchMobilePanel(id) {
-    if (id !== "checkoutPanel") setCheckoutFocus(false);
     $("#familyPanel").classList.toggle("active-panel", id === "familyPanel");
     $("#checkoutPanel").classList.toggle("active-panel", id === "checkoutPanel");
     $$(".mobile-tabs [data-panel]").forEach((button) => button.classList.toggle("active", button.dataset.panel === id));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function setCheckoutFocus(open) {
+  function syncPermanentCheckoutLayout() {
     const panel = $("#checkoutPanel");
-    const toggle = $("#checkoutFocusToggle");
-    const label = $(".checkout-focus-label");
-    const state = $("#checkoutFocusState");
-    panel.classList.toggle("is-full-height", open);
-    document.documentElement.classList.toggle("checkout-focus", open);
-    document.body.classList.toggle("checkout-focus", open);
-    toggle.setAttribute("aria-pressed", String(open));
-    toggle.title = open ? "Revenir à la vue normale" : "Afficher la caisse sur toute la hauteur";
-    label.textContent = open ? "Réduire la caisse" : "Caisse plein écran";
-    state.textContent = open ? "Vue normale" : "Plein écran";
-    if (open && window.innerWidth <= 1180) switchMobilePanel("checkoutPanel");
+    const permanent = window.matchMedia("(min-width: 1181px)").matches;
+    panel.classList.toggle("is-full-height", permanent);
+    document.documentElement.classList.toggle("checkout-focus", permanent);
+    document.body.classList.toggle("checkout-focus", permanent);
+  }
+
+  function appMenuItems() {
+    return $$('[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled])', $("#appActionsMenu"));
+  }
+
+  function quoteMenuItems() {
+    return $$('[role="menuitem"]:not([disabled])', $("#quoteActionMenu"));
+  }
+
+  function transmissionMenuItems() {
+    return $$('[role="menuitem"]:not([disabled])', $("#checkoutTransmissionMenu"));
+  }
+
+  function setTransmissionMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
+    const menu = $("#checkoutTransmissionMenu");
+    const trigger = $("#checkoutTransmitButton");
+    menu.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    trigger.setAttribute("aria-label", open ? "Fermer les choix de transmission" : "Choisir comment transmettre le devis");
+    if (open) {
+      setAppMenuOpen(false);
+      setQuoteMenuOpen(false);
+    }
+    if (open && focusFirst) transmissionMenuItems()[0]?.focus();
+    if (!open && restoreFocus) trigger.focus();
+  }
+
+  function setQuoteMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
+    const menu = $("#quoteActionMenu");
+    const trigger = $("#moreQuoteButton");
+    menu.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    trigger.setAttribute("aria-label", open ? "Fermer les actions du devis" : "Ouvrir les actions du devis");
+    if (open) {
+      setAppMenuOpen(false);
+      setTransmissionMenuOpen(false);
+    }
+    if (open && focusFirst) quoteMenuItems()[0]?.focus();
+    if (!open && restoreFocus) trigger.focus();
+  }
+
+  function setAppMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
+    const menu = $("#appActionsMenu");
+    const trigger = $("#appMenuButton");
+    menu.hidden = !open;
+    trigger.setAttribute("aria-expanded", String(open));
+    trigger.setAttribute("aria-label", open ? "Fermer le menu principal" : "Ouvrir le menu principal");
+    if (open) {
+      setQuoteMenuOpen(false);
+      setTransmissionMenuOpen(false);
+    }
+    if (open && focusFirst) appMenuItems()[0]?.focus();
+    if (!open && restoreFocus) trigger.focus();
+  }
+
+  function openHistoryLayer() {
+    renderHistory();
+    openLayer("historyLayer");
+  }
+
+  function openCustomItemLayer() {
+    $("#customItemForm").reset();
+    $("#customItemForm").elements.price.value = 0;
+    $("#customItemForm").elements.duration.value = 30;
+    $("#customItemForm").elements.saveToCatalog.checked = true;
+    openLayer("customItemLayer");
+  }
+
+  function openSettingsLayer() {
+    pendingTheme = currentTheme();
+    pendingFont = currentFont();
+    fillSettingsForm();
+    openLayer("settingsLayer");
+  }
+
+  function closeMenusForShortcut() {
+    if (!$("#appActionsMenu").hidden) setAppMenuOpen(false);
+    if (!$("#quoteActionMenu").hidden) setQuoteMenuOpen(false);
+    if (!$("#checkoutTransmissionMenu").hidden) setTransmissionMenuOpen(false);
   }
 
   function setCatalogSearchOpen(open, { focus = false, clear = true } = {}) {
@@ -1410,19 +1533,7 @@
     const shouldOpen = $("#catalogSearchPanel").hidden;
     setCatalogSearchOpen(shouldOpen, { focus: shouldOpen });
   });
-  $("#familyPriceToggle").addEventListener("click", () => {
-    db.settings.showFamilyPrices = !Boolean(db.settings.showFamilyPrices);
-    renderFamilyPriceToggle();
-    saveLocal(false);
-  });
-  $("#checkoutFocusToggle").addEventListener("click", () => {
-    setCheckoutFocus(!$("#checkoutPanel").classList.contains("is-full-height"));
-  });
-  $("#familyFooterToggle").addEventListener("click", () => {
-    db.settings.familyFooterCollapsed = !Boolean(db.settings.familyFooterCollapsed);
-    saveLocal(false);
-    renderFamilyFooterToggle();
-  });
+  $("#familyPriceToggle").addEventListener("click", toggleFamilyPrices);
   $("#offerModeSelector").addEventListener("click", (event) => {
     const button = event.target.closest("[data-offer-mode]");
     if (!button) return;
@@ -1549,7 +1660,6 @@
   });
   $("#clearClientButton").addEventListener("click", () => { quote.client = { name: "", phone: "", email: "", address: "" }; saveLocal(); renderClient(); renderHeader(); closeLayer("clientLayer"); });
 
-  $("#customItemButton").addEventListener("click", () => { $("#customItemForm").reset(); $("#customItemForm").elements.price.value = 0; $("#customItemForm").elements.duration.value = 30; $("#customItemForm").elements.saveToCatalog.checked = true; openLayer("customItemLayer"); });
   $("#customItemForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -1559,7 +1669,6 @@
     addService(item, selectedOfferMode); closeLayer("customItemLayer");
   });
 
-  $("#newQuoteButton").addEventListener("click", () => createNewQuote());
   $("#tariffChangeForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const layer = $("#tariffChangeLayer");
@@ -1569,19 +1678,47 @@
     closeLayer("tariffChangeLayer");
     applyOfferMode(requestedMode);
   });
-  $("#saveButton").addEventListener("click", saveQuote);
-  $("#printButton").addEventListener("click", printQuote);
-  $("#downloadPdfButton").addEventListener("click", downloadPdf);
   if (typeof window.bcdevisDesktop?.savePdf !== "function") {
-    const button = $("#downloadPdfButton");
-    button.title = "Ouvrir l’impression pour enregistrer au format PDF";
-    button.setAttribute("aria-label", "Imprimer ou enregistrer au format PDF");
+    const button = $("#checkoutPdfButton");
+    if (button) {
+      button.title = "Ouvrir l’impression pour enregistrer au format PDF";
+      button.setAttribute("aria-label", "Imprimer ou enregistrer au format PDF");
+    }
   }
-  $("#whatsAppButton").addEventListener("click", shareQuoteViaWhatsApp);
-  $("#historyButton").addEventListener("click", () => { renderHistory(); openLayer("historyLayer"); });
   $("#historyList").addEventListener("click", (event) => { const button = event.target.closest("[data-quote-id]"); if (button) loadHistoryQuote(button.dataset.quoteId); });
-  $("#settingsButton").addEventListener("click", () => { pendingTheme = currentTheme(); fillSettingsForm(); openLayer("settingsLayer"); });
-  $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
+  $("#checkoutPrintButton").addEventListener("click", printQuote);
+  $("#checkoutPdfButton").addEventListener("click", downloadPdf);
+  $("#checkoutTransmitButton").addEventListener("click", (event) => {
+    event.stopPropagation();
+    setTransmissionMenuOpen($("#checkoutTransmissionMenu").hidden);
+  });
+  $("#checkoutTransmitButton").addEventListener("keydown", (event) => {
+    if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+    event.preventDefault();
+    setTransmissionMenuOpen(true, { focusFirst: true });
+  });
+  $("#checkoutTransmissionMenu").addEventListener("keydown", (event) => {
+    const items = transmissionMenuItems();
+    const index = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
+    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    items[nextIndex]?.focus();
+  });
+  $("#checkoutWhatsAppButton").addEventListener("click", shareQuoteViaWhatsApp);
+  $("#checkoutEmailButton").addEventListener("click", shareQuoteViaEmail);
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#checkoutTransmitButton, #checkoutTransmissionMenu")) setTransmissionMenuOpen(false);
+  });
+  $(".checkout-primary-actions").addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (!$(".checkout-primary-actions").contains(document.activeElement)) setTransmissionMenuOpen(false);
+    }, 0);
+  });
   $("#themePicker").addEventListener("click", (event) => {
     const card = event.target.closest(".theme-card");
     if (!card) return;
@@ -1595,6 +1732,20 @@
     if (!card) return;
     event.preventDefault();
     moveRadioSelection(event.currentTarget, ".theme-card", card, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
+  });
+  $("#fontPicker").addEventListener("click", (event) => {
+    const card = event.target.closest(".font-card");
+    if (!card) return;
+    pendingFont = card.dataset.font;
+    applyFont(pendingFont);
+    syncFontPicker(pendingFont);
+  });
+  $("#fontPicker").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowUp", "ArrowRight", "ArrowDown"].includes(event.key)) return;
+    const card = event.target.closest(".font-card");
+    if (!card) return;
+    event.preventDefault();
+    moveRadioSelection(event.currentTarget, ".font-card", card, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   });
   $("#settingsForm").addEventListener("input", (event) => {
     const name = event.target?.name;
@@ -1638,9 +1789,11 @@
       taxRate: configuredTaxRate({ taxRate: data.get("taxRate") }),
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
+      fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
       packPaidDefault: Math.max(1, Math.round(Number(data.get("packPaidDefault")) || 6)), packFreeDefault: Math.max(0, Math.round(Number(data.get("packFreeDefault")) || 0)),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
-      conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim()
+      conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
+      showSignatures: data.has("showSignatures")
     };
     if (!quote.conditions || quote.conditions === oldConditions) quote.conditions = db.settings.conditions;
     const checkedFamilies = data.getAll("visibleFamilies").map(String).filter(Boolean);
@@ -1649,21 +1802,95 @@
     if (visibleIds.has(activeFamily)) expandedFamily = activeFamily;
     else { const first = visibleFamilies()[0]; activeFamily = first?.id || "all"; expandedFamily = first?.id || "all"; }
     applyTheme(db.settings.theme);
+    applyFont(db.settings.fontFamily);
     if (!saveLocal()) return;
     renderAll(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
   });
 
-  $("#moreQuoteButton").addEventListener("click", (event) => { event.stopPropagation(); const menu = $("#quoteActionMenu"); menu.hidden = !menu.hidden; event.currentTarget.setAttribute("aria-expanded", String(!menu.hidden)); });
+  $("#appMenuButton").addEventListener("click", (event) => {
+    event.stopPropagation();
+    setAppMenuOpen($("#appActionsMenu").hidden);
+  });
+  $("#appMenuButton").addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowDown") return;
+    event.preventDefault();
+    setAppMenuOpen(true, { focusFirst: true });
+  });
+  $("#appActionsMenu").addEventListener("keydown", (event) => {
+    const items = appMenuItems();
+    const index = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
+    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    items[nextIndex]?.focus();
+  });
+  $("#appActionsMenu").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-app-action]");
+    if (!button || button.disabled) return;
+    const action = button.dataset.appAction;
+    setAppMenuOpen(false, { restoreFocus: true });
+    if (action === "custom") openCustomItemLayer();
+    if (action === "settings") openSettingsLayer();
+    if (action === "shortcuts") openLayer("shortcutHelpLayer");
+  });
+  $("#newQuoteButton").addEventListener("click", createNewQuote);
+  $("#saveButton").addEventListener("click", saveQuote);
+  $("#historyButton").addEventListener("click", openHistoryLayer);
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#appActions")) setAppMenuOpen(false);
+  });
+  $("#appActions").addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (!$("#appActions").contains(document.activeElement)) setAppMenuOpen(false);
+    }, 0);
+  });
+  $("#moreQuoteButton").addEventListener("click", (event) => {
+    event.stopPropagation();
+    setQuoteMenuOpen($("#quoteActionMenu").hidden);
+  });
+  $("#moreQuoteButton").addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowDown") return;
+    event.preventDefault();
+    setQuoteMenuOpen(true, { focusFirst: true });
+  });
+  $("#quoteActionMenu").addEventListener("keydown", (event) => {
+    const items = quoteMenuItems();
+    const index = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
+    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    items[nextIndex]?.focus();
+  });
   $("#quoteActionMenu").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-action]"); if (!button) return;
-    $("#quoteActionMenu").hidden = true;
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
     const action = button.dataset.action;
+    setQuoteMenuOpen(false, { restoreFocus: true });
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
-    if (action === "clear" && (quote.lines.length === 0 || window.confirm("Vider toutes les prestations de ce devis ?"))) { quote.lines = []; saveLocal(); renderAll(); }
+    if (action === "clear" && (quote.lines.length === 0 || window.confirm("Vider toutes les prestations de ce devis ?"))) {
+      quote.lines = [];
+      saveLocal();
+      renderAll();
+    }
   });
-  document.addEventListener("click", (event) => { if (!event.target.closest("#moreQuoteButton") && !event.target.closest("#quoteActionMenu")) $("#quoteActionMenu").hidden = true; });
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#quoteHeadActions")) setQuoteMenuOpen(false);
+  });
+  $("#quoteHeadActions").addEventListener("focusout", () => {
+    window.setTimeout(() => {
+      if (!$("#quoteHeadActions").contains(document.activeElement)) setQuoteMenuOpen(false);
+    }, 0);
+  });
 
   $("#quoteImportInput").addEventListener("change", async (event) => {
     try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); if (!saveLocal()) return; renderAll(); toast("Devis importé"); }
@@ -1691,10 +1918,14 @@
       normalizeSavedQuotes();
       quote = db.current ? sanitizeQuote(db.current) : newQuote();
       couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
+      applyTheme(currentTheme());
+      applyFont(currentFont());
       if (!saveLocal()) {
         db = previousDatabase;
         quote = previousQuote;
         couponOpen = previousCouponOpen;
+        applyTheme(currentTheme());
+        applyFont(currentFont());
         renderAll();
         renderHistory();
         return;
@@ -1709,8 +1940,10 @@
     const layer = activeLayerId ? $(`#${activeLayerId}`) : null;
     if (event.key === "Tab" && layer && !layer.hidden) { trapLayerFocus(event, layer); return; }
     if (event.key === "Escape") {
+      if (!$("#checkoutTransmissionMenu").hidden) { event.preventDefault(); setTransmissionMenuOpen(false, { restoreFocus: true }); return; }
+      if (!$("#appActionsMenu").hidden) { event.preventDefault(); setAppMenuOpen(false, { restoreFocus: true }); return; }
+      if (!$("#quoteActionMenu").hidden) { event.preventDefault(); setQuoteMenuOpen(false, { restoreFocus: true }); return; }
       if (layer && !layer.hidden) { event.preventDefault(); closeLayer(layer.id); return; }
-      if ($("#checkoutPanel").classList.contains("is-full-height")) { event.preventDefault(); setCheckoutFocus(false); return; }
       if (!$("#catalogSearchPanel").hidden) { event.preventDefault(); setCatalogSearchOpen(false); }
       else $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").forEach((layer) => closeLayer(layer.id));
       return;
@@ -1718,19 +1951,44 @@
     if (layer && !layer.hidden) return;
     const command = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
-    if (command && key === "k") { event.preventDefault(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
-    if (command && key === "s" && !event.shiftKey) { event.preventDefault(); saveQuote(); return; }
-    if (command && key === "n") { event.preventDefault(); createNewQuote(); return; }
-    if (command && key === "p") { event.preventDefault(); printQuote(); return; }
-    if (command && event.shiftKey && key === "s") { event.preventDefault(); downloadPdf(); return; }
-    if (command && event.key === ",") { event.preventDefault(); pendingTheme = currentTheme(); fillSettingsForm(); openLayer("settingsLayer"); return; }
-    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "/") { event.preventDefault(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
-    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "?") { event.preventDefault(); openLayer("shortcutHelpLayer"); }
+    if (!command && event.altKey && event.code === "KeyM") {
+      event.preventDefault();
+      const shouldOpen = $("#appActionsMenu").hidden;
+      setAppMenuOpen(shouldOpen, { focusFirst: shouldOpen, restoreFocus: !shouldOpen });
+      return;
+    }
+    if (!command && event.altKey && event.code === "KeyP") {
+      event.preventDefault();
+      closeMenusForShortcut();
+      switchMobilePanel("familyPanel");
+      toggleFamilyPrices();
+      return;
+    }
+    if (command && !event.altKey && key === "k") { event.preventDefault(); closeMenusForShortcut(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
+    if (command && !event.altKey && key === "s" && !event.shiftKey) { event.preventDefault(); closeMenusForShortcut(); saveQuote(); return; }
+    if (command && !event.altKey && event.shiftKey && key === "n") { event.preventDefault(); closeMenusForShortcut(); openCustomItemLayer(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "n") { event.preventDefault(); closeMenusForShortcut(); createNewQuote(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "h") { event.preventDefault(); closeMenusForShortcut(); openHistoryLayer(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "d") { event.preventDefault(); closeMenusForShortcut(); duplicateQuote(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "o") { event.preventDefault(); closeMenusForShortcut(); $("#quoteImportInput").click(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "e") { event.preventDefault(); closeMenusForShortcut(); exportQuote(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "p") { event.preventDefault(); closeMenusForShortcut(); printQuote(); return; }
+    if (command && !event.altKey && event.shiftKey && key === "s") { event.preventDefault(); closeMenusForShortcut(); downloadPdf(); return; }
+    if (command && event.altKey && !event.shiftKey && event.code === "KeyW") { event.preventDefault(); closeMenusForShortcut(); shareQuoteViaWhatsApp(); return; }
+    if (command && !event.altKey && !event.shiftKey && event.key === ",") { event.preventDefault(); closeMenusForShortcut(); openSettingsLayer(); return; }
+    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "/") { event.preventDefault(); closeMenusForShortcut(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
+    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "?") { event.preventDefault(); closeMenusForShortcut(); openLayer("shortcutHelpLayer"); }
   });
   window.addEventListener("beforeprint", renderPrint);
   window.addEventListener("beforeunload", () => saveLocal(false));
+  window.addEventListener("resize", syncPermanentCheckoutLayout);
+  if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("PWA indisponible", error)));
+  }
 
   applyTheme(currentTheme());
+  applyFont(currentFont());
+  syncPermanentCheckoutLayout();
   saveLocal(false);
   renderAll();
 })();
