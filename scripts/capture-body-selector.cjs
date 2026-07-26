@@ -187,10 +187,77 @@ async function main() {
       && exactRegions.frontFace.ids.length === 13;
     if (!exactRegionsValid) throw new Error(`Filtrage anatomique invalide : ${JSON.stringify(exactRegions)}`);
 
+    const geometryAudit = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("[data-body-detail='body']")?.click();
+      document.querySelector('button[data-body-model="female"]').click();
+      document.querySelector('button[data-body-side="front"]').click();
+      const activate = (regionId) => {
+        const region = document.querySelector('[data-body-region="' + regionId + '"]');
+        region.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        const bounds = document.querySelector('[data-body-region="' + regionId + '"]').getBoundingClientRect();
+        return {
+          width: bounds.width,
+          height: bounds.height,
+          activeRegions: document.querySelectorAll(".body-region.active").length
+        };
+      };
+      const neutralArmpitStroke = getComputedStyle(document.querySelector(".body-region-armpit")).stroke;
+      const frontArms = activate("front-bras");
+      const frontMaillot = activate("front-maillot");
+      document.querySelector('button[data-body-side="back"]').click();
+      const backLegs = activate("back-jambes");
+      const sifHitarea = document.querySelector('[data-body-region="back-sif"] .body-region-hitarea').getBoundingClientRect();
+      const neutralSifStroke = getComputedStyle(document.querySelector('[data-body-region="back-sif"] .body-region-target')).stroke;
+      const sif = activate("back-sif");
+      const activeSifStroke = getComputedStyle(document.querySelector('[data-body-region="back-sif"] .body-region-target')).stroke;
+      return {
+        frontArms,
+        frontMaillot,
+        backLegs,
+        sif,
+        sifHitarea: { width: sifHitarea.width, height: sifHitarea.height },
+        neutralArmpitStroke,
+        neutralSifStroke,
+        activeSifStroke
+      };
+    })()`);
+    if (Object.values({
+      frontArms: geometryAudit.frontArms,
+      frontMaillot: geometryAudit.frontMaillot,
+      backLegs: geometryAudit.backLegs,
+      sif: geometryAudit.sif
+    }).some((region) => region.width <= 0 || region.height <= 0 || region.activeRegions !== 1)
+      || geometryAudit.sifHitarea.width < 25
+      || geometryAudit.sifHitarea.height < 35
+      || geometryAudit.neutralArmpitStroke !== geometryAudit.neutralSifStroke
+      || geometryAudit.activeSifStroke === geometryAudit.neutralSifStroke) {
+      throw new Error(`Géométrie anatomique invalide : ${JSON.stringify(geometryAudit)}`);
+    }
+    await capture(window, "08-zone-sif-femme.png");
+
+    const keyboardAudit = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('button[data-body-side="front"]').click();
+      const torso = document.querySelector('[data-body-region="front-torse"]');
+      torso.focus();
+      torso.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      return {
+        title: document.querySelector("#bodyResultsTitle").textContent,
+        activeTorso: Boolean(document.querySelector('[data-body-region="front-torse"].active')),
+        activeRegions: document.querySelectorAll(".body-region.active").length
+      };
+    })()`);
+    if (keyboardAudit.title !== "Torse & ventre" || !keyboardAudit.activeTorso || keyboardAudit.activeRegions !== 1) {
+      throw new Error(`Navigation clavier anatomique invalide : ${JSON.stringify(keyboardAudit)}`);
+    }
+
     window.setContentSize(740, 900);
     await new Promise((resolve) => setTimeout(resolve, 180));
     const narrow = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="front"]').click();
+      if (!document.querySelector('svg [data-body-region="front-visage"].active')) {
+        document.querySelector('svg [data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        document.querySelector("[data-body-detail='body']").click();
+      }
       const layout = document.querySelector(".body-selector-layout");
       const map = document.querySelector(".interactive-body-map");
       const results = document.querySelector(".body-results");
@@ -242,7 +309,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

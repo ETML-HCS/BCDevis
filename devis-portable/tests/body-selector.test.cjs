@@ -22,6 +22,7 @@ assert.match(app, /catalogMode: "tiles"/, "Le mode historique doit rester le cho
 assert.match(app, /function currentCatalogMode\(\)/, "Le choix sauvegardé doit être normalisé");
 assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doit avoir son propre rendu");
 assert.match(app, /function bodyMapMarkup\(side, visibleIds\)/, "Les vues avant et arrière doivent partager un rendu dédié");
+assert.match(app, /function bodyModelGeometry\(\)/, "Les morphologies doivent disposer de géométries anatomiques dédiées");
 assert.match(app, /Corps humain vu de face/, "La vue avant doit être décrite");
 assert.match(app, /Corps humain vu de dos/, "La vue arrière doit être décrite");
 assert.match(app, /interactive-body-map[^"]*"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
@@ -142,9 +143,15 @@ assert.match(styles, /\.body-selector-layout\{[^}]*grid-template-columns:/, "Le 
 assert.match(styles, /\.body-region\.active \.body-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La zone active doit être nettement mise en évidence");
 assert.match(styles, /\.body-region:focus-visible \.body-region-shape/, "Le focus clavier doit être visible sur la silhouette");
 assert.match(styles, /\.body-region:focus-visible \.body-region-target\{stroke-width:4\}/, "Le focus du SIF doit rester visible");
-assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-torse"\]/, "La morphologie féminine doit adapter le torse");
-assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-maillot"\]\{transform:scaleX\(1\.08\)\}/, "La morphologie féminine doit adapter le bassin");
+assert.doesNotMatch(styles, /\.interactive-body-map\.body-model-female \[data-body-region=/, "Les morphologies ne doivent plus être déformées zone par zone en CSS");
+assert.match(app, /const frontTorso = female[\s\S]*const backTorso = female/, "Le torse avant et arrière doit varier selon la morphologie");
+assert.match(app, /const pelvis = female[\s\S]*const leftLeg = female/, "Le bassin et les jambes doivent varier selon la morphologie");
+assert.match(app, /const backPelvis = female/, "La vue arrière doit disposer d’un bassin anatomique propre");
+assert.match(app, /class="face-figure" transform="translate\(-102 0\) scale\(1\.68 1\)"/, "Le visage doit être normalisé par un seul repère SVG");
+assert.match(app, /class="body-region-hitarea"[^>]+rx="20" ry="28"/, "Le SIF doit disposer d’une cible tactile confortable");
+assert.match(app, /class="face-region-hitarea"/, "La ligne de barbe doit disposer d’une cible tactile élargie");
 assert.match(styles, /\.interactive-face-map\{[^}]*min-height:390px/, "Le visage détaillé doit rester lisible");
+assert.doesNotMatch(styles, /\.face-region\{[^}]*scaleX/, "Le visage ne doit plus être étiré artificiellement");
 assert.match(styles, /\.face-region\.active \.face-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La sous-zone faciale active doit être clairement visible");
 assert.match(styles, /\.face-region:focus-visible \.face-region-shape/, "Le focus clavier doit être visible sur le visage");
 assert.match(styles, /@media screen and \(max-width:760px\)\{[\s\S]*?\.body-selector-layout\{grid-template-columns:1fr\}/, "Le sélecteur doit s’empiler sur mobile");
