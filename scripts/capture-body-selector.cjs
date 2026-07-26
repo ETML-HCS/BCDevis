@@ -98,18 +98,45 @@ async function main() {
     const faceDetail = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('[data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       const initialServices = document.querySelectorAll(".body-service-options .family-option").length;
-      const neutralWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
+      const map = document.querySelector(".interactive-face-map");
+      const mapBounds = map.getBoundingClientRect();
+      const figure = document.querySelector(".face-figure").getBoundingClientRect();
+      const fullFace = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect();
+      const pairedBounds = (regionId) => [...document.querySelectorAll('[data-face-region="' + regionId + '"] .face-region-shape')]
+        .map((shape) => {
+          const bounds = shape.getBoundingClientRect();
+          return { left: bounds.left, width: bounds.width, height: bounds.height };
+        });
+      const brows = pairedBounds("face-brows");
+      const cheeksBounds = pairedBounds("face-cheeks");
       document.querySelector('[data-face-region="face-cheeks"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       const cheeks = {
         title: document.querySelector("#bodyResultsTitle").textContent,
         ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId))
       };
       return {
-        mapVisible: document.querySelector(".interactive-face-map").getBoundingClientRect().height >= 390,
+        mapVisible: mapBounds.height >= 410,
+        mapBox: {
+          width: mapBounds.width,
+          height: mapBounds.height,
+          computedWidth: getComputedStyle(map).width,
+          computedHeight: getComputedStyle(map).height,
+          display: getComputedStyle(map).display
+        },
         regions: document.querySelectorAll("[data-face-region]").length,
         initialServices,
-        neutralWidth,
-        model: document.querySelector(".interactive-face-map").dataset.bodyModel,
+        model: map.dataset.bodyModel,
+        anatomySource: map.dataset.anatomySource,
+        viewBox: map.getAttribute("viewBox"),
+        figureTransformAbsent: !document.querySelector(".face-figure").hasAttribute("transform"),
+        figure: {
+          width: figure.width,
+          height: figure.height,
+          ratio: figure.width / figure.height,
+          occupancy: figure.height / mapBounds.height
+        },
+        fullFace: { width: fullFace.width, height: fullFace.height },
+        pairedRegions: { brows, cheeks: cheeksBounds },
         accessibleTitle: document.querySelector("#faceMapTitle").textContent,
         cheeks,
         backButton: Boolean(document.querySelector("[data-body-detail='body']")),
@@ -120,6 +147,17 @@ async function main() {
       || faceDetail.regions !== 12
       || faceDetail.initialServices !== 13
       || faceDetail.model !== "neutral"
+      || faceDetail.anatomySource !== "user-reference"
+      || faceDetail.viewBox !== "260 45 505 740"
+      || !faceDetail.figureTransformAbsent
+      || faceDetail.figure.ratio < .55
+      || faceDetail.figure.ratio > .78
+      || faceDetail.figure.occupancy < .9
+      || faceDetail.fullFace.height < 300
+      || faceDetail.pairedRegions.brows.length !== 2
+      || faceDetail.pairedRegions.cheeks.length !== 2
+      || Math.abs(faceDetail.pairedRegions.brows[0].width - faceDetail.pairedRegions.brows[1].width) > 3
+      || Math.abs(faceDetail.pairedRegions.cheeks[0].width - faceDetail.pairedRegions.cheeks[1].width) > 3
       || faceDetail.accessibleTitle !== "Détail du visage neutre"
       || faceDetail.cheeks.title !== "Joues"
       || faceDetail.cheeks.ids.join(",") !== "26"
@@ -145,6 +183,47 @@ async function main() {
       throw new Error(`Zone du nez invalide : ${JSON.stringify(faceNose)}`);
     }
     await capture(window, "03-visage-neutre-nez.png");
+    const faceRegionsAudit = await window.webContents.executeJavaScript(`(() => {
+      const expected = [
+        ["face-full", "Visage complet", 29],
+        ["face-temples", "Tempes", 23],
+        ["face-brows", "Sourcils", 21],
+        ["face-glabella", "Entre-sourcils", 22],
+        ["face-nose", "Nez & narines", 25],
+        ["face-cheeks", "Joues", 26],
+        ["face-upper-lip", "Lèvre supérieure", 19],
+        ["face-beard", "Barbe", 27],
+        ["face-beard-line", "Ligne de barbe", 28],
+        ["face-chin", "Menton", 20],
+        ["face-ears", "Oreilles", 24],
+        ["face-neck", "Cou", 30]
+      ];
+      return expected.map(([id, expectedTitle, expectedServiceId]) => {
+        document.querySelector('[data-face-region="' + id + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        const region = document.querySelector('[data-face-region="' + id + '"]');
+        const bounds = region.getBoundingClientRect();
+        return {
+          id,
+          expectedTitle,
+          expectedServiceId,
+          title: document.querySelector("#bodyResultsTitle").textContent,
+          serviceIds: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId)),
+          active: region.classList.contains("active"),
+          activeRegions: document.querySelectorAll(".face-region.active").length,
+          width: bounds.width,
+          height: bounds.height
+        };
+      });
+    })()`);
+    const invalidFaceRegion = faceRegionsAudit.find((region) => region.title !== region.expectedTitle
+      || region.serviceIds.join(",") !== String(region.expectedServiceId)
+      || !region.active
+      || region.activeRegions !== 1
+      || region.width <= 0
+      || region.height <= 0);
+    if (invalidFaceRegion) {
+      throw new Error(`Zone faciale invalide : ${JSON.stringify(invalidFaceRegion)}`);
+    }
     await window.webContents.executeJavaScript(`document.querySelector("[data-body-detail='body']").click()`);
 
     const back = await window.webContents.executeJavaScript(`(() => {
@@ -307,6 +386,28 @@ async function main() {
     await capture(window, "09-corps-responsive-390.png");
     await window.webContents.executeJavaScript(`document.querySelector(".body-results").scrollIntoView({ block: "start" })`);
     await capture(window, "10-prestations-responsive-390.png");
+    const mobileFace = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('[data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const map = document.querySelector(".interactive-face-map");
+      const card = document.querySelector(".body-map-card");
+      const results = document.querySelector(".body-results");
+      const bounds = map.getBoundingClientRect();
+      return {
+        regions: document.querySelectorAll("[data-face-region]").length,
+        mapHeight: bounds.height,
+        mapContained: bounds.left >= card.getBoundingClientRect().left && bounds.right <= card.getBoundingClientRect().right,
+        resultsBelowMap: results.getBoundingClientRect().top >= bounds.bottom,
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (mobileFace.regions !== 12
+      || mobileFace.mapHeight < 340
+      || !mobileFace.mapContained
+      || !mobileFace.resultsBelowMap
+      || mobileFace.horizontalOverflow) {
+      throw new Error(`Visage mobile invalide : ${JSON.stringify(mobileFace)}`);
+    }
+    await capture(window, "11-visage-neutre-responsive-390.png");
 
     window.setContentSize(1440, 980);
     await new Promise((resolve) => setTimeout(resolve, 180));
@@ -329,7 +430,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, neutralModel, faceDetail, faceNose, back, neutralBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, neutralModel, faceDetail, faceNose, faceRegionsAudit, back, neutralBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

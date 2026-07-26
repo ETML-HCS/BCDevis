@@ -33,7 +33,7 @@ assert.doesNotMatch(app, /data-body-model="(?:female|male)"/, "Aucune morphologi
 assert.doesNotMatch(app, /button\[data-body-model\]/, "Le changement homme/femme doit être retiré");
 assert.match(app, /function faceMapMarkup\(\)/, "Le visage doit disposer d’une carte anatomique dédiée");
 assert.match(app, /Détail du visage neutre/, "Le schéma facial doit être décrit comme neutre");
-assert.match(app, /sans cheveux ni traits identifiables/, "Le schéma facial doit annoncer son anonymat");
+assert.match(app, /sans cheveux ni identité reconnaissable/, "Le schéma facial doit annoncer son anonymat");
 assert.doesNotMatch(app, /féminin|masculin/, "Le sélecteur corporel ne doit plus employer de qualification genrée");
 assert.match(app, /data-body-detail="body"/, "Le détail du visage doit permettre de revenir au corps complet");
 
@@ -155,15 +155,20 @@ assert.match(app, /class="body-region-shape body-anatomy-segment"/, "Les zones d
 assert.match(app, /function anonymousBodyHeadMarkup\(side\)/, "La tête neutre doit être construite sans traits identifiables");
 assert.match(app, /class="body-region-shape body-anonymous-head"/, "La tête anonyme doit rester une zone interactive");
 assert.match(app, /const headMaskId = `body-head-mask-\$\{side\}`/, "La tête d’origine doit être masquée sans rectangle visible");
-assert.match(app, /class="face-figure" transform="translate\(-102 0\) scale\(1\.68 1\)"/, "Le visage doit être normalisé par un seul repère SVG");
+assert.match(app, /data-anatomy-source="user-reference" viewBox="260 45 505 740"/, "Le visage doit reprendre le tracé anatomique de référence dans un repère naturel");
+assert.match(app, /<g class="face-figure">/, "Le visage doit disposer d’un groupe anatomique mesurable");
+assert.doesNotMatch(app, /class="face-figure" transform=/, "Le visage ne doit subir aucune déformation corrective");
+assert.match(app, /sans cheveux ni identité reconnaissable/, "Le visage doit rester neutre et anonyme");
+assert.match(app, /class="face-anatomy-landmark"/, "Les repères des yeux doivent rester discrets et non interactifs");
 assert.match(app, /class="body-region-hitarea"[^>]+rx="48" ry="70"/, "Le SIF doit disposer d’une cible tactile confortable");
 assert.match(app, /class="face-region-hitarea"/, "La ligne de barbe doit disposer d’une cible tactile élargie");
 assert.match(styles, /\.interactive-body-map\{[^}]*height:clamp\(540px,65vh,620px\)/, "Le corps complet doit occuper une hauteur confortable");
 assert.match(styles, /\.body-anatomy-outline\{[^}]*fill:#2e2e2d;stroke:#9b968d/, "Le contour continu doit réunifier les segments anatomiques");
 assert.match(styles, /\.body-anatomy-segment\{[^}]*opacity:\.32/, "Les détails musculaires doivent rester discrets sur le mannequin neutre");
 assert.match(styles, /\.body-region\.active \.body-anatomy-segment\{[^}]*opacity:1/, "La zone active doit retrouver toute sa lisibilité");
-assert.match(styles, /\.interactive-face-map\{[^}]*min-height:390px/, "Le visage détaillé doit rester lisible");
+assert.match(styles, /\.interactive-face-map\{[^}]*height:clamp\(410px,52vh,510px\)/, "Le visage détaillé doit rester lisible");
 assert.doesNotMatch(styles, /\.face-region\{[^}]*scaleX/, "Le visage ne doit plus être étiré artificiellement");
+assert.match(styles, /\.face-anatomy-landmark\{[^}]*pointer-events:none/, "Les repères anatomiques ne doivent pas intercepter les clics");
 assert.match(styles, /\.face-region\.active \.face-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La sous-zone faciale active doit être clairement visible");
 assert.match(styles, /\.face-region:focus-visible \.face-region-shape/, "Le focus clavier doit être visible sur le visage");
 assert.match(styles, /@media screen and \(max-width:760px\)\{[\s\S]*?\.body-selector-layout\{grid-template-columns:1fr\}/, "Le sélecteur doit s’empiler sur mobile");
