@@ -1,6 +1,12 @@
 BCDevis 5.0.1 - Livrable pour Aleksandra
 Clinique Bellecour
 
+CORRECTIFS 5.0.1
+
+- Les PDF téléchargés conservent désormais un fond blanc, sans grandes
+  marges noires, y compris lorsque le thème Nuit est utilisé.
+- Les notifications restent visibles au-dessus de la caisse et des menus.
+
 CONTENU
 
 1-Windows
