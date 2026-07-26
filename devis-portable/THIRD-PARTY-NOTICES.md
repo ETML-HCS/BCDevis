@@ -2,12 +2,12 @@
 
 ## react-native-body-highlighter
 
-The interaction model and anatomical grouping of the optional BCDevis body
-selector are adapted from:
+The interaction model, anatomical grouping, and female/male SVG path geometry
+of the optional BCDevis body selector are adapted from:
 
 https://github.com/HichamELBSI/react-native-body-highlighter
 
-BCDevis uses a simplified SVG implementation written for its native
+BCDevis converts and groups the original SVG path data for its native
 HTML/CSS/JavaScript interface. It does not bundle the React Native package.
 
 MIT License

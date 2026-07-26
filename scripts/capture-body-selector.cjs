@@ -32,6 +32,9 @@ async function main() {
       partition: `bcdevis-body-selector-${process.pid}-${Date.now()}`
     }
   });
+  window.webContents.on("console-message", (event) => {
+    if (event.level >= 2) console.error(`RENDERER_CONSOLE_${event.level}: ${event.message}`);
+  });
   try {
     await window.loadFile(APP_PATH);
     await window.webContents.executeJavaScript(`document.fonts.ready`);
@@ -44,26 +47,52 @@ async function main() {
       const layout = document.querySelector(".body-selector-layout");
       const results = document.querySelector(".body-results");
       const family = document.querySelector("#familyPanel");
+      const stage = document.querySelector(".body-map-stage").getBoundingClientRect();
+      const figure = document.querySelector(".body-figure").getBoundingClientRect();
       return {
         side: document.querySelector(".body-selector").dataset.bodySide,
         services: document.querySelectorAll(".body-service-options .family-option").length,
         mapVisible: Boolean(map && map.getBoundingClientRect().height > 300),
+        figure: {
+          width: figure.width,
+          height: figure.height,
+          stageWidth: stage.width,
+          stageHeight: stage.height,
+          mapWidth: map.getBoundingClientRect().width,
+          mapHeight: map.getBoundingClientRect().height,
+          stageHeightRatio: figure.height / stage.height,
+          mapHeightRatio: figure.height / map.getBoundingClientRect().height
+        },
         layoutContained: layout.getBoundingClientRect().right <= family.getBoundingClientRect().right + 1,
         resultsContained: results.scrollWidth <= results.clientWidth + 1,
         title: document.querySelector("#bodyResultsTitle").textContent
       };
     })()`);
-    if (!front.mapVisible || !front.layoutContained || !front.resultsContained || front.services !== 13 || front.side !== "front" || front.title !== "Visage & cou") {
+    if (!front.mapVisible
+      || front.figure.height < 500
+      || front.figure.width < 220
+      || front.figure.stageHeightRatio < 0.88
+      || front.figure.mapHeightRatio < 0.88
+      || !front.layoutContained
+      || !front.resultsContained
+      || front.services !== 13
+      || front.side !== "front"
+      || front.title !== "Visage & cou") {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
     await capture(window, "01-corps-avant-femme.png");
 
     const modelToggle = await window.webContents.executeJavaScript(`(() => {
-      const dimensions = () => ({
-        torso: document.querySelector('[data-body-region="front-torse"]').getBoundingClientRect().width,
-        pelvis: document.querySelector('[data-body-region="front-maillot"]').getBoundingClientRect().width
-      });
+      const dimensions = () => {
+        const figure = document.querySelector(".body-figure").getBoundingClientRect();
+        return {
+          torso: document.querySelector('[data-body-region="front-torse"]').getBoundingClientRect().width,
+          pelvis: document.querySelector('[data-body-region="front-maillot"]').getBoundingClientRect().width,
+          figureWidth: figure.width,
+          figureHeight: figure.height
+        };
+      };
       const female = dimensions();
       document.querySelector('button[data-body-model="male"]').click();
       const male = dimensions();
@@ -78,8 +107,10 @@ async function main() {
     if (modelToggle.model !== "male"
       || modelToggle.malePressed !== "true"
       || modelToggle.services !== 13
+      || modelToggle.male.figureWidth <= modelToggle.female.figureWidth
+      || Math.abs(modelToggle.male.figureHeight - modelToggle.female.figureHeight) > 25
       || modelToggle.male.torso <= modelToggle.female.torso
-      || modelToggle.male.pelvis >= modelToggle.female.pelvis) {
+      || modelToggle.female.pelvis / modelToggle.female.torso <= modelToggle.male.pelvis / modelToggle.male.torso) {
       throw new Error(`Toggle femme/homme invalide : ${JSON.stringify(modelToggle)}`);
     }
     await capture(window, "02-corps-avant-homme.png");
@@ -156,6 +187,26 @@ async function main() {
     }
     await capture(window, "05-corps-arriere-dos.png");
 
+    const maleBack = await window.webContents.executeJavaScript(`(() => {
+      const femaleFigure = document.querySelector(".body-figure").getBoundingClientRect();
+      document.querySelector('button[data-body-model="male"]').click();
+      const maleFigure = document.querySelector(".body-figure").getBoundingClientRect();
+      return {
+        model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        female: { width: femaleFigure.width, height: femaleFigure.height },
+        male: { width: maleFigure.width, height: maleFigure.height },
+        regions: document.querySelectorAll("[data-body-region]").length
+      };
+    })()`);
+    if (maleBack.model !== "male"
+      || maleBack.regions !== 5
+      || maleBack.male.width <= maleBack.female.width
+      || Math.abs(maleBack.male.height - maleBack.female.height) > 16) {
+      throw new Error(`Vue arrière masculine invalide : ${JSON.stringify(maleBack)}`);
+    }
+    await capture(window, "09-corps-arriere-homme.png");
+    await window.webContents.executeJavaScript(`document.querySelector('button[data-body-model="female"]').click()`);
+
     const exactRegions = await window.webContents.executeJavaScript(`(() => {
       const clickRegion = (regionId) => {
         document.querySelector('[data-body-region="' + regionId + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -201,7 +252,6 @@ async function main() {
           activeRegions: document.querySelectorAll(".body-region.active").length
         };
       };
-      const neutralArmpitStroke = getComputedStyle(document.querySelector(".body-region-armpit")).stroke;
       const frontArms = activate("front-bras");
       const frontMaillot = activate("front-maillot");
       document.querySelector('button[data-body-side="back"]').click();
@@ -216,7 +266,6 @@ async function main() {
         backLegs,
         sif,
         sifHitarea: { width: sifHitarea.width, height: sifHitarea.height },
-        neutralArmpitStroke,
         neutralSifStroke,
         activeSifStroke
       };
@@ -229,7 +278,6 @@ async function main() {
     }).some((region) => region.width <= 0 || region.height <= 0 || region.activeRegions !== 1)
       || geometryAudit.sifHitarea.width < 25
       || geometryAudit.sifHitarea.height < 35
-      || geometryAudit.neutralArmpitStroke !== geometryAudit.neutralSifStroke
       || geometryAudit.activeSifStroke === geometryAudit.neutralSifStroke) {
       throw new Error(`Géométrie anatomique invalide : ${JSON.stringify(geometryAudit)}`);
     }
@@ -287,6 +335,9 @@ async function main() {
     if (!mobile.mapVisible || !mobile.sideButtonsVisible || mobile.horizontalOverflow) {
       throw new Error(`Vue mobile invalide : ${JSON.stringify(mobile)}`);
     }
+    await capture(window, "09-corps-responsive-390.png");
+    await window.webContents.executeJavaScript(`document.querySelector(".body-results").scrollIntoView({ block: "start" })`);
+    await capture(window, "10-prestations-responsive-390.png");
 
     window.setContentSize(1440, 980);
     await new Promise((resolve) => setTimeout(resolve, 180));
@@ -309,7 +360,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, maleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

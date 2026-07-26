@@ -762,72 +762,47 @@
     return `<g class="body-region${active ? " active" : ""}${enabled ? "" : " disabled"}" ${enabled ? `data-body-region="${region.id}" data-body-family="${region.familyId}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${active}"` : 'aria-hidden="true"'}><title>${label}</title>${shapes}</g>`;
   }
 
-  function bodyModelGeometry() {
-    const female = activeBodyModel === "female";
-    const mirror = (shapes) => `<g transform="translate(300 0) scale(-1 1)">${shapes}</g>`;
-    const frontHead = female
-      ? '<path class="body-region-shape" d="M119 47C119 23 131 10 150 10s31 13 31 37l-3 28c-3 20-15 36-28 39-13-3-25-19-28-39l-3-28Z"/><path class="body-region-shape" d="M120 54c-7-5-10 3-8 14 2 9 6 15 11 16m57-30c7-5 10 3 8 14-2 9-6 15-11 16"/><path class="body-region-shape" d="M134 101c4 8 9 12 16 12s12-4 16-12l2 24c-5 8-11 12-18 12s-13-4-18-12l2-24Z"/><path class="body-region-detail body-hairline" d="M123 43c15-13 39-13 54 0"/><path class="body-region-detail" d="M130 55c5-3 10-3 14 0m12 0c4-3 9-3 14 0m-20 4v17m-9 14c6 4 12 4 18 0"/><circle class="body-region-detail-fill" cx="137" cy="60" r="1.8"/><circle class="body-region-detail-fill" cx="163" cy="60" r="1.8"/>'
-      : '<path class="body-region-shape" d="M115 46C115 21 128 8 150 8s35 13 35 38l-3 29c-2 20-15 36-32 40-17-4-30-20-32-40l-3-29Z"/><path class="body-region-shape" d="M117 53c-8-5-11 3-9 15 2 10 6 16 12 17m63-32c8-5 11 3 9 15-2 10-6 16-12 17"/><path class="body-region-shape" d="M132 101c4 9 10 13 18 13s14-4 18-13l2 25c-5 8-12 12-20 12s-15-4-20-12l2-25Z"/><path class="body-region-detail body-hairline" d="M119 44c17-11 45-11 62 0"/><path class="body-region-detail" d="M128 54c6-3 11-3 16 0m12 0c5-3 10-3 16 0m-22 5v18m-10 13c7 4 13 4 20 0"/><circle class="body-region-detail-fill" cx="136" cy="60" r="2"/><circle class="body-region-detail-fill" cx="164" cy="60" r="2"/>';
-    const backHead = female
-      ? '<path class="body-region-shape" d="M119 47C119 23 131 10 150 10s31 13 31 37l-3 28c-3 20-15 36-28 39-13-3-25-19-28-39l-3-28Z"/><path class="body-region-shape" d="M120 54c-7-5-10 3-8 14 2 9 6 15 11 16m57-30c7-5 10 3 8 14-2 9-6 15-11 16"/><path class="body-region-detail body-hairline" d="M121 48c15-14 43-14 58 0M127 82c7 9 14 13 23 13s16-4 23-13"/>'
-      : '<path class="body-region-shape" d="M115 46C115 21 128 8 150 8s35 13 35 38l-3 29c-2 20-15 36-32 40-17-4-30-20-32-40l-3-29Z"/><path class="body-region-shape" d="M117 53c-8-5-11 3-9 15 2 10 6 16 12 17m63-32c8-5 11 3 9 15-2 10-6 16-12 17"/><path class="body-region-detail body-hairline" d="M118 46c18-12 46-12 64 0M123 78c8 11 17 16 27 16s19-5 27-16"/>';
-    const frontTorso = female
-      ? '<path class="body-region-shape" d="M133 119c-10 2-21 5-31 10-6 17-7 38-2 61 5 22 7 43 4 64-3 18-2 31 4 41 11 8 25 12 42 12s31-4 42-12c6-10 7-23 4-41-3-21-1-42 4-64 5-23 4-44-2-61-10-5-21-8-31-10-5 8-11 12-17 12s-12-4-17-12Z"/><path class="body-region-detail" d="M108 154c10-8 22-10 34-4m50 4c-10-8-22-10-34-4M105 207c28-8 62-8 90 0M112 277c23 8 53 8 76 0M150 158v118"/><circle class="body-region-detail-fill" cx="150" cy="243" r="3"/>'
-      : '<path class="body-region-shape" d="M130 119c-11 2-24 5-37 10-5 18-4 39 2 62 5 21 6 42 3 63-2 17-1 31 5 41 13 8 29 12 47 12s34-4 47-12c6-10 7-24 5-41-3-21-2-42 3-63 6-23 7-44 2-62-13-5-26-8-37-10-5 8-12 12-20 12s-15-4-20-12Z"/><path class="body-region-detail" d="M101 153c13-8 27-11 42-5m56 5c-13-8-27-11-42-5M101 207c30-9 68-9 98 0M108 277c26 8 58 8 84 0M150 155v122"/><circle class="body-region-detail-fill" cx="150" cy="243" r="3.3"/>';
-    const backTorso = female
-      ? '<path class="body-region-shape" d="M134 101c4 8 9 12 16 12s12-4 16-12l1 18c10 2 21 5 31 10 6 17 7 38 2 61-5 22-7 43-4 64 3 18 2 31-4 41-11 8-25 12-42 12s-31-4-42-12c-6-10-7-23-4-41 3-21 1-42-4-64-5-23-4-44 2-61 10-5 21-8 31-10l1-18Z"/><path class="body-region-detail" d="M150 123v169M109 153c10 5 19 13 24 24m58-24c-10 5-19 13-24 24m-62 57c28-8 62-8 90 0M112 278c23 8 53 8 76 0"/>'
-      : '<path class="body-region-shape" d="M132 101c4 9 10 13 18 13s14-4 18-13l2 18c11 2 24 5 37 10 5 18 4 39-2 62-5 21-6 42-3 63 2 17 1 31-5 41-13 8-29 12-47 12s-34-4-47-12c-6-10-7-24-5-41 3-21 2-42-3-63-6-23-7-44-2-62 13-5 26-8 37-10l2-18Z"/><path class="body-region-detail" d="M150 123v169M101 153c12 5 23 14 29 26m69-26c-12 5-23 14-29 26m-69 55c30-9 68-9 98 0M108 278c26 8 58 8 84 0"/>';
-    const leftArm = female
-      ? '<path class="body-region-shape" d="M104 129c-16-2-29 9-36 29-7 21-10 45-14 69l-12 61c-2 9 4 15 12 16 8 1 13-5 15-13l14-59c5-20 10-40 13-58 3-17 9-28 17-34l-9-11Z"/><path class="body-region-shape" d="M43 286c-8 9-11 22-9 35l5 25c1 6 7 6 9 1l-1-13 5 18c2 6 8 4 7-2l-4-19 8 18c2 6 8 2 6-4l-8-23c7-7 8-16 5-25l-6-11H43Z"/><path class="body-region-detail" d="M73 159c8 5 15 12 20 21M49 254c7 4 14 5 21 5"/>'
-      : '<path class="body-region-shape" d="M96 129c-19-3-33 9-40 30-7 21-11 46-15 71l-12 64c-2 10 4 17 13 18 9 1 15-6 17-15l15-62c5-20 11-41 14-60 3-17 10-29 19-35l-11-11Z"/><path class="body-region-shape" d="M31 290c-9 9-12 23-10 37l6 26c1 7 8 7 9 1l-1-14 5 20c2 7 9 5 8-2l-5-21 9 20c3 7 9 3 7-4l-9-24c8-7 9-17 6-27l-7-12H31Z"/><path class="body-region-detail" d="M65 159c9 5 17 13 22 22M38 256c8 4 16 6 24 6"/>';
-    const arms = `${leftArm}${mirror(leftArm)}${female ? '<path class="body-region-target body-region-armpit" d="M94 151c8 3 14 8 17 16m95-16c-8 3-14 8-17 16"/>' : '<path class="body-region-target body-region-armpit" d="M87 150c10 3 17 9 20 18m106-18c-10 3-17 9-20 18"/>'}`;
-    const backArms = `${leftArm}${mirror(leftArm)}`;
-    const pelvis = female
-      ? '<path class="body-region-shape" d="M104 284c-8 17-10 36-6 54 10 12 24 20 40 24l7 15c2 5 8 5 10 0l7-15c16-4 30-12 40-24 4-18 2-37-6-54-13 13-28 19-46 19s-33-6-46-19Z"/><path class="body-region-detail" d="M100 316c19 5 35 17 50 37 15-20 31-32 50-37M150 353v22"/>'
-      : '<path class="body-region-shape" d="M106 284c-7 17-9 35-5 52 11 12 24 19 39 23l6 18c2 5 6 5 8 0l6-18c15-4 28-11 39-23 4-17 2-35-5-52-12 12-27 18-44 18s-32-6-44-18Z"/><path class="body-region-detail" d="M103 315c18 6 34 18 47 37 13-19 29-31 47-37M150 352v23"/>';
-    const leftLeg = female
-      ? '<path class="body-region-shape" d="M99 334c-11 19-16 49-13 82 2 28 6 52 10 77 3 23 0 51 3 80l-1 18h23l1-18c4-30 8-56 9-80 1-26 6-51 9-76 4-26 2-45-8-58-13-6-26-14-33-25Z"/><path class="body-region-shape" d="M98 584h23l3 21c1 8-5 14-13 14H81c-7 0-10-8-4-13l18-14 3-8Z"/><path class="body-region-detail" d="M89 454c12 4 25 4 38 0M99 573h23"/><circle class="body-region-detail-fill" cx="108" cy="452" r="3.5"/>'
-      : '<path class="body-region-shape" d="M103 334c-9 18-13 48-10 81 2 28 6 53 9 78 3 23 1 52 3 80v18h22l1-18c4-30 7-57 8-80 1-26 5-51 8-76 3-26 1-46-9-59-12-6-24-14-32-24Z"/><path class="body-region-shape" d="M104 584h23l3 21c1 8-5 14-13 14H84c-7 0-10-8-4-13l21-14 3-8Z"/><path class="body-region-detail" d="M96 454c12 4 24 4 36 0M105 573h23"/><circle class="body-region-detail-fill" cx="113" cy="452" r="3.5"/>';
-    const legs = `${leftLeg}${mirror(leftLeg)}`;
-    const backPelvis = female
-      ? '<path class="body-region-shape" d="M104 283c-9 16-12 35-7 54 11 16 29 25 53 25s42-9 53-25c5-19 2-38-7-54-13 13-28 20-46 20s-33-7-46-20Z"/><path class="body-region-detail" d="M101 324c12-13 28-14 49-1 21-13 37-12 49 1M150 323v35M101 337c13 10 29 15 49 15s36-5 49-15"/>'
-      : '<path class="body-region-shape" d="M106 284c-8 16-10 34-6 52 11 14 28 22 50 22s39-8 50-22c4-18 2-36-6-52-12 12-27 18-44 18s-32-6-44-18Z"/><path class="body-region-detail" d="M103 322c12-11 27-12 47 0 20-12 35-11 47 0M150 322v32M103 336c13 9 28 13 47 13s34-4 47-13"/>';
-    return {
-      frontHead,
-      backHead,
-      frontTorso,
-      backTorso,
-      frontArms: arms,
-      backArms,
-      pelvis,
-      frontLegs: legs,
-      backLegs: `${backPelvis}${legs}`,
-      sif: '<ellipse class="body-region-hitarea" cx="150" cy="335" rx="20" ry="28"/><path class="body-region-focus" d="M150 318v34"/><ellipse class="body-region-target" cx="150" cy="335" rx="6" ry="13"/>'
-    };
+  function bodyAnatomyPaths(paths) {
+    return (paths || []).map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
+  }
+
+  function bodyModelGeometry(side) {
+    const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
+    if (!geometry) throw new Error(`Géométrie corporelle indisponible : ${activeBodyModel}/${side}`);
+    const { cx, cy } = geometry.focus[side === "front" ? "maillot" : "sif"];
+    const focus = side === "front"
+      ? `<ellipse class="body-region-hitarea" cx="${cx}" cy="${cy}" rx="74" ry="70"/><path class="body-region-focus body-region-maillot" d="M${cx - 68} ${cy - 40}Q${cx} ${cy - 4} ${cx + 68} ${cy - 40}L${cx + 48} ${cy + 30}Q${cx} ${cy + 54} ${cx - 48} ${cy + 30}Z"/>`
+      : `<ellipse class="body-region-hitarea" cx="${cx}" cy="${cy}" rx="48" ry="70"/><path class="body-region-focus body-region-sif" d="M${cx} ${cy - 38}v76"/><ellipse class="body-region-target" cx="${cx}" cy="${cy}" rx="13" ry="27"/>`;
+    return { ...geometry, focusMarkup: focus };
   }
 
   function bodyMapMarkup(side, visibleIds) {
     const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds);
-    const geometry = bodyModelGeometry();
+    const geometry = bodyModelGeometry(side);
+    const outline = `<path class="body-anatomy-outline" d="${geometry.outline}"/>`;
     if (side === "back") {
-      return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 640" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
+      return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
         <title id="bodyMapBackTitle">Corps humain vu de dos</title>
         <desc id="bodyMapBackDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
-        ${region("back-scalp", geometry.backHead)}
-        ${region("back-dos", geometry.backTorso)}
-        ${region("back-bras", geometry.backArms)}
-        ${region("back-jambes", geometry.backLegs)}
-        ${region("back-sif", geometry.sif)}
+        <g class="body-figure">${outline}
+          ${region("back-scalp", bodyAnatomyPaths(geometry.regions.scalp))}
+          ${region("back-dos", bodyAnatomyPaths(geometry.regions.dos))}
+          ${region("back-bras", bodyAnatomyPaths(geometry.regions.bras))}
+          ${region("back-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
+          ${region("back-sif", geometry.focusMarkup)}
+        </g>
       </svg>`;
     }
-    return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 640" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
+    return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
       <title id="bodyMapFrontTitle">Corps humain vu de face</title>
       <desc id="bodyMapFrontDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de face. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
-      ${region("front-visage", geometry.frontHead)}
-      ${region("front-torse", geometry.frontTorso)}
-      ${region("front-bras", geometry.frontArms)}
-      ${region("front-maillot", geometry.pelvis)}
-      ${region("front-jambes", geometry.frontLegs)}
+      <g class="body-figure">${outline}
+        ${region("front-visage", bodyAnatomyPaths(geometry.regions.visage))}
+        ${region("front-torse", bodyAnatomyPaths(geometry.regions.torse))}
+        ${region("front-bras", bodyAnatomyPaths(geometry.regions.bras))}
+        ${region("front-maillot", `${bodyAnatomyPaths(geometry.regions.maillot)}${geometry.focusMarkup}`)}
+        ${region("front-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
+      </g>
     </svg>`;
   }
 

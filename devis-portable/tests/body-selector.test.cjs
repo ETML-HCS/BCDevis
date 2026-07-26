@@ -7,6 +7,7 @@ const vm = require("node:vm");
 
 const root = path.join(__dirname, "..");
 const app = fs.readFileSync(path.join(root, "app.js"), "utf8");
+const anatomySource = fs.readFileSync(path.join(root, "body-anatomy.js"), "utf8");
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const styles = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 const notices = fs.readFileSync(path.join(root, "THIRD-PARTY-NOTICES.md"), "utf8");
@@ -22,7 +23,8 @@ assert.match(app, /catalogMode: "tiles"/, "Le mode historique doit rester le cho
 assert.match(app, /function currentCatalogMode\(\)/, "Le choix sauvegardé doit être normalisé");
 assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doit avoir son propre rendu");
 assert.match(app, /function bodyMapMarkup\(side, visibleIds\)/, "Les vues avant et arrière doivent partager un rendu dédié");
-assert.match(app, /function bodyModelGeometry\(\)/, "Les morphologies doivent disposer de géométries anatomiques dédiées");
+assert.match(app, /function bodyModelGeometry\(side\)/, "Les morphologies doivent disposer de géométries anatomiques dédiées");
+assert.match(app, /window\.BCDEVIS_BODY_ANATOMY/, "Le rendu doit utiliser les tracés anatomiques normalisés");
 assert.match(app, /Corps humain vu de face/, "La vue avant doit être décrite");
 assert.match(app, /Corps humain vu de dos/, "La vue arrière doit être décrite");
 assert.match(app, /interactive-body-map[^"]*"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
@@ -135,6 +137,7 @@ assert.match(
 );
 
 assert.match(html, /aria-label="Navigation des prestations"/, "Le réglage doit annoncer son groupe");
+assert.match(html, /<script src="body-anatomy\.js"><\/script>\s*<script src="app\.js"><\/script>/, "Les tracés anatomiques doivent être chargés avant l’application");
 assert.match(html, /name="catalogMode" type="radio" value="tiles"/, "Le mode Tuiles doit rester disponible");
 assert.match(html, /name="catalogMode" type="radio" value="body"/, "Le mode Corps interactif doit être disponible");
 assert.match(html, />Corps interactif</, "Le nouveau mode doit être nommé explicitement");
@@ -144,12 +147,15 @@ assert.match(styles, /\.body-region\.active \.body-region-shape\{fill:var\(--tau
 assert.match(styles, /\.body-region:focus-visible \.body-region-shape/, "Le focus clavier doit être visible sur la silhouette");
 assert.match(styles, /\.body-region:focus-visible \.body-region-target\{stroke-width:4\}/, "Le focus du SIF doit rester visible");
 assert.doesNotMatch(styles, /\.interactive-body-map\.body-model-female \[data-body-region=/, "Les morphologies ne doivent plus être déformées zone par zone en CSS");
-assert.match(app, /const frontTorso = female[\s\S]*const backTorso = female/, "Le torse avant et arrière doit varier selon la morphologie");
-assert.match(app, /const pelvis = female[\s\S]*const leftLeg = female/, "Le bassin et les jambes doivent varier selon la morphologie");
-assert.match(app, /const backPelvis = female/, "La vue arrière doit disposer d’un bassin anatomique propre");
+assert.match(app, /data-anatomy-source="react-native-body-highlighter"/, "La provenance anatomique doit rester explicite dans le SVG");
+assert.match(app, /<g class="body-figure">/, "Chaque silhouette doit disposer d’un groupe mesurable unique");
+assert.match(app, /class="body-anatomy-outline"/, "La silhouette doit conserver un contour corporel continu");
+assert.match(app, /class="body-region-shape body-anatomy-segment"/, "Les zones doivent reprendre des segments anatomiques précis");
 assert.match(app, /class="face-figure" transform="translate\(-102 0\) scale\(1\.68 1\)"/, "Le visage doit être normalisé par un seul repère SVG");
-assert.match(app, /class="body-region-hitarea"[^>]+rx="20" ry="28"/, "Le SIF doit disposer d’une cible tactile confortable");
+assert.match(app, /class="body-region-hitarea"[^>]+rx="48" ry="70"/, "Le SIF doit disposer d’une cible tactile confortable");
 assert.match(app, /class="face-region-hitarea"/, "La ligne de barbe doit disposer d’une cible tactile élargie");
+assert.match(styles, /\.interactive-body-map\{[^}]*height:clamp\(540px,65vh,620px\)/, "Le corps complet doit occuper une hauteur confortable");
+assert.match(styles, /\.body-anatomy-outline\{[^}]*fill:#292928;stroke:#9b968d/, "Le contour continu doit réunifier les segments anatomiques");
 assert.match(styles, /\.interactive-face-map\{[^}]*min-height:390px/, "Le visage détaillé doit rester lisible");
 assert.doesNotMatch(styles, /\.face-region\{[^}]*scaleX/, "Le visage ne doit plus être étiré artificiellement");
 assert.match(styles, /\.face-region\.active \.face-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La sous-zone faciale active doit être clairement visible");
@@ -159,5 +165,22 @@ assert.match(styles, /@media screen and \(max-width:760px\)\{[\s\S]*?\.body-sele
 assert.match(notices, /react-native-body-highlighter/, "La source du principe interactif doit être attribuée");
 assert.match(notices, /MIT License/, "La licence MIT d’origine doit être conservée");
 assert.match(notices, /Copyright \(c\) 2022 ELABBASSI Hicham/, "La notice de copyright d’origine doit être conservée");
+
+const anatomyContext = { window: {} };
+vm.createContext(anatomyContext);
+vm.runInContext(anatomySource, anatomyContext);
+const anatomy = anatomyContext.window.BCDEVIS_BODY_ANATOMY;
+assert.ok(anatomy?.female?.front && anatomy?.female?.back && anatomy?.male?.front && anatomy?.male?.back, "Les quatre silhouettes anatomiques doivent être livrées");
+assert.equal(anatomy.female.front.viewBox, "-50 -40 734 1538", "La femme de face doit conserver son repère anatomique natif");
+assert.equal(anatomy.female.back.viewBox, "756 0 774 1448", "La femme de dos doit conserver son repère anatomique natif");
+assert.equal(anatomy.male.front.viewBox, "0 70 724 1300", "L’homme de face doit être cadré sur sa hauteur anatomique utile");
+assert.equal(anatomy.male.back.viewBox, "724 70 724 1300", "L’homme de dos doit être cadré sur sa hauteur anatomique utile");
+for (const model of ["female", "male"]) {
+  for (const side of ["front", "back"]) {
+    const figure = anatomy[model][side];
+    assert.ok(figure.outline.length > 8000, `Le contour ${model}/${side} ne doit pas être une approximation simplifiée`);
+    assert.ok(Object.values(figure.regions).flat().length >= 40, `Les zones ${model}/${side} doivent rester anatomiquement détaillées`);
+  }
+}
 
 console.log("BODY_SELECTOR_TESTS_OK");
