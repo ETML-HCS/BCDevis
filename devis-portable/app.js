@@ -219,7 +219,7 @@
   let activeFamily = "visage";
   let expandedFamily = "visage";
   let activeBodySide = "front";
-  let activeBodyModel = "female";
+  const activeBodyModel = "neutral";
   let activeBodyRegion = "front-visage";
   let activeBodyDetail = "body";
   let activeFaceRegion = "";
@@ -766,6 +766,14 @@
     return (paths || []).map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
   }
 
+  function anonymousBodyHeadMarkup(side) {
+    const cx = side === "back" ? 1086 : 364;
+    const head = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140c27 0 43 17 43 44v27c0 30-18 54-43 58-25-4-43-28-43-58v-27c0-27 16-44 43-44Z"/>`;
+    if (side === "back") return head;
+    const neck = `<path class="body-region-shape body-anonymous-neck" d="M${cx - 28} 246c2 20 0 34-10 49q38 28 76 0c-10-15-12-29-10-49-8 14-18 21-28 21s-20-7-28-21Z"/>`;
+    return `${head}${neck}`;
+  }
+
   function bodyModelGeometry(side) {
     const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
     if (!geometry) throw new Error(`Géométrie corporelle indisponible : ${activeBodyModel}/${side}`);
@@ -779,13 +787,18 @@
   function bodyMapMarkup(side, visibleIds) {
     const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds);
     const geometry = bodyModelGeometry(side);
-    const outline = `<path class="body-anatomy-outline" d="${geometry.outline}"/>`;
+    const [viewX, viewY, viewWidth, viewHeight] = geometry.viewBox.split(" ").map(Number);
+    const headCx = side === "back" ? 1086 : 364;
+    const headMaskId = `body-head-mask-${side}`;
+    const headMask = `<defs><mask id="${headMaskId}" maskUnits="userSpaceOnUse"><rect x="${viewX}" y="${viewY}" width="${viewWidth}" height="${viewHeight}" fill="#fff"/><rect x="${headCx - 80}" y="130" width="160" height="145" rx="36" fill="#000"/></mask></defs>`;
+    const outline = `<path class="body-anatomy-outline" d="${geometry.outline}" mask="url(#${headMaskId})"/>`;
     if (side === "back") {
       return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
-        <title id="bodyMapBackTitle">Corps humain vu de dos</title>
-        <desc id="bodyMapBackDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        <title id="bodyMapBackTitle">Mannequin neutre vu de dos</title>
+        <desc id="bodyMapBackDescription">Silhouette anatomique neutre et anonyme vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        ${headMask}
         <g class="body-figure">${outline}
-          ${region("back-scalp", bodyAnatomyPaths(geometry.regions.scalp))}
+          ${region("back-scalp", anonymousBodyHeadMarkup("back"))}
           ${region("back-dos", bodyAnatomyPaths(geometry.regions.dos))}
           ${region("back-bras", bodyAnatomyPaths(geometry.regions.bras))}
           ${region("back-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
@@ -794,10 +807,11 @@
       </svg>`;
     }
     return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
-      <title id="bodyMapFrontTitle">Corps humain vu de face</title>
-      <desc id="bodyMapFrontDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de face. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      <title id="bodyMapFrontTitle">Mannequin neutre vu de face</title>
+      <desc id="bodyMapFrontDescription">Silhouette anatomique neutre et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      ${headMask}
       <g class="body-figure">${outline}
-        ${region("front-visage", bodyAnatomyPaths(geometry.regions.visage))}
+        ${region("front-visage", anonymousBodyHeadMarkup("front"))}
         ${region("front-torse", bodyAnatomyPaths(geometry.regions.torse))}
         ${region("front-bras", bodyAnatomyPaths(geometry.regions.bras))}
         ${region("front-maillot", `${bodyAnatomyPaths(geometry.regions.maillot)}${geometry.focusMarkup}`)}
@@ -824,36 +838,21 @@
   }
 
   function faceMapMarkup() {
-    const female = activeBodyModel === "female";
     const region = faceRegionMarkup;
-    const outline = female
-      ? "M104 72C104 34 123 14 150 14s46 20 46 58l-3 120c-3 55-19 104-43 122-24-18-40-67-43-122L104 72Z"
-      : "M96 69C96 31 118 12 150 12s54 19 54 57l-4 122c-2 52-15 98-34 116-8 7-24 7-32 0-19-18-32-64-34-116L96 69Z";
-    const neck = female
-      ? "M126 287c5 18 13 27 24 27s19-9 24-27l2 47 20 23c-13 14-28 21-46 21s-33-7-46-21l20-23 2-47Z"
-      : "M119 286c6 18 16 28 31 28s25-10 31-28l2 48 25 23c-16 14-35 21-58 21s-42-7-58-21l25-23 2-48Z";
-    const ears = female
-      ? '<path class="face-region-shape" d="M105 126c-10-7-17 1-15 18 2 16 8 28 18 29m87-47c10-7 17 1 15 18-2 16-8 28-18 29"/>'
-      : '<path class="face-region-shape" d="M98 124c-11-7-18 2-16 20 2 17 8 29 18 31m102-51c11-7 18 2 16 20-2 17-8 29-18 31"/>';
-    const brows = female
-      ? '<path class="face-region-shape" d="M116 118c8-10 20-12 31-3-10 2-20 4-31 3Zm68 0c-8-10-20-12-31-3 10 2 20 4 31 3Z"/>'
-      : '<path class="face-region-shape" d="M112 116c11-7 23-8 35-1l-2 7c-12-5-23-5-33 0v-6Zm76 0c-11-7-23-8-35-1l2 7c12-5 23-5 33 0v-6Z"/>';
-    const nose = female
-      ? '<path class="face-region-shape" d="M143 139c-1 22-3 42-8 58-3 10 4 17 15 17s18-7 15-17c-5-16-7-36-8-58-4-4-10-4-14 0Z"/>'
-      : '<path class="face-region-shape" d="M141 137c-1 21-4 41-9 59-4 12 5 20 18 20s22-8 18-20c-5-18-8-38-9-59-5-5-13-5-18 0Z"/>';
-    const chin = female
-      ? '<path class="face-region-shape" d="M128 267c6-7 14-10 22-10s16 3 22 10c-3 19-11 29-22 29s-19-10-22-29Z"/>'
-      : '<path class="face-region-shape" d="M124 266c8-7 17-10 26-10s18 3 26 10c-2 20-10 30-26 30s-24-10-26-30Z"/>';
-    const beard = female
-      ? '<path class="face-region-shape face-region-soft" d="M107 210c5 49 20 87 43 104 23-17 38-55 43-104-12 18-27 29-43 29s-31-11-43-29Z"/>'
-      : '<path class="face-region-shape face-region-soft" d="M101 205c3 50 16 88 33 102 8 7 24 7 32 0 17-14 30-52 33-102-13 17-29 27-49 27s-36-10-49-27Z"/>';
+    const outline = "M100 70C100 33 121 13 150 13s50 20 50 57l-3 122c-3 54-18 101-47 121-29-20-44-67-47-121L100 70Z";
+    const neck = "M122 287c6 18 15 27 28 27s22-9 28-27l2 47 23 23c-15 14-32 21-53 21s-38-7-53-21l23-23 2-47Z";
+    const ears = '<path class="face-region-shape" d="M102 125c-10-7-17 2-15 19 2 16 8 28 17 30m94-49c10-7 17 2 15 19-2 16-8 28-17 30"/>';
+    const brows = '<path class="face-region-shape" d="M114 117c10-8 22-9 33-2l-1 6c-11-4-22-4-32 0v-4Zm72 0c-10-8-22-9-33-2l1 6c11-4 22-4 32 0v-4Z"/>';
+    const nose = '<path class="face-region-shape" d="M142 138c-1 21-3 41-8 58-4 11 4 19 16 19s20-8 16-19c-5-17-7-37-8-58-4-4-12-4-16 0Z"/>';
+    const chin = '<path class="face-region-shape" d="M126 266c7-7 15-10 24-10s17 3 24 10c-3 20-11 30-24 30s-21-10-24-30Z"/>';
+    const lowerFace = '<path class="face-region-shape face-region-soft" d="M104 208c4 49 19 87 46 105 27-18 42-56 46-105-13 18-28 28-46 28s-33-10-46-28Z"/>';
     return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 390" role="group" aria-labelledby="faceMapTitle faceMapDescription">
-      <title id="faceMapTitle">Détail du visage ${female ? "féminin" : "masculin"}</title>
-      <desc id="faceMapDescription">Choisissez une sous-zone du visage pour filtrer la prestation correspondante.</desc>
+      <title id="faceMapTitle">Détail du visage neutre</title>
+      <desc id="faceMapDescription">Schéma facial anonyme, sans cheveux ni traits identifiables. Choisissez une sous-zone pour filtrer la prestation correspondante.</desc>
       <g class="face-figure" transform="translate(-102 0) scale(1.68 1)">
         ${region("face-neck", `<path class="face-region-shape" d="${neck}"/>`)}
         ${region("face-full", `<path class="face-region-shape face-region-base" d="${outline}"/>`)}
-        ${region("face-beard", beard)}
+        ${region("face-beard", lowerFace)}
         ${region("face-temples", '<path class="face-region-shape" d="M105 105c10-12 20-17 30-18l-3 55c-11 7-20 17-27 30-5-20-5-44 0-67Zm90 0c-10-12-20-17-30-18l3 55c11 7 20 17 27 30 5-20 5-44 0-67Z"/>')}
         ${region("face-ears", ears)}
         ${region("face-brows", brows)}
@@ -937,16 +936,13 @@
           <div class="body-map-card-head">
             <div><span>${mapEyebrow}</span><strong id="bodySelectorTitle">${mapTitle}</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div>
             ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><span aria-hidden="true">←</span> Corps complet</button>' : ""}
-            <div class="body-map-controls">
-              <div class="body-model-toggle" role="group" aria-label="Morphologie du mannequin"><button type="button" data-body-model="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>
-              <div class="body-side-toggle" role="group" aria-label="Vue du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div>
-            </div>
+            <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Vue du mannequin neutre"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div></div>
           </div>
           <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
           <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>${mapHint}</p>
         </section>
         <section class="body-results" aria-live="polite" aria-labelledby="bodyResultsTitle">
-          <div class="body-results-head"><span>${selectedFaceRegion ? `Visage ${activeBodyModel === "female" ? "féminin" : "masculin"} · zone sélectionnée` : selectedRegion ? `Vue ${activeBodySide === "back" ? "arrière" : "avant"} · zone sélectionnée` : "Autres prestations"}</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
+          <div class="body-results-head"><span>${selectedFaceRegion ? "Visage neutre · zone sélectionnée" : selectedRegion ? `Vue ${activeBodySide === "back" ? "arrière" : "avant"} · zone sélectionnée` : "Autres prestations"}</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
           ${options}
         </section>
       </div>
@@ -1261,7 +1257,6 @@
     activeFamily = "visage";
     expandedFamily = "visage";
     activeBodySide = "front";
-    activeBodyModel = "female";
     activeBodyRegion = "front-visage";
     activeBodyDetail = "body";
     activeFaceRegion = "";
@@ -1902,13 +1897,6 @@
       activeFaceRegion = "";
       renderCatalog();
       window.setTimeout(() => $('[data-body-region="front-visage"]')?.focus(), 0);
-      return;
-    }
-    const bodyModelButton = event.target.closest("button[data-body-model]");
-    if (bodyModelButton) {
-      activeBodyModel = bodyModelButton.dataset.bodyModel === "male" ? "male" : "female";
-      renderCatalog();
-      window.setTimeout(() => $(`button[data-body-model="${activeBodyModel}"]`)?.focus(), 0);
       return;
     }
     const bodySideButton = event.target.closest("[data-body-side]");

@@ -81,45 +81,24 @@ async function main() {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
-    await capture(window, "01-corps-avant-femme.png");
-
-    const modelToggle = await window.webContents.executeJavaScript(`(() => {
-      const dimensions = () => {
-        const figure = document.querySelector(".body-figure").getBoundingClientRect();
-        return {
-          torso: document.querySelector('[data-body-region="front-torse"]').getBoundingClientRect().width,
-          pelvis: document.querySelector('[data-body-region="front-maillot"]').getBoundingClientRect().width,
-          figureWidth: figure.width,
-          figureHeight: figure.height
-        };
-      };
-      const female = dimensions();
-      document.querySelector('button[data-body-model="male"]').click();
-      const male = dimensions();
-      return {
-        female,
-        male,
-        model: document.querySelector(".interactive-body-map").dataset.bodyModel,
-        malePressed: document.querySelector('button[data-body-model="male"]').getAttribute("aria-pressed"),
-        services: document.querySelectorAll(".body-service-options .family-option").length
-      };
-    })()`);
-    if (modelToggle.model !== "male"
-      || modelToggle.malePressed !== "true"
-      || modelToggle.services !== 13
-      || modelToggle.male.figureWidth <= modelToggle.female.figureWidth
-      || Math.abs(modelToggle.male.figureHeight - modelToggle.female.figureHeight) > 25
-      || modelToggle.male.torso <= modelToggle.female.torso
-      || modelToggle.female.pelvis / modelToggle.female.torso <= modelToggle.male.pelvis / modelToggle.male.torso) {
-      throw new Error(`Toggle femme/homme invalide : ${JSON.stringify(modelToggle)}`);
+    const neutralModel = await window.webContents.executeJavaScript(`(() => ({
+      model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+      modelToggleAbsent: !document.querySelector("[data-body-model]:not(svg):not(.body-selector)"),
+      sideButtons: document.querySelectorAll(".body-side-toggle button").length,
+      visibleGenderLabels: [...document.querySelectorAll(".body-map-card button")].filter((button) => /femme|homme/i.test(button.textContent)).length
+    }))()`);
+    if (neutralModel.model !== "neutral"
+      || !neutralModel.modelToggleAbsent
+      || neutralModel.sideButtons !== 2
+      || neutralModel.visibleGenderLabels !== 0) {
+      throw new Error(`Mannequin neutre invalide : ${JSON.stringify(neutralModel)}`);
     }
-    await capture(window, "02-corps-avant-homme.png");
-    await window.webContents.executeJavaScript(`document.querySelector('button[data-body-model="female"]').click()`);
+    await capture(window, "01-corps-avant-neutre.png");
 
     const faceDetail = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('[data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       const initialServices = document.querySelectorAll(".body-service-options .family-option").length;
-      const femaleWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
+      const neutralWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
       document.querySelector('[data-face-region="face-cheeks"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       const cheeks = {
         title: document.querySelector("#bodyResultsTitle").textContent,
@@ -129,7 +108,9 @@ async function main() {
         mapVisible: document.querySelector(".interactive-face-map").getBoundingClientRect().height >= 390,
         regions: document.querySelectorAll("[data-face-region]").length,
         initialServices,
-        femaleWidth,
+        neutralWidth,
+        model: document.querySelector(".interactive-face-map").dataset.bodyModel,
+        accessibleTitle: document.querySelector("#faceMapTitle").textContent,
         cheeks,
         backButton: Boolean(document.querySelector("[data-body-detail='body']")),
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
@@ -138,38 +119,33 @@ async function main() {
     if (!faceDetail.mapVisible
       || faceDetail.regions !== 12
       || faceDetail.initialServices !== 13
+      || faceDetail.model !== "neutral"
+      || faceDetail.accessibleTitle !== "Détail du visage neutre"
       || faceDetail.cheeks.title !== "Joues"
       || faceDetail.cheeks.ids.join(",") !== "26"
       || !faceDetail.backButton
       || faceDetail.horizontalOverflow) {
-      throw new Error(`Détail du visage féminin invalide : ${JSON.stringify(faceDetail)}`);
+      throw new Error(`Détail du visage neutre invalide : ${JSON.stringify(faceDetail)}`);
     }
-    await capture(window, "03-visage-femme-joues.png");
+    await capture(window, "02-visage-neutre-joues.png");
 
-    const maleFace = await window.webContents.executeJavaScript(`(() => {
-      document.querySelector('button[data-body-model="male"]').click();
-      const maleWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
+    const faceNose = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('[data-face-region="face-nose"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       return {
         model: document.querySelector(".interactive-face-map").dataset.bodyModel,
-        maleWidth,
         title: document.querySelector("#bodyResultsTitle").textContent,
         ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId)),
         activeNose: Boolean(document.querySelector('[data-face-region="face-nose"].active'))
       };
     })()`);
-    if (maleFace.model !== "male"
-      || maleFace.maleWidth <= faceDetail.femaleWidth
-      || maleFace.title !== "Nez & narines"
-      || maleFace.ids.join(",") !== "25"
-      || !maleFace.activeNose) {
-      throw new Error(`Détail du visage masculin invalide : ${JSON.stringify(maleFace)}`);
+    if (faceNose.model !== "neutral"
+      || faceNose.title !== "Nez & narines"
+      || faceNose.ids.join(",") !== "25"
+      || !faceNose.activeNose) {
+      throw new Error(`Zone du nez invalide : ${JSON.stringify(faceNose)}`);
     }
-    await capture(window, "04-visage-homme-nez.png");
-    await window.webContents.executeJavaScript(`(() => {
-      document.querySelector('button[data-body-model="female"]').click();
-      document.querySelector("[data-body-detail='body']").click();
-    })()`);
+    await capture(window, "03-visage-neutre-nez.png");
+    await window.webContents.executeJavaScript(`document.querySelector("[data-body-detail='body']").click()`);
 
     const back = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="back"]').click();
@@ -185,27 +161,21 @@ async function main() {
     if (back.side !== "back" || back.title !== "Dos & nuque" || back.services !== 5 || !back.activeBack || back.horizontalOverflow) {
       throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
     }
-    await capture(window, "05-corps-arriere-dos.png");
-
-    const maleBack = await window.webContents.executeJavaScript(`(() => {
-      const femaleFigure = document.querySelector(".body-figure").getBoundingClientRect();
-      document.querySelector('button[data-body-model="male"]').click();
-      const maleFigure = document.querySelector(".body-figure").getBoundingClientRect();
+    const neutralBack = await window.webContents.executeJavaScript(`(() => {
+      const figure = document.querySelector(".body-figure").getBoundingClientRect();
       return {
         model: document.querySelector(".interactive-body-map").dataset.bodyModel,
-        female: { width: femaleFigure.width, height: femaleFigure.height },
-        male: { width: maleFigure.width, height: maleFigure.height },
+        figure: { width: figure.width, height: figure.height },
         regions: document.querySelectorAll("[data-body-region]").length
       };
     })()`);
-    if (maleBack.model !== "male"
-      || maleBack.regions !== 5
-      || maleBack.male.width <= maleBack.female.width
-      || Math.abs(maleBack.male.height - maleBack.female.height) > 16) {
-      throw new Error(`Vue arrière masculine invalide : ${JSON.stringify(maleBack)}`);
+    if (neutralBack.model !== "neutral"
+      || neutralBack.regions !== 5
+      || neutralBack.figure.width < 220
+      || neutralBack.figure.height < 500) {
+      throw new Error(`Vue arrière neutre invalide : ${JSON.stringify(neutralBack)}`);
     }
-    await capture(window, "09-corps-arriere-homme.png");
-    await window.webContents.executeJavaScript(`document.querySelector('button[data-body-model="female"]').click()`);
+    await capture(window, "04-corps-arriere-neutre.png");
 
     const exactRegions = await window.webContents.executeJavaScript(`(() => {
       const clickRegion = (regionId) => {
@@ -240,7 +210,6 @@ async function main() {
 
     const geometryAudit = await window.webContents.executeJavaScript(`(() => {
       document.querySelector("[data-body-detail='body']")?.click();
-      document.querySelector('button[data-body-model="female"]').click();
       document.querySelector('button[data-body-side="front"]').click();
       const activate = (regionId) => {
         const region = document.querySelector('[data-body-region="' + regionId + '"]');
@@ -281,7 +250,7 @@ async function main() {
       || geometryAudit.activeSifStroke === geometryAudit.neutralSifStroke) {
       throw new Error(`Géométrie anatomique invalide : ${JSON.stringify(geometryAudit)}`);
     }
-    await capture(window, "08-zone-sif-femme.png");
+    await capture(window, "05-zone-sif-neutre.png");
 
     const keyboardAudit = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="front"]').click();
@@ -360,7 +329,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, maleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, neutralModel, faceDetail, faceNose, back, neutralBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

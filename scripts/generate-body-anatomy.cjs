@@ -14,34 +14,18 @@ const sourceAssets = path.join(path.resolve(sourceRoot), "assets");
 const sourceComponents = path.join(path.resolve(sourceRoot), "components");
 
 const sources = {
-  female: {
-    front: {
-      asset: "bodyFemaleFront.ts",
-      wrapper: "SvgFemaleWrapper.tsx",
-      viewBox: "-50 -40 734 1538",
-      outlineLabel: "female-body-outline-front",
-      focus: { maillot: { cx: 320, cy: 722 }, sif: { cx: 1140, cy: 742 } }
-    },
-    back: {
-      asset: "bodyFemaleBack.ts",
-      wrapper: "SvgFemaleWrapper.tsx",
-      viewBox: "756 0 774 1448",
-      outlineLabel: "female-body-outline-back",
-      focus: { maillot: { cx: 320, cy: 722 }, sif: { cx: 1140, cy: 742 } }
-    }
-  },
-  male: {
+  neutral: {
     front: {
       asset: "bodyFront.ts",
       wrapper: "SvgMaleWrapper.tsx",
-      viewBox: "0 70 724 1300",
+      viewBox: "0 130 724 1230",
       outlineLabel: "male-body-outline-front",
       focus: { maillot: { cx: 364, cy: 718 }, sif: { cx: 1085, cy: 748 } }
     },
     back: {
       asset: "bodyBack.ts",
       wrapper: "SvgMaleWrapper.tsx",
-      viewBox: "724 70 724 1300",
+      viewBox: "724 130 724 1230",
       outlineLabel: "male-body-outline-back",
       focus: { maillot: { cx: 364, cy: 718 }, sif: { cx: 1085, cy: 748 } }
     }
@@ -50,14 +34,14 @@ const sources = {
 
 const groups = {
   front: {
-    visage: ["hair", "head", "neck"],
+    visage: ["head", "neck"],
     torse: ["trapezius", "chest", "obliques", "abs"],
     bras: ["deltoids", "biceps", "triceps", "forearm", "hands"],
     maillot: ["adductors"],
     jambes: ["quadriceps", "knees", "tibialis", "calves", "ankles", "feet"]
   },
   back: {
-    scalp: ["hair", "head"],
+    scalp: ["head"],
     dos: ["neck", "trapezius", "upper-back", "lower-back"],
     bras: ["deltoids", "triceps", "forearm", "hands"],
     jambes: ["gluteal", "adductors", "hamstring", "calves", "ankles", "feet"]

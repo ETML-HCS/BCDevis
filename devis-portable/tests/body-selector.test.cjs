@@ -23,17 +23,18 @@ assert.match(app, /catalogMode: "tiles"/, "Le mode historique doit rester le cho
 assert.match(app, /function currentCatalogMode\(\)/, "Le choix sauvegardé doit être normalisé");
 assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doit avoir son propre rendu");
 assert.match(app, /function bodyMapMarkup\(side, visibleIds\)/, "Les vues avant et arrière doivent partager un rendu dédié");
-assert.match(app, /function bodyModelGeometry\(side\)/, "Les morphologies doivent disposer de géométries anatomiques dédiées");
+assert.match(app, /function bodyModelGeometry\(side\)/, "Le mannequin doit disposer d’une géométrie anatomique dédiée");
 assert.match(app, /window\.BCDEVIS_BODY_ANATOMY/, "Le rendu doit utiliser les tracés anatomiques normalisés");
-assert.match(app, /Corps humain vu de face/, "La vue avant doit être décrite");
-assert.match(app, /Corps humain vu de dos/, "La vue arrière doit être décrite");
+assert.match(app, /Mannequin neutre vu de face/, "La vue avant neutre doit être décrite");
+assert.match(app, /Mannequin neutre vu de dos/, "La vue arrière neutre doit être décrite");
 assert.match(app, /interactive-body-map[^"]*"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
-assert.match(app, /let activeBodyModel = "female"/, "La silhouette féminine doit être proposée par défaut");
-assert.match(app, /data-body-model="female"[^>]+>Femme</, "Le sélecteur doit proposer une morphologie féminine");
-assert.match(app, /data-body-model="male"[^>]+>Homme</, "Le sélecteur doit proposer une morphologie masculine");
-assert.match(app, /button\[data-body-model\]/, "Le changement de morphologie doit être interactif");
+assert.match(app, /const activeBodyModel = "neutral"/, "Une silhouette neutre unique doit être utilisée");
+assert.doesNotMatch(app, /data-body-model="(?:female|male)"/, "Aucune morphologie genrée ne doit être proposée");
+assert.doesNotMatch(app, /button\[data-body-model\]/, "Le changement homme/femme doit être retiré");
 assert.match(app, /function faceMapMarkup\(\)/, "Le visage doit disposer d’une carte anatomique dédiée");
-assert.match(app, /Détail du visage \$\{female \? "féminin" : "masculin"\}/, "Les deux visages doivent être décrits distinctement");
+assert.match(app, /Détail du visage neutre/, "Le schéma facial doit être décrit comme neutre");
+assert.match(app, /sans cheveux ni traits identifiables/, "Le schéma facial doit annoncer son anonymat");
+assert.doesNotMatch(app, /féminin|masculin/, "Le sélecteur corporel ne doit plus employer de qualification genrée");
 assert.match(app, /data-body-detail="body"/, "Le détail du visage doit permettre de revenir au corps complet");
 
 const expectedFaceRegions = {
@@ -151,11 +152,16 @@ assert.match(app, /data-anatomy-source="react-native-body-highlighter"/, "La pro
 assert.match(app, /<g class="body-figure">/, "Chaque silhouette doit disposer d’un groupe mesurable unique");
 assert.match(app, /class="body-anatomy-outline"/, "La silhouette doit conserver un contour corporel continu");
 assert.match(app, /class="body-region-shape body-anatomy-segment"/, "Les zones doivent reprendre des segments anatomiques précis");
+assert.match(app, /function anonymousBodyHeadMarkup\(side\)/, "La tête neutre doit être construite sans traits identifiables");
+assert.match(app, /class="body-region-shape body-anonymous-head"/, "La tête anonyme doit rester une zone interactive");
+assert.match(app, /const headMaskId = `body-head-mask-\$\{side\}`/, "La tête d’origine doit être masquée sans rectangle visible");
 assert.match(app, /class="face-figure" transform="translate\(-102 0\) scale\(1\.68 1\)"/, "Le visage doit être normalisé par un seul repère SVG");
 assert.match(app, /class="body-region-hitarea"[^>]+rx="48" ry="70"/, "Le SIF doit disposer d’une cible tactile confortable");
 assert.match(app, /class="face-region-hitarea"/, "La ligne de barbe doit disposer d’une cible tactile élargie");
 assert.match(styles, /\.interactive-body-map\{[^}]*height:clamp\(540px,65vh,620px\)/, "Le corps complet doit occuper une hauteur confortable");
-assert.match(styles, /\.body-anatomy-outline\{[^}]*fill:#292928;stroke:#9b968d/, "Le contour continu doit réunifier les segments anatomiques");
+assert.match(styles, /\.body-anatomy-outline\{[^}]*fill:#2e2e2d;stroke:#9b968d/, "Le contour continu doit réunifier les segments anatomiques");
+assert.match(styles, /\.body-anatomy-segment\{[^}]*opacity:\.32/, "Les détails musculaires doivent rester discrets sur le mannequin neutre");
+assert.match(styles, /\.body-region\.active \.body-anatomy-segment\{[^}]*opacity:1/, "La zone active doit retrouver toute sa lisibilité");
 assert.match(styles, /\.interactive-face-map\{[^}]*min-height:390px/, "Le visage détaillé doit rester lisible");
 assert.doesNotMatch(styles, /\.face-region\{[^}]*scaleX/, "Le visage ne doit plus être étiré artificiellement");
 assert.match(styles, /\.face-region\.active \.face-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La sous-zone faciale active doit être clairement visible");
@@ -170,17 +176,14 @@ const anatomyContext = { window: {} };
 vm.createContext(anatomyContext);
 vm.runInContext(anatomySource, anatomyContext);
 const anatomy = anatomyContext.window.BCDEVIS_BODY_ANATOMY;
-assert.ok(anatomy?.female?.front && anatomy?.female?.back && anatomy?.male?.front && anatomy?.male?.back, "Les quatre silhouettes anatomiques doivent être livrées");
-assert.equal(anatomy.female.front.viewBox, "-50 -40 734 1538", "La femme de face doit conserver son repère anatomique natif");
-assert.equal(anatomy.female.back.viewBox, "756 0 774 1448", "La femme de dos doit conserver son repère anatomique natif");
-assert.equal(anatomy.male.front.viewBox, "0 70 724 1300", "L’homme de face doit être cadré sur sa hauteur anatomique utile");
-assert.equal(anatomy.male.back.viewBox, "724 70 724 1300", "L’homme de dos doit être cadré sur sa hauteur anatomique utile");
-for (const model of ["female", "male"]) {
-  for (const side of ["front", "back"]) {
-    const figure = anatomy[model][side];
-    assert.ok(figure.outline.length > 8000, `Le contour ${model}/${side} ne doit pas être une approximation simplifiée`);
-    assert.ok(Object.values(figure.regions).flat().length >= 40, `Les zones ${model}/${side} doivent rester anatomiquement détaillées`);
-  }
+assert.deepEqual(Array.from(Object.keys(anatomy)), ["neutral"], "Une seule anatomie neutre doit être livrée");
+assert.ok(anatomy?.neutral?.front && anatomy?.neutral?.back, "Les vues avant et arrière du mannequin neutre doivent être livrées");
+assert.equal(anatomy.neutral.front.viewBox, "0 130 724 1230", "La vue avant doit être resserrée sur la hauteur anatomique utile");
+assert.equal(anatomy.neutral.back.viewBox, "724 130 724 1230", "La vue arrière doit être resserrée sur la hauteur anatomique utile");
+for (const side of ["front", "back"]) {
+  const figure = anatomy.neutral[side];
+  assert.ok(figure.outline.length > 8000, `Le contour neutre/${side} ne doit pas être une approximation simplifiée`);
+  assert.ok(Object.values(figure.regions).flat().length >= 40, `Les zones neutres/${side} doivent rester anatomiquement détaillées`);
 }
 
 console.log("BODY_SELECTOR_TESTS_OK");
