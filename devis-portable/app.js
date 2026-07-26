@@ -476,6 +476,15 @@
     };
   }
 
+  function serviceVisual(item) {
+    const category = categoryFor(item.categoryId);
+    const requestedIcon = String(item.icon || "");
+    return {
+      icon: /^[a-z0-9-]+$/.test(requestedIcon) ? requestedIcon : category.icon || "skin-target",
+      zone: String(item.zone || category.short || category.name || "Zone sur mesure")
+    };
+  }
+
   function familyFor(id = activeFamily) {
     return window.QUOTE_FAMILIES.find((family) => family.id === id) || window.QUOTE_FAMILIES[0];
   }
@@ -634,10 +643,12 @@
         const display = offerDisplay();
         const added = quote.lines.some((line) => String(line.serviceId) === String(item.id) && line.offerType === selectedOfferMode);
         const durationLabel = item.duration ? ` (${item.duration} min)` : "";
-        return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · ${escapeHTML(display.label)}">
-          <span><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong></span>
+        const visual = serviceVisual(item);
+        return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)}">
+          <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="#icon-${visual.icon}"></use></svg></span>
+          <span class="family-option-copy"><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong><small>${escapeHTML(visual.zone)}</small></span>
           <b class="family-option-price">${money(item.price)}</b>
-          <svg><use href="#icon-plus"></use></svg>
+          <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
         </button>`;
       }).join("")}</div>` : "";
       const countLabel = needle ? plural(visibleServices.length, "résultat") : plural(familyServices.length, "soin");

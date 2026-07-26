@@ -883,13 +883,84 @@
     .theme-picker{grid-template-columns:1fr}
     html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
   }
+  /* Utilitaires d’application placés après le groupe des tarifs. */
+  .topbar-utilities{
+    display:flex;
+    flex:0 0 auto;
+    align-items:center;
+    gap:5px;
+  }
+  .topbar-utility-button{
+    position:relative;
+    display:grid;
+    width:42px;
+    min-width:42px;
+    height:42px;
+    padding:0;
+    place-items:center;
+    border:1px solid color-mix(in srgb,var(--topbar-fg) 18%,transparent);
+    border-radius:9px;
+    color:var(--topbar-fg);
+    background:color-mix(in srgb,var(--topbar-fg) 7%,transparent);
+  }
+  .topbar-utility-button svg{width:18px;height:18px}
+  .topbar-utility-button:hover,.topbar-utility-button:focus-visible{
+    border-color:var(--accent);
+    background:color-mix(in srgb,var(--topbar-fg) 12%,transparent);
+  }
+  .topbar-utility-button::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    z-index:110;
+    top:calc(100% + 8px);
+    right:0;
+    padding:5px 8px;
+    visibility:hidden;
+    border-radius:5px;
+    color:var(--contrast-ink);
+    background:var(--contrast);
+    box-shadow:0 8px 20px rgba(0,0,0,.22);
+    font-size:10px;
+    font-weight:650;
+    line-height:1;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-2px);
+    transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+  }
+  .topbar-utility-button:hover::after,.topbar-utility-button:focus-visible::after{
+    visibility:visible;
+    opacity:1;
+    transform:translateY(0);
+  }
+  @media screen and (min-width:1451px){
+    .topbar{grid-template-columns:180px 48px minmax(360px,1fr) auto;gap:16px}
+  }
+  @media screen and (min-width:1181px) and (max-width:1450px){
+    .topbar{grid-template-columns:160px 48px minmax(300px,1fr) auto;gap:12px}
+  }
+  @media screen and (max-width:1180px){
+    .topbar{gap:8px}
+    .topbar-context{min-width:0}
+    .topbar-utility-button{width:40px;min-width:40px;height:40px}
+  }
+  @media screen and (max-width:760px){
+    .topbar{gap:5px}
+    .topbar-utilities{gap:4px}
+    .topbar-utility-button{width:38px;min-width:38px;height:38px}
+    .topbar-utility-button svg{width:16px;height:16px}
+  }
+  @media screen and (max-width:400px){
+    .topbar-utility-button{width:36px;min-width:36px;height:36px}
+  }
   /* En-tête de caisse : actions essentielles sous forme d’icônes compactes. */
   .family-title-row h2{font-size:18px}
   .checkout-panel h2{font-size:22px}
   .receipt-head{min-height:42px;gap:6px}
   .quote-title-row{flex:0 0 auto}
   .quote-head-actions{min-width:0;gap:5px}
-  .tax-header-toggle{min-height:38px;gap:5px;font-size:11px}
+  .tax-header-toggle{min-height:38px;gap:5px;font-size:11px;transform:translateX(-5px)}
   .tax-header-toggle .switch{width:38px;height:22px}
   .tax-header-toggle .switch:after{width:16px;height:16px}
   .tax-header-toggle input:checked+.switch:after{transform:translateX(16px)}
@@ -1011,15 +1082,61 @@
     <symbol id="icon-scan" viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4m0 6v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4"></path><circle cx="12" cy="12" r="3"></circle></symbol>
     <symbol id="icon-session" viewBox="0 0 24 24"><rect x="6" y="4.5" width="12" height="15" rx="2.2"></rect><path d="M9 9h6M9 13h4.5"></path></symbol>
     <symbol id="icon-pack" viewBox="0 0 24 24"><rect x="7" y="7" width="11" height="12" rx="2.2"></rect><path d="M5 16V6a2 2 0 0 1 2-2h9M10 10.5h5M10 14h5"></path></symbol>
-    <symbol id="icon-face" viewBox="0 0 24 24"><path d="M14.9 3.7c-4.3-.9-8.1 2.1-8.2 6.4 0 2.6 1.1 4.5 2.3 6.1.8 1.1 1 2.6.7 4.1"></path><path d="M14 6.4c.2 1.5.7 2.9 1.8 4.2l-1.7 1.5c.2.7.8 1.1 1.7 1.2-.2 2.4-1.8 3.8-4.6 3.8M11.2 8.7h.01M12 14.8c.8.3 1.6.3 2.4 0"></path></symbol>
-    <symbol id="icon-arms" viewBox="0 0 24 24"><path d="M9.2 5.2C7 6.3 5.5 8.4 5.1 11L3.8 20.2M14.8 5.2c2.2 1.1 3.7 3.2 4.1 5.8l1.3 9.2M9.2 5.2c.7 1.3 1.7 2 2.8 2s2.1-.7 2.8-2M9.7 10.3c1.5.7 3.1.7 4.6 0"></path><path d="M7.2 12.2 6 19.4M16.8 12.2l1.2 7.2" opacity=".55"></path></symbol>
-    <symbol id="icon-torso" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M9 11.3c2 1 4 1 6 0M12 6v12.5"></path></symbol>
-    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><path d="M8.5 10.2c1.1.2 2.1.8 3.5 2 1.4-1.2 2.4-1.8 3.5-2M9.1 16.2c1.9.8 3.9.8 5.8 0" opacity=".65"></path></symbol>
-    <symbol id="icon-maillot" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path></symbol>
-    <symbol id="icon-legs" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><path d="M12 4v7.7" opacity=".55"></path></symbol>
-    <symbol id="icon-electrolysis" viewBox="0 0 24 24"><path d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0M10.4 20.5c.8-4.8.9-8.8.2-12.2-.4-1.9.5-3.8 2.2-4.8M20.5 4.1 13.7 14"></path><circle cx="12.9" cy="15" r="1.7"></circle></symbol>
+    <symbol id="icon-face" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M8.4 10h1.2m4.8 0h1.2M10 15.8c1.3.7 2.7.7 4 0"></path></symbol>
+    <symbol id="icon-scalp" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M6.2 8.4c.6-3.4 2.7-5.6 5.8-5.6s5.2 2.2 5.8 5.6c-1.7-1-3.6-1.5-5.8-1.5s-4.1.5-5.8 1.5Z" fill="currentColor" stroke="none" opacity=".28"></path><path d="M8.2 5.8c2.4-1.2 5.2-1.2 7.6 0"></path></symbol>
+    <symbol id="icon-face-skin" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="8.7" cy="13" r="2" fill="currentColor" stroke="none" opacity=".24"></circle><circle cx="15.3" cy="13" r="2" fill="currentColor" stroke="none" opacity=".24"></circle><path d="M8.5 9.6h1M14.5 9.6h1M10 16c1.3.7 2.7.7 4 0"></path></symbol>
+    <symbol id="icon-face-neck" viewBox="0 0 24 24"><path d="M12 2.8c-3.6 0-5.8 2.8-5.8 6.6 0 4.7 2.5 8.2 5.8 9.3 3.3-1.1 5.8-4.6 5.8-9.3 0-3.8-2.2-6.6-5.8-6.6Z"></path><path d="M9 17.1v4m6-4v4M9 20.8c2-.9 4-.9 6 0"></path><path d="M9.2 17.2c.9 1 1.8 1.5 2.8 1.5s1.9-.5 2.8-1.5v3.2H9.2v-3.2Z" fill="currentColor" stroke="none" opacity=".25"></path></symbol>
+    <symbol id="icon-forehead" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M7 6.1c1.4-2.2 3-3.3 5-3.3s3.6 1.1 5 3.3l-.6 2.3H7.6L7 6.1Z" fill="currentColor" stroke="none" opacity=".27"></path><path d="M8.3 9.8h1.4m4.6 0h1.4"></path></symbol>
+    <symbol id="icon-glabella" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M8.1 9.2h2.2m3.4 0h2.2"></path><rect x="10.8" y="7.5" width="2.4" height="4.2" rx="1.2" fill="currentColor" stroke="none" opacity=".3"></rect></symbol>
+    <symbol id="icon-cheeks" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="8.5" cy="13.2" r="2.2" fill="currentColor" stroke="none" opacity=".3"></circle><circle cx="15.5" cy="13.2" r="2.2" fill="currentColor" stroke="none" opacity=".3"></circle><path d="M8.4 9.6h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-upper-lip" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M8.7 14.3c1.1-.2 2.2-.8 3.3-1.6 1.1.8 2.2 1.4 3.3 1.6-1 1-2.1 1.4-3.3 1.4s-2.3-.4-3.3-1.4Z" fill="currentColor" stroke="none" opacity=".38"></path><path d="M8.5 9.7h1m5 0h1"></path></symbol>
+    <symbol id="icon-chin" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M8.8 17.1c.9 2 2 3.3 3.2 3.9 1.2-.6 2.3-1.9 3.2-3.9-2.1.9-4.3.9-6.4 0Z" fill="currentColor" stroke="none" opacity=".3"></path><path d="M10.1 14.8c1.3.7 2.5.7 3.8 0"></path></symbol>
+    <symbol id="icon-nose" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M12 8.2 10.2 14c1.2.7 2.4.7 3.6 0L12 8.2Z" fill="currentColor" stroke="none" opacity=".3"></path><path d="M8.3 9.3h1.4m4.6 0h1.4"></path></symbol>
+    <symbol id="icon-ears" viewBox="0 0 24 24"><path d="M12 2.8c-3.5 0-5.7 3-5.7 7.2 0 5.5 2.5 9.7 5.7 11 3.2-1.3 5.7-5.5 5.7-11 0-4.2-2.2-7.2-5.7-7.2Z"></path><path d="M6.4 9.3c-2-1-2.5 1.1-1.4 3.5.5 1 1.1 1.5 1.8 1.4m10.8-4.9c2-1 2.5 1.1 1.4 3.5-.5 1-1.1 1.5-1.8 1.4"></path><circle cx="5.8" cy="11.6" r="1.7" fill="currentColor" stroke="none" opacity=".27"></circle><circle cx="18.2" cy="11.6" r="1.7" fill="currentColor" stroke="none" opacity=".27"></circle></symbol>
+    <symbol id="icon-eyebrows" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M7.7 8.9c1.1-.8 2.2-.9 3.2-.2m2.2 0c1-.7 2.1-.6 3.2.2" stroke-width="2.5"></path><path d="M10 15.7c1.3.7 2.7.7 4 0"></path></symbol>
+    <symbol id="icon-temples" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="6.8" cy="9" r="1.8" fill="currentColor" stroke="none" opacity=".3"></circle><circle cx="17.2" cy="9" r="1.8" fill="currentColor" stroke="none" opacity=".3"></circle><path d="M8.4 10h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-beard" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M6.4 12.5c.8 4.3 3 7.4 5.6 8.5 2.6-1.1 4.8-4.2 5.6-8.5-1.7 1.1-3.5 1.6-5.6 1.6s-3.9-.5-5.6-1.6Z" fill="currentColor" stroke="none" opacity=".27"></path><path d="M8.4 9.5h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-beard-line" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M6.3 12.7c1 3.8 3 6.9 5.7 8.3 2.7-1.4 4.7-4.5 5.7-8.3M8.1 12.2c2.6 1.4 5.2 1.4 7.8 0" stroke-width="2.2"></path></symbol>
+    <symbol id="icon-face-zone" viewBox="0 0 24 24"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="15.1" cy="13.1" r="2.4"></circle><circle cx="15.1" cy="13.1" r=".7" fill="currentColor" stroke="none"></circle><path d="M8.2 9.8h1.4"></path></symbol>
+    <symbol id="icon-neck" viewBox="0 0 24 24"><circle cx="12" cy="6.8" r="4.2"></circle><path d="M8.7 10v3.4c0 1.7-1.3 2.7-3.4 3.4M15.3 10v3.4c0 1.7 1.3 2.7 3.4 3.4M5.3 16.8c2 2.8 4.2 4.2 6.7 4.2s4.7-1.4 6.7-4.2"></path><path d="M9 10.3h6v5.3H9z" fill="currentColor" stroke="none" opacity=".27"></path></symbol>
+    <symbol id="icon-arms" viewBox="0 0 24 24"><path d="M9.2 5.2C7 6.3 5.5 8.4 5.1 11L3.8 20.2M14.8 5.2c2.2 1.1 3.7 3.2 4.1 5.8l1.3 9.2M9.2 5.2c.7 1.3 1.7 2 2.8 2s2.1-.7 2.8-2M9.7 10.3c1.5.7 3.1.7 4.6 0"></path><path d="M7.2 10.7 5.8 19.8M16.8 10.7l1.4 9.1" stroke-width="2.6" opacity=".55"></path></symbol>
+    <symbol id="icon-forearms" viewBox="0 0 24 24"><path d="M9 4.5C6.5 6 5.2 8.3 5.2 11.5L4 21M15 4.5c2.5 1.5 3.8 3.8 3.8 7l1.2 9.5M9 4.5c1.8 1.5 4.2 1.5 6 0"></path><path d="M5.1 14.2 4 21m14.9-6.8L20 21" stroke-width="3" opacity=".5"></path></symbol>
+    <symbol id="icon-armpits" viewBox="0 0 24 24"><path d="M9 5.2C6.6 6.4 5.1 8.6 4.8 11.8L4 20M15 5.2c2.4 1.2 3.9 3.4 4.2 6.6L20 20M9 5.2c.7 1.2 1.7 1.8 3 1.8s2.3-.6 3-1.8M9.3 11.2c1.8.9 3.6.9 5.4 0"></path><circle cx="7.6" cy="10.2" r="1.8" fill="currentColor" stroke="none" opacity=".32"></circle><circle cx="16.4" cy="10.2" r="1.8" fill="currentColor" stroke="none" opacity=".32"></circle></symbol>
+    <symbol id="icon-shoulders" viewBox="0 0 24 24"><path d="M9 4.5c.8 1.3 1.8 1.9 3 1.9s2.2-.6 3-1.9M9 4.5C6.3 6 4.6 8.4 4.2 12M15 4.5c2.7 1.5 4.4 3.9 4.8 7.5M8 20l.8-8.4c2.1.9 4.3.9 6.4 0L16 20"></path><path d="M4.4 11.4c.7-2.8 2.2-4.9 4.6-6.3l1.1 3c-2.4.7-4.3 1.8-5.7 3.3Zm15.2 0c-.7-2.8-2.2-4.9-4.6-6.3l-1.1 3c2.4.7 4.3 1.8 5.7 3.3Z" fill="currentColor" stroke="none" opacity=".26"></path></symbol>
+    <symbol id="icon-hands" viewBox="0 0 24 24"><path d="M8.2 11V5.4a1.1 1.1 0 0 1 2.2 0v4.1-5.6a1.1 1.1 0 0 1 2.2 0v5.6-4.7a1.1 1.1 0 0 1 2.2 0v5.1-3.5a1.1 1.1 0 0 1 2.2 0v6.8c0 5-2.7 7.8-7 7.8-2.5 0-4.2-1.2-5.5-3.4l-2-3.5a1.4 1.4 0 0 1 2.3-1.6l2.1 2.3c.6.7 1.3.3 1.3-.6V11Z"></path><path d="M8.2 10.5h8.7v5.9c0 2.9-2.6 4.6-6.4 4.6-1.8 0-3.2-.7-4.2-2l-1.8-2.5 3.7-2.1v-3.9Z" fill="currentColor" stroke="none" opacity=".18"></path></symbol>
+    <symbol id="icon-fingers" viewBox="0 0 24 24"><path d="M7.5 13V6.2a1 1 0 0 1 2 0v5.1-7.4a1 1 0 0 1 2 0v7-6.1a1 1 0 0 1 2 0v6.1-4.7a1 1 0 0 1 2 0v7c0 4.8-2.3 7.8-6.3 7.8-2.3 0-4-1.3-5.2-3.5l-1.5-2.8a1.3 1.3 0 0 1 2.1-1.5l1.7 1.9c.6.6 1.2.2 1.2-.6V13Z"></path><path d="M8.5 4.6v6.2m2-7.9v7.5m2-6.5v6.5m2-4.9v5.3" stroke-width="2.4" opacity=".55"></path></symbol>
+    <symbol id="icon-arm-zone" viewBox="0 0 24 24"><path d="M7 4.2c2.4.9 4 2.8 4.9 5.8l2.7 8.3c.6 1.8 2.1 2.4 4.4 1.7M5 5.7l4.1 12.7c.7 2.2 2.4 3 5 2.4"></path><circle cx="10.6" cy="13.3" r="2.4"></circle><circle cx="10.6" cy="13.3" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-torso" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M9 11.3c2 1 4 1 6 0M12 6v12.5"></path><path d="M7.2 8.1h9.6v5.2H7.2z" fill="currentColor" stroke="none" opacity=".2"></path></symbol>
+    <symbol id="icon-abdomen" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M12 6v15"></path><path d="M7.2 12.2h9.6L16 20.5H8l-.8-8.3Z" fill="currentColor" stroke="none" opacity=".24"></path></symbol>
+    <symbol id="icon-areola" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M12 6v15"></path><circle cx="9.3" cy="10.6" r="1.6" fill="currentColor" stroke="none" opacity=".32"></circle><circle cx="14.7" cy="10.6" r="1.6" fill="currentColor" stroke="none" opacity=".32"></circle></symbol>
+    <symbol id="icon-linea-alba" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M9 11.3c2 1 4 1 6 0"></path><path d="M10.7 11.2h2.6v9.6h-2.6z" fill="currentColor" stroke="none" opacity=".31"></path></symbol>
+    <symbol id="icon-torso-zone" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.8 6.5 6 9.3 6.6 12.5L7.8 21M15 4.2c2.2 2.3 3 5.1 2.4 8.3L16.2 21M12 6v15"></path><circle cx="14.2" cy="13.2" r="2.5"></circle><circle cx="14.2" cy="13.2" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><path d="M7 8.2h10v12.4H7z" fill="currentColor" stroke="none" opacity=".18"></path><path d="M8.5 10.2c1.1.2 2.1.8 3.5 2 1.4-1.2 2.4-1.8 3.5-2M9.1 16.2c1.9.8 3.9.8 5.8 0"></path></symbol>
+    <symbol id="icon-upper-back" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><path d="M7.1 7.5h9.8l-.2 6.2H7.3l-.2-6.2Z" fill="currentColor" stroke="none" opacity=".28"></path></symbol>
+    <symbol id="icon-lower-back" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><path d="M7.2 14.2h9.6l-.6 6.5H7.8l-.6-6.5Z" fill="currentColor" stroke="none" opacity=".29"></path></symbol>
+    <symbol id="icon-back-zone" viewBox="0 0 24 24"><path d="M9 4.2c.8 1.2 1.8 1.8 3 1.8s2.2-.6 3-1.8M9 4.2C6.7 6.4 6 9.3 6.7 12.6L7.8 21M15 4.2c2.3 2.2 3 5.1 2.3 8.4L16.2 21M12 6v15"></path><circle cx="9.7" cy="14" r="2.4"></circle><circle cx="9.7" cy="14" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-nape" viewBox="0 0 24 24"><circle cx="12" cy="6.4" r="4"></circle><path d="M8.8 9.3v4.2c0 1.8-1.4 2.7-3.8 3.5M15.2 9.3v4.2c0 1.8 1.4 2.7 3.8 3.5M5 17c2 2.7 4.3 4 7 4s5-1.3 7-4"></path><path d="M9 9.4h6v5.4H9z" fill="currentColor" stroke="none" opacity=".3"></path><path d="M9.5 5.6c1.7 1 3.3 1 5 0"></path></symbol>
+    <symbol id="icon-maillot" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><path d="m7.2 10.2 4.8 3.4 4.8-3.4-1.2 7.6H8.4l-1.2-7.6Z" fill="currentColor" stroke="none" opacity=".26"></path></symbol>
+    <symbol id="icon-bikini-classic" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><path d="m8 11.6 4 2 4-2-.8 4.3H8.8L8 11.6Z" fill="currentColor" stroke="none" opacity=".3"></path></symbol>
+    <symbol id="icon-bikini-high" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><path d="m6.5 10.8 5.5 2.8 5.5-2.8-2.2 6.8H8.7l-2.2-6.8Z" fill="currentColor" stroke="none" opacity=".29"></path></symbol>
+    <symbol id="icon-bikini-zone" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><circle cx="12" cy="15.6" r="2.5"></circle><circle cx="12" cy="15.6" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-male-intimate" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><rect x="10.2" y="12.8" width="3.6" height="5.4" rx="1.8" fill="currentColor" stroke="none" opacity=".3"></rect></symbol>
+    <symbol id="icon-sif" viewBox="0 0 24 24"><path d="M7.4 5.2c.1 4.1-1 8.1-3.1 11.9M16.6 5.2c-.1 4.1 1 8.1 3.1 11.9M7.1 10.1c1.1 2.3 2.8 3.5 4.9 3.5s3.8-1.2 4.9-3.5M7.8 18.6c2.7-1.6 5.7-1.6 8.4 0"></path><path d="M12 13.6v6.8" stroke-width="3" opacity=".48"></path></symbol>
+    <symbol id="icon-buttocks" viewBox="0 0 24 24"><path d="M7.4 4.2c.3 3.3-.5 6.1-2.2 8.5C3.5 15 4.6 20 8.7 20c1.6 0 2.7-.7 3.3-2 .6 1.3 1.7 2 3.3 2 4.1 0 5.2-5 3.5-7.3-1.7-2.4-2.5-5.2-2.2-8.5M12 8v10"></path><path d="M5.2 13.1c2.4-2 4.7-1.1 6.8 1.7 2.1-2.8 4.4-3.7 6.8-1.7.9 3.1-.2 6.9-3.5 6.9-1.6 0-2.7-.7-3.3-2-.6 1.3-1.7 2-3.3 2-3.3 0-4.4-3.8-3.5-6.9Z" fill="currentColor" stroke="none" opacity=".23"></path></symbol>
+    <symbol id="icon-legs" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><path d="M8.3 4h3.1v16.3H8.3zm4.3 0h3.1v16.3h-3.1z" fill="currentColor" stroke="none" opacity=".16"></path></symbol>
+    <symbol id="icon-thighs" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><path d="M8.4 3.8h3.2v8H8.8l-.4-8Zm4 0h3.2l-.4 8h-2.8v-8Z" fill="currentColor" stroke="none" opacity=".3"></path></symbol>
+    <symbol id="icon-thigh-zone" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><circle cx="9.8" cy="7.3" r="2.1"></circle><circle cx="9.8" cy="7.3" r=".6" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-lower-legs" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><path d="M8.6 11h2.8l-.4 9.3H8.3L8.6 11Zm4 0h2.8l.3 9.3H13L12.6 11Z" fill="currentColor" stroke="none" opacity=".3"></path></symbol>
+    <symbol id="icon-knees" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><circle cx="9.8" cy="11.3" r="1.7" fill="currentColor" stroke="none" opacity=".34"></circle><circle cx="14.2" cy="11.3" r="1.7" fill="currentColor" stroke="none" opacity=".34"></circle></symbol>
+    <symbol id="icon-leg-zone" viewBox="0 0 24 24"><path d="M8.5 3.5c.5 6 .6 11.5-.2 16.8M15.5 3.5c-.5 6-.6 11.5.2 16.8M8.8 10.5c1 .8 2.1 1.2 3.2 1.2s2.2-.4 3.2-1.2M8.3 20.3H5.1M15.7 20.3h3.2"></path><circle cx="14.1" cy="15.1" r="2.1"></circle><circle cx="14.1" cy="15.1" r=".6" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-feet" viewBox="0 0 24 24"><path d="M8.5 3.2c.2 5.8-.5 10.2-2.1 13.2-1.1 2 .1 4.4 2.4 4.4h2.5c1.5 0 2.4-1.5 1.8-2.8l-1.5-3.2M15.5 3.2c-.2 5.8.5 10.2 2.1 13.2 1.1 2-.1 4.4-2.4 4.4h-2.5"></path><path d="M5.9 16.2c1.7-.6 3.7-.4 5.7.6l1.5 1.2c.6 1.3-.3 2.8-1.8 2.8H8.8c-2.3 0-3.5-2.4-2.9-4.6Z" fill="currentColor" stroke="none" opacity=".26"></path></symbol>
+    <symbol id="icon-toes" viewBox="0 0 24 24"><path d="M7.6 3.3c.3 5.5-.2 9.8-1.7 12.8-1.1 2.2.2 4.7 2.6 4.7h5.2c1.6 0 2.5-1.7 1.7-3.1-1.4-2.3-2.7-5.2-3.8-8.7"></path><circle cx="7.4" cy="18.9" r="1.3" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="10.1" cy="19.5" r="1.1" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="12.5" cy="19.5" r=".9" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="14.5" cy="18.8" r=".75" fill="currentColor" stroke="none" opacity=".35"></circle></symbol>
+    <symbol id="icon-electrolysis" viewBox="0 0 24 24"><path d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0M10.4 20.5c.8-4.8.9-8.8.2-12.2-.4-1.9.5-3.8 2.2-4.8M20.5 4.1 13.7 14"></path><circle cx="12.9" cy="15" r="1.7" fill="currentColor" opacity=".2"></circle></symbol>
+    <symbol id="icon-injection" viewBox="0 0 24 24"><path d="M13.3 3.6C9.2 3.2 6 6.2 6.2 10.3c.1 2.4 1.2 4.2 2.4 5.8.8 1.1 1 2.5.7 4M12.6 6.5c.3 1.6.8 2.9 1.9 4L12.9 12c.4.8 1 1.2 1.9 1.2-.2 2.2-1.7 3.5-4.3 3.7"></path><path d="m19.7 4.3-5.4 5.4m3.4-6.9 3.5 3.5m-5.8-1.1 3.5 3.5m-5.2 1.6-1.4 1.4"></path></symbol>
+    <symbol id="icon-skin-target" viewBox="0 0 24 24"><path d="M4 6.5c4.7-1.4 11.3-1.4 16 0v11c-4.7 1.4-11.3 1.4-16 0v-11Z"></path><circle cx="12" cy="12" r="3.6"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-body-vessels" viewBox="0 0 24 24"><circle cx="12" cy="3.7" r="1.9"></circle><path d="M9.1 6.8c-1.6 1.4-2.4 3.6-2.4 6.4L6.2 21M14.9 6.8c1.6 1.4 2.4 3.6 2.4 6.4l.5 7.8M9.1 6.8c1.9 1.2 3.9 1.2 5.8 0M12 7.8V21"></path><path d="m8.1 10.2 2.1 1.8-1.4 2.1 2.4 2.1m4.7-6-2.1 1.8 1.4 2.1-2.4 2.1" stroke-width="2.1" opacity=".55"></path></symbol>
     <symbol id="icon-aesthetic" viewBox="0 0 24 24"><path d="M12.8 3.7C8.7 3.2 5.5 6.2 5.7 10.3c.1 2.4 1.2 4.2 2.4 5.8.8 1.1 1 2.5.7 4M12.1 6.6c.3 1.6.8 2.9 1.9 4l-1.6 1.5c.4.8 1 1.2 1.9 1.2-.2 2.2-1.7 3.5-4.3 3.7"></path><path d="m18.2 5 .7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"></path><circle cx="10.2" cy="8.8" r=".45" fill="currentColor" stroke="none"></circle></symbol>
-    <symbol id="icon-zones" viewBox="0 0 24 24"><path d="M9.1 4.2c.7 1.2 1.7 1.8 2.9 1.8s2.2-.6 2.9-1.8M9.1 4.2C6.8 6.5 6.1 9.5 6.8 12.7L8 21M14.9 4.2c2.3 2.3 3 5.3 2.3 8.5L16 21M12 6v15"></path><circle cx="8.2" cy="10.8" r="1.3"></circle><circle cx="15.2" cy="16.3" r="1.3"></circle></symbol>
+    <symbol id="icon-zones" viewBox="0 0 24 24"><circle cx="12" cy="3.7" r="1.9"></circle><path d="M9.1 6.8c-1.6 1.4-2.4 3.6-2.4 6.4L6.2 21M14.9 6.8c1.6 1.4 2.4 3.6 2.4 6.4l.5 7.8M9.1 6.8c1.9 1.2 3.9 1.2 5.8 0M12 7.8V21"></path><circle cx="8" cy="10.8" r="1.5" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="15.7" cy="15.6" r="1.5" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="9.3" cy="18.2" r="1.2" fill="currentColor" stroke="none" opacity=".35"></circle></symbol>
     <symbol id="icon-consultation" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3"></circle><path d="M3.8 19.5c.3-4 2-6 4.7-6 2.1 0 3.6 1.2 4.3 3.6M14 5h6.2v5.2h-2l-2.2 2v-2h-2z"></path></symbol>
     <symbol id="icon-all" viewBox="0 0 24 24"><path d="M12 3.2c.5 4.7 2.1 6.3 6.8 6.8-4.7.5-6.3 2.1-6.8 6.8-.5-4.7-2.1-6.3-6.8-6.8 4.7-.5 6.3-2.1 6.8-6.8Z"></path><path d="M18.4 15.2c.2 2.2 1 3 3.2 3.2-2.2.2-3 1-3.2 3.2-.2-2.2-1-3-3.2-3.2 2.2-.2 3-1 3.2-3.2ZM5.3 16.2c.2 1.4.7 1.9 2.1 2.1-1.4.2-1.9.7-2.1 2.1-.2-1.4-.7-1.9-2.1-2.1 1.4-.2 1.9-.7 2.1-2.1Z" opacity=".72"></path></symbol>
     <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
@@ -1044,11 +1161,6 @@
             <button id="customItemButton" type="button" role="menuitem" data-app-action="custom" aria-keyshortcuts="Control+Shift+N Meta+Shift+N"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span><kbd>Ctrl Maj N</kbd></button>
             <button id="familyPriceToggle" type="button" role="menuitemcheckbox" data-app-action="prices" aria-checked="false" aria-keyshortcuts="Alt+P"><svg><use href="#icon-eye"></use></svg><span><strong>Prix sur les boutons</strong><small id="familyPriceToggleState">Masqués</small></span><kbd>Alt P</kbd></button>
           </div>
-          <div class="app-menu-group" role="none">
-            <p role="presentation">Application</p>
-            <button id="settingsButton" type="button" role="menuitem" data-app-action="settings" aria-keyshortcuts="Control+Comma Meta+Comma"><svg><use href="#icon-settings"></use></svg><span><strong>Réglages</strong><small>Entreprise, tarifs et apparence</small></span><kbd>Ctrl ,</kbd></button>
-            <button id="shortcutHelpButton" type="button" role="menuitem" data-app-action="shortcuts" aria-keyshortcuts="?" aria-haspopup="dialog"><svg><use href="#icon-keyboard"></use></svg><span><strong>Raccourcis clavier</strong><small>Afficher toutes les commandes rapides</small></span><kbd>?</kbd></button>
-          </div>
         </div>
       </div>
       <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="radiogroup" aria-label="Tarif appliqué aux soins">
@@ -1056,6 +1168,10 @@
         <button type="button" data-offer-mode="pack" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-pack"></use></svg></span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
         <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
       </div></div>
+      <div class="topbar-utilities" aria-label="Application">
+        <button class="topbar-utility-button" id="settingsButton" type="button" aria-label="Ouvrir les réglages" aria-keyshortcuts="Control+Comma Meta+Comma" data-tooltip="Réglages"><svg aria-hidden="true"><use href="#icon-settings"></use></svg></button>
+        <button class="topbar-utility-button" id="shortcutHelpButton" type="button" aria-label="Afficher les raccourcis clavier" aria-keyshortcuts="?" aria-haspopup="dialog" data-tooltip="Raccourcis clavier"><svg aria-hidden="true"><use href="#icon-keyboard"></use></svg></button>
+      </div>
     </header>
 
     <main class="workspace">
@@ -1107,11 +1223,11 @@
           <div class="checkout-primary-actions" aria-label="Actions rapides du devis">
             <button class="button secondary" id="checkoutPrintButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg aria-hidden="true"><use href="#icon-print"></use></svg><span>Imprimer</span></button>
             <button class="button primary" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg aria-hidden="true"><use href="#icon-download"></use></svg><span>PDF</span></button>
-            <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment transmettre le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Transmettre le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Transmettre</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
-            <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Transmettre le devis" hidden>
+            <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Envoyer</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+            <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden>
               <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
               <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis par e-mail" title="Préparer le devis par e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>E-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
-              <p class="transmission-note">Le PDF est préparé séparément et reste à joindre au message.</p>
+              <p class="transmission-note">E-mail joint automatiquement le PDF sur Windows avec Outlook classique. Pour WhatsApp, ajoutez-le depuis Téléchargements.</p>
             </div>
           </div>
         </div>

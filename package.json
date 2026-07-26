@@ -7,7 +7,7 @@
   "description": "BCDevis, application de devis locale pour Windows, macOS et ChromeOS.",
   "main": "devis-portable/main.cjs",
   "scripts": {
-    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/keyboard-accessibility.test.cjs && node devis-portable/tests/theme-contracts.test.cjs && node devis-portable/tests/persistence-smoke.cjs && node devis-portable/tests/brand-pwa.test.cjs && node devis-portable/tests/platform-delivery.test.cjs",
+    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/prestation-icons.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/keyboard-accessibility.test.cjs && node devis-portable/tests/theme-contracts.test.cjs && node devis-portable/tests/persistence-smoke.cjs && node devis-portable/tests/brand-pwa.test.cjs && node devis-portable/tests/platform-delivery.test.cjs",
     "check": "node --check devis-portable/app.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && node --check devis-portable/service-worker.js && node --check scripts/build-chromeos.cjs && node --check scripts/require-build-platform.cjs && node --check scripts/pwa-server.cjs && node --check scripts/run-electron-script.cjs && node --check scripts/pdf-test-preload.cjs && node --check scripts/generate-signature-pdfs.cjs && npm test",
     "start": "electron .",
     "pwa": "node scripts/pwa-server.cjs",

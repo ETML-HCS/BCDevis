@@ -17,7 +17,118 @@ window.QUOTE_CATEGORIES = [
   { id: 36, name: "Étudiant·e·s", short: "Étudiant·e·s", icon: "student", tone: "amber" }
 ];
 
-const service = (id, name, price, duration, categoryId) => ({ id, name, price, duration, categoryId });
+const PRESTATION_VISUALS = {
+  102: ["consultation", "Consultation d’épilation laser"],
+  110: ["skin-target", "Zone cutanée à retoucher"],
+
+  99: ["consultation", "Consultation du visage et de la peau"],
+  96: ["scalp", "Cuir chevelu"],
+  95: ["face-skin", "Visage ou zone cutanée"],
+  94: ["face-skin", "Peau du visage"],
+
+  15: ["consultation", "Consultation de médecine esthétique"],
+  14: ["consultation", "Consultation d’épilation définitive"],
+  130: ["consultation", "Consultation du phototype cutané"],
+
+  97: ["consultation", "Consultation pour injections"],
+  63: ["injection", "Zone du visage ou du corps à injecter"],
+  100: ["injection", "Zone injectée à retoucher"],
+  87: ["forehead", "Haut du visage"],
+  89: ["face-neck", "Visage et cou"],
+  88: ["injection", "Zone du visage à restaurer"],
+  93: ["face-skin", "Peau du visage"],
+  90: ["nose", "Nez"],
+  91: ["armpits", "Aisselles"],
+  92: ["male-intimate", "Zone intime masculine"],
+
+  98: ["consultation", "Consultation pour laser médical"],
+  80: ["cheeks", "Joues et visage"],
+  81: ["body-vessels", "Vaisseaux du corps"],
+
+  111: ["zones", "Zones multiples du corps"],
+  122: ["zones", "Zones multiples du corps"],
+  123: ["zones", "Zones multiples du corps"],
+  124: ["zones", "Zones multiples du corps"],
+  125: ["zones", "Zones multiples du corps"],
+  126: ["zones", "Zones multiples du corps"],
+  127: ["zones", "Zones multiples du corps"],
+  128: ["zones", "Zones multiples du corps"],
+  129: ["zones", "Zones multiples du corps"],
+
+  101: ["consultation", "Consultation d’électrolyse"],
+  62: ["electrolysis", "Zone pileuse à traiter"],
+  61: ["electrolysis", "Zone pileuse à traiter"],
+  60: ["electrolysis", "Zone pileuse à traiter"],
+  59: ["electrolysis", "Zone pileuse à traiter"],
+  58: ["electrolysis", "Zone pileuse à traiter"],
+
+  27: ["beard", "Barbe"],
+  30: ["neck", "Cou"],
+  22: ["glabella", "Entre les sourcils"],
+  26: ["cheeks", "Joues"],
+  19: ["upper-lip", "Lèvre supérieure"],
+  28: ["beard-line", "Contour de la barbe"],
+  20: ["chin", "Menton"],
+  25: ["nose", "Nez et narines"],
+  24: ["ears", "Oreilles"],
+  21: ["eyebrows", "Sourcils"],
+  23: ["temples", "Tempes"],
+  29: ["face", "Visage complet"],
+  109: ["face-zone", "Zone définie du visage"],
+
+  33: ["abdomen", "Abdomen"],
+  32: ["areola", "Aréoles"],
+  34: ["linea-alba", "Ligne médiane de l’abdomen"],
+  31: ["torso", "Poitrine"],
+  108: ["torso-zone", "Zone définie de la poitrine ou de l’abdomen"],
+
+  37: ["lower-back", "Bas du dos"],
+  38: ["back", "Dos complet"],
+  36: ["upper-back", "Haut du dos"],
+  35: ["nape", "Nuque"],
+  105: ["back-zone", "Zone définie du dos"],
+
+  41: ["armpits", "Aisselles"],
+  43: ["forearms", "Avant-bras"],
+  44: ["arms", "Bras complets"],
+  39: ["fingers", "Doigts"],
+  42: ["shoulders", "Épaules"],
+  40: ["hands", "Mains"],
+  104: ["arm-zone", "Zone définie du bras"],
+
+  45: ["bikini-classic", "Contour classique du maillot"],
+  46: ["bikini-high", "Contour échancré du maillot"],
+  47: ["maillot", "Maillot intégral"],
+  48: ["male-intimate", "Zone intime masculine"],
+  49: ["sif", "Sillon interfessier"],
+  107: ["bikini-zone", "Zone définie du maillot"],
+
+  54: ["thighs", "Cuisses"],
+  56: ["lower-legs", "Demi-jambes, genoux et pieds"],
+  55: ["buttocks", "Fesses"],
+  52: ["knees", "Genoux"],
+  57: ["legs", "Jambes et pieds complets"],
+  50: ["toes", "Orteils"],
+  51: ["feet", "Pieds"],
+  106: ["leg-zone", "Zone définie de la jambe"],
+  53: ["thigh-zone", "Zone définie de la cuisse"],
+
+  112: ["student", "Zone définie lors de la séance"],
+  113: ["student", "Zone définie lors de la séance"],
+  114: ["student", "Zone définie lors de la séance"],
+  115: ["student", "Zone définie lors de la séance"],
+  116: ["student", "Zone définie lors de la séance"],
+  118: ["student", "Zone définie lors de la séance"],
+  119: ["student", "Zone définie lors de la séance"],
+  120: ["student", "Zone définie lors de la séance"],
+  121: ["student", "Zone définie lors de la séance"]
+};
+
+const service = (id, name, price, duration, categoryId) => {
+  const visual = PRESTATION_VISUALS[id];
+  if (!visual) throw new Error(`Pictogramme de prestation manquant pour ${id} · ${name}`);
+  return { id, name, price, duration, categoryId, icon: visual[0], zone: visual[1] };
+};
 
 window.QUOTE_FAMILIES = [
   { id: "visage", name: "Visage", description: "Lèvre, menton, joues, barbe et visage complet.", icon: "face", categoryIds: [20] },
