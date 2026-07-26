@@ -2,17 +2,17 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.0.0 - Windows et Linux</p>
+  <p class="version">Version 5.0.0 - Windows, Linux et ChromeOS</p>
 </div>
 
 <style>
 @media print {
-  body { font-size: 9.7pt; line-height: 1.42; }
-  h2 { margin: 20px 0 9px; padding: 7px 11px; font-size: 15.5pt; }
-  h3 { margin: 14px 0 5px; font-size: 11.5pt; }
-  ul, ol { margin: 7px 0; }
-  li { margin: 2px 0; }
-  .callout { margin: 10px 0; padding: 9px 11px; }
+  body { font-size: 9.4pt; line-height: 1.36; }
+  h2 { margin: 17px 0 8px; padding: 6px 10px; font-size: 15pt; }
+  h3 { margin: 11px 0 4px; font-size: 11.2pt; }
+  ul, ol { margin: 5px 0; }
+  li { margin: 1px 0; }
+  .callout { margin: 8px 0; padding: 8px 10px; }
 }
 </style>
 
@@ -34,6 +34,12 @@ chmod +x BCDevis-5.0.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
+
+### ChromeOS
+
+La version ChromeOS est une PWA. L'archive `BCDevis-5.0.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+
+Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
 <div class="callout"><strong>Option pratique :</strong> dans Réglages > Interface, activez Lancer au démarrage si BCDevis doit s'ouvrir automatiquement avec la session Windows ou Linux.</div>
 
@@ -70,7 +76,7 @@ Le fichier `MODELE-DEVIS-V5.json` fourni avec le livrable peut être importé de
 
 ## 5. Créer ou envoyer le PDF
 
-- **PDF** crée le devis A4 dans le dossier Téléchargements.
+- **PDF** crée le devis A4 dans le dossier Téléchargements. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d'impression.
 - **Imprimer** ouvre l'impression du système.
 - **Envoyer > E-mail** prépare un message avec le PDF joint.
 - **Envoyer > WhatsApp** prépare le PDF et ouvre le message ; ajoutez ensuite manuellement le fichier dans WhatsApp.
@@ -88,5 +94,6 @@ Sur le nouvel ordinateur, ouvrez **Historique > Restaurer**. La restauration rem
 - PDF introuvable : ouvrez le dossier **Téléchargements**.
 - Devis absent de l'historique : cliquez sur **Enregistrer**.
 - Données Windows absentes : vérifiez que le dossier `data` se trouve toujours à côté de l'EXE.
+- Données ChromeOS absentes : vérifiez que vous utilisez le même profil Chrome.
 - Application déjà ouverte : fermez l'ancienne fenêtre avant de lancer la nouvelle version.
 - Tous les raccourcis : ouvrez **Raccourcis** dans l'application ou consultez `RACCOURCIS-CLAVIER-V5.pdf`.

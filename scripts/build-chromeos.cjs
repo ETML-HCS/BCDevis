@@ -19,6 +19,7 @@ const CHECKSUM_PATH = `${ARCHIVE_PATH}.sha256`;
 
 const APP_FILES = [
   "app.js",
+  "body-anatomy.js",
   "catalog.js",
   "index.html",
   "manifest.webmanifest",
@@ -82,13 +83,14 @@ async function copyApp() {
 async function verifyAssembledSite() {
   const { server, url } = await startPwaServer({ port: 0, root: SITE_ROOT });
   try {
-    const [page, manifest, serviceWorker, icon] = await Promise.all([
+    const [page, manifest, serviceWorker, icon, bodyAnatomy] = await Promise.all([
       fetch(url),
       fetch(new URL("manifest.webmanifest", url)),
       fetch(new URL("service-worker.js", url)),
-      fetch(new URL("assets/pwa-icon-512.png", url))
+      fetch(new URL("assets/pwa-icon-512.png", url)),
+      fetch(new URL("body-anatomy.js", url))
     ]);
-    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok) {
+    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok || !bodyAnatomy.ok) {
       throw new Error("Le dossier ChromeOS assemblé contient une ressource inaccessible.");
     }
     if (!String(page.headers.get("content-type")).startsWith("text/html")) {
@@ -99,6 +101,9 @@ async function verifyAssembledSite() {
     }
     if (!String(serviceWorker.headers.get("content-type")).startsWith("text/javascript")) {
       throw new Error("Le service worker ChromeOS assemblé a un type MIME incorrect.");
+    }
+    if (!String(bodyAnatomy.headers.get("content-type")).startsWith("text/javascript")) {
+      throw new Error("Le sélecteur anatomique ChromeOS a un type MIME incorrect.");
     }
     const parsedManifest = await manifest.json();
     if (parsedManifest.display !== "standalone" || parsedManifest.start_url !== "./") {

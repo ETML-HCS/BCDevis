@@ -31,6 +31,7 @@ for (const relativePath of [
 
 const styles = text("styles.css");
 const appSource = text("app.js");
+const bodyAnatomy = text("body-anatomy.js");
 const index = text("index.html");
 const manifest = JSON.parse(text("manifest.webmanifest"));
 const serviceWorker = text("service-worker.js");
@@ -52,9 +53,12 @@ assert.doesNotMatch(printItemMetaTemplate, /duration|\bmin\b/, "La durée ne doi
 assert.match(index, /name="showSignatures" type="checkbox"/);
 assert.doesNotMatch(index, /id="headerLogo"/);
 assert.match(index, /id="headerLogoPreview"/);
+assert.match(index, /<script src="body-anatomy\.js"><\/script>/);
+assert.ok(bodyAnatomy.length > 1000, "La géométrie du sélecteur anatomique doit être livrée");
 assert.equal(manifest.display, "standalone");
 assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ["192x192", "512x512"]);
 assert.match(serviceWorker, /clinique-bellecour-logo-officiel\.png/);
+assert.match(serviceWorker, /\.\/body-anatomy\.js/);
 assert.match(serviceWorker, /red-hat-display-extrabold\.ttf/);
 assert.match(serviceWorker, /roboto-latin\.woff2/);
 assert.match(serviceWorker, /roboto-slab-latin\.woff2/);

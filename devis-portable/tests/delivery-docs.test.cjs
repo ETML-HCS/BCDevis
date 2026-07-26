@@ -39,6 +39,11 @@ assert.match(manual, /\*\*Linux\*\*/);
 assert.match(manual, /Lancer au démarrage/);
 assert.match(quick, /BCDevis-5\.0\.0\.exe/);
 assert.match(quick, /BCDevis-5\.0\.0-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-5\.0\.0-chromeos\.zip/);
+assert.match(quick, /adresse HTTPS/);
+assert.match(shortcuts, /ChromeOS/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.0\.0-chromeos\.zip/);
+assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 
 const expectedShortcutLabels = [
   "Ouvrir le menu Catalogue",
