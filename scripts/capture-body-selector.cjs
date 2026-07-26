@@ -57,7 +57,33 @@ async function main() {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
-    await capture(window, "01-corps-avant.png");
+    await capture(window, "01-corps-avant-femme.png");
+
+    const modelToggle = await window.webContents.executeJavaScript(`(() => {
+      const dimensions = () => ({
+        torso: document.querySelector('[data-body-region="front-torse"]').getBoundingClientRect().width,
+        pelvis: document.querySelector('[data-body-region="front-maillot"]').getBoundingClientRect().width
+      });
+      const female = dimensions();
+      document.querySelector('button[data-body-model="male"]').click();
+      const male = dimensions();
+      return {
+        female,
+        male,
+        model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        malePressed: document.querySelector('button[data-body-model="male"]').getAttribute("aria-pressed"),
+        services: document.querySelectorAll(".body-service-options .family-option").length
+      };
+    })()`);
+    if (modelToggle.model !== "male"
+      || modelToggle.malePressed !== "true"
+      || modelToggle.services !== 13
+      || modelToggle.male.torso <= modelToggle.female.torso
+      || modelToggle.male.pelvis >= modelToggle.female.pelvis) {
+      throw new Error(`Toggle femme/homme invalide : ${JSON.stringify(modelToggle)}`);
+    }
+    await capture(window, "02-corps-avant-homme.png");
+    await window.webContents.executeJavaScript(`document.querySelector('button[data-body-model="female"]').click()`);
 
     const back = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="back"]').click();
@@ -73,7 +99,7 @@ async function main() {
     if (back.side !== "back" || back.title !== "Dos & nuque" || back.services !== 5 || !back.activeBack || back.horizontalOverflow) {
       throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
     }
-    await capture(window, "02-corps-arriere-dos.png");
+    await capture(window, "03-corps-arriere-dos.png");
 
     const exactRegions = await window.webContents.executeJavaScript(`(() => {
       const clickRegion = (regionId) => {
@@ -126,7 +152,7 @@ async function main() {
     if (narrow.columns !== 1 || !narrow.mapVisible || narrow.title !== "Visage & cou" || !narrow.activeFrontRegion || !narrow.resultsBelowMap || narrow.horizontalOverflow) {
       throw new Error(`Vue étroite invalide : ${JSON.stringify(narrow)}`);
     }
-    await capture(window, "03-corps-responsive-760.png");
+    await capture(window, "04-corps-responsive-760.png");
 
     window.setContentSize(390, 844);
     await new Promise((resolve) => setTimeout(resolve, 180));
@@ -159,9 +185,9 @@ async function main() {
     if (settings.cards !== 2 || !settings.bodyChecked || !settings.cardsBalanced || !settings.contained || settings.horizontalOverflow) {
       throw new Error(`Réglage du sélecteur invalide : ${JSON.stringify(settings)}`);
     }
-    await capture(window, "04-reglage-navigation.png");
+    await capture(window, "05-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, modelToggle, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

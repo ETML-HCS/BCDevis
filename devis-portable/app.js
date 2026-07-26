@@ -216,6 +216,7 @@
   let activeFamily = "visage";
   let expandedFamily = "visage";
   let activeBodySide = "front";
+  let activeBodyModel = "female";
   let activeBodyRegion = "front-visage";
   let selectedOfferMode = "single";
   let searchQuery = "";
@@ -745,24 +746,24 @@
   function bodyMapMarkup(side, visibleIds) {
     const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds);
     if (side === "back") {
-      return `<svg class="interactive-body-map" viewBox="0 0 220 560" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
+      return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 640" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
         <title id="bodyMapBackTitle">Corps humain vu de dos</title>
-        <desc id="bodyMapBackDescription">Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
-        ${region("back-scalp", '<path class="body-region-shape" d="M84 39c0-22 10-34 26-34s26 12 26 34c0 14-5 26-12 33H96c-7-7-12-19-12-33Z"/>')}
-        ${region("back-dos", '<path class="body-region-shape" d="M96 70h28l4 14 25 10c13 5 19 17 17 32l-11 111c-13 11-30 17-49 17s-36-6-49-17L50 126c-2-15 4-27 17-32l25-10 4-14Z"/><path class="body-region-detail" d="M110 82v154M69 119c24 13 58 13 82 0M64 179c29-10 63-10 92 0"/>')}
-        ${region("back-bras", '<path class="body-region-shape" d="M65 94c-12 1-21 9-25 23L17 242c-2 12 13 16 18 5l38-108 7-35-15-10Zm90 0c12 1 21 9 25 23l23 125c2 12-13 16-18 5l-38-108-7-35 15-10Z"/><path class="body-region-shape" d="M14 241c-7 9-7 24 0 34l11 14c5 6 14 0 11-7l-5-15 9 12c5 6 13-1 9-7l-15-28-20-3Zm192 0c7 9 7 24 0 34l-11 14c-5 6-14 0-11-7l5-15-9 12c-5 6-13-1-9-7l15-28 20-3Z"/>')}
-        ${region("back-jambes", '<path class="body-region-shape" d="M61 230c8 21 25 32 49 32s41-11 49-32l5 47-18 108-8 143H91L74 385 56 277l5-47Z"/><path class="body-region-detail" d="M66 258c11-10 26-8 44 7 18-15 33-17 44-7M110 265v263M74 385h72"/><path class="body-region-shape" d="M91 520h31l-3 30H77c-6 0-8-8-3-11l17-19Zm38 0h-31l3 30h42c6 0 8-8 3-11l-17-19Z"/>')}
-        ${region("back-sif", '<path class="body-region-focus" d="M110 264v53"/><circle class="body-region-target" cx="110" cy="290" r="12"/>')}
+        <desc id="bodyMapBackDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        ${region("back-scalp", '<path class="body-region-shape" d="M116 48C116 22 129 8 150 8s34 14 34 40l-3 26c-2 21-15 37-31 41-16-4-29-20-31-41l-3-26Z"/><path class="body-region-shape" d="M117 53c-7-5-11 2-9 13 2 10 6 17 12 18m63-31c7-5 11 2 9 13-2 10-6 17-12 18"/><path class="body-region-detail" d="M122 47c17-10 39-10 56 0"/>')}
+        ${region("back-dos", '<path class="body-region-shape" d="M132 101c4 8 11 13 18 13s14-5 18-13l2 19c10 2 21 4 33 8 3 21 2 42-3 61-5 22-6 45-3 67 2 17 1 30-4 39-12 8-26 12-43 12s-31-4-43-12c-5-9-6-22-4-39 3-22 2-45-3-67-5-19-6-40-3-61 12-4 23-6 33-8l2-19Z"/><path class="body-region-detail" d="M150 124v169M111 151c10 5 19 13 24 24m54-24c-10 5-19 13-24 24m-58 58c27-8 59-8 86 0M111 278c24 8 54 8 78 0"/>')}
+        ${region("back-bras", '<path class="body-region-shape" d="M101 128c-20-4-35 8-42 29-7 20-10 46-14 71l-12 66c-2 11 4 18 13 19 9 1 15-6 17-15l14-63c5-20 11-42 14-61 3-17 10-29 20-35l-10-11Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M101 128c-20-4-35 8-42 29-7 20-10 46-14 71l-12 66c-2 11 4 18 13 19 9 1 15-6 17-15l14-63c5-20 11-42 14-61 3-17 10-29 20-35l-10-11Z"/><path class="body-region-shape" d="M35 289c-9 9-13 24-11 39l6 23c2 7 9 7 10 0l-2-15 6 21c2 7 9 5 8-2l-5-22 9 21c3 7 10 3 7-4l-8-24c8-7 10-17 7-27l-7-10H35Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M35 289c-9 9-13 24-11 39l6 23c2 7 9 7 10 0l-2-15 6 21c2 7 9 5 8-2l-5-22 9 21c3 7 10 3 7-4l-8-24c8-7 10-17 7-27l-7-10H35Z"/><path class="body-region-detail" d="M69 159c9 5 17 12 22 22m140-22c-9 5-17 12-22 22M43 254c8 4 16 6 24 6m190-6c-8 4-16 6-24 6"/>')}
+        ${region("back-jambes", '<path class="body-region-shape" d="M103 284c-7 16-10 35-7 54 10 14 29 22 54 22s44-8 54-22c3-19 0-38-7-54-13 13-29 19-47 19s-34-6-47-19Z"/><path class="body-region-shape" d="M96 335c-10 18-16 49-14 83 2 28 6 51 10 75 3 22 1 52 4 81v18h24l1-18c4-31 8-57 9-80 1-26 6-50 9-76 4-28 3-48-6-59-14-6-27-14-37-24Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M96 335c-10 18-16 49-14 83 2 28 6 51 10 75 3 22 1 52 4 81v18h24l1-18c4-31 8-57 9-80 1-26 6-50 9-76 4-28 3-48-6-59-14-6-27-14-37-24Z"/><path class="body-region-shape" d="M96 584h25l4 22c2 9-4 17-13 17H78c-8 0-11-9-5-14l20-15 3-10Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M96 584h25l4 22c2 9-4 17-13 17H78c-8 0-11-9-5-14l20-15 3-10Z"/><path class="body-region-detail" d="M102 317c11-9 27-8 48 6 21-14 37-15 48-6M96 338c13 10 31 16 54 16s41-6 54-16M88 454c13 5 27 5 41 0m42 0c14 5 28 5 41 0M96 574h25m58 0h25"/>')}
+        ${region("back-sif", '<path class="body-region-focus" d="M150 315v42"/><circle class="body-region-target" cx="150" cy="337" r="13"/>')}
       </svg>`;
     }
-    return `<svg class="interactive-body-map" viewBox="0 0 220 560" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
+    return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 640" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
       <title id="bodyMapFrontTitle">Corps humain vu de face</title>
-      <desc id="bodyMapFrontDescription">Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
-      ${region("front-visage", '<path class="body-region-shape" d="M84 39c0-22 10-34 26-34s26 12 26 34c0 20-11 38-26 43-15-5-26-23-26-43Z"/><path class="body-region-shape" d="M97 74h26l4 24H93l4-24Z"/><path class="body-region-detail" d="M96 39h8m12 0h8M103 61c5 3 9 3 14 0"/>')}
-      ${region("front-torse", '<path class="body-region-shape" d="M93 84c9 7 25 7 34 0l27 11c13 5 18 17 16 32l-11 112c-13 9-29 14-49 14s-36-5-49-14L50 127c-2-15 3-27 16-32l27-11Z"/><path class="body-region-detail" d="M70 126c24-13 56-13 80 0M64 177c29-8 63-8 92 0M110 130v109"/><circle class="body-region-detail-fill" cx="110" cy="194" r="3"/>')}
-      ${region("front-bras", '<path class="body-region-shape" d="M65 94c-12 1-21 9-25 23L17 242c-2 12 13 16 18 5l38-108 7-35-15-10Zm90 0c12 1 21 9 25 23l23 125c2 12-13 16-18 5l-38-108-7-35 15-10Z"/><circle class="body-region-detail-fill" cx="69" cy="123" r="7"/><circle class="body-region-detail-fill" cx="151" cy="123" r="7"/><path class="body-region-shape" d="M14 241c-7 9-7 24 0 34l11 14c5 6 14 0 11-7l-5-15 9 12c5 6 13-1 9-7l-15-28-20-3Zm192 0c7 9 7 24 0 34l-11 14c-5 6-14 0-11-7l5-15-9 12c-5 6-13-1-9-7l15-28 20-3Z"/>')}
-      ${region("front-maillot", '<path class="body-region-shape" d="M61 230c13 9 29 14 49 14s36-5 49-14l4 47-29 44h-48l-29-44 4-47Z"/><path class="body-region-detail" d="M61 253 110 296l49-43M110 296v21"/>')}
-      ${region("front-jambes", '<path class="body-region-shape" d="M57 274 86 315l9 68-13 145h38l-2-145-8-67-8 67-2 145h38l-13-145 9-68 29-41-4 4-25 43H86l-25-43-4-4Z"/><circle class="body-region-detail-fill" cx="91" cy="383" r="9"/><circle class="body-region-detail-fill" cx="129" cy="383" r="9"/><path class="body-region-shape" d="M82 520h38l-2 30H76c-6 0-8-8-3-11l9-19Zm56 0h-38l2 30h42c6 0 8-8 3-11l-9-19Z"/>')}
+      <desc id="bodyMapFrontDescription">Silhouette anatomique ${activeBodyModel === "male" ? "masculine" : "féminine"} vue de face. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      ${region("front-visage", '<path class="body-region-shape" d="M116 48C116 22 129 8 150 8s34 14 34 40l-3 26c-2 21-15 37-31 41-16-4-29-20-31-41l-3-26Z"/><path class="body-region-shape" d="M117 53c-7-5-11 2-9 13 2 10 6 17 12 18m63-31c7-5 11 2 9 13-2 10-6 17-12 18"/><path class="body-region-shape" d="M132 101c4 8 11 13 18 13s14-5 18-13l2 25c-6 8-13 12-20 12s-14-4-20-12l2-25Z"/><path class="body-region-detail" d="M130 54c5-3 10-3 15 0m10 0c5-3 10-3 15 0m-20 5v17m-9 14c6 4 12 4 18 0"/><circle class="body-region-detail-fill" cx="137" cy="59" r="2"/><circle class="body-region-detail-fill" cx="163" cy="59" r="2"/>')}
+      ${region("front-torse", '<path class="body-region-shape" d="M130 120c-10 2-21 4-33 8-3 21-2 42 3 61 5 22 6 45 3 67-2 17-1 30 4 39 12 8 26 12 43 12s31-4 43-12c5-9 6-22 4-39-3-22-2-45 3-67 5-19 6-40 3-61-12-4-23-6-33-8-5 7-12 11-20 11s-15-4-20-11Z"/><path class="body-region-detail" d="M107 151c12-8 24-11 36-8m50 8c-12-8-24-11-36-8M104 208c28-9 64-9 92 0M111 277c24 8 54 8 78 0M150 156v122"/><circle class="body-region-detail-fill" cx="150" cy="244" r="3.5"/>')}
+      ${region("front-bras", '<path class="body-region-shape" d="M101 128c-20-4-35 8-42 29-7 20-10 46-14 71l-12 66c-2 11 4 18 13 19 9 1 15-6 17-15l14-63c5-20 11-42 14-61 3-17 10-29 20-35l-10-11Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M101 128c-20-4-35 8-42 29-7 20-10 46-14 71l-12 66c-2 11 4 18 13 19 9 1 15-6 17-15l14-63c5-20 11-42 14-61 3-17 10-29 20-35l-10-11Z"/><path class="body-region-shape" d="M35 289c-9 9-13 24-11 39l6 23c2 7 9 7 10 0l-2-15 6 21c2 7 9 5 8-2l-5-22 9 21c3 7 10 3 7-4l-8-24c8-7 10-17 7-27l-7-10H35Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M35 289c-9 9-13 24-11 39l6 23c2 7 9 7 10 0l-2-15 6 21c2 7 9 5 8-2l-5-22 9 21c3 7 10 3 7-4l-8-24c8-7 10-17 7-27l-7-10H35Z"/><path class="body-region-detail" d="M69 159c9 5 17 12 22 22m140-22c-9 5-17 12-22 22M43 254c8 4 16 6 24 6m190-6c-8 4-16 6-24 6"/><path class="body-region-target body-region-armpit" d="M91 150c9 3 15 9 18 17m100-17c-9 3-15 9-18 17"/>')}
+      ${region("front-maillot", '<path class="body-region-shape" d="M103 284c-7 16-10 35-7 54 10 10 22 17 37 22l11 18c3 6 9 6 12 0l11-18c15-5 27-12 37-22 3-19 0-38-7-54-13 13-29 19-47 19s-34-6-47-19Z"/><path class="body-region-detail" d="M97 316c19 5 36 17 53 38 17-21 34-33 53-38M150 354v22"/>')}
+      ${region("front-jambes", '<path class="body-region-shape" d="M96 335c-10 18-16 49-14 83 2 28 6 51 10 75 3 22 1 52 4 81v18h24l1-18c4-31 8-57 9-80 1-26 6-50 9-76 4-28 3-48-6-59-14-6-27-14-37-24Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M96 335c-10 18-16 49-14 83 2 28 6 51 10 75 3 22 1 52 4 81v18h24l1-18c4-31 8-57 9-80 1-26 6-50 9-76 4-28 3-48-6-59-14-6-27-14-37-24Z"/><path class="body-region-shape" d="M96 584h25l4 22c2 9-4 17-13 17H78c-8 0-11-9-5-14l20-15 3-10Z"/><path class="body-region-shape" transform="translate(300 0) scale(-1 1)" d="M96 584h25l4 22c2 9-4 17-13 17H78c-8 0-11-9-5-14l20-15 3-10Z"/><path class="body-region-detail" d="M88 454c13 5 27 5 41 0m42 0c14 5 28 5 41 0M96 574h25m58 0h25"/><circle class="body-region-detail-fill" cx="108" cy="452" r="5"/><circle class="body-region-detail-fill" cx="192" cy="452" r="5"/>')}
     </svg>`;
   }
 
@@ -810,10 +811,16 @@
       ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
       : `<div class="body-results-empty"><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucun soin dans cette zone</strong><small>${needle ? "Essayez un autre terme." : "Cette famille est vide ou masquée dans les réglages."}</small></div>`;
     const auxiliary = BODY_AUXILIARY_FAMILY_IDS.map((id) => visible.find((family) => family.id === id)).filter(Boolean);
-    $("#familyList").innerHTML = `<div class="body-selector" data-body-side="${activeBodySide}">
+    $("#familyList").innerHTML = `<div class="body-selector" data-body-side="${activeBodySide}" data-body-model="${activeBodyModel}">
       <div class="body-selector-layout">
         <section class="body-map-card" aria-labelledby="bodySelectorTitle">
-          <div class="body-map-card-head"><div><span>Navigation corporelle</span><strong id="bodySelectorTitle">Choisir une zone</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div><div class="body-side-toggle" role="group" aria-label="Vue du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div></div>
+          <div class="body-map-card-head">
+            <div><span>Navigation corporelle</span><strong id="bodySelectorTitle">Choisir une zone</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div>
+            <div class="body-map-controls">
+              <div class="body-model-toggle" role="group" aria-label="Morphologie du mannequin"><button type="button" data-body-model="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>
+              <div class="body-side-toggle" role="group" aria-label="Vue du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div>
+            </div>
+          </div>
           <div class="body-map-stage">${bodyMapMarkup(activeBodySide, visibleIds)}</div>
           <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Cliquez ou utilisez Tab puis Entrée sur une partie du corps.</p>
         </section>
@@ -1133,6 +1140,7 @@
     activeFamily = "visage";
     expandedFamily = "visage";
     activeBodySide = "front";
+    activeBodyModel = "female";
     activeBodyRegion = "front-visage";
     selectedOfferMode = "single";
     searchQuery = "";
@@ -1763,6 +1771,13 @@
     if (serviceButton) {
       const item = allServices().find((service) => String(service.id) === serviceButton.dataset.familyServiceId);
       if (item) addService(item, selectedOfferMode);
+      return;
+    }
+    const bodyModelButton = event.target.closest("button[data-body-model]");
+    if (bodyModelButton) {
+      activeBodyModel = bodyModelButton.dataset.bodyModel === "male" ? "male" : "female";
+      renderCatalog();
+      window.setTimeout(() => $(`button[data-body-model="${activeBodyModel}"]`)?.focus(), 0);
       return;
     }
     const bodySideButton = event.target.closest("[data-body-side]");

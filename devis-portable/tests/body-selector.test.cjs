@@ -24,7 +24,11 @@ assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doi
 assert.match(app, /function bodyMapMarkup\(side, visibleIds\)/, "Les vues avant et arrière doivent partager un rendu dédié");
 assert.match(app, /Corps humain vu de face/, "La vue avant doit être décrite");
 assert.match(app, /Corps humain vu de dos/, "La vue arrière doit être décrite");
-assert.match(app, /interactive-body-map"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
+assert.match(app, /interactive-body-map[^"]*"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
+assert.match(app, /let activeBodyModel = "female"/, "La silhouette féminine doit être proposée par défaut");
+assert.match(app, /data-body-model="female"[^>]+>Femme</, "Le sélecteur doit proposer une morphologie féminine");
+assert.match(app, /data-body-model="male"[^>]+>Homme</, "Le sélecteur doit proposer une morphologie masculine");
+assert.match(app, /button\[data-body-model\]/, "Le changement de morphologie doit être interactif");
 
 const expectedRegionCounts = {
   "front-visage": 13,
@@ -114,6 +118,8 @@ assert.match(styles, /\.body-selector-layout\{[^}]*grid-template-columns:/, "Le 
 assert.match(styles, /\.body-region\.active \.body-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La zone active doit être nettement mise en évidence");
 assert.match(styles, /\.body-region:focus-visible \.body-region-shape/, "Le focus clavier doit être visible sur la silhouette");
 assert.match(styles, /\.body-region:focus-visible \.body-region-target\{stroke-width:4\}/, "Le focus du SIF doit rester visible");
+assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-torse"\]/, "La morphologie féminine doit adapter le torse");
+assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-maillot"\]\{transform:scaleX\(1\.08\)\}/, "La morphologie féminine doit adapter le bassin");
 assert.match(styles, /@media screen and \(max-width:760px\)\{[\s\S]*?\.body-selector-layout\{grid-template-columns:1fr\}/, "Le sélecteur doit s’empiler sur mobile");
 
 assert.match(notices, /react-native-body-highlighter/, "La source du principe interactif doit être attribuée");
