@@ -53,7 +53,7 @@ async function main() {
         title: document.querySelector("#bodyResultsTitle").textContent
       };
     })()`);
-    if (!front.mapVisible || !front.layoutContained || !front.resultsContained || front.services < 1 || front.side !== "front") {
+    if (!front.mapVisible || !front.layoutContained || !front.resultsContained || front.services !== 13 || front.side !== "front" || front.title !== "Visage & cou") {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
@@ -61,12 +61,12 @@ async function main() {
 
     const back = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="back"]').click();
-      document.querySelector('svg [data-body-family="dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.querySelector('svg [data-body-region="back-dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       return {
         side: document.querySelector(".body-selector").dataset.bodySide,
         title: document.querySelector("#bodyResultsTitle").textContent,
         services: document.querySelectorAll(".body-service-options .family-option").length,
-        activeBack: Boolean(document.querySelector('svg [data-body-family="dos"].active')),
+        activeBack: Boolean(document.querySelector('svg [data-body-region="back-dos"].active')),
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
       };
     })()`);
@@ -74,6 +74,37 @@ async function main() {
       throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
     }
     await capture(window, "02-corps-arriere-dos.png");
+
+    const exactRegions = await window.webContents.executeJavaScript(`(() => {
+      const clickRegion = (regionId) => {
+        document.querySelector('[data-body-region="' + regionId + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return {
+          title: document.querySelector("#bodyResultsTitle").textContent,
+          ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId))
+        };
+      };
+      const result = {
+        sif: clickRegion("back-sif"),
+        scalp: clickRegion("back-scalp"),
+        backLegs: clickRegion("back-jambes")
+      };
+      document.querySelector('button[data-body-side="front"]').click();
+      result.frontMaillot = clickRegion("front-maillot");
+      result.frontLegs = clickRegion("front-jambes");
+      result.frontFace = clickRegion("front-visage");
+      return result;
+    })()`);
+    const exactRegionsValid = exactRegions.sif.title === "Sillon interfessier (SIF)"
+      && exactRegions.sif.ids.join(",") === "49"
+      && exactRegions.scalp.title === "Cuir chevelu"
+      && exactRegions.scalp.ids.join(",") === "96"
+      && exactRegions.backLegs.ids.length === 9
+      && exactRegions.frontMaillot.ids.length === 5
+      && !exactRegions.frontMaillot.ids.includes(49)
+      && exactRegions.frontLegs.ids.length === 8
+      && !exactRegions.frontLegs.ids.includes(55)
+      && exactRegions.frontFace.ids.length === 13;
+    if (!exactRegionsValid) throw new Error(`Filtrage anatomique invalide : ${JSON.stringify(exactRegions)}`);
 
     window.setContentSize(740, 900);
     await new Promise((resolve) => setTimeout(resolve, 180));
@@ -87,12 +118,12 @@ async function main() {
         columns: getComputedStyle(layout).gridTemplateColumns.split(" ").length,
         mapVisible: map.getBoundingClientRect().height >= 380,
         title: document.querySelector("#bodyResultsTitle").textContent,
-        activeFrontRegion: Boolean(document.querySelector('svg [data-body-family="visage"].active')),
+        activeFrontRegion: Boolean(document.querySelector('svg [data-body-region="front-visage"].active')),
         resultsBelowMap: results.getBoundingClientRect().top >= map.getBoundingClientRect().bottom,
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
       };
     })()`);
-    if (narrow.columns !== 1 || !narrow.mapVisible || narrow.title !== "Visage" || !narrow.activeFrontRegion || !narrow.resultsBelowMap || narrow.horizontalOverflow) {
+    if (narrow.columns !== 1 || !narrow.mapVisible || narrow.title !== "Visage & cou" || !narrow.activeFrontRegion || !narrow.resultsBelowMap || narrow.horizontalOverflow) {
       throw new Error(`Vue étroite invalide : ${JSON.stringify(narrow)}`);
     }
     await capture(window, "03-corps-responsive-760.png");
@@ -108,8 +139,29 @@ async function main() {
     if (!mobile.mapVisible || !mobile.sideButtonsVisible || mobile.horizontalOverflow) {
       throw new Error(`Vue mobile invalide : ${JSON.stringify(mobile)}`);
     }
+
+    window.setContentSize(1440, 980);
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    const settings = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      const picker = document.querySelector(".catalog-mode-picker");
+      picker.scrollIntoView({ block: "center" });
+      const cards = [...picker.querySelectorAll(".catalog-mode-card")];
+      const modal = document.querySelector("#settingsLayer .settings-modal");
+      return {
+        cards: cards.length,
+        bodyChecked: document.querySelector('input[name="catalogMode"][value="body"]').checked,
+        cardsBalanced: Math.max(...cards.map((card) => card.getBoundingClientRect().height)) - Math.min(...cards.map((card) => card.getBoundingClientRect().height)) <= 1,
+        contained: picker.getBoundingClientRect().left >= modal.getBoundingClientRect().left && picker.getBoundingClientRect().right <= modal.getBoundingClientRect().right,
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (settings.cards !== 2 || !settings.bodyChecked || !settings.cardsBalanced || !settings.contained || settings.horizontalOverflow) {
+      throw new Error(`Réglage du sélecteur invalide : ${JSON.stringify(settings)}`);
+    }
+    await capture(window, "04-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, back, narrow, mobile, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

@@ -1194,6 +1194,7 @@ html[data-theme] .family-visibility-icon svg{
   text-transform:uppercase;
 }
 .body-map-card-head strong{display:block;margin-top:4px;color:#fff;font-size:14px}
+.body-map-card-head>div:first-child small{display:block;margin-top:4px;color:#777;font-size:9px;font-weight:700}
 .body-side-toggle{display:flex;padding:3px;border:1px solid #3b3b3b;border-radius:10px;background:#171717}
 .body-side-toggle button{min-height:30px;padding:0 10px;border:0;border-radius:7px;color:#888;background:transparent;font-size:10px;font-weight:800}
 .body-side-toggle button:hover{color:#fff}
@@ -1207,7 +1208,10 @@ html[data-theme] .family-visibility-icon svg{
 .body-region-focus{fill:none;stroke:var(--taupe);stroke-width:4;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
 .body-region-target{fill:rgba(180,169,150,.12);stroke:var(--taupe);stroke-width:2;vector-effect:non-scaling-stroke;pointer-events:none}
 .body-region:hover .body-region-shape,.body-region:focus-visible .body-region-shape{fill:#49453e;stroke:var(--taupe);filter:drop-shadow(0 3px 7px rgba(0,0,0,.28))}
+.body-region:hover .body-region-focus,.body-region:focus-visible .body-region-focus{stroke:#fff}
+.body-region:hover .body-region-target,.body-region:focus-visible .body-region-target{fill:rgba(255,255,255,.18);stroke:#fff;filter:drop-shadow(0 3px 7px rgba(0,0,0,.28))}
 .body-region:focus-visible .body-region-shape{stroke-width:4}
+.body-region:focus-visible .body-region-target{stroke-width:4}
 .body-region.active .body-region-shape{fill:var(--taupe);stroke:#fff}
 .body-region.active .body-region-detail{stroke:#312e29}
 .body-region.active .body-region-detail-fill{fill:#312e29}

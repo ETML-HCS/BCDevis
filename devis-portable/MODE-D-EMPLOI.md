@@ -277,6 +277,8 @@ Deux navigations sont disponibles dans **Réglages** > **Apparence** > **Navigat
 - **Tuiles** : ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées** ;
 - **Corps interactif** : choisissez **Avant** ou **Arrière**, puis cliquez directement sur la zone du corps. Les soins correspondants apparaissent à droite de la silhouette. Les consultations, l’électrolyse, la médecine esthétique et les zones combinées restent accessibles sous le corps.
 
+Les deux faces sont filtrées avec précision : les **fesses** et le **SIF** se sélectionnent à l’arrière, tandis que le maillot avant n’affiche pas le SIF. La zone **Cuir chevelu** affiche uniquement la mésothérapie capillaire.
+
 Cliquez ensuite sur le soin souhaité : il est ajouté immédiatement à la caisse. Répétez l’opération pour chaque soin.
 
 Au clavier, utilisez `Tab` pour atteindre une zone de la silhouette, puis `Entrée` ou `Espace` pour la sélectionner.

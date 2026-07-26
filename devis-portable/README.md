@@ -20,7 +20,7 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 - L’accordéon reste volontairement sobre : nom, mode actif et durée, sans répéter les montants.
 - Le prix apparaît uniquement après ajout dans la caisse.
 - Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute à la caisse.
-- Dans `Réglages` > `Navigation des prestations`, le mode **Corps interactif** remplace l’accordéon par une silhouette avant/arrière : toucher une zone affiche les soins correspondants. Le mode **Tuiles** reste disponible à tout moment.
+- Dans `Réglages` > `Navigation des prestations`, le mode **Corps interactif** remplace l’accordéon par une silhouette avant/arrière : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
 - Le mode Étudiant réduit directement le prix de chaque soin selon le pourcentage configuré, fixé à 50 % par défaut.
 - L’en-tête de la caisse donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
 - Les commandes Imprimer, PDF et Envoyer restent visibles au bas de la caisse dès qu’une prestation est ajoutée.

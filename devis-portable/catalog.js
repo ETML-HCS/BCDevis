@@ -143,6 +143,20 @@ window.QUOTE_FAMILIES = [
   { id: "consultations", name: "Consultations", description: "Premiers rendez-vous, consultations et retouches.", icon: "consultation", categoryIds: [7, 13] },
   { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "all", categoryIds: [] }
 ];
+
+window.QUOTE_BODY_REGIONS = [
+  { id: "front-visage", side: "front", familyId: "visage", title: "Visage & cou", description: "Barbe, cou, lèvres, menton, joues, nez, oreilles, sourcils, tempes et visage complet." },
+  { id: "front-torse", side: "front", familyId: "torse", title: "Torse & ventre", description: "Torse, abdomen, aréoles, ligne blanche et zones définies de la poitrine ou du ventre." },
+  { id: "front-bras", side: "front", familyId: "bras", title: "Bras & aisselles", description: "Aisselles, épaules, bras, avant-bras, mains, doigts et zones définies du bras." },
+  { id: "front-maillot", side: "front", familyId: "maillot", title: "Maillot & zone intime", description: "Maillot classique, échancré, intégral, masculin et zone spéciale. Le SIF se sélectionne au dos.", excludeServiceIds: [49] },
+  { id: "front-jambes", side: "front", familyId: "jambes", title: "Jambes & pieds", description: "Cuisses, demi-jambes, genoux, jambes complètes, pieds, orteils et zones définies. Les fesses se sélectionnent au dos.", excludeServiceIds: [55] },
+  { id: "back-scalp", side: "back", familyId: "medecine", title: "Cuir chevelu", description: "Mésothérapie capillaire uniquement.", includeServiceIds: [96] },
+  { id: "back-dos", side: "back", familyId: "dos", title: "Dos & nuque", description: "Nuque, haut du dos, bas du dos, dos complet et zones définies du dos." },
+  { id: "back-bras", side: "back", familyId: "bras", title: "Bras & épaules", description: "Épaules, bras, avant-bras, mains, doigts et aisselles." },
+  { id: "back-jambes", side: "back", familyId: "jambes", title: "Fesses, jambes & pieds", description: "Fesses, cuisses, demi-jambes, genoux, jambes complètes, pieds, orteils et zones définies." },
+  { id: "back-sif", side: "back", familyId: "maillot", title: "Sillon interfessier (SIF)", description: "Sillon interfessier uniquement.", includeServiceIds: [49] }
+];
+
 window.QUOTE_SERVICES = [
   service(102, "Consultation offerte sans engagement", 0, 30, 13),
   service(110, "Retouche", 0, 15, 13),

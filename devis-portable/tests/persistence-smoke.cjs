@@ -249,9 +249,13 @@ async function run() {
       settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       if (!document.querySelector(".interactive-body-map")) throw new Error("Le corps interactif ne remplace pas les tuiles après enregistrement");
       document.querySelector('button[data-body-side="back"]').click();
-      document.querySelector('svg [data-body-family="dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.querySelector('svg [data-body-region="back-dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       if (document.querySelector("#bodyResultsTitle").textContent !== "Dos & nuque") throw new Error("La zone du dos n’affiche pas ses prestations");
+      document.querySelector('svg [data-body-region="back-sif"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const sifServices = [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => item.dataset.familyServiceId);
+      if (document.querySelector("#bodyResultsTitle").textContent !== "Sillon interfessier (SIF)" || sifServices.join(",") !== "49") throw new Error("Le SIF doit rester une zone anatomique exacte");
       document.querySelector('button[data-body-side="front"]').click();
+      if (document.querySelector("#bodyResultsTitle").textContent !== "Maillot & zone intime") throw new Error("Le passage avant/arrière doit conserver une zone corporelle cohérente");
 
       document.querySelector("#saveButton").click();
       return {
