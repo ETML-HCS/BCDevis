@@ -1,4 +1,4 @@
-# BCDevis — version 4.21.0
+# BCDevis — version 4.21.1
 
 Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, macOS et ChromeOS.
 
@@ -6,7 +6,7 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-4.21.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-4.21.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -21,8 +21,8 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 - Le prix apparaît uniquement après ajout dans la caisse.
 - Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute à la caisse.
 - Le mode Étudiant réduit directement le prix de chaque soin selon le pourcentage configuré, fixé à 50 % par défaut.
-- Le menu « Actions » dans l’en-tête regroupe le nouveau devis, l’enregistrement, l’historique, le catalogue et les réglages.
-- Les commandes Imprimer, PDF et Transmettre restent visibles au bas de la caisse dès qu’une prestation est ajoutée.
+- L’en-tête de la caisse donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
+- Les commandes Imprimer, PDF et Envoyer restent visibles au bas de la caisse dès qu’une prestation est ajoutée.
 - Sur tablette ou téléphone, un grand onglet permet de passer de Prestations à Caisse.
 - Sur les écrans peu hauts, prestations et caisse défilent sans bandeau d’actions fixe en bas.
 
@@ -54,7 +54,7 @@ Toutes les données restent locales :
 - sous macOS, dans le profil applicatif BCDevis de l’utilisateur ;
 - sous ChromeOS, dans le stockage du profil Chrome qui a installé la PWA.
 
-Pour déplacer les données vers un autre ordinateur ou une autre plateforme, utiliser `Actions` > `Historique` > `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive JSON peut être copiée sur une clé USB et ne dépend pas d’Internet.
+Pour déplacer les données vers un autre ordinateur ou une autre plateforme, ouvrir **Historique** depuis l’en-tête de la caisse, choisir `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive JSON peut être copiée sur une clé USB et ne dépend pas d’Internet.
 
 ## Créer un PDF
 
@@ -89,7 +89,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-4.21.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-4.21.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -106,14 +106,14 @@ Les deux PDF de référence avec signatures activées et désactivées sont écr
 - `?` ouvre cette aide dans l’application ; `Échap` ferme une fenêtre ou la recherche.
 - Dans les choix de tarif et de thème, les flèches gauche/droite ou haut/bas sélectionnent directement l’option suivante.
 
-## Transférer un devis
+## Envoyer un devis
 
-La commande **Transmettre** au bas de la caisse propose deux choix :
+La commande **Envoyer** au bas de la caisse propose deux choix :
 
 - **WhatsApp** : prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message du devis prérempli ;
-- **E-mail** : prépare le PDF, puis ouvre la messagerie avec l’objet et le message préremplis. Si le client possède une adresse e-mail, elle est utilisée automatiquement. Sinon, le champ destinataire reste vide afin de la saisir dans la messagerie.
+- **E-mail** : dans l’application de bureau Windows, macOS ou Linux, ouvre un nouveau message avec l’objet, le texte et le PDF déjà joint. Si le client possède une adresse e-mail, elle est utilisée automatiquement. Sinon, le champ destinataire reste vide afin de la saisir dans la messagerie.
 
-Pour des raisons de sécurité propres à WhatsApp et aux logiciels de messagerie, le PDF ne peut pas être joint automatiquement par un simple lien. Il reste à l’ajouter au message depuis **Téléchargements** avant l’envoi. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez le fichier enregistré.
+Sous Windows, BCDevis utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, il crée dans **Téléchargements** un brouillon `.eml` contenant déjà le message et le PDF, puis l’ouvre avec la messagerie par défaut. Il n’ouvre plus de message `mailto:` sans pièce jointe. WhatsApp exige toujours l’ajout manuel du PDF. Sous ChromeOS, où le navigateur ne peut pas joindre automatiquement le document, créez d’abord le PDF avec la commande **PDF**, puis joignez le fichier enregistré.
 
 ## Générer les applications de distribution
 
@@ -129,7 +129,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-4.21.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-4.21.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -139,7 +139,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -147,6 +147,6 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les trois systèmes natifs et publie trois artefacts séparés : `BCDevis-Windows`, `BCDevis-macOS` et `BCDevis-ChromeOS`.

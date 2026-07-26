@@ -1,6 +1,8 @@
 "use strict";
 
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { execFile } = require("node:child_process");
+const { randomUUID } = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -20,10 +22,152 @@ if (windowsPortableDirectory) {
 
 let mainWindow;
 
+const OUTLOOK_COMPOSE_SCRIPT = [
+  '$ErrorActionPreference = "Stop"',
+  '$payloadPath = $env:BCDEVIS_EMAIL_PAYLOAD',
+  'if ([string]::IsNullOrWhiteSpace($payloadPath)) { throw "Payload e-mail manquant." }',
+  '$payload = Get-Content -LiteralPath $payloadPath -Raw -Encoding UTF8 | ConvertFrom-Json',
+  '$outlook = New-Object -ComObject Outlook.Application',
+  '$mail = $outlook.CreateItem(0)',
+  '$mail.BodyFormat = 1',
+  'if (-not [string]::IsNullOrWhiteSpace([string]$payload.to)) { $mail.To = [string]$payload.to }',
+  '$mail.Subject = [string]$payload.subject',
+  '$mail.Body = [string]$payload.body',
+  '[void]$mail.Attachments.Add([string]$payload.attachmentPath)',
+  'if ($mail.Attachments.Count -lt 1) { throw "La pièce jointe Outlook n’a pas été ajoutée." }',
+  '$mail.Display($false)'
+].join("\r\n");
+const OUTLOOK_COMPOSE_COMMAND = Buffer.from(OUTLOOK_COMPOSE_SCRIPT, "utf16le").toString("base64");
+
 function allowedExternalUrl(url) {
   const target = new URL(String(url));
-  if (!["https:", "mailto:"].includes(target.protocol)) throw new Error("Lien externe non autorisé.");
+  if (target.protocol !== "https:") throw new Error("Lien externe non autorisé.");
   return target.toString();
+}
+
+function runExecutable(file, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, options, (error, stdout, stderr) => {
+      if (error) {
+        error.stderr = stderr;
+        reject(error);
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+  });
+}
+
+function safeEmailPayload(payload) {
+  const attachmentPath = path.resolve(String(payload?.attachmentPath || ""));
+  const downloadsPath = path.resolve(app.getPath("downloads"));
+  const relativeAttachment = path.relative(downloadsPath, attachmentPath);
+  if (
+    path.extname(attachmentPath).toLowerCase() !== ".pdf"
+    || relativeAttachment.startsWith("..")
+    || path.isAbsolute(relativeAttachment)
+  ) {
+    throw new Error("Pièce jointe e-mail non autorisée.");
+  }
+  return {
+    to: String(payload?.to || "").replace(/[\r\n]+/g, " ").trim().slice(0, 320),
+    subject: String(payload?.subject || "").replace(/[\r\n]+/g, " ").trim().slice(0, 250),
+    body: String(payload?.body || "").slice(0, 50000),
+    attachmentPath
+  };
+}
+
+function base64Lines(value) {
+  return Buffer.from(value).toString("base64").match(/.{1,76}/g)?.join("\r\n") || "";
+}
+
+function encodedEmailHeader(value) {
+  return `=?UTF-8?B?${Buffer.from(String(value), "utf8").toString("base64")}?=`;
+}
+
+async function availableEmlPath(attachmentPath) {
+  const directory = app.getPath("downloads");
+  const baseName = `${path.parse(attachmentPath).name || "devis"}-email`;
+  await fs.mkdir(directory, { recursive: true });
+  for (let index = 0; index < 1000; index += 1) {
+    const suffix = index ? ` (${index})` : "";
+    const candidate = path.join(directory, `${baseName}${suffix}.eml`);
+    try {
+      await fs.access(candidate);
+    } catch (error) {
+      if (error?.code === "ENOENT") return candidate;
+      throw error;
+    }
+  }
+  throw new Error("Impossible de choisir un nom de brouillon e-mail disponible.");
+}
+
+async function composeEmailWithEml(payload) {
+  const email = safeEmailPayload(payload);
+  const attachment = await fs.readFile(email.attachmentPath);
+  if (attachment.length > 25 * 1024 * 1024) {
+    throw new Error("Le PDF est trop volumineux pour être joint automatiquement.");
+  }
+  const attachmentName = path.basename(email.attachmentPath);
+  const asciiAttachmentName = attachmentName.replace(/[^\x20-\x7E]+/g, "_").replace(/["\\]/g, "_");
+  const boundary = `----BCDevis-${randomUUID()}`;
+  const lines = [
+    "X-Unsent: 1",
+    `To: ${email.to}`,
+    `Subject: ${encodedEmailHeader(email.subject)}`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${randomUUID()}@bcdevis.local>`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    base64Lines(Buffer.from(email.body, "utf8")),
+    "",
+    `--${boundary}`,
+    `Content-Type: application/pdf; name="${asciiAttachmentName}"`,
+    "Content-Transfer-Encoding: base64",
+    `Content-Disposition: attachment; filename="${asciiAttachmentName}"; filename*=UTF-8''${encodeURIComponent(attachmentName)}`,
+    "",
+    base64Lines(attachment),
+    "",
+    `--${boundary}--`,
+    ""
+  ];
+  const draftPath = await availableEmlPath(email.attachmentPath);
+  await fs.writeFile(draftPath, lines.join("\r\n"), "utf8");
+  const openError = await shell.openPath(draftPath);
+  if (openError) throw new Error(`Le brouillon e-mail n’a pas pu être ouvert : ${openError}`);
+  return { opened: true, attached: true, client: "eml", draftPath };
+}
+
+async function composeEmailWithOutlook(payload) {
+  const email = safeEmailPayload(payload);
+  const payloadPath = path.join(app.getPath("temp"), `bcdevis-email-${process.pid}-${randomUUID()}.json`);
+  await fs.writeFile(payloadPath, JSON.stringify(email), "utf8");
+  try {
+    const powershell = path.join(
+      String(process.env.SystemRoot || "C:\\Windows"),
+      "System32",
+      "WindowsPowerShell",
+      "v1.0",
+      "powershell.exe"
+    );
+    await runExecutable(
+      powershell,
+      ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-EncodedCommand", OUTLOOK_COMPOSE_COMMAND],
+      {
+        windowsHide: true,
+        timeout: 45000,
+        env: { ...process.env, BCDEVIS_EMAIL_PAYLOAD: payloadPath }
+      }
+    );
+    return { opened: true, attached: true, client: "outlook" };
+  } finally {
+    await fs.unlink(payloadPath).catch(() => {});
+  }
 }
 
 function safePdfName(requestedName) {
@@ -100,6 +244,16 @@ async function savePdf(event, requestedName, includeContents = false) {
 
 ipcMain.handle("bcdevis:save-pdf", (event, requestedName) => savePdf(event, requestedName));
 ipcMain.handle("bcdevis:save-pdf-for-share", (event, requestedName) => savePdf(event, requestedName, true));
+ipcMain.handle("bcdevis:compose-email", async (_event, payload) => {
+  const email = safeEmailPayload(payload);
+  if (process.platform !== "win32") return composeEmailWithEml(email);
+  try {
+    return await composeEmailWithOutlook(email);
+  } catch (outlookError) {
+    console.warn("Outlook classique indisponible, ouverture du brouillon EML.", outlookError?.message || outlookError);
+    return composeEmailWithEml(email);
+  }
+});
 
 ipcMain.handle("bcdevis:open-external", async (_event, url) => {
   const target = allowedExternalUrl(url);
@@ -108,7 +262,13 @@ ipcMain.handle("bcdevis:open-external", async (_event, url) => {
 });
 
 const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) app.quit();
+if (!gotLock) {
+  dialog.showErrorBox?.(
+    "BCDevis est déjà ouvert",
+    "Fermez complètement l’ancienne fenêtre BCDevis, puis relancez ce nouvel EXE pour appliquer la mise à jour."
+  );
+  app.quit();
+}
 else {
   app.on("second-instance", () => {
     if (!mainWindow) return;

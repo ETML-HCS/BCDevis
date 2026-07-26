@@ -71,6 +71,7 @@
     return Number.isFinite(number) ? clamp(number, minimum, maximum) : fallback;
   };
   const boundedInteger = (value, minimum, maximum, fallback = minimum) => Math.round(boundedNumber(value, minimum, maximum, fallback));
+  const safeLocalId = (value) => String(value || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96);
   const validISODate = (value, fallback = todayISO()) => {
     const candidate = String(value || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(candidate)) return fallback;
@@ -110,8 +111,8 @@
 
   function packDefaults() {
     return {
-      paid: Math.max(1, Math.round(Number(db.settings.packPaidDefault) || 6)),
-      free: Math.max(0, Math.round(Number(db.settings.packFreeDefault) || 0))
+      paid: boundedInteger(db.settings.packPaidDefault, 1, 24, 6),
+      free: boundedInteger(db.settings.packFreeDefault, 0, 12, 0)
     };
   }
 
@@ -332,10 +333,17 @@
     };
     const quoteDate = validISODate(source.date, base.date);
     const importedNumber = String(source.number || "").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 64);
+    const knownLineIds = new Set();
+    const uniqueLineId = (value) => {
+      let id = safeLocalId(value) || uid();
+      while (knownLineIds.has(id)) id = uid();
+      knownLineIds.add(id);
+      return id;
+    };
     const sanitized = {
       ...base,
       ...source,
-      id: String(source.id || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96) || uid(),
+      id: safeLocalId(source.id) || uid(),
       number: importedNumber || nextQuoteNumber(quoteDate),
       date: quoteDate,
       validUntil: addDaysISO(quoteDate, QUOTE_VALIDITY_DAYS),
@@ -355,7 +363,7 @@
         const price = boundedNumber(line.price ?? line.unit_price, 0, MAX_LINE_PRICE, 0);
         const basePrice = boundedNumber(line.basePrice ?? price, 0, MAX_LINE_PRICE, 0);
         return {
-          id: line.id || uid(),
+          id: uniqueLineId(line.id),
           serviceId: line.serviceId ?? null,
           name: String(line.name || line.description || "Prestation").trim().slice(0, 240) || "Prestation",
           categoryId: Number(line.categoryId) || 0,
@@ -483,6 +491,12 @@
       icon: /^[a-z0-9-]+$/.test(requestedIcon) ? requestedIcon : category.icon || "skin-target",
       zone: String(item.zone || category.short || category.name || "Zone sur mesure")
     };
+  }
+
+  function prestationIconHref(icon) {
+    const normalized = /^[a-z0-9-]+$/.test(String(icon || "")) ? String(icon) : "skin-target";
+    const bodyMapId = `icon-map-${normalized}`;
+    return `#${document.getElementById(bodyMapId) ? bodyMapId : `icon-${normalized}`}`;
   }
 
   function familyFor(id = activeFamily) {
@@ -645,7 +659,7 @@
         const durationLabel = item.duration ? ` (${item.duration} min)` : "";
         const visual = serviceVisual(item);
         return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)}">
-          <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="#icon-${visual.icon}"></use></svg></span>
+          <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
           <span class="family-option-copy"><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong><small>${escapeHTML(visual.zone)}</small></span>
           <b class="family-option-price">${money(item.price)}</b>
           <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
@@ -654,7 +668,7 @@
       const countLabel = needle ? plural(visibleServices.length, "résultat") : plural(familyServices.length, "soin");
       return `<div class="family-group ${isOpen ? "open" : ""}">
         <button class="family-button ${isActive ? "active" : ""}" type="button" data-family="${family.id}" aria-expanded="${isOpen}">
-          <span class="family-button-icon"><svg><use href="#icon-${family.icon}"></use></svg></span>
+          <span class="family-button-icon"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>
           <span><strong>${escapeHTML(family.name)}</strong><small>${countLabel}</small></span>
           <svg class="family-arrow"><use href="#icon-chevron"></use></svg>
         </button>
@@ -694,7 +708,7 @@
       toast(`${item.name} · ce pack est déjà dans la caisse`);
       return;
     }
-    if (existing) existing.quantity += 1;
+    if (existing) existing.quantity = boundedInteger(existing.quantity + 1, 1, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
     else {
       const basePrice = Math.max(0, Number(item.price) || 0);
       const discount = clamp(db.settings.studentDiscount, 0, 100);
@@ -703,8 +717,8 @@
         duration: Math.max(0, Number(item.duration) || 0), offerType: offer, basePrice,
         studentDiscount: discount,
         price: basePrice,
-        quantity: offer === "pack" ? Math.max(1, Math.round(Number(db.settings.packPaidDefault) || 6)) : 1,
-        freeQuantity: offer === "pack" ? Math.max(0, Math.round(Number(db.settings.packFreeDefault) || 0)) : 0
+        quantity: offer === "pack" ? packDefaults().paid : 1,
+        freeQuantity: offer === "pack" ? packDefaults().free : 0
       });
     }
     saveLocal(); renderCatalog(); renderCheckout();
@@ -715,7 +729,13 @@
     const client = quote.client;
     const clientEmail = String(client.email || "").trim();
     const emailRecipient = $("#checkoutEmailRecipient");
-    if (emailRecipient) emailRecipient.textContent = clientEmail || "Destinataire à saisir";
+    const desktopEmailAvailable = typeof window.bcdevisDesktop?.composeEmail === "function"
+      && typeof window.bcdevisDesktop?.savePdf === "function";
+    if (emailRecipient) {
+      emailRecipient.textContent = desktopEmailAvailable
+        ? clientEmail || "Destinataire à saisir"
+        : "Application de bureau requise";
+    }
     if (client.name) {
       const initials = client.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
       $("#clientInitials").textContent = initials || "C";
@@ -741,14 +761,13 @@
       const isPack = line.offerType === "pack";
       const pack = packDefaults();
       const canAddPackOffer = line.offerType === "single" && pack.free > 0 && line.quantity >= pack.paid;
-      const nameSize = Math.min(28, Math.max(8, Array.from(line.name).length + 1));
       const categoryLabel = category.short.toLocaleLowerCase("fr-CH");
       const paidControl = `<span class="quantity-group quantity-group-inline${isPack ? " is-pack" : ""}">${isPack ? "<small>Payées</small>" : ""}<button class="quantity-value" type="button" data-quantity-gesture="paid" aria-label="${line.quantity} séance${line.quantity > 1 ? "s" : ""} payée${line.quantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.quantity}</button></span>`;
       const freeControl = isPack ? `<span class="quantity-group quantity-group-inline is-pack free"><small>Offertes</small><button class="quantity-value" type="button" data-quantity-gesture="free" aria-label="${line.freeQuantity} séance${line.freeQuantity > 1 ? "s" : ""} offerte${line.freeQuantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.freeQuantity}</button></span>` : "";
       const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
-        <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" size="${nameSize}" aria-label="Nom de la prestation"></span>${packOfferAction}</div>
-        <div class="cart-line-inline-controls"><span class="cart-line-category">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price">${money(line.price)}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
+        <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
+        <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price">${money(line.price)}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
       </article>`;
     }).join("");
   }
@@ -806,10 +825,19 @@
     if (quote.discount.type !== previousCouponType) saveLocal(false);
     const hasLines = quote.lines.length > 0;
     $("#checkoutPanel").classList.toggle("is-empty", !hasLines);
-    ["saveButton", "checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton", "checkoutEmailButton"].forEach((id) => {
+    ["saveButton", "checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton"].forEach((id) => {
       const button = $(`#${id}`);
       if (button) button.disabled = !hasLines;
     });
+    const emailButton = $("#checkoutEmailButton");
+    const desktopEmailAvailable = typeof window.bcdevisDesktop?.composeEmail === "function"
+      && typeof window.bcdevisDesktop?.savePdf === "function";
+    if (emailButton) {
+      emailButton.disabled = !hasLines || !desktopEmailAvailable;
+      emailButton.title = desktopEmailAvailable
+        ? "Préparer le devis par e-mail"
+        : "Le PDF joint automatiquement nécessite l’application de bureau";
+    }
     if (!hasLines) setTransmissionMenuOpen(false);
     renderHeader();
     renderClient();
@@ -949,7 +977,7 @@
   function createNewQuote(force = false) {
     const hasContent = quote.lines.length || quote.client.name;
     const isArchived = Boolean(db.quotes[quote.id]);
-    if (!force && hasContent && !isArchived && !window.confirm("Créer un nouveau devis ? Le brouillon actuel restera enregistré localement, mais ne figurera pas dans Mes devis.")) return;
+    if (!force && hasContent && !isArchived && !window.confirm("Le brouillon actuel n’est pas enregistré dans Mes devis et sera remplacé. Créer quand même un nouveau devis ?")) return;
     quote = newQuote();
     couponOpen = false;
     activeFamily = "visage";
@@ -1062,7 +1090,7 @@
     const initiallyAll = !configured.size;
     grid.innerHTML = allSelectable.map((family) => {
       const checked = initiallyAll || configured.has(family.id);
-      return `<label class="family-visibility-item" data-family-id="${family.id}">\n        <input type="checkbox" name="visibleFamilies" value="${family.id}" ${checked ? "checked" : ""}>\n        <span class="family-visibility-icon" aria-hidden="true"><svg><use href="#icon-${family.icon}"></use></svg></span>\n        <span class="family-visibility-copy"><strong>${escapeHTML(family.name)}</strong><small>${escapeHTML(family.description || "")}</small></span>\n      </label>`;
+      return `<label class="family-visibility-item" data-family-id="${family.id}">\n        <input type="checkbox" name="visibleFamilies" value="${family.id}" ${checked ? "checked" : ""}>\n        <span class="family-visibility-icon" aria-hidden="true"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>\n        <span class="family-visibility-copy"><strong>${escapeHTML(family.name)}</strong><small>${escapeHTML(family.description || "")}</small></span>\n      </label>`;
     }).join("");
   }
 
@@ -1325,11 +1353,29 @@
     const totals = calculate(quote);
     const clientName = String(quote.client?.name || "").trim();
     const lines = quote.lines.map((line) => {
-      const quantity = line.offerType === "pack"
-        ? `${line.quantity} payée${line.quantity > 1 ? "s" : ""}${line.freeQuantity ? ` + ${line.freeQuantity} offerte${line.freeQuantity > 1 ? "s" : ""}` : ""}`
-        : `${line.quantity} ×`;
-      return `• ${line.name} — ${quantity} · ${money(line.price * line.quantity)}`;
+      const name = String(line.name || "Prestation").trim().replace(/[\s—–-]+$/u, "").trim() || "Prestation";
+      const quantity = Math.max(0, Number(line.quantity) || 0);
+      const unitPrice = line.offerType === "student"
+        ? Math.max(0, Number(line.basePrice ?? line.price) || 0)
+        : Math.max(0, Number(line.price) || 0);
+      if (line.offerType === "pack") {
+        const paid = `${quantity} payée${quantity > 1 ? "s" : ""}`;
+        const offeredQuantity = Math.max(0, Number(line.freeQuantity) || 0);
+        const offered = offeredQuantity ? ` et ${offeredQuantity} offerte${offeredQuantity > 1 ? "s" : ""}` : "";
+        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(unitPrice * quantity)}`;
+      }
+      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(unitPrice * quantity)}`;
     });
+    const summary = [`Sous-total : ${money(totals.subtotal)}`];
+    if (totals.studentDiscount > 0) summary.push(`Rabais étudiant (${totals.studentRate} %) : ${money(totals.studentDiscount)}`);
+    if (totals.discount > 0) {
+      const label = quote.discount.code ? `Coupon ${quote.discount.code}` : "Réduction";
+      summary.push(`${label} : ${money(totals.discount)}`);
+    }
+    if (quote.tax.enabled && totals.tax > 0) {
+      summary.push(`TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""} : ${money(totals.tax)}`);
+    }
+    summary.push(`Total : ${money(totals.total)}`);
     const message = [
       `Bonjour${clientName ? ` ${clientName}` : ""},`,
       "",
@@ -1337,7 +1383,7 @@
       "",
       ...lines,
       "",
-      `Total : ${money(totals.total)}`,
+      ...summary,
       `Valable jusqu’au ${formatDate(quote.validUntil)}.`,
       "",
       "Bien cordialement,",
@@ -1361,11 +1407,8 @@
     if (!popup) window.location.assign(url);
   }
 
-  function emailUrl(message) {
-    const recipient = String(quote.client?.email || "").trim();
-    const subject = `Votre devis ${quote.number} — ${String(db.settings.companyName || "Clinique Bellecour").trim()}`;
-    const parameters = new URLSearchParams({ subject, body: message });
-    return `mailto:${encodeURIComponent(recipient)}?${parameters.toString()}`;
+  function emailSubject() {
+    return `Votre devis ${quote.number} — ${String(db.settings.companyName || "Clinique Bellecour").trim()}`;
   }
 
   function setTransmissionBusy(busy) {
@@ -1409,19 +1452,25 @@
     const recipient = String(quote.client?.email || "").trim();
     try {
       const result = await prepareTransmissionPdf();
-      await openExternalUrl(emailUrl(message));
-      if (result?.saved) {
-        toast(recipient
-          ? `E-mail préparé pour ${recipient} — joignez le PDF depuis Téléchargements.`
-          : "E-mail préparé — saisissez le destinataire et joignez le PDF depuis Téléchargements.");
-      } else {
-        toast(recipient
-          ? `E-mail préparé pour ${recipient} — créez puis joignez le PDF.`
-          : "E-mail préparé — saisissez le destinataire, puis créez et joignez le PDF.");
+      if (!result?.saved || !result.filePath) throw new Error("Le PDF du devis n’a pas pu être créé.");
+      if (typeof window.bcdevisDesktop?.composeEmail !== "function") {
+        throw new Error("La création d’un brouillon avec pièce jointe n’est pas disponible.");
       }
+      const composed = await window.bcdevisDesktop.composeEmail({
+        to: recipient,
+        subject: emailSubject(),
+        body: message,
+        attachmentPath: result.filePath
+      });
+      if (!composed?.opened || !composed?.attached) {
+        throw new Error("Le client e-mail n’a pas confirmé la pièce jointe.");
+      }
+      toast(recipient
+        ? `E-mail prêt pour ${recipient} — PDF joint.`
+        : "E-mail prêt avec le PDF joint — saisissez le destinataire.");
     } catch (error) {
       console.error(error);
-      toast("Le message e-mail n’a pas pu être ouvert.", "error");
+      toast("Impossible d’ouvrir un e-mail avec le PDF joint. Le PDF reste dans Téléchargements.", "error");
     } finally {
       setTransmissionBusy(false);
     }
@@ -1459,7 +1508,7 @@
     const trigger = $("#checkoutTransmitButton");
     menu.hidden = !open;
     trigger.setAttribute("aria-expanded", String(open));
-    trigger.setAttribute("aria-label", open ? "Fermer les choix de transmission" : "Choisir comment transmettre le devis");
+    trigger.setAttribute("aria-label", open ? "Fermer les choix d’envoi" : "Choisir comment envoyer le devis");
     if (open) {
       setAppMenuOpen(false);
       setQuoteMenuOpen(false);
@@ -1581,8 +1630,11 @@
     const line = lineFromElement(control);
     if (!line) return;
     const kind = control.dataset.quantityGesture;
-    if (kind === "free") line.freeQuantity = Math.max(0, line.freeQuantity + (increase ? 1 : -1));
-    else line.quantity = Math.max(1, line.quantity + (increase ? 1 : -1));
+    if (kind === "free") {
+      line.freeQuantity = boundedInteger(line.freeQuantity + (increase ? 1 : -1), 0, MAX_LINE_QUANTITY, 0);
+    } else {
+      line.quantity = boundedInteger(line.quantity + (increase ? 1 : -1), 1, MAX_LINE_QUANTITY, 1);
+    }
     saveLocal(); renderCatalog(); renderCheckout();
     const quantity = kind === "free" ? line.freeQuantity : line.quantity;
     const restoredControl = $(`[data-line-id="${line.id}"] [data-quantity-gesture="${kind}"]`);
@@ -1604,12 +1656,12 @@
       line.freeQuantity = pack.free;
       selectedOfferMode = "pack";
       saveLocal(); renderCatalog(); renderCheckout();
-      toast(`${line.name} · ${line.quantity} payées + ${line.free} offerte${line.free > 1 ? "s" : ""}`);
+      toast(`${line.name} · ${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity > 1 ? "s" : ""}`);
       return;
     }
-    if (action === "increase") line.quantity += 1;
+    if (action === "increase") line.quantity = boundedInteger(line.quantity + 1, 1, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
     if (action === "decrease") line.quantity = Math.max(1, line.quantity - 1);
-    if (action === "increase-free") line.freeQuantity += 1;
+    if (action === "increase-free") line.freeQuantity = boundedInteger(line.freeQuantity + 1, 0, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
     if (action === "decrease-free") line.freeQuantity = Math.max(0, line.freeQuantity - 1);
     if (action === "remove") quote.lines = quote.lines.filter((item) => item.id !== line.id);
     saveLocal(); renderCatalog(); renderCheckout();
@@ -1801,7 +1853,7 @@
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
-      packPaidDefault: Math.max(1, Math.round(Number(data.get("packPaidDefault")) || 6)), packFreeDefault: Math.max(0, Math.round(Number(data.get("packFreeDefault")) || 0)),
+      packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
       showSignatures: data.has("showSignatures")
@@ -1845,9 +1897,9 @@
     const action = button.dataset.appAction;
     setAppMenuOpen(false, { restoreFocus: true });
     if (action === "custom") openCustomItemLayer();
-    if (action === "settings") openSettingsLayer();
-    if (action === "shortcuts") openLayer("shortcutHelpLayer");
   });
+  $("#settingsButton").addEventListener("click", openSettingsLayer);
+  $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
   $("#newQuoteButton").addEventListener("click", createNewQuote);
   $("#saveButton").addEventListener("click", saveQuote);
   $("#historyButton").addEventListener("click", openHistoryLayer);

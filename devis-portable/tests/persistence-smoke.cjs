@@ -57,6 +57,11 @@ async function run() {
       const noTransitions = document.createElement("style");
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
+      window.bcdevisDesktop = {
+        savePdf: async (fileName) => ({ saved: true, fileName, filePath: "C:/Downloads/" + fileName }),
+        composeEmail: async () => ({ opened: true, attached: true, client: "test" }),
+        openExternal: async () => true
+      };
       const normalizedColor = (value) => {
         const probe = document.createElement("span");
         probe.style.color = value;
@@ -82,6 +87,11 @@ async function run() {
       if (quoteHeaderButtons.length !== 4 || quoteHeaderButtons.some((button) => button.textContent.trim() || !button.querySelector("svg") || !button.dataset.tooltip)) throw new Error("Les quatre actions de l’en-tête doivent rester des SVG seuls avec info-bulle");
       if (Math.max(...quoteHeaderRects.map((rect) => rect.width)) - Math.min(...quoteHeaderRects.map((rect) => rect.width)) > 1 || quoteHeaderRects.some((rect) => rect.right > checkoutRect.right + 1)) throw new Error("Les actions de l’en-tête de caisse sont déséquilibrées ou débordent");
       if (Number.parseFloat(getComputedStyle(document.querySelector("#familyNavTitle")).fontSize) !== 18 || Number.parseFloat(getComputedStyle(document.querySelector("#checkoutTitle")).fontSize) !== 22) throw new Error("Les titres Prestations et Caisse n’ont pas été réduits avec mesure");
+      const topbarUtilities = document.querySelector(".topbar-utilities");
+      const utilityButtons = [...topbarUtilities.querySelectorAll(".topbar-utility-button")];
+      const utilityRect = topbarUtilities.getBoundingClientRect();
+      if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 2) throw new Error("Les deux utilitaires ne suivent pas directement le groupe des tarifs");
+      if (utilityButtons.some((button) => button.textContent.trim() || !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne sont pas des SVG compacts ou empiètent sur la caisse");
       const menuButton = document.querySelector("#appMenuButton");
       if (menuButton.childElementCount !== 1 || !menuButton.firstElementChild.matches("svg")) throw new Error("Le menu principal n’est pas réduit à son icône");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));
@@ -117,9 +127,45 @@ async function run() {
       if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 4) throw new Error("Le menu des actions du devis est incomplet");
       if (quoteMenuRect.left < checkoutRect.left || quoteMenuRect.right > checkoutRect.right + 1) throw new Error("Le menu des actions du devis déborde de la caisse");
       document.querySelector("#moreQuoteButton").click();
-      const serviceIds = [...document.querySelectorAll("[data-family-service-id]")].slice(0, 5).map((service) => service.dataset.familyServiceId);
-      if (serviceIds.length < 5) throw new Error("Moins de cinq prestations disponibles pour tester la caisse");
+      const catalogSearch = document.querySelector("#catalogSearch");
+      catalogSearch.value = "Zone spéciale 100 cm²";
+      catalogSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      const specialService = document.querySelector('[data-family-service-id="108"]');
+      if (!specialService) throw new Error("La prestation Zone spéciale 100 cm² est introuvable");
+      specialService.click();
+      catalogSearch.value = "";
+      catalogSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      const serviceIds = [...document.querySelectorAll("[data-family-service-id]")]
+        .map((service) => service.dataset.familyServiceId)
+        .filter((serviceId) => serviceId !== "108")
+        .slice(0, 4);
+      if (serviceIds.length < 4) throw new Error("Moins de quatre prestations complémentaires disponibles pour tester la caisse");
       for (const serviceId of serviceIds) document.querySelector('[data-family-service-id="' + serviceId + '"]').click();
+      for (let index = 1; index < 6; index += 1) {
+        document.querySelector('[data-family-service-id="' + serviceIds[0] + '"]').click();
+      }
+      const packOfferAction = document.querySelector(".cart-line .pack-offer-action");
+      if (!packOfferAction) throw new Error("La proposition de séance offerte n’apparaît pas au seuil du pack");
+      packOfferAction.click();
+      const convertedPackLine = document.querySelector(".cart-line.offer-pack");
+      if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-gesture="free"]')?.textContent.trim() !== "1") {
+        throw new Error("La conversion en pack ne conserve pas correctement la séance offerte");
+      }
+      if (/undefined/i.test(document.querySelector("#toastRegion").textContent)) throw new Error("Le message de conversion en pack contient une valeur indéfinie");
+      const specialLineName = [...document.querySelectorAll(".cart-line-name")].find((input) => input.value === "Zone spéciale 100 cm²");
+      if (!specialLineName) throw new Error("Zone spéciale 100 cm² n’apparaît pas dans la caisse");
+      const specialLine = specialLineName.closest(".cart-line");
+      const specialControls = specialLine.querySelector(".cart-line-inline-controls");
+      const specialCategory = specialLine.querySelector(".cart-line-category");
+      const specialNameRect = specialLineName.getBoundingClientRect();
+      const specialControlsRect = specialControls.getBoundingClientRect();
+      const specialRowRect = specialLine.getBoundingClientRect();
+      const specialNameStyle = getComputedStyle(specialLineName);
+      if (specialNameRect.right > specialControlsRect.left + 1) throw new Error("Zone spéciale 100 cm² chevauche encore sa catégorie et ses contrôles");
+      if (specialControlsRect.right > specialRowRect.right + 1) throw new Error("Les contrôles de Zone spéciale 100 cm² débordent de la caisse");
+      if (specialNameStyle.textOverflow !== "ellipsis" || specialNameStyle.overflowX !== "hidden" || specialNameStyle.whiteSpace !== "nowrap") throw new Error("Les prestations longues ne sont pas tronquées avec une ellipse");
+      if (specialLineName.scrollWidth <= specialLineName.clientWidth + 1) throw new Error("Zone spéciale 100 cm² n’active pas réellement la troncature prévue");
+      if (specialLineName.title !== specialLineName.value || specialCategory.title !== "Poitrine et abdomen") throw new Error("Le libellé complet tronqué n’est pas disponible au survol");
       const cartViewport = document.querySelector("#cartLines").getBoundingClientRect();
       const visibleRows = [...document.querySelectorAll(".cart-line")].filter((row) => {
         const rect = row.getBoundingClientRect();
@@ -136,6 +182,7 @@ async function run() {
       const actionRects = checkoutActions.map((button) => button.getBoundingClientRect());
       if (actionRects.some((rect) => rect.bottom > checkoutRect.bottom + 1)) throw new Error("Les actions rapides débordent de la caisse");
       if (Math.max(...actionRects.map((rect) => rect.width)) - Math.min(...actionRects.map((rect) => rect.width)) > 1) throw new Error("Les trois actions rapides doivent avoir la même largeur");
+      if (document.querySelector("#couponToggle").textContent.trim() !== "Ajouter un coupon") throw new Error("L’action coupon reste réduite à un signe ambigu");
 
       document.querySelector("#clientButton").click();
       const client = document.querySelector("#clientForm");
@@ -144,13 +191,12 @@ async function run() {
       client.elements.email.value = "sophie@example.test";
       client.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       document.querySelector("#checkoutTransmitButton").click();
-      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Transmettre n’ouvre pas les choix WhatsApp et E-mail");
+      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp et E-mail");
       if (document.querySelector("#checkoutEmailRecipient").textContent !== "sophie@example.test") throw new Error("Le choix E-mail ne reprend pas l’adresse du contact");
       if (!document.querySelector("#checkoutWhatsAppButton") || !document.querySelector("#checkoutEmailButton")) throw new Error("Un choix de transmission est absent");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-      if (!document.querySelector("#checkoutTransmissionMenu").hidden || document.activeElement !== document.querySelector("#checkoutTransmitButton")) throw new Error("Échap ne referme pas correctement Transmettre");
+      if (!document.querySelector("#checkoutTransmissionMenu").hidden || document.activeElement !== document.querySelector("#checkoutTransmitButton")) throw new Error("Échap ne referme pas correctement Envoyer");
 
-      document.querySelector("#appMenuButton").click();
       document.querySelector("#settingsButton").click();
       document.querySelector('[data-theme="night"]').click();
       document.querySelector('[data-font="roboto"]').click();
@@ -158,7 +204,6 @@ async function run() {
       if (document.documentElement.dataset.theme !== "light") throw new Error("L’annulation des réglages doit restaurer le thème enregistré");
       if (document.documentElement.dataset.font !== "red-hat") throw new Error("L’annulation des réglages doit restaurer la police enregistrée");
 
-      document.querySelector("#appMenuButton").click();
       document.querySelector("#settingsButton").click();
       for (const theme of ["light", "night", "forest", "bordeaux"]) {
         const themeCard = document.querySelector('[data-theme="' + theme + '"]');
@@ -213,6 +258,51 @@ async function run() {
     })()`);
     assert.deepEqual(initial, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test" });
 
+    const emailDraft = await window.webContents.executeJavaScript(`(async () => {
+      window.__bcdevisEmailPayload = null;
+      window.__bcdevisFallbackUrl = null;
+      window.bcdevisDesktop = {
+        savePdf: async (fileName) => ({ saved: true, fileName, filePath: "C:/Downloads/" + fileName }),
+        composeEmail: async (payload) => {
+          window.__bcdevisEmailPayload = payload;
+          return { opened: true, attached: true, client: "outlook" };
+        },
+        openExternal: async (url) => { window.__bcdevisFallbackUrl = url; }
+      };
+      document.querySelector("#checkoutTransmitButton").click();
+      document.querySelector("#checkoutEmailButton").click();
+      for (let attempt = 0; attempt < 20 && !window.__bcdevisEmailPayload; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      return {
+        payload: window.__bcdevisEmailPayload,
+        fallbackUrl: window.__bcdevisFallbackUrl
+      };
+    })()`);
+    assert.equal(emailDraft.payload.to, "sophie@example.test");
+    assert.match(emailDraft.payload.attachmentPath, /DEV-\d{8}[A-Z0-9]*\d{3}\.pdf$/);
+    assert.match(emailDraft.payload.body, /Sous-total :/);
+    assert.match(emailDraft.payload.body, /Total :/);
+    assert.doesNotMatch(emailDraft.payload.body, /\+/);
+    assert.doesNotMatch(emailDraft.payload.body, /—\s*—| — /);
+    assert.equal(emailDraft.fallbackUrl, null, "Outlook ne doit pas être remplacé par mailto lorsque le PDF est joint");
+
+    const emailFailure = await window.webContents.executeJavaScript(`(async () => {
+      window.__bcdevisFallbackUrl = null;
+      window.bcdevisDesktop.composeEmail = async () => { throw new Error("Client e-mail indisponible"); };
+      document.querySelector("#checkoutTransmitButton").click();
+      document.querySelector("#checkoutEmailButton").click();
+      for (let attempt = 0; attempt < 40 && document.querySelector("#checkoutEmailButton").hasAttribute("aria-busy"); attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      return {
+        fallbackUrl: window.__bcdevisFallbackUrl,
+        toast: document.querySelector("#toastRegion").textContent
+      };
+    })()`);
+    assert.equal(emailFailure.fallbackUrl, null, "Un échec de pièce jointe ne doit jamais ouvrir mailto");
+    assert.match(emailFailure.toast, /Impossible d’ouvrir un e-mail avec le PDF joint/);
+
     await reload(window.webContents);
     const restored = await window.webContents.executeJavaScript(`(() => {
       document.querySelector("#historyButton").click();
@@ -237,7 +327,10 @@ async function run() {
         number: "DEV-" + today.replaceAll("-", "") + "A999",
         date: today,
         client: { name: "Sauvegarde vérifiée", phone: "+41 79 999 00 00", email: "backup@example.test", address: "Genève" },
-        lines: [{ id: "backup-line", name: "Prestation restaurée", price: 120, quantity: 2, categoryId: 1, duration: 30, offerType: "single" }],
+        lines: [
+          { id: 'backup-line" data-injected="true', name: "Prestation restaurée", price: 120, quantity: 2, categoryId: 1, duration: 30, offerType: "single" },
+          { id: 'backup-line" data-injected="true', name: "Deuxième prestation restaurée", price: 80, quantity: 1, categoryId: 1, duration: 20, offerType: "single" }
+        ],
         discount: { code: "", type: "percent", value: 0 },
         tax: { enabled: true, rate: 8.1, mode: "included" }
       };
@@ -252,6 +345,8 @@ async function run() {
           if (document.querySelector("#clientName").textContent === "Sauvegarde vérifiée") return resolve({
             client: document.querySelector("#clientName").textContent,
             lines: document.querySelectorAll(".cart-line").length,
+            lineIds: [...document.querySelectorAll(".cart-line")].map((line) => line.dataset.lineId),
+            injectedAttribute: Boolean(document.querySelector("[data-injected]")),
             theme: document.documentElement.dataset.theme,
             font: document.documentElement.dataset.font,
             company: document.querySelector(".brand-block .eyebrow")?.textContent || ""
@@ -263,7 +358,12 @@ async function run() {
         verify();
       });
     })()`);
-    assert.deepEqual(backupRestored, { client: "Sauvegarde vérifiée", lines: 1, theme: "night", font: "roboto", company: "Clinique sauvegardée" });
+    assert.equal(backupRestored.injectedAttribute, false, "Un identifiant importé ne doit pas injecter d’attribut HTML");
+    assert.equal(new Set(backupRestored.lineIds).size, 2, "Les identifiants de lignes importées doivent rester uniques");
+    assert.ok(backupRestored.lineIds.every((id) => /^[a-zA-Z0-9_-]+$/.test(id)), "Les identifiants de lignes importées doivent être nettoyés");
+    delete backupRestored.injectedAttribute;
+    delete backupRestored.lineIds;
+    assert.deepEqual(backupRestored, { client: "Sauvegarde vérifiée", lines: 2, theme: "night", font: "roboto", company: "Clinique sauvegardée" });
 
     await reload(window.webContents);
     const backupAfterReload = await window.webContents.executeJavaScript(`(() => {
@@ -284,9 +384,12 @@ async function run() {
         const checkout = document.querySelector("#checkoutPanel");
         const brand = document.querySelector(".brand-block");
         const topbar = document.querySelector(".topbar");
+        const tariffRect = document.querySelector(".topbar-context").getBoundingClientRect();
+        const utilitiesRect = document.querySelector(".topbar-utilities").getBoundingClientRect();
         if (checkout.classList.contains("is-full-height") || document.documentElement.classList.contains("checkout-focus")) throw new Error("La caisse permanente bloque la navigation responsive");
         if (getComputedStyle(document.querySelector("#mobileTabs")).display === "none") throw new Error("La navigation mobile est absente à ${viewport.width}px");
         if (document.documentElement.scrollWidth > innerWidth + 1 || topbar.scrollWidth > topbar.clientWidth + 1) throw new Error("Le header déborde à ${viewport.width}px");
+        if (utilitiesRect.left < tariffRect.right - 1 || utilitiesRect.right > topbar.getBoundingClientRect().right + 1) throw new Error("Les utilitaires chevauchent les tarifs à ${viewport.width}px");
         if ((getComputedStyle(brand).display === "none") !== ${viewport.hideBrand}) throw new Error("La marque n’est pas adaptée à ${viewport.width}px");
         document.querySelector('[data-panel="checkoutPanel"]').click();
         const receiptRect = document.querySelector(".receipt-head").getBoundingClientRect();

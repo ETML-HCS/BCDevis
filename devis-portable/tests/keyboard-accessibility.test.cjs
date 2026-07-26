@@ -6,6 +6,7 @@ const path = require("node:path");
 
 const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const main = fs.readFileSync(path.join(__dirname, "..", "main.cjs"), "utf8");
 
 for (const shortcut of ["event.code === \"KeyM\"", "event.code === \"KeyP\"", "key === \"k\"", "key === \"s\"", "key === \"n\"", "key === \"h\"", "key === \"d\"", "key === \"o\"", "key === \"e\"", "key === \"p\"", "event.shiftKey && key === \"s\"", "event.code === \"KeyW\"", "event.key === \",\""]) {
   assert.match(app, new RegExp(shortcut.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Raccourci absent : ${shortcut}`);
@@ -21,9 +22,28 @@ assert.match(html, /id="appMenuButton"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>
 assert.doesNotMatch(html, /id="appMenuButton"[^>]*>[\s\S]*?<span>Actions<\/span>[\s\S]*?<\/button>/, "Le titre Actions ne doit plus prendre de place dans le header");
 assert.match(html, /id="appActionsMenu" role="menu" aria-label="Menu principal"/, "Le menu principal doit être identifié");
 assert.doesNotMatch(html, /app-menu-status|100% local|id="saveState"/, "Le menu Actions ne doit pas contenir une ligne d’état inutile");
-for (const id of ["customItemButton", "familyPriceToggle", "settingsButton", "shortcutHelpButton"]) {
+for (const id of ["customItemButton", "familyPriceToggle"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem`), `${id} doit appartenir au menu Actions`);
 }
+assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
+for (const [id, label, shortcut] of [
+  ["settingsButton", "Ouvrir les réglages", "Control\\+Comma Meta\\+Comma"],
+  ["shortcutHelpButton", "Afficher les raccourcis clavier", "\\?"]
+]) {
+  assert.match(html, new RegExp(`class="topbar-utility-button" id="${id}"[^>]*aria-label="${label}"[^>]*aria-keyshortcuts="${shortcut}"[^>]*data-tooltip="[^"]+"`), `${id} doit suivre les tarifs sous forme de SVG documenté`);
+  assert.match(html, new RegExp(`id="${id}"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} ne doit contenir que son SVG`);
+}
+assert.match(app, /\$\("#settingsButton"\)\.addEventListener\("click", openSettingsLayer\)/, "Le bouton Réglages du header doit fonctionner");
+assert.match(app, /\$\("#shortcutHelpButton"\)\.addEventListener\("click", \(\) => openLayer\("shortcutHelpLayer"\)\)/, "Le bouton Raccourcis du header doit fonctionner");
+assert.ok(
+  html.indexOf('id="shortcutHelpButton"') < html.indexOf('id="appActions"'),
+  "Le menu principal doit être placé après le bouton Raccourcis clavier"
+);
+assert.match(
+  html,
+  /grid-template-columns:180px minmax\(360px,1fr\) auto 48px/,
+  "Le header large doit conserver le menu principal dans sa colonne de droite"
+);
 assert.doesNotMatch(html, />Devis<\/p>[\s\S]*?id="newQuoteButton"/, "Les actions essentielles du devis ne doivent plus être dupliquées dans le menu principal");
 assert.match(html, /id="familyPriceToggle"[^>]*aria-keyshortcuts="Alt\+P"[^>]*>[\s\S]*?<kbd>Alt P<\/kbd>/, "Le basculement des prix doit annoncer Alt+P");
 assert.match(html, /<kbd>Alt<\/kbd><kbd>P<\/kbd><\/dt><dd>Afficher ou masquer les prix<\/dd>/, "Alt+P doit figurer dans l’aide des raccourcis");
@@ -79,16 +99,23 @@ for (const id of ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitB
   assert.match(html, new RegExp(`id="${id}"`), `${id} doit rester directement accessible dans la caisse`);
 }
 assert.equal((html.match(/id="checkout(?:Print|Pdf|Transmit)Button"/g) || []).length, 3, "La caisse doit contenir exactement trois actions rapides");
-assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"/, "Transmettre doit annoncer ses deux choix");
-assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Transmettre le devis" hidden/, "Le menu de transmission doit être identifié");
+assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"[^>]*>[\s\S]*?<span>Envoyer<\/span>/, "Envoyer doit annoncer ses deux choix avec un libellé court");
+assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden/, "Le menu d’envoi doit être identifié");
 for (const id of ["checkoutWhatsAppButton", "checkoutEmailButton"]) {
-  assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Transmettre`);
+  assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Envoyer`);
 }
 assert.match(html, /id="checkoutEmailRecipient">Destinataire à saisir</, "Le choix E-mail doit expliquer le destinataire manquant");
-assert.match(app, /function setTransmissionMenuOpen/, "Le menu Transmettre doit exposer un état ouvert et fermé");
+assert.match(app, /function setTransmissionMenuOpen/, "Le menu Envoyer doit exposer un état ouvert et fermé");
 assert.match(app, /function shareQuoteViaEmail/, "Le transfert par e-mail doit être implémenté");
 assert.match(app, /quote\.client\?\.email/, "L’adresse e-mail du contact doit être réutilisée lorsqu’elle existe");
-assert.match(app, /mailto:/, "Le transfert e-mail doit ouvrir la messagerie configurée");
+assert.doesNotMatch(app, /mailto:/, "Le transfert e-mail ne doit plus ouvrir un brouillon sans pièce jointe");
+assert.match(app, /bcdevisDesktop\?\.composeEmail/, "L’application de bureau doit demander un brouillon avec le PDF joint");
+assert.doesNotMatch(app, /new URLSearchParams\(\{ subject, body: message \}\)/, "Le lien e-mail ne doit pas transformer les espaces en signes plus");
+assert.match(main, /X-Unsent: 1/, "Un brouillon EML avec pièce jointe doit remplacer le repli mailto");
+assert.match(main, /Content-Disposition: attachment/, "Le brouillon EML doit embarquer le PDF");
+assert.match(app, /class="cart-line-name"[^>]*title="\$\{escapeHTML\(line\.name\)\}"/, "Le libellé complet d’une prestation tronquée doit rester disponible au survol");
+assert.match(app, /class="cart-line-category"[^>]*title="\$\{escapeHTML\(category\.name\)\}"/, "La catégorie complète doit rester disponible au survol");
+assert.match(app, /replace\(\/\[\\s—–-\]\+\$\/u, ""\)/, "Les séparateurs déjà présents à la fin d’une prestation doivent être nettoyés");
 assert.doesNotMatch(app, /setCheckoutFocus|familyFooterCollapsed/, "L’ancien basculement de la caisse doit être supprimé");
 assert.match(html, /role="radiogroup" aria-label="Tarif appliqué aux soins"/, "Le tarif doit être annoncé comme un groupe de choix");
 assert.match(html, /id="themePicker" role="radiogroup" aria-label="Choix du thème"/, "Les thèmes doivent être annoncés comme un groupe de choix");

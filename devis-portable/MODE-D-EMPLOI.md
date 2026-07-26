@@ -130,6 +130,7 @@ code {
 }
 
 table {
+  display: table;
   width: 100%;
   margin: 14px 0 22px;
   border-collapse: collapse;
@@ -140,7 +141,21 @@ table {
   page-break-inside: avoid;
 }
 
+thead {
+  display: table-header-group;
+}
+
+tbody {
+  display: table-row-group;
+}
+
+tr {
+  display: table-row;
+}
+
 th {
+  display: table-cell;
+  margin: 0;
   color: #fff;
   background: var(--bc-black);
   font-weight: 700;
@@ -148,6 +163,7 @@ th {
 }
 
 th, td {
+  display: table-cell;
   padding: 9px 11px;
   border-bottom: 1px solid var(--bc-line);
   vertical-align: top;
@@ -210,15 +226,15 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 4.21.0 · Windows · macOS · ChromeOS</p>
+  <p class="cover-version">Version 4.21.1 · Windows · macOS · ChromeOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-4.21.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **macOS** : ouvrez `BCDevis-4.21.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-4.21.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **macOS** : ouvrez `BCDevis-4.21.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
@@ -235,7 +251,10 @@ Dans la barre supérieure :
 - **Séance** : tarif à l’unité ;
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
-- **Actions** : regroupe le nouveau devis, l’enregistrement, l’historique, le catalogue, les réglages et les raccourcis.
+- **Réglages** et **Raccourcis** : les deux boutons utilitaires placés après les tarifs ;
+- **Menu principal** : objet sur mesure et affichage des prix sur les prestations.
+
+Dans l’en-tête de la caisse, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…` du devis.
 
 Sur un écran étroit, les onglets **Prestations** et **Caisse** en bas permettent de passer d’une zone à l’autre. Sur ordinateur, la caisse occupe toute la hauteur de la fenêtre.
 
@@ -261,7 +280,7 @@ Pour retrouver rapidement un soin, cliquez sur l’icône de recherche dans l’
 
 ### Étape 3 : Ajouter un objet sur mesure
 
-Utilisez **Actions** > **Objet sur mesure** pour créer une prestation libre. Renseignez :
+Utilisez **Menu principal** > **Objet sur mesure** pour créer une prestation libre. Renseignez :
 
 - le nom de la prestation ;
 - le prix unitaire en CHF ;
@@ -295,7 +314,7 @@ En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bo
 
 ### Coupon
 
-Cliquez sur le bouton `+` de la ligne Coupon, puis saisissez le code et la valeur de la réduction.
+Cliquez sur **Ajouter un coupon**, puis saisissez le code et la valeur de la réduction.
 
 - `%` applique une réduction en pourcentage ;
 - `CHF` applique une réduction fixe.
@@ -304,24 +323,24 @@ Avec le tarif Étudiant, seul un coupon en CHF peut être ajouté : le coupon en
 
 ### TVA
 
-Le bouton **Afficher TVA** active ou masque les lignes fiscales du devis en cours. Le taux par défaut est de 8,1 % et le mode par défaut est **TVA incluse**. Le taux et le mode peuvent être modifiés dans **Réglages**.
+Le bouton **TVA** active ou masque les lignes fiscales du devis en cours. Le taux par défaut est de 8,1 % et le mode par défaut est **TVA incluse**. Le taux et le mode peuvent être modifiés dans **Réglages**.
 
 ### Paiement échelonné
 
-Ouvrez **Paiement échelonné (CHF)** pour afficher une simulation indicative. Les options sont proposées selon le total : 3, 4 et 6 mois sous 1’000 CHF ; 10 mois à partir de 1’000 CHF ; 12 mois à partir de 2’000 CHF. Ces montants restent indicatifs et soumis à l’accord du partenaire financier.
+La simulation indicative apparaît automatiquement sous le total. Les options sont proposées selon le montant : 3, 4 et 6 mois sous 1’000 CHF ; 10 mois à partir de 1’000 CHF ; 12 mois à partir de 2’000 CHF. Ces montants restent indicatifs et soumis à l’accord du partenaire financier.
 
-## 4. Enregistrer, imprimer et transmettre
+## 4. Enregistrer, imprimer et envoyer
 
-Les trois commandes de sortie restent visibles au bas de la caisse. L’enregistrement se trouve dans le menu **Actions** de l’en-tête.
+Les trois commandes de sortie restent visibles au bas de la caisse. L’enregistrement se trouve directement dans l’en-tête de la caisse.
 
-- **Enregistrer** : archive le devis dans **Actions > Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
+- **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
 - **Télécharger le PDF** : sous Windows et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression.
-- **Transmettre** : affiche deux choix :
+- **Envoyer** : affiche deux choix :
   - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
-  - **E-mail** prépare le PDF, puis ouvre la messagerie avec l’objet et le message préremplis. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
+  - **E-mail** ouvre dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
 
-WhatsApp et les logiciels de messagerie n’autorisent pas un simple lien à imposer une pièce jointe. Avant l’envoi, ajoutez manuellement le PDF préparé depuis **Téléchargements**. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**.
+Sous Windows, BCDevis utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. Aucun message e-mail sans pièce jointe n’est ouvert. WhatsApp exige toujours l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
 
 Le PDF reprend le détail des prestations, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 
@@ -329,7 +348,7 @@ Le bouton `…` en haut de la caisse donne accès à **Dupliquer**, **Exporter c
 
 ## 5. Consulter l’historique et sauvegarder les données
 
-Cliquez sur **Actions** > **Historique** pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de prestations et le total. Cliquez sur une carte pour rouvrir le devis.
+Cliquez sur le bouton **Historique** dans l’en-tête de la caisse pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de prestations et le total. Cliquez sur une carte pour rouvrir le devis.
 
 En bas de l’historique :
 
@@ -377,13 +396,11 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 
 Sur Mac, remplacez `Ctrl` par `⌘`.
 
-<div class="page-break"></div>
-
 ## 8. Résoudre les situations courantes
 
 **Le devis n’apparaît pas dans Mes devis.**
 
-Cliquez sur **Enregistrer**. Un brouillon peut être conservé localement sans apparaître dans l’historique tant qu’il n’a pas été enregistré.
+Cliquez sur **Enregistrer**. Le brouillon en cours est conservé localement sans apparaître dans l’historique. Si vous créez un nouveau devis avant de l’enregistrer, BCDevis prévient que ce brouillon sera remplacé.
 
 **Le PDF n’est pas visible.**
 
@@ -395,7 +412,7 @@ Si la confirmation est encore ouverte, cliquez sur **Annuler**. Sinon, rechargez
 
 **Je change d’ordinateur.**
 
-Depuis **Actions** > **Historique**, cliquez sur **Sauvegarde complète**, copiez le fichier JSON sur le nouvel appareil, puis utilisez **Restaurer**.
+Depuis **Historique**, cliquez sur **Sauvegarde complète**, copiez le fichier JSON sur le nouvel appareil, puis utilisez **Restaurer**.
 
 **Les données semblent avoir disparu.**
 

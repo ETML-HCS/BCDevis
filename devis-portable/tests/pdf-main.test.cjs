@@ -1,19 +1,28 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fsSync = require("node:fs");
 const Module = require("node:module");
 const path = require("node:path");
 
 const handlers = new Map();
 const writes = [];
 const externalTargets = [];
+const openedPaths = [];
+const processRuns = [];
+const deletedFiles = [];
+let failOutlook = false;
 const originalLoad = Module._load;
 
 const fakeApp = {
   isPackaged: false,
   setName() {},
   setPath() {},
-  getPath(name) { return name === "downloads" ? "C:\\Downloads" : "C:\\Application"; },
+  getPath(name) {
+    if (name === "downloads") return "C:\\Downloads";
+    if (name === "temp") return "C:\\Temp";
+    return "C:\\Application";
+  },
   whenReady() { return { then() { return { catch() {} }; } }; },
   on() {},
   requestSingleInstanceLock() { return false; },
@@ -27,14 +36,27 @@ Module._load = function loadWithElectronMocks(request, parent, isMain) {
       BrowserWindow: { fromWebContents() { return null; } },
       dialog: {},
       ipcMain: { handle(channel, handler) { handlers.set(channel, handler); } },
-      shell: { openExternal: async (target) => externalTargets.push(target) }
+      shell: {
+        openExternal: async (target) => externalTargets.push(target),
+        openPath: async (target) => { openedPaths.push(target); return ""; }
+      }
     };
   }
   if (request === "node:fs/promises") {
     return {
       mkdir: async () => {},
       access: async () => { const error = new Error("Missing"); error.code = "ENOENT"; throw error; },
-      writeFile: async (filePath, contents) => writes.push({ filePath, contents })
+      readFile: async () => Buffer.from("%PDF-email-fallback"),
+      writeFile: async (filePath, contents) => writes.push({ filePath, contents }),
+      unlink: async (filePath) => deletedFiles.push(filePath)
+    };
+  }
+  if (request === "node:child_process") {
+    return {
+      execFile(file, args, options, callback) {
+        processRuns.push({ file, args, options });
+        callback(failOutlook ? new Error("Outlook indisponible") : null, "", "");
+      }
     };
   }
   return originalLoad.call(this, request, parent, isMain);
@@ -45,6 +67,7 @@ try {
 } finally {
   Module._load = originalLoad;
 }
+const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "utf8");
 
 (async () => {
   const result = await handlers.get("bcdevis:save-pdf")({
@@ -65,12 +88,63 @@ try {
     sender: { printToPDF: async () => Buffer.from("%PDF-share") }
   }, "DEV-000001.pdf");
   assert.equal(shareResult.contentBase64, Buffer.from("%PDF-share").toString("base64"));
-  await handlers.get("bcdevis:open-external")(null, "mailto:sophie@example.test?subject=Devis");
+  const emailResult = await handlers.get("bcdevis:compose-email")(null, {
+    to: "sophie@example.test",
+    subject: "Votre devis DEV-000001",
+    body: "Bonjour Sophie,\n\nVoici votre devis.",
+    attachmentPath: "C:\\Downloads\\DEV-000001.pdf"
+  });
+  assert.deepEqual(emailResult, { opened: true, attached: true, client: "outlook" });
+  assert.equal(processRuns.length, 1);
+  assert.match(processRuns[0].file, /powershell\.exe$/i);
+  assert.ok(processRuns[0].args.includes("-EncodedCommand"));
+  assert.match(processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD, /^C:\\Temp\\bcdevis-email-.+\.json$/);
+  const emailPayloadWrite = writes.find(({ filePath }) => filePath === processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD);
+  assert.deepEqual(JSON.parse(emailPayloadWrite.contents), {
+    to: "sophie@example.test",
+    subject: "Votre devis DEV-000001",
+    body: "Bonjour Sophie,\n\nVoici votre devis.",
+    attachmentPath: "C:\\Downloads\\DEV-000001.pdf"
+  });
+  assert.deepEqual(deletedFiles, [processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD]);
+  failOutlook = true;
+  const fallbackResult = await handlers.get("bcdevis:compose-email")(null, {
+    to: "sophie@example.test",
+    subject: "Votre devis DEV-000002",
+    body: "Bonjour Sophie,\n\nVoici votre devis de secours.",
+    attachmentPath: "C:\\Downloads\\DEV-000002.pdf"
+  });
+  assert.equal(fallbackResult.opened, true);
+  assert.equal(fallbackResult.attached, true);
+  assert.equal(fallbackResult.client, "eml");
+  assert.match(fallbackResult.draftPath, /^C:\\Downloads\\DEV-000002-email\.eml$/);
+  assert.deepEqual(openedPaths, [fallbackResult.draftPath]);
+  const emlWrite = writes.find(({ filePath }) => filePath === fallbackResult.draftPath);
+  assert.ok(emlWrite, "Le brouillon EML de secours doit être écrit");
+  assert.match(emlWrite.contents, /^X-Unsent: 1\r\n/);
+  assert.match(emlWrite.contents, /Content-Type: multipart\/mixed/);
+  assert.match(emlWrite.contents, /Content-Disposition: attachment; filename="DEV-000002\.pdf"/);
+  assert.match(emlWrite.contents, new RegExp(Buffer.from("%PDF-email-fallback").toString("base64")));
+  assert.match(emlWrite.contents, new RegExp(Buffer.from("Bonjour Sophie,\n\nVoici votre devis de secours.").toString("base64")));
+  assert.deepEqual(deletedFiles, processRuns.map(({ options }) => options.env.BCDEVIS_EMAIL_PAYLOAD));
+  assert.match(mainSource, /process\.platform !== "win32"\) return composeEmailWithEml\(email\)/, "macOS et Linux doivent aussi ouvrir un brouillon EML avec le PDF joint");
+  assert.doesNotMatch(mainSource, /reason:\s*"unsupported-platform"/, "L’envoi e-mail de bureau ne doit pas être désactivé hors Windows");
+  failOutlook = false;
+  await assert.rejects(
+    handlers.get("bcdevis:compose-email")(null, {
+      to: "sophie@example.test",
+      subject: "Test",
+      body: "Test",
+      attachmentPath: "C:\\Windows\\secret.pdf"
+    }),
+    /Pièce jointe e-mail non autorisée/
+  );
   await handlers.get("bcdevis:open-external")(null, "https://wa.me/?text=Devis");
-  assert.deepEqual(externalTargets, [
-    "mailto:sophie@example.test?subject=Devis",
-    "https://wa.me/?text=Devis"
-  ]);
+  assert.deepEqual(externalTargets, ["https://wa.me/?text=Devis"]);
+  await assert.rejects(
+    handlers.get("bcdevis:open-external")(null, "mailto:sophie@example.test?subject=Devis"),
+    /Lien externe non autorisé/
+  );
   await assert.rejects(
     handlers.get("bcdevis:open-external")(null, "file:///C:/Windows/System32"),
     /Lien externe non autorisé/

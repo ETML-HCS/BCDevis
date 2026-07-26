@@ -23,7 +23,7 @@ const PRESTATION_VISUALS = {
 
   99: ["consultation", "Consultation du visage et de la peau"],
   96: ["scalp", "Cuir chevelu"],
-  95: ["face-skin", "Visage ou zone cutanée"],
+  95: ["skin-target", "Visage ou zone cutanée du corps"],
   94: ["face-skin", "Peau du visage"],
 
   15: ["consultation", "Consultation de médecine esthétique"],
@@ -31,8 +31,8 @@ const PRESTATION_VISUALS = {
   130: ["consultation", "Consultation du phototype cutané"],
 
   97: ["consultation", "Consultation pour injections"],
-  63: ["injection", "Zone du visage ou du corps à injecter"],
-  100: ["injection", "Zone injectée à retoucher"],
+  63: ["injection-zone", "Zone du visage ou du corps à injecter"],
+  100: ["injection-zone", "Zone injectée à retoucher"],
   87: ["forehead", "Haut du visage"],
   89: ["face-neck", "Visage et cou"],
   88: ["injection", "Zone du visage à restaurer"],
@@ -79,7 +79,7 @@ const PRESTATION_VISUALS = {
   33: ["abdomen", "Abdomen"],
   32: ["areola", "Aréoles"],
   34: ["linea-alba", "Ligne médiane de l’abdomen"],
-  31: ["torso", "Poitrine"],
+  31: ["torso", "Torse (poitrine)"],
   108: ["torso-zone", "Zone définie de la poitrine ou de l’abdomen"],
 
   37: ["lower-back", "Bas du dos"],
@@ -113,15 +113,15 @@ const PRESTATION_VISUALS = {
   106: ["leg-zone", "Zone définie de la jambe"],
   53: ["thigh-zone", "Zone définie de la cuisse"],
 
-  112: ["student", "Zone définie lors de la séance"],
-  113: ["student", "Zone définie lors de la séance"],
-  114: ["student", "Zone définie lors de la séance"],
-  115: ["student", "Zone définie lors de la séance"],
-  116: ["student", "Zone définie lors de la séance"],
-  118: ["student", "Zone définie lors de la séance"],
-  119: ["student", "Zone définie lors de la séance"],
-  120: ["student", "Zone définie lors de la séance"],
-  121: ["student", "Zone définie lors de la séance"]
+  112: ["student", "Zone du corps définie lors de la séance"],
+  113: ["student", "Zone du corps définie lors de la séance"],
+  114: ["student", "Zone du corps définie lors de la séance"],
+  115: ["student", "Zone du corps définie lors de la séance"],
+  116: ["student", "Zone du corps définie lors de la séance"],
+  118: ["student", "Zone du corps définie lors de la séance"],
+  119: ["student", "Zone du corps définie lors de la séance"],
+  120: ["student", "Zone du corps définie lors de la séance"],
+  121: ["student", "Zone du corps définie lors de la séance"]
 };
 
 const service = (id, name, price, duration, categoryId) => {

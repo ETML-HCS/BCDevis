@@ -34,6 +34,7 @@ const appSource = text("app.js");
 const index = text("index.html");
 const manifest = JSON.parse(text("manifest.webmanifest"));
 const serviceWorker = text("service-worker.js");
+const packageJson = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
 
 assert.match(styles, /font-family:"Red Hat Display"/);
 assert.match(styles, /font-family:"Roboto"/);
@@ -57,6 +58,7 @@ assert.match(serviceWorker, /clinique-bellecour-logo-officiel\.png/);
 assert.match(serviceWorker, /red-hat-display-extrabold\.ttf/);
 assert.match(serviceWorker, /roboto-latin\.woff2/);
 assert.match(serviceWorker, /roboto-slab-latin\.woff2/);
+assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}"`), "Le cache PWA doit changer avec la version livrée");
 
 function get(url) {
   return new Promise((resolve, reject) => {

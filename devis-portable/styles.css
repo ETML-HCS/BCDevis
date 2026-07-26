@@ -346,16 +346,14 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 }
 
 /* V4.9 — catégorie intégrée au nom de la prestation */
-.cart-line-name-row{display:flex;min-width:0;align-items:baseline;gap:4px}
-.cart-line-name-row .cart-line-name{width:auto;min-width:8ch;max-width:100%;flex:0 1 auto}
-.cart-line-category{min-width:0;color:#888;font-size:11px;font-weight:650;white-space:nowrap}
+.cart-line-name-row{display:block;width:100%;min-width:0;overflow:hidden}
+.cart-line-name-row .cart-line-name{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.cart-line-category{display:block;min-width:0;max-width:14ch;overflow:hidden;flex:0 1 14ch;color:#888;font-size:11px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
 
 /* V4.10 — contrôles compacts sur la ligne de prestation */
 .cart-line{display:grid;min-width:0;align-items:center;grid-template-columns:minmax(0,1fr) auto;gap:9px}
-.cart-line-info{min-width:0;grid-column:1;grid-row:1}
-.cart-line-info{display:flex;align-items:flex-start;flex-direction:column;gap:4px}
-.cart-line-name-row{overflow:hidden}
-.cart-line-inline-controls{display:flex;min-width:0;grid-column:2;grid-row:1;align-items:center;gap:6px}
+.cart-line-info{display:flex;min-width:0;grid-column:1;grid-row:1;align-items:flex-start;flex-direction:column;gap:4px}
+.cart-line-inline-controls{display:flex;min-width:0;max-width:100%;grid-column:2;grid-row:1;align-items:center;gap:6px}
 .cart-line-inline-controls .quantity-group{display:flex;align-items:center;flex-direction:row;gap:4px}
 .cart-line-inline-controls .quantity-group.is-pack{align-items:flex-end;flex-direction:column;gap:2px}
 .cart-line-inline-controls .quantity-group.is-pack>small{color:#888;font-size:8px;font-weight:700;line-height:1;letter-spacing:.04em;text-transform:uppercase}
@@ -371,6 +369,7 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 @media screen and (max-width:700px){
   .cart-line{gap:6px}
   .cart-line-inline-controls{gap:4px}
+  .cart-line-category{max-width:9ch;flex-basis:9ch}
   .cart-line-inline-controls .quantity-value{min-width:24px;height:30px;font-size:12px}
   .cart-line-inline-controls .cart-line-price{min-height:30px;font-size:11px}
   .cart-line-inline-controls .remove-line{width:30px;height:30px}
@@ -411,7 +410,7 @@ html,body,.app-shell,.workspace{max-width:100%}.workspace>*{min-width:0}.family-
 @media screen and (max-width:520px){.whatsapp-button span{display:none}.quote-output-actions{grid-template-columns:minmax(0,2fr) repeat(2,minmax(44px,1fr))}}
 
 /* V4.12 — coupon à la demande et actions de caisse toujours accessibles */
-.coupon-toggle{display:inline-flex;min-height:34px;padding:0 2px;align-items:center;gap:6px;border:0;color:#666;background:transparent;font-size:11px;font-weight:800;cursor:pointer}
+.coupon-toggle{display:inline-flex;min-height:34px;padding:0 4px;align-items:center;gap:6px;border:0;color:#666;background:transparent;font-size:11px;font-weight:800;cursor:pointer}
 .coupon-toggle:hover{color:#111}
 .coupon-toggle svg{width:15px;height:15px}
 .coupon-editor[hidden]{display:none}
@@ -872,7 +871,8 @@ html[data-theme] .family-visibility-icon svg{
   position:absolute;
   z-index:100;
   top:calc(100% + 9px);
-  left:0;
+  right:0;
+  left:auto;
   display:grid;
   width:min(380px,calc(100vw - 24px));
   max-height:calc(100vh - 104px);
@@ -1071,24 +1071,53 @@ html[data-theme] .family-visibility-icon svg{
   .checkout-primary-actions .button{padding-inline:5px;font-size:10px}
 }
 
-/* Prestations : pictogrammes anatomiques explicites et homogènes. */
+/* Prestations : cartes corporelles compactes, inspirées des body highlighters. */
 .family-option{
   min-height:76px;
-  grid-template-columns:44px minmax(0,1fr) auto 30px;
-  gap:10px;
+  padding:7px 5px 7px 9px;
+  grid-template-columns:40px minmax(0,1fr) 22px;
+  gap:8px;
 }
 .service-zone-icon{
   display:grid;
-  width:42px;
-  height:42px;
+  width:40px;
+  height:40px;
   place-items:center;
   border:1px solid #48443e;
   border-radius:13px;
   color:var(--taupe);
   background:rgba(180,169,150,.1);
 }
-.service-zone-icon svg{width:27px;height:27px;stroke-width:1.65}
-.svg-sprite symbol[id^="icon-"] [fill="currentColor"][opacity]{opacity:.48}
+.service-zone-icon svg{width:29px;height:29px;stroke-width:1.5}
+.anatomy-base{
+  fill:currentColor;
+  fill-opacity:.13;
+  stroke:currentColor;
+  stroke-opacity:.52;
+  stroke-width:1.05;
+}
+.anatomy-zone{
+  fill:currentColor;
+  fill-opacity:.9;
+  stroke:none;
+}
+.anatomy-zone-soft{
+  fill:currentColor;
+  fill-opacity:.58;
+  stroke:none;
+}
+.anatomy-detail{
+  fill:none;
+  stroke:currentColor;
+  stroke-opacity:.72;
+  stroke-width:.95;
+}
+.anatomy-focus{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.45;
+}
+.anatomy-dot{fill:currentColor;stroke:none}
 .family-option-copy{min-width:0}
 .family-option-copy strong,
 .family-option-copy small{display:block}
@@ -1100,7 +1129,8 @@ html[data-theme] .family-visibility-icon svg{
   font-weight:600;
   line-height:1.25;
 }
-.family-option-add{width:21px;height:21px;justify-self:center;color:var(--taupe)}
+.family-option-add{width:20px;height:20px;justify-self:end;color:var(--taupe)}
+.show-family-prices .family-option{grid-template-columns:40px minmax(0,1fr) auto 22px}
 .family-option:hover .service-zone-icon,
 .family-option:focus-visible .service-zone-icon{border-color:var(--taupe);background:rgba(180,169,150,.17)}
 .family-option:active .service-zone-icon{color:#111;border-color:#111;background:rgba(255,255,255,.42)}
@@ -1108,7 +1138,8 @@ html[data-theme] .family-visibility-icon svg{
 .family-option.added .service-zone-icon{color:#111;border-color:var(--taupe);background:var(--taupe)}
 
 @media screen and (max-width:760px){
-  .family-option{grid-template-columns:42px minmax(0,1fr) auto 28px}
+  .family-option{padding:7px 4px 7px 8px;grid-template-columns:40px minmax(0,1fr) 20px;gap:7px}
+  .show-family-prices .family-option{grid-template-columns:40px minmax(0,1fr) auto 20px}
   .service-zone-icon{width:40px;height:40px}
-  .service-zone-icon svg{width:25px;height:25px}
+  .service-zone-icon svg{width:27px;height:27px}
 }
