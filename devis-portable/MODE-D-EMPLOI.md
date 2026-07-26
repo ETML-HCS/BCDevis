@@ -190,6 +190,14 @@ img {
   page-break-inside: avoid;
 }
 
+.capture-caption {
+  margin: -15px 0 22px;
+  color: var(--bc-muted);
+  font-size: 9pt;
+  text-align: center;
+  page-break-before: avoid;
+}
+
 a {
   color: #665d4e;
 }
@@ -242,6 +250,8 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
+<p class="capture-caption">Mode Tuiles : les soins sont regroupés dans des familles dépliables.</p>
+
 ## 1. Se repérer dans l’application
 
 L’écran est organisé en deux zones :
@@ -273,20 +283,51 @@ Sélectionnez **Séance**, **Pack** ou **Étudiant** avant d’ajouter les prest
 
 Si le devis contient déjà des prestations, changer de tarif affiche une confirmation. Le nouveau tarif est appliqué à l’ensemble du devis ; les modes ne sont pas mélangés sur un même devis.
 
-### Étape 2 : Ajouter les prestations
+### Étape 2 : Choisir Tuiles ou Mannequin
 
-Deux navigations sont disponibles dans **Réglages** > **Interface** > **Navigation des prestations** :
+BCDevis propose deux façons de parcourir les mêmes prestations. Le choix modifie uniquement la navigation : il ne change ni les tarifs, ni la caisse, ni le contenu du devis.
 
-- **Tuiles** : ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées** ;
-- **Corps interactif** : choisissez **Femme** ou **Homme**, puis **Face** ou **Dos**, et cliquez directement sur une zone du corps. Les soins correspondants apparaissent à côté de la silhouette. Un clic à côté du mannequin permet aussi de basculer entre les deux morphologies. Les consultations, l’électrolyse, la médecine esthétique et les zones combinées restent accessibles sous le corps.
+Pour sélectionner le mode :
 
-Les deux faces sont filtrées avec précision : les **fesses** et le **SIF** se sélectionnent à l’arrière, tandis que le maillot avant n’affiche pas le SIF. La zone **Cuir chevelu** affiche uniquement la mésothérapie capillaire.
+1. ouvrez **Réglages** avec la roue dentée ;
+2. restez dans l’onglet **Interface** ;
+3. dans **Navigation**, choisissez **Tuiles** ou **Corps interactif** ;
+4. cliquez sur **Enregistrer**.
 
-Cliquez ensuite sur le soin souhaité : il est ajouté immédiatement à la caisse. Répétez l’opération pour chaque soin.
+Le mode choisi est mémorisé pour les prochains lancements. **Tuiles** reste le mode activé par défaut lors d’une première utilisation.
 
-Au clavier, utilisez `Tab` pour atteindre une zone de la silhouette, puis `Entrée` ou `Espace` pour la sélectionner. Lorsque le cadre du corps est sélectionné, `Entrée` ou `Espace` bascule entre le mannequin féminin et masculin.
+![Choix Tuiles ou Corps interactif dans les réglages](captures/02-reglages.png)
 
-Pour retrouver rapidement un soin, cliquez sur l’icône de recherche dans l’en-tête **Prestations**, puis saisissez son nom. Les prix sont masqués sur les boutons par défaut ; **Prix sur les boutons** permet de les afficher.
+<p class="capture-caption">Réglages > Interface : choix de la navigation, du thème, de la police et du lancement automatique.</p>
+
+#### Mode Tuiles
+
+Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées**. Les soins de la famille apparaissent sous la tuile ; cliquez sur le `+` du soin souhaité pour l’ajouter à la caisse.
+
+#### Mode Mannequin — Corps interactif
+
+Le bouton **Corps interactif** active le mannequin anatomique :
+
+1. choisissez **Femme** ou **Homme** ;
+2. choisissez **Face** ou **Dos** ;
+3. cliquez sur une zone du mannequin ;
+4. sélectionnez le soin proposé à droite pour l’ajouter à la caisse.
+
+La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse, aux bras, au maillot et aux jambes. Sur la vue arrière, il donne accès au cuir chevelu, au dos, aux bras, aux fesses et jambes ainsi qu’au **SIF**.
+
+![Navigation avec le mannequin féminin, vue de face](captures/04-corps-interactif.png)
+
+<p class="capture-caption">Mode Mannequin : Femme/Homme et Face/Dos restent accessibles au-dessus de la silhouette.</p>
+
+En sélectionnant le visage, BCDevis ouvre un schéma plus précis avec douze zones : visage complet, tempes, sourcils, entre-sourcils, nez et narines, joues, lèvre supérieure, barbe, ligne de barbe, menton, oreilles et cou. Utilisez **Corps complet** pour revenir au mannequin.
+
+Les filtres évitent les mélanges : les **fesses** et le **SIF** se sélectionnent uniquement à l’arrière, le maillot avant n’affiche pas le SIF et **Cuir chevelu** propose uniquement la mésothérapie capillaire. Les familles **Consultations**, **Électrolyse**, **Médecine esthétique** et **Zones combinées** restent disponibles sous le mannequin. Les 82 prestations actives restent donc accessibles dans les deux modes.
+
+Pour changer rapidement de morphologie, utilisez de préférence les boutons **Femme** et **Homme**. Un clic dans l’espace libre autour du mannequin permet aussi de basculer de l’un à l’autre.
+
+Au clavier, utilisez `Tab` pour atteindre une zone, puis `Entrée` ou `Espace` pour la sélectionner. Lorsque le cadre du mannequin est sélectionné, `Entrée` ou `Espace` change de morphologie.
+
+Dans les deux modes, la loupe recherche un soin dans tout le catalogue. Les prix sont masqués sur les boutons par défaut ; utilisez **Menu principal > Prix sur les boutons** ou `Alt + P` pour les afficher.
 
 ### Étape 3 : Ajouter un objet sur mesure
 
@@ -345,7 +386,7 @@ Les trois commandes de sortie restent visibles au bas de la caisse. L’enregist
 
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
-- **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression.
+- **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
 - **Envoyer** : affiche deux choix :
   - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
   - **E-mail** ouvre dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
@@ -365,6 +406,10 @@ En bas de l’historique :
 - **Sauvegarde complète** exporte les réglages, l’historique, le brouillon et les prestations personnalisées dans un fichier JSON ;
 - **Restaurer** importe une sauvegarde JSON complète.
 
+![Historique local des devis](captures/03-historique-des-devis.png)
+
+<p class="capture-caption">Historique local : réouverture d’un devis, sauvegarde complète et restauration.</p>
+
 La restauration remplace les données locales actuelles après confirmation. Faites une sauvegarde complète avant de transférer l’application vers un autre ordinateur.
 
 Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ensemble. Pour changer d’ordinateur, de poste Linux, de Mac, de Chromebook ou de plateforme, utilisez toujours la sauvegarde complète JSON.
@@ -373,20 +418,16 @@ Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ens
 
 Ouvrez **Réglages**, choisissez l’onglet concerné, puis cliquez sur **Enregistrer les réglages** après toute modification.
 
-![Réglages BCDevis](captures/02-reglages.png)
-
 Les quatre onglets disponibles sont :
 
-- **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux, typographie, navigation **Tuiles / Corps interactif**, familles visibles et option **Lancer au démarrage** pour Windows, Linux et macOS ;
-- **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo de l’application et logo du PDF. Si le logo PDF est vide, le logo principal est réutilisé ;
+- **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux ; polices Red Hat Display, Roboto, Roboto Slab ou Système ; navigation **Tuiles / Corps interactif** ; familles visibles dans le catalogue ; option **Lancer au démarrage** pour Windows, Linux et macOS ;
+- **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo principal, logo du PDF, préfixe et nom du poste pour la numérotation. Si le logo PDF est vide, le logo principal est réutilisé ;
 - **Tarifs** : taux et mode de TVA, nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
-- **Document** : préfixe et nom de machine pour la numérotation, conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
+- **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
 
 Le format de numéro par défaut ressemble à `DEV-20260718A001`. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
 
 Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés puis conservés uniquement dans les données locales.
-
-![Historique local des devis](captures/03-historique-des-devis.png)
 
 ## 7. Raccourcis clavier V5
 
@@ -436,6 +477,10 @@ Sous Windows, Linux et macOS, ouvrez **Téléchargements**. Sous ChromeOS, recom
 **J’ai changé de tarif par erreur.**
 
 Si la confirmation est encore ouverte, cliquez sur **Annuler**. Sinon, rechargez une version enregistrée depuis l’historique ou créez un nouveau devis. Le changement de tarif est appliqué à toutes les lignes après confirmation.
+
+**Je ne vois pas le mannequin ou je souhaite revenir aux tuiles.**
+
+Ouvrez **Réglages > Interface**, choisissez **Corps interactif** pour afficher le mannequin ou **Tuiles** pour retrouver les familles en accordéon, puis cliquez sur **Enregistrer**.
 
 **Je change d’ordinateur.**
 

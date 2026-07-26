@@ -37,10 +37,18 @@ for (const document of [readme, manual, quick, shortcuts, templateGuide, clientR
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
 assert.match(manual, /Lancer au démarrage/);
+assert.match(manual, /Mode Mannequin/);
+assert.match(manual, /\*\*Tuiles\*\* reste le mode activé par défaut/);
+assert.match(manual, /Corps complet/);
+assert.match(manual, /douze zones/);
+assert.match(manual, /captures\/04-corps-interactif\.png/);
+assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
+assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
 assert.match(quick, /BCDevis-5\.0\.1\.exe/);
 assert.match(quick, /BCDevis-5\.0\.1-linux-x86_64\.AppImage/);
 assert.match(quick, /BCDevis-5\.0\.1-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
+assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
 assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.0\.1-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
@@ -85,6 +93,12 @@ for (const pdfName of [
   const contents = fs.readFileSync(pdfPath);
   assert.equal(contents.subarray(0, 4).toString("ascii"), "%PDF", `${pdfName} doit être un PDF valide`);
   assert.ok(contents.length > 10000, `${pdfName} semble incomplet`);
+}
+
+for (const captureName of ["02-reglages.png", "04-corps-interactif.png"]) {
+  const capturePath = path.join(projectRoot, "devis-portable", "captures", captureName);
+  assert.ok(fs.existsSync(capturePath), `${captureName} doit illustrer le manuel V5`);
+  assert.ok(fs.statSync(capturePath).size > 100000, `${captureName} semble incomplet`);
 }
 
 console.log("DELIVERY_DOCS_TESTS_OK");

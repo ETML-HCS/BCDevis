@@ -11,7 +11,12 @@
   h2 { margin: 17px 0 8px; padding: 6px 10px; font-size: 15pt; }
   h3 { margin: 11px 0 4px; font-size: 11.2pt; }
   ul, ol { margin: 5px 0; }
-  li { margin: 1px 0; }
+  li {
+    display: list-item;
+    width: 100%;
+    margin: 1px 0;
+    break-inside: avoid;
+  }
   .callout { margin: 8px 0; padding: 8px 10px; }
 }
 </style>
@@ -44,6 +49,8 @@ Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, e
 <div class="callout"><strong>Option pratique :</strong> dans Réglages > Interface, activez Lancer au démarrage si BCDevis doit s'ouvrir automatiquement avec la session Windows ou Linux.</div>
 
 ## 2. Créer un devis en 8 gestes
+
+Dans **Réglages > Interface > Navigation**, choisissez **Tuiles** pour parcourir les familles en accordéon ou **Corps interactif** pour utiliser le mannequin Femme/Homme et Face/Dos. Le choix est mémorisé.
 
 1. Choisissez le tarif en haut : **Séance**, **Pack** ou **Étudiant -50 %**.
 2. Recherchez un soin avec `Ctrl + K`, ou ouvrez une famille de prestations.
