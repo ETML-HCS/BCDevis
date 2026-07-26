@@ -125,6 +125,11 @@ assert.doesNotMatch(
   /@media print\{[\s\S]*?font-family:"Red Hat Display"/,
   "Aucune zone du PDF ne doit forcer Red Hat Display après un changement"
 );
+assert.match(
+  styles,
+  /@media print\{[\s\S]*?html\[data-theme\] body,[\s\S]*?background:#fff!important;[\s\S]*?color-scheme:light!important/,
+  "Le thème sombre ne doit jamais colorer les marges physiques du PDF"
+);
 assert.equal(manifest.background_color, "#f4f1eb", "Le lancement PWA doit reprendre le papier du thème Lumière");
 assert.equal(manifest.theme_color, "#171512", "Le lancement PWA doit reprendre l’en-tête du thème Lumière");
 assert.doesNotMatch(html, /id="headerLogo"/, "Le logo ne doit plus occuper l’en-tête de l’application");

@@ -3,6 +3,7 @@ setlocal
 set "APP_DIR=%~dp0"
 for %%I in ("%APP_DIR%..") do set "PROJECT_DIR=%%~fI"
 set "ELECTRON_EXE=%PROJECT_DIR%\node_modules\electron\dist\electron.exe"
+set "ELECTRON_RUN_AS_NODE="
 
 if not exist "%ELECTRON_EXE%" (
   echo Le moteur BCDevis est introuvable.

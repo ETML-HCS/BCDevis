@@ -102,7 +102,7 @@ async function main() {
       if (!/CrOS/.test(result.userAgent)) throw new Error("L’émulation Chrome OS n’est pas active.");
       const pdf = await window.webContents.printToPDF({
         pageSize: "A4",
-        printBackground: true,
+        printBackground: false,
         preferCSSPageSize: true
       });
       const pdfPath = path.join(PDF_OUTPUT, `BCDevis-test-signatures-${label}.pdf`);

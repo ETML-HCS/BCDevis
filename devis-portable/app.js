@@ -458,13 +458,8 @@
 
   function syncToastPlacement() {
     const region = $("#toastRegion");
-    const slot = $("#checkoutToastSlot");
-    const checkout = $("#checkoutPanel");
-    if (!region || !slot || !checkout) return;
-    const checkoutIsVisible = window.getComputedStyle(checkout).display !== "none";
-    const host = checkoutIsVisible ? slot : document.body;
-    if (region.parentElement !== host) host.append(region);
-    region.classList.toggle("is-floating", !checkoutIsVisible);
+    if (!region) return;
+    if (region.parentElement !== document.body) document.body.append(region);
   }
 
   function toast(message, type = "success") {

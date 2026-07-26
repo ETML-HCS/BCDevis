@@ -1,16 +1,16 @@
-BCDevis 5.0.0 - Livrable pour Aleksandra
+BCDevis 5.0.1 - Livrable pour Aleksandra
 Clinique Bellecour
 
 CONTENU
 
 1-Windows
-  BCDevis-5.0.0.exe
+  BCDevis-5.0.1.exe
 
 2-Linux
-  BCDevis-5.0.0-linux-x86_64.AppImage
+  BCDevis-5.0.1-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.0.0-chromeos.zip
+  BCDevis-5.0.1-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -23,7 +23,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.0.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.0.1.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -37,14 +37,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.0.0-linux-x86_64.AppImage
-  ./BCDevis-5.0.0-linux-x86_64.AppImage
+  chmod +x BCDevis-5.0.1-linux-x86_64.AppImage
+  ./BCDevis-5.0.1-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.0.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.0.1-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

@@ -82,6 +82,11 @@ assert.match(
   /node_modules\\electron\\dist\\electron\.exe/i,
   "Le lanceur local doit ouvrir Electron pour conserver le téléchargement PDF direct"
 );
+assert.match(
+  localLauncherSource,
+  /set "ELECTRON_RUN_AS_NODE="/,
+  "Le lanceur local doit neutraliser le mode Node hérité avant d’ouvrir Electron"
+);
 assert.doesNotMatch(
   localLauncherSource,
   /msedge|chrome\.exe|--app=|file:\/\/\//i,
@@ -92,7 +97,7 @@ assert.doesNotMatch(
   const result = await handlers.get("bcdevis:save-pdf")({
     sender: {
       printToPDF: async (options) => {
-        assert.deepEqual(options, { pageSize: "A4", printBackground: true, preferCSSPageSize: true });
+        assert.deepEqual(options, { pageSize: "A4", printBackground: false, preferCSSPageSize: true });
         return Buffer.from("%PDF-test");
       }
     }

@@ -275,7 +275,7 @@ function createWindow() {
 
 async function savePdf(event, requestedName, includeContents = false) {
   const filePath = await availablePdfPath(app.getPath("downloads"), requestedName);
-  const pdf = await event.sender.printToPDF({ pageSize: "A4", printBackground: true, preferCSSPageSize: true });
+  const pdf = await event.sender.printToPDF({ pageSize: "A4", printBackground: false, preferCSSPageSize: true });
   await fs.writeFile(filePath, pdf);
   return {
     saved: true,

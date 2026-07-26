@@ -19,11 +19,11 @@ const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
 const template = readJSON("devis-portable/MODELE-DEVIS-V5.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 
-assert.equal(packageJson.version, "5.0.0", "La livraison majeure doit rester en version 5.0.0");
+assert.equal(packageJson.version, "5.0.1", "La livraison corrective doit rester en version 5.0.1");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
-assert.match(serviceWorker, /bcdevis-pwa-v5\.0\.0/, "Le cache PWA doit suivre la version majeure");
+assert.match(serviceWorker, /bcdevis-pwa-v5\.0\.1/, "Le cache PWA doit suivre la version corrective");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -32,17 +32,17 @@ assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /5\.0\.0|V5/, "Chaque document client doit annoncer la version V5");
+  assert.match(document, /5\.0\.1|V5/, "Chaque document client doit annoncer la version V5");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
 assert.match(manual, /Lancer au démarrage/);
-assert.match(quick, /BCDevis-5\.0\.0\.exe/);
-assert.match(quick, /BCDevis-5\.0\.0-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-5\.0\.0-chromeos\.zip/);
+assert.match(quick, /BCDevis-5\.0\.1\.exe/);
+assert.match(quick, /BCDevis-5\.0\.1-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-5\.0\.1-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.0\.0-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.0\.1-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 
 const expectedShortcutLabels = [

@@ -226,16 +226,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.0.0 - Windows - Linux - macOS - ChromeOS</p>
+  <p class="cover-version">Version 5.0.1 - Windows - Linux - macOS - ChromeOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.0.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.0.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.0.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.0.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.0.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.0.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 
 Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V5** et un **modèle de devis** importable.

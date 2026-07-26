@@ -146,20 +146,17 @@ assert.match(app, /const SETTINGS_TAB_IDS = \["interface", "company", "pricing",
 assert.match(app, /function setSettingsTab\(/, "La navigation de Personnalisation doit synchroniser onglets et panneaux");
 assert.match(app, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Les onglets de Personnalisation doivent accepter les flèches, Début et Fin");
 assert.doesNotMatch(html, /class="layer-backdrop"[^>]*?(?<!tabindex="-1")>/, "Les fonds de modale ne doivent pas interrompre l’ordre de tabulation");
-assert.match(
-  html,
-  /class="receipt-meta"[\s\S]*?id="quoteDate"[\s\S]*?id="checkoutToastSlot"/,
-  "La notification doit disposer d’un emplacement contextuel à côté de la date du devis"
-);
-assert.match(app, /function syncToastPlacement\(\)/, "La notification doit suivre la caisse active");
+assert.doesNotMatch(html, /id="checkoutToastSlot"/, "La notification ne doit plus dépendre d’un conteneur rogné dans la caisse");
+assert.match(html, /<div class="toast-region" id="toastRegion" aria-live="polite"/, "La notification doit rester dans le calque global");
+assert.match(app, /if \(region\.parentElement !== document\.body\) document\.body\.append\(region\)/, "La notification doit être replacée dans le calque global");
 assert.match(
   styles,
-  /\.checkout-toast-slot \.toast-region\{position:static;[\s\S]*?width:min\(340px,100%\)/,
-  "La notification de caisse ne doit plus flotter au-dessus des actions du bas"
+  /\.toast-region\{position:fixed;z-index:320;[\s\S]*?width:min\(340px,calc\(100vw - 32px\)\)/,
+  "La notification doit rester au-dessus des calques de l’application sans sortir de l’écran"
 );
 assert.match(
   styles,
-  /body>\.toast-region\{position:fixed;top:90px;[\s\S]*?bottom:auto/,
-  "Quand la caisse est masquée, la notification doit rester visible sous l’en-tête"
+  /@media screen and \(max-width:1180px\)\{[\s\S]*?\.toast-region\{top:auto;bottom:88px\}/,
+  "Sur tablette, la notification doit rester au-dessus de la navigation du bas"
 );
 console.log("KEYBOARD_ACCESSIBILITY_TESTS_OK");
