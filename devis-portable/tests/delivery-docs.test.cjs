@@ -9,7 +9,7 @@ const read = (relativePath) => fs.readFileSync(path.join(projectRoot, relativePa
 const readJSON = (relativePath) => JSON.parse(read(relativePath));
 
 const packageJson = readJSON("package.json");
-const workflow = read(".github/workflows/livrables.yml");
+const workflow = read(".github/workflows/livrables.yml").replace(/\r\n?/g, "\n");
 const readme = read("devis-portable/README.md");
 const manual = read("devis-portable/MODE-D-EMPLOI.md");
 const quick = read("devis-portable/UTILISATION-RAPIDE.md");
