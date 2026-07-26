@@ -11,5 +11,17 @@ contextBridge.exposeInMainWorld("bcdevisDesktop", {
     body: String(payload?.body || ""),
     attachmentPath: String(payload?.attachmentPath || "")
   }),
-  openExternal: (url) => ipcRenderer.invoke("bcdevis:open-external", String(url || ""))
+  openExternal: (url) => ipcRenderer.invoke("bcdevis:open-external", String(url || "")),
+  getLaunchAtLogin: () => ipcRenderer.invoke("bcdevis:startup-get"),
+  setLaunchAtLogin: (enabled) => ipcRenderer.invoke("bcdevis:startup-set", Boolean(enabled)),
+  minimizeWindow: () => ipcRenderer.invoke("bcdevis:window-minimize"),
+  toggleMaximizeWindow: () => ipcRenderer.invoke("bcdevis:window-toggle-maximize"),
+  isWindowMaximized: () => ipcRenderer.invoke("bcdevis:window-is-maximized"),
+  closeWindow: () => ipcRenderer.invoke("bcdevis:window-close"),
+  onWindowMaximized: (callback) => {
+    if (typeof callback !== "function") return () => {};
+    const listener = (_event, isMaximized) => callback(Boolean(isMaximized));
+    ipcRenderer.on("bcdevis:window-maximized", listener);
+    return () => ipcRenderer.removeListener("bcdevis:window-maximized", listener);
+  }
 });

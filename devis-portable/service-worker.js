@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v4.21.1";
+const CACHE_NAME = "bcdevis-pwa-v5.0.0";
 const APP_SHELL = [
   "./",
   "./index.html",

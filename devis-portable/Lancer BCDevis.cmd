@@ -1,18 +1,17 @@
 @echo off
 setlocal
 set "APP_DIR=%~dp0"
-set "PROFILE_DIR=%APP_DIR%data\browser-profile"
-set "BROWSER=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+for %%I in ("%APP_DIR%..") do set "PROJECT_DIR=%%~fI"
+set "ELECTRON_EXE=%PROJECT_DIR%\node_modules\electron\dist\electron.exe"
 
-if not exist "%BROWSER%" set "BROWSER=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
-if not exist "%BROWSER%" set "BROWSER=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
-if not exist "%BROWSER%" (
-  echo Edge ou Chrome est necessaire pour lancer BCDevis.
+if not exist "%ELECTRON_EXE%" (
+  echo Le moteur BCDevis est introuvable.
+  echo.
+  echo Depuis "%PROJECT_DIR%", lancez d'abord : npm install
+  echo Ou utilisez directement le fichier BCDevis-*.exe du dossier dist.
   pause
   exit /b 1
 )
 
-if not exist "%PROFILE_DIR%" mkdir "%PROFILE_DIR%"
-set "APP_URL=file:///%APP_DIR:\=/%index.html"
-start "BCDevis" "%BROWSER%" --user-data-dir="%PROFILE_DIR%" --no-first-run --no-default-browser-check --app="%APP_URL%"
+start "BCDevis" /D "%PROJECT_DIR%" "%ELECTRON_EXE%" "%PROJECT_DIR%"
 exit /b 0

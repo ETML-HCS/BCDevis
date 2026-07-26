@@ -7,6 +7,7 @@ const path = require("node:path");
 const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const main = fs.readFileSync(path.join(__dirname, "..", "main.cjs"), "utf8");
+const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 
 for (const shortcut of ["event.code === \"KeyM\"", "event.code === \"KeyP\"", "key === \"k\"", "key === \"s\"", "key === \"n\"", "key === \"h\"", "key === \"d\"", "key === \"o\"", "key === \"e\"", "key === \"p\"", "event.shiftKey && key === \"s\"", "event.code === \"KeyW\"", "event.key === \",\""]) {
   assert.match(app, new RegExp(shortcut.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Raccourci absent : ${shortcut}`);
@@ -14,9 +15,24 @@ for (const shortcut of ["event.code === \"KeyM\"", "event.code === \"KeyP\"", "k
 assert.match(app, /trapLayerFocus/, "Les modales doivent conserver le focus au clavier");
 assert.match(app, /moveRadioSelection/, "Les groupes de choix doivent accepter les flèches");
 assert.match(app, /function setAppMenuOpen/, "Le menu Actions doit exposer un état ouvert et fermé");
+assert.match(app, /function closeContextMenus/, "Les menus contextuels doivent partager une fermeture fiable");
+assert.match(app, /document\.addEventListener\("pointerdown",[\s\S]*?true\);/, "Le clic extérieur doit fermer les menus avant les actions de la page");
+assert.match(styles, /\.bcdevis-context-menu-open \.topbar\{[\s\S]*?-webkit-app-region:no-drag/, "La zone de déplacement ne doit pas absorber le clic extérieur lorsqu’un menu est ouvert");
+assert.match(app, /classList\.toggle\("bcdevis-catalog-menu-open", catalogMenuOpen\)/, "Le menu Catalogue doit piloter son propre niveau d’empilement");
+assert.match(styles, /html\.bcdevis-catalog-menu-open \.topbar\{z-index:400\}/, "Le menu Catalogue doit élever le header au-dessus de toutes les surfaces");
+assert.match(styles, /html\.bcdevis-catalog-menu-open \.app-actions-menu\{z-index:420\}/, "Le menu Catalogue doit rester au sommet du header");
 assert.match(app, /event\.key === "ArrowDown"/, "Le menu Actions doit accepter les flèches");
 assert.match(app, /data-logo-picker/, "Le choix de logo doit être atteignable au clavier");
 assert.match(html, /id="shortcutHelpLayer"/, "L’aide des raccourcis doit être accessible dans l’interface");
+assert.deepEqual(
+  [...html.matchAll(/class="shortcut-group" aria-labelledby="[^"]+">\s*<h3[^>]*>([^<]+)<\/h3>/g)].map((match) => match[1]),
+  ["Catalogue", "Devis", "Impression et partage", "Application"],
+  "L’aide des raccourcis doit être organisée selon les quatre zones de travail"
+);
+assert.equal((html.match(/<dl class="shortcut-list">/g) || []).length, 4, "Chaque zone doit avoir sa liste de raccourcis");
+assert.equal((html.match(/<div><dt><kbd>/g) || []).length, 16, "Les seize raccourcis actifs doivent rester documentés");
+assert.match(html, /<kbd>Alt<\/kbd><kbd>M<\/kbd><\/dt><dd>Ouvrir le menu Catalogue<\/dd>/, "Alt+M doit reprendre le nom actuel du menu Catalogue");
+assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>S<\/kbd><\/dt><dd>Télécharger le PDF<\/dd>/, "Le raccourci PDF doit reprendre l’action actuelle");
 assert.match(html, /id="appMenuButton"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-keyshortcuts="Alt\+M"/, "Le bouton du menu principal doit annoncer son menu et son raccourci");
 assert.match(html, /id="appMenuButton"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "Le bouton du menu principal doit rester un SVG seul");
 assert.doesNotMatch(html, /id="appMenuButton"[^>]*>[\s\S]*?<span>Actions<\/span>[\s\S]*?<\/button>/, "Le titre Actions ne doit plus prendre de place dans le header");
@@ -71,7 +87,7 @@ assert.doesNotMatch(html, />Gestion du devis</, "La gestion du devis ne doit pas
 assert.match(html, /<span>TVA<\/span>/, "Le toggle de caisse doit être libellé simplement TVA");
 assert.doesNotMatch(html, />Afficher TVA</, "Le libellé TVA ne doit pas être inutilement long");
 assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro de devis ne doit plus encombrer l’en-tête de caisse");
-assert.match(html, /\.family-title-row h2\{font-size:18px\}/, "Le titre Prestations doit être réduit avec mesure");
+assert.match(styles, /\.family-title-row h2\{font-size:16px;line-height:1\}/, "Le titre Prestations doit rester compact");
 assert.match(html, /\.checkout-panel h2\{font-size:22px\}/, "Le titre Caisse doit être réduit avec mesure");
 assert.match(html, /id="installmentTableWrap" hidden><table class="installment-table"[^>]*><tbody id="installmentGrid"/, "L’échelonnement doit utiliser un tableau compact");
 assert.doesNotMatch(html, /<details class="installments"|Paiement échelonné \(CHF\)|class="installment-note"/, "La caisse ne doit plus afficher le panneau explicatif de l’échelonnement");
@@ -123,5 +139,27 @@ assert.equal((html.match(/class="theme-card"/g) || []).length, 4, "Les quatre th
 assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la police"/, "Les polices doivent être annoncées comme un groupe de choix");
 assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les quatre polices doivent rester accessibles au clavier");
 assert.match(app, /moveRadioSelection\(event\.currentTarget, "\.font-card"/, "Les polices doivent accepter les flèches du clavier");
+assert.match(html, /id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation"/, "Les groupes de réglages doivent être annoncés comme des onglets");
+assert.equal((html.match(/role="tab" aria-selected=/g) || []).length, 4, "Les quatre onglets de Personnalisation doivent exposer leur état");
+assert.equal((html.match(/role="tabpanel" aria-labelledby=/g) || []).length, 4, "Chaque onglet de Personnalisation doit piloter un panneau");
+assert.match(app, /const SETTINGS_TAB_IDS = \["interface", "company", "pricing", "document"\]/, "La navigation doit rester limitée aux quatre groupes prévus");
+assert.match(app, /function setSettingsTab\(/, "La navigation de Personnalisation doit synchroniser onglets et panneaux");
+assert.match(app, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Les onglets de Personnalisation doivent accepter les flèches, Début et Fin");
 assert.doesNotMatch(html, /class="layer-backdrop"[^>]*?(?<!tabindex="-1")>/, "Les fonds de modale ne doivent pas interrompre l’ordre de tabulation");
+assert.match(
+  html,
+  /class="receipt-meta"[\s\S]*?id="quoteDate"[\s\S]*?id="checkoutToastSlot"/,
+  "La notification doit disposer d’un emplacement contextuel à côté de la date du devis"
+);
+assert.match(app, /function syncToastPlacement\(\)/, "La notification doit suivre la caisse active");
+assert.match(
+  styles,
+  /\.checkout-toast-slot \.toast-region\{position:static;[\s\S]*?width:min\(340px,100%\)/,
+  "La notification de caisse ne doit plus flotter au-dessus des actions du bas"
+);
+assert.match(
+  styles,
+  /body>\.toast-region\{position:fixed;top:90px;[\s\S]*?bottom:auto/,
+  "Quand la caisse est masquée, la notification doit rester visible sous l’en-tête"
+);
 console.log("KEYBOARD_ACCESSIBILITY_TESTS_OK");

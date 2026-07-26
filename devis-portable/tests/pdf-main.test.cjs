@@ -5,6 +5,13 @@ const fsSync = require("node:fs");
 const Module = require("node:module");
 const path = require("node:path");
 
+const originalPlatformDescriptor = Object.getOwnPropertyDescriptor(process, "platform");
+Object.defineProperty(process, "platform", { ...originalPlatformDescriptor, value: "win32" });
+const testRoot = path.resolve(__dirname, ".pdf-main-fixtures");
+const testDownloads = path.join(testRoot, "Downloads");
+const testTemp = path.join(testRoot, "Temp");
+const restorePlatform = () => Object.defineProperty(process, "platform", originalPlatformDescriptor);
+
 const handlers = new Map();
 const writes = [];
 const externalTargets = [];
@@ -19,9 +26,9 @@ const fakeApp = {
   setName() {},
   setPath() {},
   getPath(name) {
-    if (name === "downloads") return "C:\\Downloads";
-    if (name === "temp") return "C:\\Temp";
-    return "C:\\Application";
+    if (name === "downloads") return testDownloads;
+    if (name === "temp") return testTemp;
+    return path.join(testRoot, "Application");
   },
   whenReady() { return { then() { return { catch() {} }; } }; },
   on() {},
@@ -68,6 +75,18 @@ try {
   Module._load = originalLoad;
 }
 const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "utf8");
+const localLauncherSource = fsSync.readFileSync(path.join(__dirname, "..", "Lancer BCDevis.cmd"), "utf8");
+
+assert.match(
+  localLauncherSource,
+  /node_modules\\electron\\dist\\electron\.exe/i,
+  "Le lanceur local doit ouvrir Electron pour conserver le téléchargement PDF direct"
+);
+assert.doesNotMatch(
+  localLauncherSource,
+  /msedge|chrome\.exe|--app=|file:\/\/\//i,
+  "Le lanceur local ne doit pas ouvrir la version navigateur qui remplace le PDF par l'impression"
+);
 
 (async () => {
   const result = await handlers.get("bcdevis:save-pdf")({
@@ -81,7 +100,7 @@ const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "
 
   assert.equal(result.saved, true);
   assert.equal(result.fileName, "DEV-000001.pdf");
-  assert.equal(result.filePath, path.join("C:\\Downloads", "DEV-000001.pdf"));
+  assert.equal(result.filePath, path.join(testDownloads, "DEV-000001.pdf"));
   assert.equal(writes.length, 1);
   assert.equal(writes[0].contents.toString(), "%PDF-test");
   const shareResult = await handlers.get("bcdevis:save-pdf-for-share")({
@@ -92,19 +111,20 @@ const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "
     to: "sophie@example.test",
     subject: "Votre devis DEV-000001",
     body: "Bonjour Sophie,\n\nVoici votre devis.",
-    attachmentPath: "C:\\Downloads\\DEV-000001.pdf"
+    attachmentPath: path.join(testDownloads, "DEV-000001.pdf")
   });
   assert.deepEqual(emailResult, { opened: true, attached: true, client: "outlook" });
   assert.equal(processRuns.length, 1);
   assert.match(processRuns[0].file, /powershell\.exe$/i);
   assert.ok(processRuns[0].args.includes("-EncodedCommand"));
-  assert.match(processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD, /^C:\\Temp\\bcdevis-email-.+\.json$/);
+  assert.equal(path.dirname(processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD), testTemp);
+  assert.match(path.basename(processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD), /^bcdevis-email-.+\.json$/);
   const emailPayloadWrite = writes.find(({ filePath }) => filePath === processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD);
   assert.deepEqual(JSON.parse(emailPayloadWrite.contents), {
     to: "sophie@example.test",
     subject: "Votre devis DEV-000001",
     body: "Bonjour Sophie,\n\nVoici votre devis.",
-    attachmentPath: "C:\\Downloads\\DEV-000001.pdf"
+    attachmentPath: path.join(testDownloads, "DEV-000001.pdf")
   });
   assert.deepEqual(deletedFiles, [processRuns[0].options.env.BCDEVIS_EMAIL_PAYLOAD]);
   failOutlook = true;
@@ -112,12 +132,12 @@ const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "
     to: "sophie@example.test",
     subject: "Votre devis DEV-000002",
     body: "Bonjour Sophie,\n\nVoici votre devis de secours.",
-    attachmentPath: "C:\\Downloads\\DEV-000002.pdf"
+    attachmentPath: path.join(testDownloads, "DEV-000002.pdf")
   });
   assert.equal(fallbackResult.opened, true);
   assert.equal(fallbackResult.attached, true);
   assert.equal(fallbackResult.client, "eml");
-  assert.match(fallbackResult.draftPath, /^C:\\Downloads\\DEV-000002-email\.eml$/);
+  assert.equal(fallbackResult.draftPath, path.join(testDownloads, "DEV-000002-email.eml"));
   assert.deepEqual(openedPaths, [fallbackResult.draftPath]);
   const emlWrite = writes.find(({ filePath }) => filePath === fallbackResult.draftPath);
   assert.ok(emlWrite, "Le brouillon EML de secours doit être écrit");
@@ -135,7 +155,7 @@ const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "
       to: "sophie@example.test",
       subject: "Test",
       body: "Test",
-      attachmentPath: "C:\\Windows\\secret.pdf"
+      attachmentPath: path.join(testRoot, "outside", "secret.pdf")
     }),
     /Pièce jointe e-mail non autorisée/
   );
@@ -150,7 +170,8 @@ const mainSource = fsSync.readFileSync(path.join(__dirname, "..", "main.cjs"), "
     /Lien externe non autorisé/
   );
   console.log("PDF_MAIN_TESTS_OK");
-})().catch((error) => {
+})().then(restorePlatform).catch((error) => {
+  restorePlatform();
   console.error(error);
   process.exitCode = 1;
 });

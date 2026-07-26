@@ -14,12 +14,13 @@ const sourceAssets = path.join(path.resolve(sourceRoot), "assets");
 const sourceComponents = path.join(path.resolve(sourceRoot), "components");
 
 const sources = {
-  neutral: {
+  male: {
     front: {
       asset: "bodyFront.ts",
       wrapper: "SvgMaleWrapper.tsx",
       viewBox: "0 130 724 1230",
       outlineLabel: "male-body-outline-front",
+      head: { cx: 364 },
       focus: { maillot: { cx: 364, cy: 718 }, sif: { cx: 1085, cy: 748 } }
     },
     back: {
@@ -27,7 +28,27 @@ const sources = {
       wrapper: "SvgMaleWrapper.tsx",
       viewBox: "724 130 724 1230",
       outlineLabel: "male-body-outline-back",
+      head: { cx: 1086 },
       focus: { maillot: { cx: 364, cy: 718 }, sif: { cx: 1085, cy: 748 } }
+    }
+  },
+  female: {
+    front: {
+      asset: "bodyFemaleFront.ts",
+      wrapper: "SvgFemaleWrapper.tsx",
+      viewBox: "-50 130 734 1368",
+      outlineLabel: "female-body-outline-front",
+      head: { cx: 320 },
+      focus: { maillot: { cx: 320, cy: 718 }, sif: { cx: 1143, cy: 738 } }
+    },
+    back: {
+      asset: "bodyFemaleBack.ts",
+      wrapper: "SvgFemaleWrapper.tsx",
+      viewBox: "756 130 774 1318",
+      outlineLabel: "female-body-outline-back",
+      head: { cx: 1143 },
+      focus: { maillot: { cx: 320, cy: 718 }, sif: { cx: 1143, cy: 738 } },
+      groups: { scalp: ["hair"] }
     }
   }
 };
@@ -69,7 +90,8 @@ function extractOutline(filePath, label) {
 
 function buildView(model, side, definition) {
   const parts = parseParts(path.join(sourceAssets, definition.asset));
-  const regions = Object.fromEntries(Object.entries(groups[side]).map(([region, slugs]) => {
+  const modelGroups = { ...groups[side], ...definition.groups };
+  const regions = Object.fromEntries(Object.entries(modelGroups).map(([region, slugs]) => {
     const paths = slugs.flatMap((slug) => parts[slug] || []);
     if (!paths.length) throw new Error(`Aucun tracé pour ${model}/${side}/${region}`);
     return [region, paths];
@@ -77,6 +99,7 @@ function buildView(model, side, definition) {
   return {
     viewBox: definition.viewBox,
     outline: extractOutline(path.join(sourceComponents, definition.wrapper), definition.outlineLabel),
+    head: definition.head,
     focus: definition.focus,
     regions
   };

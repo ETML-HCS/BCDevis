@@ -1,12 +1,17 @@
 "use strict";
 
-const { app, BrowserWindow, dialog, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, screen, shell } = require("electron");
 const { execFile } = require("node:child_process");
 const { randomUUID } = require("node:crypto");
 const fs = require("node:fs/promises");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
+const { createStartupManager } = require("./system-startup.cjs");
 
 app.setName("BCDevis");
+if (process.platform === "win32" && typeof app.setAppUserModelId === "function") {
+  app.setAppUserModelId("ch.cliniquebellecour.bcdevis");
+}
 
 // electron-builder exposes PORTABLE_EXECUTABLE_DIR for the Windows portable
 // target. macOS app bundles and Linux/AppImage mounts must keep their data in
@@ -20,7 +25,9 @@ if (windowsPortableDirectory) {
   app.setPath("userData", path.join(__dirname, "data"));
 }
 
+const startupManager = createStartupManager({ app });
 let mainWindow;
+const TABLET_WINDOW_SIZE = Object.freeze({ width: 1180, height: 820 });
 
 const OUTLOOK_COMPOSE_SCRIPT = [
   '$ErrorActionPreference = "Stop"',
@@ -194,14 +201,45 @@ async function availablePdfPath(directory, requestedName) {
   throw new Error("Impossible de choisir un nom de fichier PDF disponible.");
 }
 
+function tabletWindowBounds(window) {
+  const workArea = screen.getDisplayMatching(window.getBounds()).workArea;
+  const width = Math.min(TABLET_WINDOW_SIZE.width, workArea.width);
+  const height = Math.min(TABLET_WINDOW_SIZE.height, workArea.height);
+  return {
+    x: Math.round(workArea.x + (workArea.width - width) / 2),
+    y: Math.round(workArea.y + (workArea.height - height) / 2),
+    width,
+    height
+  };
+}
+
+function switchToTabletWindow(window) {
+  if (window.isFullScreen()) window.setFullScreen(false);
+  if (window.isMaximized()) window.unmaximize();
+  window.setBounds(tabletWindowBounds(window), true);
+  return false;
+}
+
 function createWindow() {
+  const appIcon = path.join(__dirname, "assets", "bcdevis-app-icon.png");
+  const customWindowPlatforms = ["win32", "linux"];
+  const windowChrome = process.platform === "darwin"
+    ? { titleBarStyle: "hiddenInset" }
+    : (customWindowPlatforms.includes(process.platform) ? { titleBarStyle: "hidden" } : {});
+  const windowShell = process.platform === "darwin"
+    ? "mac"
+    : (customWindowPlatforms.includes(process.platform) ? "custom" : "standard");
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
     minWidth: 980,
     minHeight: 680,
     show: false,
+    backgroundColor: "#0e0e0e",
+    icon: appIcon,
     autoHideMenuBar: true,
+    ...windowChrome,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
@@ -211,7 +249,14 @@ function createWindow() {
   });
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
-  mainWindow.loadFile(path.join(__dirname, "index.html"));
+  const syncMaximizedState = () => {
+    mainWindow?.webContents.send("bcdevis:window-maximized", mainWindow.isMaximized());
+  };
+  mainWindow.on("maximize", syncMaximizedState);
+  mainWindow.on("unmaximize", syncMaximizedState);
+  const appUrl = pathToFileURL(path.join(__dirname, "index.html"));
+  appUrl.searchParams.set("windowShell", windowShell);
+  mainWindow.loadURL(appUrl.toString());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     try {
       shell.openExternal(allowedExternalUrl(url)).catch((error) => console.error(error));
@@ -258,6 +303,29 @@ ipcMain.handle("bcdevis:compose-email", async (_event, payload) => {
 ipcMain.handle("bcdevis:open-external", async (_event, url) => {
   const target = allowedExternalUrl(url);
   await shell.openExternal(target);
+  return true;
+});
+ipcMain.handle("bcdevis:startup-get", () => startupManager.get());
+ipcMain.handle("bcdevis:startup-set", (_event, enabled) => {
+  if (typeof enabled !== "boolean") throw new TypeError("Le réglage de démarrage doit être un booléen.");
+  return startupManager.set(enabled);
+});
+ipcMain.handle("bcdevis:window-minimize", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.minimize();
+  return true;
+});
+ipcMain.handle("bcdevis:window-toggle-maximize", (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender);
+  if (!window) return false;
+  if (window.isMaximized() || window.isFullScreen()) return switchToTabletWindow(window);
+  window.maximize();
+  return window.isMaximized();
+});
+ipcMain.handle("bcdevis:window-is-maximized", (event) => {
+  return Boolean(BrowserWindow.fromWebContents(event.sender)?.isMaximized());
+});
+ipcMain.handle("bcdevis:window-close", (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.close();
   return true;
 });
 

@@ -226,16 +226,19 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 4.21.1 · Windows · macOS · ChromeOS</p>
+  <p class="cover-version">Version 5.0.0 - Windows - Linux - macOS - ChromeOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-4.21.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **macOS** : ouvrez `BCDevis-4.21.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.0.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.0.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.0.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
+
+Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V5** et un **modèle de devis** importable.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -272,16 +275,16 @@ Si le devis contient déjà des prestations, changer de tarif affiche une confir
 
 ### Étape 2 : Ajouter les prestations
 
-Deux navigations sont disponibles dans **Réglages** > **Apparence** > **Navigation des prestations** :
+Deux navigations sont disponibles dans **Réglages** > **Interface** > **Navigation des prestations** :
 
 - **Tuiles** : ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées** ;
-- **Corps interactif** : choisissez **Avant** ou **Arrière**, puis cliquez directement sur la zone du corps. Les soins correspondants apparaissent à droite de la silhouette. Les consultations, l’électrolyse, la médecine esthétique et les zones combinées restent accessibles sous le corps.
+- **Corps interactif** : choisissez **Femme** ou **Homme**, puis **Face** ou **Dos**, et cliquez directement sur une zone du corps. Les soins correspondants apparaissent à côté de la silhouette. Un clic à côté du mannequin permet aussi de basculer entre les deux morphologies. Les consultations, l’électrolyse, la médecine esthétique et les zones combinées restent accessibles sous le corps.
 
 Les deux faces sont filtrées avec précision : les **fesses** et le **SIF** se sélectionnent à l’arrière, tandis que le maillot avant n’affiche pas le SIF. La zone **Cuir chevelu** affiche uniquement la mésothérapie capillaire.
 
 Cliquez ensuite sur le soin souhaité : il est ajouté immédiatement à la caisse. Répétez l’opération pour chaque soin.
 
-Au clavier, utilisez `Tab` pour atteindre une zone de la silhouette, puis `Entrée` ou `Espace` pour la sélectionner.
+Au clavier, utilisez `Tab` pour atteindre une zone de la silhouette, puis `Entrée` ou `Espace` pour la sélectionner. Lorsque le cadre du corps est sélectionné, `Entrée` ou `Espace` bascule entre le mannequin féminin et masculin.
 
 Pour retrouver rapidement un soin, cliquez sur l’icône de recherche dans l’en-tête **Prestations**, puis saisissez son nom. Les prix sont masqués sur les boutons par défaut ; **Prix sur les boutons** permet de les afficher.
 
@@ -342,7 +345,7 @@ Les trois commandes de sortie restent visibles au bas de la caisse. L’enregist
 
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
-- **Télécharger le PDF** : sous Windows et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression.
+- **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression.
 - **Envoyer** : affiche deux choix :
   - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
   - **E-mail** ouvre dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
@@ -364,46 +367,63 @@ En bas de l’historique :
 
 La restauration remplace les données locales actuelles après confirmation. Faites une sauvegarde complète avant de transférer l’application vers un autre ordinateur.
 
-Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ensemble. Pour changer d’ordinateur, de Mac, de Chromebook ou de plateforme, utilisez toujours la sauvegarde complète JSON.
+Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ensemble. Pour changer d’ordinateur, de poste Linux, de Mac, de Chromebook ou de plateforme, utilisez toujours la sauvegarde complète JSON.
 
 ## 6. Personnaliser l’application
 
-Ouvrez **Réglages**, puis cliquez sur **Enregistrer les réglages** après toute modification.
+Ouvrez **Réglages**, choisissez l’onglet concerné, puis cliquez sur **Enregistrer les réglages** après toute modification.
 
 ![Réglages BCDevis](captures/02-reglages.png)
 
-Les sections disponibles sont :
+Les quatre onglets disponibles sont :
 
-- **Apparence** : thèmes Lumière, Nuit, Forêt ou Bordeaux, typographie et navigation **Tuiles / Corps interactif** ;
-- **Votre entreprise** : nom, sous-titre, adresse, téléphone, e-mail et UID / TVA ;
-- **Logo de l’application** : identité utilisée comme base personnalisée ;
-- **Logo du PDF** : logo utilisé dans les documents imprimés. S’il est vide, le logo de l’application est réutilisé ;
-- **Numérotation des devis** : préfixe et nom de machine. Le format par défaut ressemble à `DEV-20260718A001` ;
-- **Fiscalité** : taux de TVA et choix TVA incluse ou TVA en plus ;
-- **Tarification commerciale** : nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
-- **Familles de prestations** : familles visibles dans le catalogue ;
-- **Mentions légales** : conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
+- **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux, typographie, navigation **Tuiles / Corps interactif**, familles visibles et option **Lancer au démarrage** pour Windows, Linux et macOS ;
+- **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo de l’application et logo du PDF. Si le logo PDF est vide, le logo principal est réutilisé ;
+- **Tarifs** : taux et mode de TVA, nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
+- **Document** : préfixe et nom de machine pour la numérotation, conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
+
+Le format de numéro par défaut ressemble à `DEV-20260718A001`. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
 
 Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés puis conservés uniquement dans les données locales.
 
 ![Historique local des devis](captures/03-historique-des-devis.png)
 
-## 7. Raccourcis clavier
+## 7. Raccourcis clavier V5
 
 | Raccourci | Action |
 | --- | --- |
+| `Alt` + `M` | Ouvrir le menu Catalogue |
+| `Ctrl` + `K` ou `/` | Rechercher une prestation |
+| `Alt` + `P` | Afficher ou masquer les prix |
+| `Ctrl` + `Maj` + `N` | Créer un objet sur mesure |
 | `Ctrl` + `N` | Nouveau devis |
 | `Ctrl` + `S` | Enregistrer le devis |
-| `Ctrl` + `K` ou `/` | Rechercher une prestation |
+| `Ctrl` + `H` | Ouvrir l’historique |
+| `Ctrl` + `D` | Dupliquer le devis |
+| `Ctrl` + `O` | Importer un devis |
+| `Ctrl` + `E` | Exporter le devis |
 | `Ctrl` + `P` | Imprimer le devis |
 | `Ctrl` + `Maj` + `S` | Créer le PDF |
 | `Ctrl` + `Alt` + `W` | Préparer le devis via WhatsApp |
 | `Ctrl` + `,` | Ouvrir les réglages |
+| `?` | Afficher l’aide des raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V5.pdf` reprend ces 16 commandes.
 
-## 8. Résoudre les situations courantes
+## 8. Utiliser le modèle de devis
+
+Le livrable contient `MODELE-DEVIS-V5.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
+
+1. Ouvrez le menu `...` dans l’en-tête de la caisse.
+2. Cliquez sur **Importer un devis**.
+3. Sélectionnez `MODELE-DEVIS-V5.json`.
+4. BCDevis crée un devis vierge avec la date, la numérotation et les réglages actuels.
+5. Ajoutez le client et les prestations, puis enregistrez.
+
+Pour créer un modèle personnalisé, préparez un devis type puis utilisez `...` > **Exporter ce devis**. Ne confondez pas cette fonction avec **Restaurer**, qui remplace toute la base locale par une sauvegarde complète.
+
+## 9. Résoudre les situations courantes
 
 **Le devis n’apparaît pas dans Mes devis.**
 
@@ -411,7 +431,7 @@ Cliquez sur **Enregistrer**. Le brouillon en cours est conservé localement sans
 
 **Le PDF n’est pas visible.**
 
-Sous Windows et macOS, ouvrez **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
+Sous Windows, Linux et macOS, ouvrez **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
 
 **J’ai changé de tarif par erreur.**
 
@@ -423,4 +443,8 @@ Depuis **Historique**, cliquez sur **Sauvegarde complète**, copiez le fichier J
 
 **Les données semblent avoir disparu.**
 
-Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. Sur macOS et ChromeOS, vérifiez que vous utilisez le même compte local ou profil Chrome. L’application ne stocke pas les données dans un compte en ligne.
+Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. Sous Linux et macOS, vérifiez que vous utilisez le même compte local. Sous ChromeOS, vérifiez le profil Chrome actif. L’application ne stocke pas les données dans un compte en ligne.
+
+**Le lancement automatique ne s’active pas.**
+
+Utilisez la version empaquetée de BCDevis, puis ouvrez **Réglages > Interface**. Sous Windows, le système peut désactiver l’entrée dans ses paramètres de démarrage. Sous Linux, vérifiez que le fichier AppImage n’a pas été déplacé après l’activation ; désactivez puis réactivez l’option si son emplacement a changé.

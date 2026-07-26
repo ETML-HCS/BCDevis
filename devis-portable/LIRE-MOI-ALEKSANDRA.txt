@@ -1,0 +1,57 @@
+BCDevis 5.0.0 - Livrable pour Aleksandra
+Clinique Bellecour
+
+CONTENU
+
+1-Windows
+  BCDevis-5.0.0.exe
+
+2-Linux
+  BCDevis-5.0.0-linux-x86_64.AppImage
+
+3-Documentation
+  BCDevis-V5-Utilisation-rapide.pdf
+  BCDevis-V5-Raccourcis-clavier.pdf
+  BCDevis-V5-Mode-d-emploi.pdf
+
+4-Modele-devis
+  MODELE-DEVIS-V5.json
+  BCDevis-V5-Modele-devis.pdf
+
+INSTALLATION WINDOWS
+
+Double-cliquer sur BCDevis-5.0.0.exe. L'application est portable et ne
+demande pas d'installation.
+
+Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
+conserver et déplacer l'EXE avec ce dossier afin de garder les réglages,
+le brouillon et l'historique.
+
+L'EXE n'est pas signé numériquement. Windows peut donc demander une
+confirmation au premier lancement.
+
+INSTALLATION LINUX X64
+
+Dans un terminal placé dans le dossier du fichier :
+
+  chmod +x BCDevis-5.0.0-linux-x86_64.AppImage
+  ./BCDevis-5.0.0-linux-x86_64.AppImage
+
+Les données sont enregistrées dans le profil local de l'utilisateur.
+
+MODELE DE DEVIS
+
+Dans BCDevis, ouvrir le menu ... en haut de la caisse, choisir Importer un
+devis, puis sélectionner MODELE-DEVIS-V5.json. La date et le prochain
+numéro sont attribués automatiquement.
+
+SAUVEGARDE
+
+Avant un changement d'ordinateur, ouvrir Historique puis Sauvegarde
+complète. Sur le nouveau poste, utiliser Historique puis Restaurer.
+
+VERIFICATION
+
+Le fichier SHA256SUMS.txt permet de contrôler l'intégrité des deux
+applications. Les détails d'utilisation se trouvent dans le dossier
+3-Documentation.

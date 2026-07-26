@@ -23,8 +23,11 @@
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  if (new URLSearchParams(window.location.search).get("windowShell") === "windows") {
+  const windowShell = new URLSearchParams(window.location.search).get("windowShell");
+  if (["custom", "windows"].includes(windowShell)) {
     document.documentElement.classList.add("bcdevis-window-overlay");
+  } else if (windowShell === "mac") {
+    document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const { roundMoney, clamp, calculate, installmentMonths } = window.QuoteCore;
@@ -83,6 +86,7 @@
   };
   const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
   const KNOWN_FONTS = ["red-hat", "roboto", "roboto-slab", "system"];
+  const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document"];
 
   const defaultSettings = {
     companyName: "Clinique Bellecour",
@@ -106,6 +110,7 @@
     showFamilyPrices: false,
     skipTariffChangeConfirmation: false,
     catalogMode: "tiles",
+    launchAtLogin: false,
     visibleFamilies: [],
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
@@ -219,7 +224,7 @@
   let activeFamily = "visage";
   let expandedFamily = "visage";
   let activeBodySide = "front";
-  const activeBodyModel = "neutral";
+  let activeBodyModel = "male";
   let activeBodyRegion = "front-visage";
   let activeBodyDetail = "body";
   let activeFaceRegion = "";
@@ -231,6 +236,7 @@
   let pendingTheme = "light";
   let pendingFont = "red-hat";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
+  let activeSettingsTab = "interface";
   let activeLayerId = "";
   const layerReturnFocus = new Map();
 
@@ -450,7 +456,19 @@
     }
   }
 
+  function syncToastPlacement() {
+    const region = $("#toastRegion");
+    const slot = $("#checkoutToastSlot");
+    const checkout = $("#checkoutPanel");
+    if (!region || !slot || !checkout) return;
+    const checkoutIsVisible = window.getComputedStyle(checkout).display !== "none";
+    const host = checkoutIsVisible ? slot : document.body;
+    if (region.parentElement !== host) host.append(region);
+    region.classList.toggle("is-floating", !checkoutIsVisible);
+  }
+
   function toast(message, type = "success") {
+    syncToastPlacement();
     const region = $("#toastRegion");
     window.clearTimeout(toastTimer);
     if (activeToast) activeToast.remove();
@@ -766,12 +784,12 @@
     return (paths || []).map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
   }
 
-  function anonymousBodyHeadMarkup(side) {
-    const cx = side === "back" ? 1086 : 364;
-    const head = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140c27 0 43 17 43 44v27c0 30-18 54-43 58-25-4-43-28-43-58v-27c0-27 16-44 43-44Z"/>`;
-    if (side === "back") return head;
+  function anonymousBodyHeadMarkup(side, headGeometry) {
+    const cx = headGeometry.cx;
+    const headMarkup = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140c27 0 43 17 43 44v27c0 30-18 54-43 58-25-4-43-28-43-58v-27c0-27 16-44 43-44Z"/>`;
+    if (side === "back") return headMarkup;
     const neck = `<path class="body-region-shape body-anonymous-neck" d="M${cx - 28} 246c2 20 0 34-10 49q38 28 76 0c-10-15-12-29-10-49-8 14-18 21-28 21s-20-7-28-21Z"/>`;
-    return `${head}${neck}`;
+    return `${headMarkup}${neck}`;
   }
 
   function bodyModelGeometry(side) {
@@ -784,21 +802,33 @@
     return { ...geometry, focusMarkup: focus };
   }
 
+  function setBodyModel(model, focusSelector) {
+    if (!["female", "male"].includes(model) || model === activeBodyModel) return;
+    activeBodyModel = model;
+    renderCatalog();
+    window.setTimeout(() => $(focusSelector)?.focus(), 0);
+  }
+
+  function toggleBodyModel() {
+    setBodyModel(activeBodyModel === "male" ? "female" : "male", "[data-body-model-toggle]");
+  }
+
   function bodyMapMarkup(side, visibleIds) {
     const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds);
     const geometry = bodyModelGeometry(side);
     const [viewX, viewY, viewWidth, viewHeight] = geometry.viewBox.split(" ").map(Number);
-    const headCx = side === "back" ? 1086 : 364;
+    const headCx = geometry.head.cx;
     const headMaskId = `body-head-mask-${side}`;
     const headMask = `<defs><mask id="${headMaskId}" maskUnits="userSpaceOnUse"><rect x="${viewX}" y="${viewY}" width="${viewWidth}" height="${viewHeight}" fill="#fff"/><rect x="${headCx - 80}" y="130" width="160" height="145" rx="36" fill="#000"/></mask></defs>`;
     const outline = `<path class="body-anatomy-outline" d="${geometry.outline}" mask="url(#${headMaskId})"/>`;
+    const modelLabel = activeBodyModel === "female" ? "féminin" : "masculin";
     if (side === "back") {
       return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
-        <title id="bodyMapBackTitle">Mannequin neutre vu de dos</title>
-        <desc id="bodyMapBackDescription">Silhouette anatomique neutre et anonyme vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        <title id="bodyMapBackTitle">Mannequin ${modelLabel} vu de dos</title>
+        <desc id="bodyMapBackDescription">Silhouette anatomique ${modelLabel} et anonyme vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
         ${headMask}
         <g class="body-figure">${outline}
-          ${region("back-scalp", anonymousBodyHeadMarkup("back"))}
+          ${region("back-scalp", anonymousBodyHeadMarkup("back", geometry.head))}
           ${region("back-dos", bodyAnatomyPaths(geometry.regions.dos))}
           ${region("back-bras", bodyAnatomyPaths(geometry.regions.bras))}
           ${region("back-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
@@ -807,11 +837,11 @@
       </svg>`;
     }
     return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
-      <title id="bodyMapFrontTitle">Mannequin neutre vu de face</title>
-      <desc id="bodyMapFrontDescription">Silhouette anatomique neutre et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      <title id="bodyMapFrontTitle">Mannequin ${modelLabel} vu de face</title>
+      <desc id="bodyMapFrontDescription">Silhouette anatomique ${modelLabel} et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
       ${headMask}
       <g class="body-figure">${outline}
-        ${region("front-visage", anonymousBodyHeadMarkup("front"))}
+        ${region("front-visage", anonymousBodyHeadMarkup("front", geometry.head))}
         ${region("front-torse", bodyAnatomyPaths(geometry.regions.torse))}
         ${region("front-bras", bodyAnatomyPaths(geometry.regions.bras))}
         ${region("front-maillot", `${bodyAnatomyPaths(geometry.regions.maillot)}${geometry.focusMarkup}`)}
@@ -923,39 +953,31 @@
         ? servicesForBodyRegion(selectedRegion, selectedFamily)
         : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
     const resultTitle = needle ? "Résultats de recherche" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Prestations";
-    const resultDescription = needle
-      ? `${plural(services.length, "soin")} correspondant à « ${searchQuery.trim()} »`
-      : selectedFaceRegion?.description || selectedRegion?.description || selectedFamily?.description || "Choisissez une zone sur la silhouette.";
-    const availableRegionCount = faceDetailActive
-      ? FACE_REGION_DEFINITIONS.size
-      : bodyRegionsForSide(activeBodySide).filter((region) => visibleIds.has(region.familyId)).length;
-    const mapTitle = faceDetailActive ? "Choisir une zone du visage" : "Choisir une zone";
-    const mapEyebrow = faceDetailActive ? "Détail du visage" : "Navigation corporelle";
     const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
+    const nextBodyModelLabel = activeBodyModel === "male" ? "féminin" : "masculin";
+    const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>`;
     const mapHint = faceDetailActive
-      ? "Sélectionnez une zone précise du visage ou revenez au corps complet."
-      : "Cliquez ou utilisez Tab puis Entrée sur une partie du corps.";
+      ? '<p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Sélectionnez une zone précise du visage ou revenez au corps complet.</p>'
+      : "";
     const options = services.length
       ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
       : `<div class="body-results-empty"><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucun soin dans cette zone</strong><small>${needle ? "Essayez un autre terme." : "Cette famille est vide ou masquée dans les réglages."}</small></div>`;
     const auxiliary = BODY_AUXILIARY_FAMILY_IDS.map((id) => visible.find((family) => family.id === id)).filter(Boolean);
     $("#familyList").innerHTML = `<div class="body-selector" data-body-side="${activeBodySide}" data-body-model="${activeBodyModel}">
       <div class="body-selector-layout">
-        <section class="body-map-card" aria-labelledby="bodySelectorTitle">
+        <section class="body-map-card" aria-label="Sélecteur des zones corporelles">
           <div class="body-map-card-head">
-            <div><span>${mapEyebrow}</span><strong id="bodySelectorTitle">${mapTitle}</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div>
-            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><span aria-hidden="true">←</span> Corps complet</button>' : ""}
-            <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Vue du mannequin neutre"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div></div>
+            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><span aria-hidden="true">←</span> Corps complet</button>' : modelToggle}
+            <div class="body-map-head-actions">
+              <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Orientation du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Face</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Dos</button></div></div>
+            </div>
           </div>
-          <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
-          <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>${mapHint}</p>
+          <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}"${faceDetailActive ? "" : ` data-body-model-toggle tabindex="0" role="group" aria-label="Corps ${activeBodyModel === "female" ? "féminin" : "masculin"}. Cliquez à côté de la silhouette ou appuyez sur Entrée pour afficher le corps ${nextBodyModelLabel}."`}>${mapMarkup}</div>
+          ${mapHint}
         </section>
-        <section class="body-results" aria-live="polite" aria-labelledby="bodyResultsTitle">
-          <div class="body-results-head"><span>${selectedFaceRegion ? "Visage neutre · zone sélectionnée" : selectedRegion ? `Vue ${activeBodySide === "back" ? "arrière" : "avant"} · zone sélectionnée` : "Autres prestations"}</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
-          ${options}
-        </section>
+        <section class="body-results" aria-live="polite" aria-label="Prestations : ${escapeHTML(resultTitle)}" data-body-results-title="${escapeHTML(resultTitle)}">${options}</section>
       </div>
-      ${auxiliary.length ? `<div class="body-auxiliary"><span>Autres prestations</span><div>${auxiliary.map((family) => `<button type="button" data-body-family="${family.id}" class="${!activeBodyRegion && activeFamily === family.id ? "active" : ""}"><svg aria-hidden="true"><use href="${prestationIconHref(family.icon)}"></use></svg><strong>${escapeHTML(family.name)}</strong><small>${plural(allServices().filter((item) => serviceInFamily(item, family)).length, "soin")}</small></button>`).join("")}</div></div>` : ""}
+      ${auxiliary.length ? `<div class="body-auxiliary"><div>${auxiliary.map((family) => `<button type="button" data-body-family="${family.id}" class="${!activeBodyRegion && activeFamily === family.id ? "active" : ""}"><svg aria-hidden="true"><use href="${prestationIconHref(family.icon)}"></use></svg><strong>${escapeHTML(family.name)}</strong><small>${plural(allServices().filter((item) => serviceInFamily(item, family)).length, "soin")}</small></button>`).join("")}</div></div>` : ""}
       <p class="body-selector-credit">Silhouette interactive adaptée du principe de <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noreferrer">react-native-body-highlighter</a> (MIT).</p>
     </div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
@@ -1377,14 +1399,74 @@
     const initiallyAll = !configured.size;
     grid.innerHTML = allSelectable.map((family) => {
       const checked = initiallyAll || configured.has(family.id);
-      return `<label class="family-visibility-item" data-family-id="${family.id}">\n        <input type="checkbox" name="visibleFamilies" value="${family.id}" ${checked ? "checked" : ""}>\n        <span class="family-visibility-icon" aria-hidden="true"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>\n        <span class="family-visibility-copy"><strong>${escapeHTML(family.name)}</strong><small>${escapeHTML(family.description || "")}</small></span>\n      </label>`;
+      return `<label class="family-visibility-item" data-family-id="${family.id}">\n        <input type="checkbox" name="visibleFamilies" value="${family.id}" ${checked ? "checked" : ""}>\n        <span class="family-visibility-icon" aria-hidden="true"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>\n        <span class="family-visibility-copy"><strong>${escapeHTML(family.name)}</strong></span>\n      </label>`;
     }).join("");
+  }
+
+  let launchAtLoginState = {
+    available: false,
+    enabled: false,
+    loading: false,
+    status: "unavailable"
+  };
+
+  function launchAtLoginMessage(result) {
+    if (!result?.available) {
+      if (result?.status === "packaged-required") return "Version installée requise.";
+      return "Application de bureau uniquement.";
+    }
+    if (result.status === "blocked") return "Désactivé dans Windows.";
+    if (result.status === "stale") return "Emplacement à actualiser.";
+    if (result.status === "requires-approval") return "Autorisation macOS requise.";
+    return result.enabled
+      ? `Activé · ${result.platformLabel || "cet ordinateur"}`
+      : `Désactivé · ${result.platformLabel || "cet ordinateur"}`;
+  }
+
+  function applyLaunchAtLoginResult(result) {
+    const input = $("#launchAtLogin");
+    const status = $("#launchAtLoginStatus");
+    launchAtLoginState = {
+      available: Boolean(result?.available),
+      enabled: Boolean(result?.enabled),
+      loading: false,
+      status: String(result?.status || "unavailable")
+    };
+    if (input) {
+      input.checked = launchAtLoginState.enabled;
+      input.disabled = !launchAtLoginState.available;
+    }
+    if (status) status.textContent = launchAtLoginMessage(result);
+  }
+
+  async function refreshLaunchAtLoginSetting() {
+    const input = $("#launchAtLogin");
+    const status = $("#launchAtLoginStatus");
+    if (!input || !status) return;
+    input.disabled = true;
+    status.textContent = "Vérification…";
+    launchAtLoginState.loading = true;
+    if (typeof window.bcdevisDesktop?.getLaunchAtLogin !== "function") {
+      applyLaunchAtLoginResult({ available: false, enabled: false, status: "desktop-required" });
+      return;
+    }
+    try {
+      applyLaunchAtLoginResult(await window.bcdevisDesktop.getLaunchAtLogin());
+    } catch (error) {
+      console.error("Lecture du démarrage automatique impossible.", error);
+      applyLaunchAtLoginResult({ available: false, enabled: false, status: "read-error" });
+      status.textContent = "Lecture impossible.";
+    }
   }
 
   function fillSettingsForm() {
     const form = $("#settingsForm");
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
     if (form.elements.showSignatures) form.elements.showSignatures.checked = db.settings.showSignatures !== false;
+    if (form.elements.launchAtLogin) {
+      form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
+      form.elements.launchAtLogin.disabled = true;
+    }
     pendingLogos = {
       headerLogoDataUrl: safeLogoDataUrl(db.settings.headerLogoDataUrl),
       pdfLogoDataUrl: safeLogoDataUrl(db.settings.pdfLogoDataUrl)
@@ -1394,6 +1476,7 @@
     refreshSettingsPreview();
     syncThemePicker(currentTheme());
     syncFontPicker(currentFont());
+    void refreshLaunchAtLoginSetting();
   }
 
   function readLogoFile(file) {
@@ -1442,8 +1525,8 @@
     if (pdfPreview) pdfPreview.src = pdfLogo || headerLogo || DEFAULT_LOGO_PATH;
     const headerStatus = $("#headerLogoStatus");
     const pdfStatus = $("#pdfLogoStatus");
-    if (headerStatus) headerStatus.textContent = headerLogo ? "Logo personnalisé prêt" : "Logo Bellecour par défaut";
-    if (pdfStatus) pdfStatus.textContent = pdfLogo ? "Logo PDF personnalisé prêt" : headerLogo ? "Logo de l’application réutilisé" : "Logo Bellecour par défaut";
+    if (headerStatus) headerStatus.textContent = headerLogo ? "Personnalisé" : "Bellecour";
+    if (pdfStatus) pdfStatus.textContent = pdfLogo ? "Personnalisé" : headerLogo ? "Logo principal" : "Bellecour";
     const removeHeader = $('[data-remove-logo="header"]');
     const removePdf = $('[data-remove-logo="pdf"]');
     if (removeHeader) removeHeader.hidden = !headerLogo;
@@ -1469,6 +1552,22 @@
     });
   }
 
+  function setSettingsTab(requestedTab, { focus = false, resetScroll = false } = {}) {
+    const tabId = SETTINGS_TAB_IDS.includes(requestedTab) ? requestedTab : SETTINGS_TAB_IDS[0];
+    activeSettingsTab = tabId;
+    $$("#settingsTabs [role='tab']").forEach((tab) => {
+      const isActive = tab.dataset.settingsTab === tabId;
+      tab.setAttribute("aria-selected", String(isActive));
+      tab.tabIndex = isActive ? 0 : -1;
+      if (focus && isActive) tab.focus();
+    });
+    $$("[data-settings-panel]").forEach((panel) => {
+      const isActive = panel.dataset.settingsPanel === tabId;
+      panel.hidden = !isActive;
+      if (isActive && resetScroll) panel.scrollTop = 0;
+    });
+  }
+
   function refreshSettingsPreview() {
     const form = $("#settingsForm");
     if (!form) return;
@@ -1482,19 +1581,19 @@
     const free = Math.max(0, Math.round(Number(form.elements.packFreeDefault?.value) || 0));
     const totalPack = paid + free;
     const packSummary = document.querySelector('[data-summary="pack"]');
-    if (packSummary) packSummary.textContent = totalPack > 0 ? `${paid} payée${paid > 1 ? "s" : ""} + ${free} offerte${free > 1 ? "s" : ""} = ${totalPack} séance${totalPack > 1 ? "s" : ""}${free > 0 ? ` (1 séance gratuite pour ${Math.round(totalPack / free)} achetées en moy.)` : ""}` : "";
+    if (packSummary) packSummary.textContent = totalPack > 0 ? `${totalPack} séance${totalPack > 1 ? "s" : ""} au total.` : "";
     const student = Math.max(0, Math.min(100, Math.round(Number(form.elements.studentDiscount?.value) || 0)));
     const studentOutput = form.querySelector("[data-student-discount]");
     if (studentOutput) studentOutput.textContent = `${student} %`;
     const studentSummary = document.querySelector('[data-summary="student"]');
-    if (studentSummary) studentSummary.textContent = student > 0 ? `Le client paie ${100 - student}% du prix séance${student >= 100 ? " (gratuit)" : ""}.` : "";
+    if (studentSummary) studentSummary.textContent = student > 0 ? `Prix client : ${100 - student} %${student >= 100 ? " · gratuit" : ""}.` : "";
     const familySummary = document.querySelector('[data-summary="families"]');
     if (familySummary) {
       const checkedFamilies = form.elements.visibleFamilies ? Array.from(form.elements.visibleFamilies).filter((input) => input.checked) : [];
       const total = selectableFamilies().length;
-      familySummary.textContent = checkedFamilies.length === 0
-        ? `Aucune famille sélectionnée — le catalogue affichera l’intégralité des prestations par défaut.`
-        : `${checkedFamilies.length} famille${checkedFamilies.length === 1 ? "" : "s"} visible${checkedFamilies.length === 1 ? "" : "s"} sur ${total}.`;
+      familySummary.textContent = checkedFamilies.length === 0 && total > 0
+        ? "Aucune sélection = tout afficher."
+        : "";
     }
   }
 
@@ -1767,6 +1866,7 @@
     $("#familyPanel").classList.toggle("active-panel", id === "familyPanel");
     $("#checkoutPanel").classList.toggle("active-panel", id === "checkoutPanel");
     $$(".mobile-tabs [data-panel]").forEach((button) => button.classList.toggle("active", button.dataset.panel === id));
+    syncToastPlacement();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -1790,6 +1890,14 @@
     return $$('[role="menuitem"]:not([disabled])', $("#checkoutTransmissionMenu"));
   }
 
+  function syncContextMenuState() {
+    const catalogMenuOpen = !$("#appActionsMenu").hidden;
+    const hasOpenMenu = ["#appActionsMenu", "#quoteActionMenu", "#checkoutTransmissionMenu"]
+      .some((selector) => !$(selector).hidden);
+    document.documentElement.classList.toggle("bcdevis-catalog-menu-open", catalogMenuOpen);
+    document.documentElement.classList.toggle("bcdevis-context-menu-open", hasOpenMenu);
+  }
+
   function setTransmissionMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
     const menu = $("#checkoutTransmissionMenu");
     const trigger = $("#checkoutTransmitButton");
@@ -1800,6 +1908,7 @@
       setAppMenuOpen(false);
       setQuoteMenuOpen(false);
     }
+    syncContextMenuState();
     if (open && focusFirst) transmissionMenuItems()[0]?.focus();
     if (!open && restoreFocus) trigger.focus();
   }
@@ -1814,6 +1923,7 @@
       setAppMenuOpen(false);
       setTransmissionMenuOpen(false);
     }
+    syncContextMenuState();
     if (open && focusFirst) quoteMenuItems()[0]?.focus();
     if (!open && restoreFocus) trigger.focus();
   }
@@ -1828,8 +1938,15 @@
       setQuoteMenuOpen(false);
       setTransmissionMenuOpen(false);
     }
+    syncContextMenuState();
     if (open && focusFirst) appMenuItems()[0]?.focus();
     if (!open && restoreFocus) trigger.focus();
+  }
+
+  function closeContextMenus() {
+    if (!$("#appActionsMenu").hidden) setAppMenuOpen(false);
+    if (!$("#quoteActionMenu").hidden) setQuoteMenuOpen(false);
+    if (!$("#checkoutTransmissionMenu").hidden) setTransmissionMenuOpen(false);
   }
 
   function openHistoryLayer() {
@@ -1849,13 +1966,12 @@
     pendingTheme = currentTheme();
     pendingFont = currentFont();
     fillSettingsForm();
+    setSettingsTab(activeSettingsTab, { resetScroll: true });
     openLayer("settingsLayer");
   }
 
   function closeMenusForShortcut() {
-    if (!$("#appActionsMenu").hidden) setAppMenuOpen(false);
-    if (!$("#quoteActionMenu").hidden) setQuoteMenuOpen(false);
-    if (!$("#checkoutTransmissionMenu").hidden) setTransmissionMenuOpen(false);
+    closeContextMenus();
   }
 
   function setCatalogSearchOpen(open, { focus = false, clear = true } = {}) {
@@ -1894,6 +2010,17 @@
     moveRadioSelection(event.currentTarget, "[data-offer-mode]", button, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   });
   $("#familyList").addEventListener("click", (event) => {
+    const bodyModelButton = event.target.closest("button[data-body-model-choice]");
+    if (bodyModelButton) {
+      const model = bodyModelButton.dataset.bodyModelChoice;
+      setBodyModel(model, `[data-body-model-choice="${model}"]`);
+      return;
+    }
+    const bodyModelToggleArea = event.target.closest("[data-body-model-toggle]");
+    if (bodyModelToggleArea && !event.target.closest(".body-figure")) {
+      toggleBodyModel();
+      return;
+    }
     const serviceButton = event.target.closest("[data-family-service-id]");
     if (serviceButton) {
       const item = allServices().find((service) => String(service.id) === serviceButton.dataset.familyServiceId);
@@ -1979,6 +2106,12 @@
     renderCatalog();
   });
   $("#familyList").addEventListener("keydown", (event) => {
+    const bodyModelToggleArea = event.target.closest("[data-body-model-toggle]");
+    if (bodyModelToggleArea && event.target === bodyModelToggleArea && ["Enter", " "].includes(event.key)) {
+      event.preventDefault();
+      toggleBodyModel();
+      return;
+    }
     const interactiveRegion = event.target.closest("svg [data-body-region], svg [data-face-region]");
     if (!interactiveRegion || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
@@ -2130,10 +2263,13 @@
     event.preventDefault();
     items[nextIndex]?.focus();
   });
-  $("#checkoutWhatsAppButton").addEventListener("click", shareQuoteViaWhatsApp);
-  $("#checkoutEmailButton").addEventListener("click", shareQuoteViaEmail);
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("#checkoutTransmitButton, #checkoutTransmissionMenu")) setTransmissionMenuOpen(false);
+  $("#checkoutWhatsAppButton").addEventListener("click", () => {
+    setTransmissionMenuOpen(false);
+    shareQuoteViaWhatsApp();
+  });
+  $("#checkoutEmailButton").addEventListener("click", () => {
+    setTransmissionMenuOpen(false);
+    shareQuoteViaEmail();
   });
   $(".checkout-primary-actions").addEventListener("focusout", () => {
     window.setTimeout(() => {
@@ -2168,6 +2304,24 @@
     event.preventDefault();
     moveRadioSelection(event.currentTarget, ".font-card", card, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   });
+  $("#settingsTabs").addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-settings-tab]");
+    if (tab) setSettingsTab(tab.dataset.settingsTab, { focus: true, resetScroll: true });
+  });
+  $("#settingsTabs").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = $$("#settingsTabs [role='tab']");
+    const current = event.target.closest("[data-settings-tab]");
+    const index = tabs.indexOf(current);
+    if (index < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? tabs.length - 1
+        : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+    setSettingsTab(tabs[nextIndex].dataset.settingsTab, { focus: true, resetScroll: true });
+  });
   $("#settingsForm").addEventListener("input", (event) => {
     const name = event.target?.name;
     if (["quotePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
@@ -2196,9 +2350,39 @@
     pendingLogos[key] = "";
     renderLogoPreviews();
   }));
-  $("#settingsForm").addEventListener("submit", (event) => {
+  $("#settingsForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const desiredLaunchAtLogin = data.has("launchAtLogin");
+    let savedLaunchAtLogin = db.settings.launchAtLogin === true;
+    const submitButton = $('button[type="submit"]', event.currentTarget);
+    if (launchAtLoginState.available && typeof window.bcdevisDesktop?.setLaunchAtLogin === "function") {
+      submitButton.disabled = true;
+      const previousSubmitLabel = submitButton.textContent;
+      submitButton.textContent = "Application au système…";
+      try {
+        let result = {
+          available: true,
+          enabled: launchAtLoginState.enabled,
+          status: launchAtLoginState.status
+        };
+        if (desiredLaunchAtLogin !== launchAtLoginState.enabled) {
+          result = await window.bcdevisDesktop.setLaunchAtLogin(desiredLaunchAtLogin);
+        }
+        applyLaunchAtLoginResult(result);
+        if (!result?.available || Boolean(result.enabled) !== desiredLaunchAtLogin) {
+          throw new Error(launchAtLoginMessage(result));
+        }
+        savedLaunchAtLogin = Boolean(result.enabled);
+      } catch (error) {
+        console.error("Modification du démarrage automatique impossible.", error);
+        toast(error?.message || "Le démarrage automatique n’a pas pu être modifié.", "error");
+        return;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = previousSubmitLabel;
+      }
+    }
     const oldConditions = db.settings.conditions;
     db.settings = { ...db.settings,
       companyName: String(data.get("companyName") || "").trim() || defaultSettings.companyName,
@@ -2212,6 +2396,7 @@
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
       catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",
+      launchAtLogin: savedLaunchAtLogin,
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
@@ -2262,9 +2447,6 @@
   $("#newQuoteButton").addEventListener("click", createNewQuote);
   $("#saveButton").addEventListener("click", saveQuote);
   $("#historyButton").addEventListener("click", openHistoryLayer);
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("#appActions")) setAppMenuOpen(false);
-  });
   $("#appActions").addEventListener("focusout", () => {
     window.setTimeout(() => {
       if (!$("#appActions").contains(document.activeElement)) setAppMenuOpen(false);
@@ -2305,14 +2487,19 @@
       renderAll();
     }
   });
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("#quoteHeadActions")) setQuoteMenuOpen(false);
-  });
   $("#quoteHeadActions").addEventListener("focusout", () => {
     window.setTimeout(() => {
       if (!$("#quoteHeadActions").contains(document.activeElement)) setQuoteMenuOpen(false);
     }, 0);
   });
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    if (!$("#appActionsMenu").hidden && !target.closest("#appMenuButton, #appActionsMenu")) setAppMenuOpen(false);
+    if (!$("#quoteActionMenu").hidden && !target.closest("#moreQuoteButton, #quoteActionMenu")) setQuoteMenuOpen(false);
+    if (!$("#checkoutTransmissionMenu").hidden && !target.closest("#checkoutTransmitButton, #checkoutTransmissionMenu")) setTransmissionMenuOpen(false);
+  }, true);
+  window.addEventListener("blur", closeContextMenus);
 
   $("#quoteImportInput").addEventListener("change", async (event) => {
     try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); if (!saveLocal()) return; renderAll(); toast("Devis importé"); }
@@ -2404,6 +2591,7 @@
   window.addEventListener("beforeprint", renderPrint);
   window.addEventListener("beforeunload", () => saveLocal(false));
   window.addEventListener("resize", syncPermanentCheckoutLayout);
+  window.addEventListener("resize", syncToastPlacement);
   if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("PWA indisponible", error)));
   }
@@ -2413,7 +2601,10 @@
   if (windowControls && typeof desktopWindow?.minimizeWindow === "function") {
     const syncWindowControlState = (isMaximized) => {
       windowControls.dataset.maximized = String(Boolean(isMaximized));
-      $("#windowMaximizeButton").setAttribute("aria-label", isMaximized ? "Restaurer BCDevis" : "Agrandir BCDevis");
+      const maximizeButton = $("#windowMaximizeButton");
+      const nextAction = isMaximized ? "Passer en mode tablette" : "Agrandir la fenêtre";
+      maximizeButton.setAttribute("aria-label", nextAction);
+      maximizeButton.title = nextAction;
     };
     $("#windowMinimizeButton").addEventListener("click", () => desktopWindow.minimizeWindow());
     $("#windowMaximizeButton").addEventListener("click", async () => syncWindowControlState(await desktopWindow.toggleMaximizeWindow()));
@@ -2425,6 +2616,7 @@
   applyTheme(currentTheme());
   applyFont(currentFont());
   syncPermanentCheckoutLayout();
+  syncToastPlacement();
   saveLocal(false);
   renderAll();
 })();

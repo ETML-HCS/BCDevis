@@ -140,7 +140,7 @@ window.QUOTE_FAMILIES = [
   { id: "electrolyse", name: "Électrolyse", description: "Épilation électrique facturée selon la durée.", icon: "electrolysis", categoryIds: [15] },
   { id: "medecine", name: "Médecine esthétique", description: "Injections, lasers médicaux, peau et cheveux.", icon: "aesthetic", categoryIds: [16, 17, 32] },
   { id: "combinees", name: "Zones combinées", description: "Réservations multi-zones organisées par durée.", icon: "zones", categoryIds: [35] },
-  { id: "consultations", name: "Consultations", description: "Premiers rendez-vous, consultations et retouches.", icon: "consultation", categoryIds: [7, 13] },
+  { id: "consultations", name: "Consultations", description: "", icon: "consultation", categoryIds: [7, 13] },
   { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "all", categoryIds: [] }
 ];
 

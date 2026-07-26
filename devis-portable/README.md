@@ -1,16 +1,21 @@
-# BCDevis — version 4.21.1
+# BCDevis - version 5.0.0
 
-Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, macOS et ChromeOS.
+Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS et ChromeOS.
 
-Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md).
+Documents maintenus avec la version 5 :
+
+- [Mode d’emploi](MODE-D-EMPLOI.md)
+- [Utilisation rapide](UTILISATION-RAPIDE.md)
+- [Raccourcis clavier V5](RACCOURCIS-CLAVIER-V5.md)
+- [Modèle de devis](MODELE-DEVIS-V5.md) et fichier importable [MODELE-DEVIS-V5.json](MODELE-DEVIS-V5.json)
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-4.21.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-5.0.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
-`Lancer BCDevis.cmd` reste disponible comme solution de secours pour ouvrir les sources HTML avec Edge/Chrome ; il n’est pas destiné à la distribution.
+`Lancer BCDevis.cmd` ouvre les sources dans leur moteur Electron local afin de conserver toutes les fonctions de bureau, dont le téléchargement direct du PDF. Il nécessite d’avoir lancé `npm install` à la racine du projet et n’est pas destiné à la distribution.
 
 ## Interface tactile
 
@@ -20,7 +25,7 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 - L’accordéon reste volontairement sobre : nom, mode actif et durée, sans répéter les montants.
 - Le prix apparaît uniquement après ajout dans la caisse.
 - Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute à la caisse.
-- Dans `Réglages` > `Navigation des prestations`, le mode **Corps interactif** remplace l’accordéon par une silhouette avant/arrière : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
+- Dans `Réglages` > `Interface` > `Navigation des prestations`, le mode **Corps interactif** remplace l’accordéon par une silhouette Femme/Homme et Face/Dos : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
 - Le mode Étudiant réduit directement le prix de chaque soin selon le pourcentage configuré, fixé à 50 % par défaut.
 - L’en-tête de la caisse donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
 - Les commandes Imprimer, PDF et Envoyer restent visibles au bas de la caisse dès qu’une prestation est ajoutée.
@@ -30,7 +35,7 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 ## Parcours
 
 1. Choisir le mode de prestation : Séance, Pack ou Étudiant −50 %.
-2. En mode **Tuiles**, ouvrir une famille. En mode **Corps interactif**, choisir la vue Avant ou Arrière puis toucher directement la zone du corps ; les soins correspondants apparaissent à côté.
+2. En mode **Tuiles**, ouvrir une famille. En mode **Corps interactif**, choisir Femme/Homme et Face/Dos puis toucher directement la zone du corps ; les soins correspondants apparaissent à côté.
 3. Toucher le soin désiré : il est ajouté directement à la caisse avec le prix et les conditions du mode actif.
 4. Ajuster dans la caisse les quantités payées et, pour un pack, les séances offertes. En mode Séance, dès que la quantité atteint le seuil configuré du pack, la caisse propose d’ajouter la séance offerte. Les séances offertes apparaissent sur le devis mais ne sont jamais facturées.
 
@@ -40,7 +45,8 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 - Un sélecteur Séance/Pack/Étudiant : le passage vers ou depuis le tarif étudiant applique le nouveau tarif à toutes les prestations du devis, après confirmation. Cette confirmation peut être désactivée depuis sa case « Ne plus afficher ce message ». Le rabais étudiant, configurable et fixé à 50 % par défaut, est affiché séparément dans les totaux pour rendre l’économie visible.
 - Réglages globaux du pack et du pourcentage du tarif étudiant.
 - Recherche simultanée dans toutes les familles et prestations personnalisées réutilisables.
-- Navigation corporelle facultative, accessible au clavier, avec vues avant/arrière et accès conservé aux consultations, à l’électrolyse, à la médecine esthétique et aux zones combinées.
+- Navigation corporelle facultative, accessible au clavier, avec morphologies femme/homme, vues face/dos et accès conservé aux consultations, à l’électrolyse, à la médecine esthétique et aux zones combinées.
+- Démarrage automatique facultatif avec la session Windows, Linux ou macOS, configurable dans `Réglages` > `Interface`.
 - Caisse avec prix unitaire modifiable et coupon manuel : pourcentage ou montant CHF. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
 - TVA incluse par défaut, désactivable ou ajoutée en plus. Le paiement échelonné propose 3/4/6 mois sous 1’000 CHF, ajoute 10 mois dès 1’000 CHF, puis 12 mois dès 2’000 CHF.
 - Date du devis fixée au jour même par défaut, ajustable jusqu’à J+14 ; validité calculée automatiquement à 30 jours calendaires.
@@ -53,6 +59,7 @@ Le guide d’utilisation est disponible dans [MODE-D-EMPLOI.md](MODE-D-EMPLOI.md
 Toutes les données restent locales :
 
 - sous Windows portable, dans le dossier `data` placé à côté de l’EXE ;
+- sous Linux, dans le profil applicatif BCDevis de l’utilisateur ;
 - sous macOS, dans le profil applicatif BCDevis de l’utilisateur ;
 - sous ChromeOS, dans le stockage du profil Chrome qui a installé la PWA.
 
@@ -60,7 +67,7 @@ Pour déplacer les données vers un autre ordinateur ou une autre plateforme, ou
 
 ## Créer un PDF
 
-Dans les applications Windows et macOS, la commande `Télécharger le PDF` crée directement le document dans le dossier `Téléchargements`. Un second clic sur le même devis crée un fichier numéroté, sans écraser le précédent. Sous ChromeOS, la même commande ouvre l’impression : choisir `Enregistrer au format PDF`.
+Dans les applications Windows, Linux et macOS, la commande `Télécharger le PDF` crée directement le document dans le dossier `Téléchargements`. Un second clic sur le même devis crée un fichier numéroté, sans écraser le précédent. Sous ChromeOS, la même commande ouvre l’impression : choisir `Enregistrer au format PDF`.
 
 Le document est composé automatiquement pour le format A4 : les lignes d’un soin ne sont jamais coupées, les en-têtes du tableau sont répétés sur les pages suivantes et les blocs de total, conditions et signature restent groupés.
 
@@ -91,7 +98,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-4.21.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-5.0.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -101,12 +108,15 @@ npm run test:chromeos
 
 Les deux PDF de référence avec signatures activées et désactivées sont écrits dans `output/pdf`.
 
-## Raccourcis clavier
+## Raccourcis clavier V5
 
-- `Ctrl` / `⌘` + `N` : nouveau devis ; `S` : enregistrer ; `K` ou `/` : rechercher une prestation.
-- `Ctrl` / `⌘` + `P` : imprimer ; `Maj` + `S` : créer le PDF ; `,` : ouvrir les réglages.
-- `?` ouvre cette aide dans l’application ; `Échap` ferme une fenêtre ou la recherche.
+- Catalogue : `Alt + M`, `Ctrl + K` ou `/`, `Alt + P`, `Ctrl + Maj + N`.
+- Devis : `Ctrl + N`, `Ctrl + S`, `Ctrl + H`, `Ctrl + D`, `Ctrl + O`, `Ctrl + E`.
+- Sortie : `Ctrl + P`, `Ctrl + Maj + S`, `Ctrl + Alt + W`.
+- Application : `Ctrl + ,`, `?`, `Échap`.
 - Dans les choix de tarif et de thème, les flèches gauche/droite ou haut/bas sélectionnent directement l’option suivante.
+
+La fiche [RACCOURCIS-CLAVIER-V5.md](RACCOURCIS-CLAVIER-V5.md) documente les 16 commandes.
 
 ## Envoyer un devis
 
@@ -131,7 +141,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-4.21.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-5.0.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -141,7 +151,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.0.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -149,6 +159,16 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-4.21.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.0.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
-Le workflow `.github/workflows/livrables.yml` exécute les builds sur les trois systèmes natifs et publie trois artefacts séparés : `BCDevis-Windows`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
+Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
+
+## Générer les documents PDF
+
+Après une modification du manuel ou des fiches client :
+
+```powershell
+npm run docs:pdf
+```
+
+La commande régénère et contrôle les quatre PDF suivis dans `devis-portable`, puis écrit une copie de livraison dans `output/pdf`.

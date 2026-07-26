@@ -15,6 +15,7 @@ vm.runInNewContext(catalogSource, context, { filename: "catalog.js" });
 
 const services = context.window.QUOTE_SERVICES;
 const categories = context.window.QUOTE_CATEGORIES;
+const families = context.window.QUOTE_FAMILIES;
 const symbolMatches = [...html.matchAll(/<symbol\s+id="icon-([^"]+)"\s+viewBox="([^"]+)"/g)];
 const symbolNames = symbolMatches.map((match) => match[1]);
 const symbols = new Set(symbolNames);
@@ -55,8 +56,13 @@ const expectedIcons = {
   112: "student", 113: "student", 114: "student", 115: "student", 116: "student",
   118: "student", 119: "student", 120: "student", 121: "student"
 };
+const usedIconBodies = [...new Set(services.map((service) => service.icon))].map((icon) => {
+  const match = html.match(new RegExp(`<symbol id="icon-map-${icon}"[^>]*>([\\s\\S]*?)<\\/symbol>`));
+  return [icon, match?.[1].replace(/\s+/g, " ").trim()];
+});
 
 assert.equal(services.length, 91, "Le catalogue doit toujours contenir 91 prestations");
+assert.equal(new Set(services.map((service) => service.icon)).size, 57, "Les 91 prestations doivent conserver leurs 57 dessins anatomiques distincts");
 assert.equal(categories.length, 16, "Les 16 catégories historiques doivent rester disponibles");
 assert.equal(symbolNames.length, symbols.size, "Chaque identifiant de symbole SVG doit être unique");
 assert.deepEqual(
@@ -65,6 +71,16 @@ assert.deepEqual(
   "Tous les pictogrammes doivent partager le viewBox 24 × 24"
 );
 assert.equal(Object.keys(expectedIcons).length, services.length, "La matrice visuelle doit couvrir chaque prestation");
+assert.ok(usedIconBodies.every(([, body]) => body), "Chaque dessin utilisé doit contenir une géométrie SVG");
+assert.equal(
+  new Set(usedIconBodies.map(([, body]) => body)).size,
+  usedIconBodies.length,
+  "Deux zones anatomiques différentes ne doivent pas partager accidentellement le même dessin"
+);
+assert.ok(
+  usedIconBodies.every(([, body]) => !/<image\b|href="https?:|style="/.test(body)),
+  "Les pictogrammes doivent rester des vecteurs locaux sans image, dépendance distante ni style isolé"
+);
 
 for (const icon of normalizedReferenceIcons) {
   assert.match(
@@ -85,8 +101,65 @@ assert.match(
 );
 assert.match(
   html,
-  /<symbol id="icon-map-nose"[^>]*>[\s\S]*?<path class="anatomy-zone" d="m12 8\.3 2 5\.5-2 1\.3-2-1\.3 2-5\.5Z"/,
-  "Le nez doit être explicitement mis en évidence sur le visage frontal"
+  /<symbol id="icon-map-nose"[^>]*>[\s\S]*?<use href="#bodymap-face"[\s\S]*?M11 9\.1h2[\s\S]*?<circle class="anatomy-negative" cx="10\.9"[\s\S]*?<circle class="anatomy-negative" cx="13\.1"/,
+  "Le nez et les deux narines doivent être explicitement lisibles de face"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-upper-lip"[^>]*>[\s\S]*?<use href="#bodymap-face"[\s\S]*?M9\.4 12\.8c1\.7\.7/,
+  "La zone située au-dessus de la lèvre supérieure doit être lisible de face"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-beard"[^>]*>[\s\S]*?class="anatomy-zone-soft"[\s\S]*?class="anatomy-negative-line"/,
+  "La barbe pleine doit associer une zone dense à des repères de texture"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-beard-line"[^>]*>[\s\S]*?<use href="#bodymap-face-profile"[\s\S]*?M10\.1 13\.5[\s\S]*?M9\.8 16\.2/,
+  "La ligne de barbe doit montrer en profil le contour de joue et le contour sous-mandibulaire"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-face-skin"[^>]*>[\s\S]*?<path class="anatomy-zone-soft"[\s\S]*?<circle class="anatomy-dot" cx="12" cy="17"/,
+  "La peau du visage doit couvrir le visage et rester distincte des deux joues"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-forehead"[^>]*>[\s\S]*?M6\.8 7\.4c3\.4-1\.5 7-1\.5 10\.4 0/,
+  "Le front doit rester une bande faciale distincte de la calotte du cuir chevelu"
+);
+assert.match(
+  html,
+  /<g id="bodymap-hands-pair">[\s\S]*?<use href="#bodymap-hand" transform="translate\(0 2\.1\)"[\s\S]*?translate\(24 2\.1\) scale\(-1 1\)/,
+  "Les prestations des mains et des doigts doivent représenter deux mains entières en miroir"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-hands"[^>]*>[\s\S]*?class="anatomy-zone-soft"[\s\S]*?class="anatomy-negative-line"/,
+  "Les mains doivent mettre en évidence les deux dos de main et leurs articulations"
+);
+assert.equal(
+  (html.match(/<symbol id="icon-map-fingers"[\s\S]*?<\/symbol>/)?.[0].match(/class="anatomy-zone"/g) || []).length,
+  10,
+  "Les dix doigts, pouces compris, doivent être explicitement mis en évidence"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-face-zone"[^>]*>[\s\S]*?class="anatomy-patch"/,
+  "Les zones spéciales doivent utiliser le contour clinique pointillé"
+);
+for (const icon of ["face-zone", "arm-zone", "torso-zone", "back-zone", "bikini-zone", "thigh-zone", "leg-zone", "skin-target"]) {
+  assert.match(
+    html,
+    new RegExp(`<symbol id="icon-map-${icon}"[^>]*>[\\s\\S]*?class="anatomy-patch"`),
+    `La zone spéciale ${icon} doit utiliser le contour clinique pointillé`
+  );
+}
+assert.match(
+  html,
+  /<symbol id="icon-map-neck"[^>]*>[\s\S]*?<use href="#bodymap-neck-front"[\s\S]*?M9\.3 8v3\.2/,
+  "Le cou doit utiliser un buste dédié et limiter la zone pleine au cou"
 );
 assert.match(
   html,
@@ -107,6 +180,16 @@ assert.match(
   html,
   /<symbol id="icon-map-maillot"[^>]*>[\s\S]*?M5\.6 9\.5 12 15\.3l6\.4-5\.8/,
   "Le maillot doit conserver un contour frontal immédiatement reconnaissable"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-bikini-classic"[^>]*>[\s\S]*?m6\.7 10\.6 4 3\.1m6\.6-3\.1-4 3\.1" stroke-width="2\.2"/,
+  "Le maillot classique doit montrer les lignes traitées plutôt qu’un vêtement rempli"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-bikini-high"[^>]*>[\s\S]*?m5\.5 8\.2 5\.2 5\.6m7\.8-5\.6-5\.2 5\.6" stroke-width="2\.5"/,
+  "Le maillot échancré doit rester plus étendu que le maillot classique"
 );
 assert.match(
   html,
@@ -148,6 +231,31 @@ assert.match(
   /<symbol id="icon-map-legs"[^>]*>[\s\S]*?M7\.4 20\.2h3\.8v1\.7/,
   "Les jambes complètes doivent aussi montrer les pieds inclus"
 );
+assert.match(
+  html,
+  /<g id="bodymap-foot">[\s\S]*?M7\.7 4\.7c1\.4-.2[\s\S]*?<circle class="anatomy-base" cx="9\.9" cy="2\.9" r="1\.05"/,
+  "Chaque pied doit présenter une voûte, un talon et cinq orteils anatomiquement ordonnés"
+);
+assert.match(
+  html,
+  /<g id="bodymap-feet">[\s\S]*?<use href="#bodymap-foot"[\s\S]*?translate\(24 0\) scale\(-1 1\)/,
+  "Les deux pieds doivent être représentés en miroir avec les gros orteils vers le centre"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-feet"[^>]*>[\s\S]*?class="anatomy-zone-soft"[\s\S]*?class="anatomy-negative-line"/,
+  "Les pieds doivent mettre en évidence les deux plantes et leurs talons"
+);
+assert.equal(
+  (html.match(/<symbol id="icon-map-toes"[\s\S]*?<\/symbol>/)?.[0].match(/class="anatomy-zone"/g) || []).length,
+  10,
+  "Les dix orteils doivent être explicitement visibles"
+);
+assert.match(
+  html,
+  /<symbol id="icon-map-skin-target"[^>]*>[\s\S]*?class="anatomy-patch"[\s\S]*?<circle class="anatomy-dot"[\s\S]*?<circle class="anatomy-dot"[\s\S]*?<circle class="anatomy-dot"/,
+  "Une zone cutanée générique doit évoquer une surface de peau traitée"
+);
 assert.equal(
   services.find((service) => service.id === 95)?.zone,
   "Visage ou zone cutanée du corps",
@@ -177,17 +285,32 @@ for (const category of categories.filter((category) => services.some((service) =
   assert.ok(categoryServices.every((service) => symbols.has(`map-${service.icon}`)), `Catégorie incomplète : ${category.name}`);
 }
 
+for (const family of families.filter((family) => family.id !== "all")) {
+  assert.ok(symbols.has(`map-${family.icon}`), `Pictogramme Body Map V3 absent pour la famille ${family.name}`);
+}
+
 assert.match(appSource, /function serviceVisual\(item\)/, "Le rendu doit gérer les prestations intégrées et sur mesure");
 assert.match(appSource, /function prestationIconHref\(icon\)/, "Le rendu doit privilégier le système Body map V3");
 assert.match(appSource, /document\.getElementById\(bodyMapId\)/, "Un pictogramme sur mesure doit conserver un repli sûr");
+assert.match(
+  appSource,
+  /class="family-visibility-icon"[\s\S]*?prestationIconHref\(family\.icon\)/,
+  "Le Catalogue des réglages doit réutiliser les pictogrammes actuels des familles"
+);
 assert.match(appSource, /class="service-zone-icon"/, "Le pictogramme anatomique doit être visible dans chaque prestation");
 assert.match(appSource, /<small>\$\{escapeHTML\(visual\.zone\)\}<\/small>/, "La zone doit aussi être explicitée en texte");
 assert.match(styles, /Prestations : cartes corporelles compactes, inspirées des body highlighters/);
-assert.match(styles, /\.anatomy-base\{[\s\S]*?fill-opacity:\.13;[\s\S]*?stroke-opacity:\.52;/);
-assert.match(styles, /\.anatomy-zone\{[\s\S]*?fill-opacity:\.9;[\s\S]*?stroke:none;/);
+assert.match(styles, /\.anatomy-base\{[\s\S]*?fill-opacity:\.1;[\s\S]*?stroke-opacity:\.82;/);
+assert.match(styles, /\.anatomy-zone\{[\s\S]*?fill-opacity:\.96;[\s\S]*?stroke:none;/);
+assert.match(styles, /\.anatomy-patch\{[\s\S]*?stroke-dasharray:1\.35 1\.15;/);
 assert.match(
   styles,
-  /\.family-option\{\s*min-height:76px;\s*padding:7px 5px 7px 9px;\s*grid-template-columns:40px minmax\(0,1fr\) 22px;\s*gap:8px;/,
+  /\.service-zone-icon svg\{width:34px;height:34px;stroke-width:1\.5;shape-rendering:geometricPrecision\}/,
+  "Les pictogrammes doivent conserver leur taille de lecture renforcée"
+);
+assert.match(
+  styles,
+  /\.family-option\{\s*min-height:76px;\s*padding:7px 5px 7px 9px;\s*grid-template-columns:44px minmax\(0,1fr\) 22px;\s*gap:8px;/,
   "Les prestations doivent réserver la largeur principale au texte"
 );
 assert.match(
@@ -197,7 +320,7 @@ assert.match(
 );
 assert.match(
   styles,
-  /\.show-family-prices \.family-option\{grid-template-columns:40px minmax\(0,1fr\) auto 22px\}/,
+  /\.show-family-prices \.family-option\{grid-template-columns:44px minmax\(0,1fr\) auto 22px\}/,
   "La colonne de prix ne doit être réservée que lorsqu’elle est visible"
 );
 

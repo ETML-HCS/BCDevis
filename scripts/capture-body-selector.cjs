@@ -16,6 +16,26 @@ async function capture(window, name) {
   await fs.writeFile(path.join(OUTPUT_PATH, name), image.toPNG());
 }
 
+function validateBodyGeometry(label, geometry) {
+  const view = geometry.viewBox;
+  const tolerance = 2;
+  const invalidRegion = geometry.regions.find((region) => region.paths < 1
+    || region.width <= 0
+    || region.height <= 0
+    || region.x < view.x - tolerance
+    || region.y < view.y - tolerance
+    || region.x + region.width > view.x + view.width + tolerance
+    || region.y + region.height > view.y + view.height + tolerance);
+  if (invalidRegion) {
+    throw new Error(`Géométrie ${label} rognée ou vide : ${JSON.stringify(invalidRegion)}`);
+  }
+  const figureCenter = geometry.figure.x + (geometry.figure.width / 2);
+  const viewCenter = view.x + (view.width / 2);
+  if (Math.abs(figureCenter - viewCenter) > view.width * .04) {
+    throw new Error(`Géométrie ${label} décentrée : ${JSON.stringify({ figureCenter, viewCenter })}`);
+  }
+}
+
 async function main() {
   await fs.mkdir(OUTPUT_PATH, { recursive: true });
   const window = new BrowserWindow({
@@ -49,6 +69,8 @@ async function main() {
       const family = document.querySelector("#familyPanel");
       const stage = document.querySelector(".body-map-stage").getBoundingClientRect();
       const figure = document.querySelector(".body-figure").getBoundingClientRect();
+      const figureBox = document.querySelector(".body-figure").getBBox();
+      const viewBox = map.viewBox.baseVal;
       return {
         side: document.querySelector(".body-selector").dataset.bodySide,
         services: document.querySelectorAll(".body-service-options .family-option").length,
@@ -63,9 +85,24 @@ async function main() {
           stageHeightRatio: figure.height / stage.height,
           mapHeightRatio: figure.height / map.getBoundingClientRect().height
         },
+        geometry: {
+          viewBox: { x: viewBox.x, y: viewBox.y, width: viewBox.width, height: viewBox.height },
+          figure: { x: figureBox.x, y: figureBox.y, width: figureBox.width, height: figureBox.height },
+          regions: [...document.querySelectorAll("[data-body-region]")].map((region) => {
+            const bounds = region.getBBox();
+            return {
+              id: region.dataset.bodyRegion,
+              paths: region.querySelectorAll("path,ellipse").length,
+              x: bounds.x,
+              y: bounds.y,
+              width: bounds.width,
+              height: bounds.height
+            };
+          })
+        },
         layoutContained: layout.getBoundingClientRect().right <= family.getBoundingClientRect().right + 1,
         resultsContained: results.scrollWidth <= results.clientWidth + 1,
-        title: document.querySelector("#bodyResultsTitle").textContent
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle
       };
     })()`);
     if (!front.mapVisible
@@ -80,20 +117,127 @@ async function main() {
       || front.title !== "Visage & cou") {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
+    validateBodyGeometry("homme/Face", front.geometry);
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
-    const neutralModel = await window.webContents.executeJavaScript(`(() => ({
+    const initialModel = await window.webContents.executeJavaScript(`(() => ({
       model: document.querySelector(".interactive-body-map").dataset.bodyModel,
-      modelToggleAbsent: !document.querySelector("[data-body-model]:not(svg):not(.body-selector)"),
+      modelToggleArea: Boolean(document.querySelector("[data-body-model-toggle]")),
       sideButtons: document.querySelectorAll(".body-side-toggle button").length,
-      visibleGenderLabels: [...document.querySelectorAll(".body-map-card button")].filter((button) => /femme|homme/i.test(button.textContent)).length
+      modelButtons: [...document.querySelectorAll("[data-body-model-choice]")].map((button) => ({
+        label: button.textContent.trim(),
+        pressed: button.getAttribute("aria-pressed")
+      }))
     }))()`);
-    if (neutralModel.model !== "neutral"
-      || !neutralModel.modelToggleAbsent
-      || neutralModel.sideButtons !== 2
-      || neutralModel.visibleGenderLabels !== 0) {
-      throw new Error(`Mannequin neutre invalide : ${JSON.stringify(neutralModel)}`);
+    if (initialModel.model !== "male"
+      || !initialModel.modelToggleArea
+      || initialModel.sideButtons !== 2
+      || initialModel.modelButtons.map((button) => button.label).join(",") !== "Femme,Homme"
+      || initialModel.modelButtons.map((button) => button.pressed).join(",") !== "false,true") {
+      throw new Error(`Mannequin masculin initial invalide : ${JSON.stringify(initialModel)}`);
     }
-    await capture(window, "01-corps-avant-neutre.png");
+    await capture(window, "01-corps-avant-homme.png");
+    const femaleToggle = await window.webContents.executeJavaScript(`(() => {
+      const beforeRegion = document.querySelector("[data-body-region].active")?.dataset.bodyRegion;
+      document.querySelector('[data-body-model-choice="female"]').click();
+      const figure = document.querySelector(".body-figure").getBoundingClientRect();
+      const figureBox = document.querySelector(".body-figure").getBBox();
+      const map = document.querySelector(".interactive-body-map");
+      const viewBox = map.viewBox.baseVal;
+      return {
+        beforeRegion,
+        femaleModel: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        afterClickRegion: document.querySelector("[data-body-region].active")?.dataset.bodyRegion,
+        femalePressed: document.querySelector('[data-body-model-choice="female"]').getAttribute("aria-pressed"),
+        figure: { width: figure.width, height: figure.height },
+        geometry: {
+          viewBox: { x: viewBox.x, y: viewBox.y, width: viewBox.width, height: viewBox.height },
+          figure: { x: figureBox.x, y: figureBox.y, width: figureBox.width, height: figureBox.height },
+          regions: [...document.querySelectorAll("[data-body-region]")].map((region) => {
+            const bounds = region.getBBox();
+            return { id: region.dataset.bodyRegion, paths: region.querySelectorAll("path,ellipse").length, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+          })
+        }
+      };
+    })()`);
+    if (femaleToggle.femaleModel !== "female"
+      || femaleToggle.beforeRegion !== femaleToggle.afterClickRegion
+      || femaleToggle.femalePressed !== "true"
+      || femaleToggle.figure.width < 210
+      || femaleToggle.figure.height < 500) {
+      throw new Error(`Basculement vers le corps féminin invalide : ${JSON.stringify(femaleToggle)}`);
+    }
+    validateBodyGeometry("femme/Face", femaleToggle.geometry);
+    await capture(window, "02-corps-avant-femme.png");
+    const femaleFrontRegionsAudit = await window.webContents.executeJavaScript(`(() => {
+      const expected = [
+        ["front-torse", "Torse & ventre", 5],
+        ["front-bras", "Bras & aisselles", 7],
+        ["front-maillot", "Maillot & zone intime", 5],
+        ["front-jambes", "Jambes & pieds", 8],
+        ["front-visage", "Visage & cou", 13]
+      ];
+      const results = expected.map(([id, expectedTitle, expectedServices]) => {
+        document.querySelector('[data-body-region="' + id + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return {
+          id,
+          expectedTitle,
+          expectedServices,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
+          services: document.querySelectorAll(".body-service-options .family-option").length,
+          model: document.querySelector("[data-body-model]").dataset.bodyModel
+        };
+      });
+      document.querySelector("[data-body-detail='body']")?.click();
+      return results;
+    })()`);
+    const invalidFemaleFrontRegion = femaleFrontRegionsAudit.find((region) => region.title !== region.expectedTitle
+      || region.services !== region.expectedServices
+      || region.model !== "female");
+    if (invalidFemaleFrontRegion) {
+      throw new Error(`Zone féminine Face invalide : ${JSON.stringify(invalidFemaleFrontRegion)}`);
+    }
+    const maleToggle = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('[data-body-model-choice="male"]').click();
+      return {
+        finalModel: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        finalRegion: document.querySelector("[data-body-region].active")?.dataset.bodyRegion,
+        malePressed: document.querySelector('[data-body-model-choice="male"]').getAttribute("aria-pressed")
+      };
+    })()`);
+    const modelToggle = { ...femaleToggle, ...maleToggle };
+    if (modelToggle.finalModel !== "male"
+      || modelToggle.beforeRegion !== modelToggle.finalRegion
+      || modelToggle.malePressed !== "true") {
+      throw new Error(`Basculement inverse vers le corps masculin invalide : ${JSON.stringify(modelToggle)}`);
+    }
+    const maleFrontRegionsAudit = await window.webContents.executeJavaScript(`(() => {
+      const expected = [
+        ["front-torse", "Torse & ventre", 5],
+        ["front-bras", "Bras & aisselles", 7],
+        ["front-maillot", "Maillot & zone intime", 5],
+        ["front-jambes", "Jambes & pieds", 8],
+        ["front-visage", "Visage & cou", 13]
+      ];
+      const results = expected.map(([id, expectedTitle, expectedServices]) => {
+        document.querySelector('[data-body-region="' + id + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return {
+          id,
+          expectedTitle,
+          expectedServices,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
+          services: document.querySelectorAll(".body-service-options .family-option").length,
+          model: document.querySelector("[data-body-model]").dataset.bodyModel
+        };
+      });
+      document.querySelector("[data-body-detail='body']")?.click();
+      return results;
+    })()`);
+    const invalidMaleFrontRegion = maleFrontRegionsAudit.find((region) => region.title !== region.expectedTitle
+      || region.services !== region.expectedServices
+      || region.model !== "male");
+    if (invalidMaleFrontRegion) {
+      throw new Error(`Zone masculine Face invalide : ${JSON.stringify(invalidMaleFrontRegion)}`);
+    }
 
     const faceDetail = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('[data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -111,7 +255,7 @@ async function main() {
       const cheeksBounds = pairedBounds("face-cheeks");
       document.querySelector('[data-face-region="face-cheeks"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       const cheeks = {
-        title: document.querySelector("#bodyResultsTitle").textContent,
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
         ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId))
       };
       return {
@@ -146,7 +290,7 @@ async function main() {
     if (!faceDetail.mapVisible
       || faceDetail.regions !== 12
       || faceDetail.initialServices !== 13
-      || faceDetail.model !== "neutral"
+      || faceDetail.model !== "male"
       || faceDetail.anatomySource !== "user-reference"
       || faceDetail.viewBox !== "260 45 505 740"
       || !faceDetail.figureTransformAbsent
@@ -171,12 +315,12 @@ async function main() {
       document.querySelector('[data-face-region="face-nose"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       return {
         model: document.querySelector(".interactive-face-map").dataset.bodyModel,
-        title: document.querySelector("#bodyResultsTitle").textContent,
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
         ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId)),
         activeNose: Boolean(document.querySelector('[data-face-region="face-nose"].active'))
       };
     })()`);
-    if (faceNose.model !== "neutral"
+    if (faceNose.model !== "male"
       || faceNose.title !== "Nez & narines"
       || faceNose.ids.join(",") !== "25"
       || !faceNose.activeNose) {
@@ -206,7 +350,7 @@ async function main() {
           id,
           expectedTitle,
           expectedServiceId,
-          title: document.querySelector("#bodyResultsTitle").textContent,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
           serviceIds: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId)),
           active: region.classList.contains("active"),
           activeRegions: document.querySelectorAll(".face-region.active").length,
@@ -231,7 +375,7 @@ async function main() {
       document.querySelector('svg [data-body-region="back-dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       return {
         side: document.querySelector(".body-selector").dataset.bodySide,
-        title: document.querySelector("#bodyResultsTitle").textContent,
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
         services: document.querySelectorAll(".body-service-options .family-option").length,
         activeBack: Boolean(document.querySelector('svg [data-body-region="back-dos"].active')),
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
@@ -240,27 +384,140 @@ async function main() {
     if (back.side !== "back" || back.title !== "Dos & nuque" || back.services !== 5 || !back.activeBack || back.horizontalOverflow) {
       throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
     }
-    const neutralBack = await window.webContents.executeJavaScript(`(() => {
+    const maleBack = await window.webContents.executeJavaScript(`(() => {
       const figure = document.querySelector(".body-figure").getBoundingClientRect();
+      const figureBox = document.querySelector(".body-figure").getBBox();
+      const map = document.querySelector(".interactive-body-map");
+      const viewBox = map.viewBox.baseVal;
       return {
         model: document.querySelector(".interactive-body-map").dataset.bodyModel,
         figure: { width: figure.width, height: figure.height },
-        regions: document.querySelectorAll("[data-body-region]").length
+        regions: document.querySelectorAll("[data-body-region]").length,
+        geometry: {
+          viewBox: { x: viewBox.x, y: viewBox.y, width: viewBox.width, height: viewBox.height },
+          figure: { x: figureBox.x, y: figureBox.y, width: figureBox.width, height: figureBox.height },
+          regions: [...document.querySelectorAll("[data-body-region]")].map((region) => {
+            const bounds = region.getBBox();
+            return { id: region.dataset.bodyRegion, paths: region.querySelectorAll("path,ellipse").length, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+          })
+        }
       };
     })()`);
-    if (neutralBack.model !== "neutral"
-      || neutralBack.regions !== 5
-      || neutralBack.figure.width < 220
-      || neutralBack.figure.height < 500) {
-      throw new Error(`Vue arrière neutre invalide : ${JSON.stringify(neutralBack)}`);
+    if (maleBack.model !== "male"
+      || maleBack.regions !== 5
+      || maleBack.figure.width < 220
+      || maleBack.figure.height < 500) {
+      throw new Error(`Vue arrière masculine invalide : ${JSON.stringify(maleBack)}`);
     }
-    await capture(window, "04-corps-arriere-neutre.png");
+    validateBodyGeometry("homme/Dos", maleBack.geometry);
+    await capture(window, "04-corps-arriere-homme.png");
+    const maleBackRegionsAudit = await window.webContents.executeJavaScript(`(() => {
+      const expected = [
+        ["back-scalp", "Cuir chevelu", 1],
+        ["back-dos", "Dos & nuque", 5],
+        ["back-bras", "Bras & épaules", 7],
+        ["back-jambes", "Fesses, jambes & pieds", 9],
+        ["back-sif", "Sillon interfessier (SIF)", 1]
+      ];
+      const results = expected.map(([id, expectedTitle, expectedServices]) => {
+        document.querySelector('[data-body-region="' + id + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return {
+          id,
+          expectedTitle,
+          expectedServices,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
+          services: document.querySelectorAll(".body-service-options .family-option").length,
+          model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+          active: Boolean(document.querySelector('[data-body-region="' + id + '"].active'))
+        };
+      });
+      document.querySelector('[data-body-region="back-dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return results;
+    })()`);
+    const invalidMaleBackRegion = maleBackRegionsAudit.find((region) => region.title !== region.expectedTitle
+      || region.services !== region.expectedServices
+      || region.model !== "male"
+      || !region.active);
+    if (invalidMaleBackRegion) {
+      throw new Error(`Zone masculine Dos invalide : ${JSON.stringify(invalidMaleBackRegion)}`);
+    }
+    const femaleBack = await window.webContents.executeJavaScript(`(() => {
+      const beforeRegion = document.querySelector("[data-body-region].active")?.dataset.bodyRegion;
+      document.querySelector(".interactive-body-map").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const figure = document.querySelector(".body-figure").getBoundingClientRect();
+      const figureBox = document.querySelector(".body-figure").getBBox();
+      const map = document.querySelector(".interactive-body-map");
+      const viewBox = map.viewBox.baseVal;
+      return {
+        model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        beforeRegion,
+        afterRegion: document.querySelector("[data-body-region].active")?.dataset.bodyRegion,
+        figure: { width: figure.width, height: figure.height },
+        regions: document.querySelectorAll("[data-body-region]").length,
+        geometry: {
+          viewBox: { x: viewBox.x, y: viewBox.y, width: viewBox.width, height: viewBox.height },
+          figure: { x: figureBox.x, y: figureBox.y, width: figureBox.width, height: figureBox.height },
+          regions: [...document.querySelectorAll("[data-body-region]")].map((region) => {
+            const bounds = region.getBBox();
+            return { id: region.dataset.bodyRegion, paths: region.querySelectorAll("path,ellipse").length, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+          })
+        }
+      };
+    })()`);
+    if (femaleBack.model !== "female"
+      || femaleBack.regions !== 5
+      || femaleBack.beforeRegion !== femaleBack.afterRegion
+      || femaleBack.figure.width < 210
+      || femaleBack.figure.height < 480) {
+      throw new Error(`Vue arrière féminine invalide : ${JSON.stringify(femaleBack)}`);
+    }
+    validateBodyGeometry("femme/Dos", femaleBack.geometry);
+    await capture(window, "05-corps-arriere-femme.png");
+    const femaleBackRegionsAudit = await window.webContents.executeJavaScript(`(() => {
+      const expected = [
+        ["back-scalp", "Cuir chevelu", 1],
+        ["back-dos", "Dos & nuque", 5],
+        ["back-bras", "Bras & épaules", 7],
+        ["back-jambes", "Fesses, jambes & pieds", 9],
+        ["back-sif", "Sillon interfessier (SIF)", 1]
+      ];
+      return expected.map(([id, expectedTitle, expectedServices]) => {
+        document.querySelector('[data-body-region="' + id + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return {
+          id,
+          expectedTitle,
+          expectedServices,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
+          services: document.querySelectorAll(".body-service-options .family-option").length,
+          model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+          active: Boolean(document.querySelector('[data-body-region="' + id + '"].active'))
+        };
+      });
+    })()`);
+    const invalidFemaleBackRegion = femaleBackRegionsAudit.find((region) => region.title !== region.expectedTitle
+      || region.services !== region.expectedServices
+      || region.model !== "female"
+      || !region.active);
+    if (invalidFemaleBackRegion) {
+      throw new Error(`Zone féminine Dos invalide : ${JSON.stringify(invalidFemaleBackRegion)}`);
+    }
+    const restoredMaleBack = await window.webContents.executeJavaScript(`(() => {
+      const stage = document.querySelector("[data-body-model-toggle]");
+      stage.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      return {
+        model: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        region: document.querySelector("[data-body-region].active")?.dataset.bodyRegion
+      };
+    })()`);
+    if (restoredMaleBack.model !== "male" || restoredMaleBack.region !== "back-sif") {
+      throw new Error(`Retour clavier vers le dos masculin invalide : ${JSON.stringify(restoredMaleBack)}`);
+    }
 
     const exactRegions = await window.webContents.executeJavaScript(`(() => {
       const clickRegion = (regionId) => {
         document.querySelector('[data-body-region="' + regionId + '"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
         return {
-          title: document.querySelector("#bodyResultsTitle").textContent,
+          title: document.querySelector(".body-results").dataset.bodyResultsTitle,
           ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId))
         };
       };
@@ -337,7 +594,7 @@ async function main() {
       torso.focus();
       torso.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       return {
-        title: document.querySelector("#bodyResultsTitle").textContent,
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
         activeTorso: Boolean(document.querySelector('[data-body-region="front-torse"].active')),
         activeRegions: document.querySelectorAll(".body-region.active").length
       };
@@ -361,7 +618,7 @@ async function main() {
         width: innerWidth,
         columns: getComputedStyle(layout).gridTemplateColumns.split(" ").length,
         mapVisible: map.getBoundingClientRect().height >= 380,
-        title: document.querySelector("#bodyResultsTitle").textContent,
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
         activeFrontRegion: Boolean(document.querySelector('svg [data-body-region="front-visage"].active')),
         resultsBelowMap: results.getBoundingClientRect().top >= map.getBoundingClientRect().bottom,
         horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
@@ -430,7 +687,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, neutralModel, faceDetail, faceNose, faceRegionsAudit, back, neutralBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, initialModel, modelToggle, femaleFrontRegionsAudit, maleFrontRegionsAudit, faceDetail, faceNose, faceRegionsAudit, back, maleBack, maleBackRegionsAudit, femaleBack, femaleBackRegionsAudit, restoredMaleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

@@ -46,6 +46,23 @@ jobs:
           path: devis-portable/dist/BCDevis-*-mac.dmg
           if-no-files-found: error
 
+  linux:
+    name: Linux AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: xvfb-run -a npm run linux
+      - uses: actions/upload-artifact@v7
+        with:
+          name: BCDevis-Linux
+          path: devis-portable/dist/BCDevis-*-linux-x86_64.AppImage
+          if-no-files-found: error
+
   chromeos:
     name: ChromeOS PWA
     runs-on: ubuntu-latest
