@@ -272,9 +272,14 @@ Si le devis contient déjà des prestations, changer de tarif affiche une confir
 
 ### Étape 2 : Ajouter les prestations
 
-1. Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées**.
-2. Cliquez sur le soin souhaité. Il est ajouté immédiatement à la caisse.
-3. Répétez l’opération pour chaque soin.
+Deux navigations sont disponibles dans **Réglages** > **Apparence** > **Navigation des prestations** :
+
+- **Tuiles** : ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées** ;
+- **Corps interactif** : choisissez **Avant** ou **Arrière**, puis cliquez directement sur la zone du corps. Les soins correspondants apparaissent à droite de la silhouette. Les consultations, l’électrolyse, la médecine esthétique et les zones combinées restent accessibles sous le corps.
+
+Cliquez ensuite sur le soin souhaité : il est ajouté immédiatement à la caisse. Répétez l’opération pour chaque soin.
+
+Au clavier, utilisez `Tab` pour atteindre une zone de la silhouette, puis `Entrée` ou `Espace` pour la sélectionner.
 
 Pour retrouver rapidement un soin, cliquez sur l’icône de recherche dans l’en-tête **Prestations**, puis saisissez son nom. Les prix sont masqués sur les boutons par défaut ; **Prix sur les boutons** permet de les afficher.
 
@@ -367,7 +372,7 @@ Ouvrez **Réglages**, puis cliquez sur **Enregistrer les réglages** après tout
 
 Les sections disponibles sont :
 
-- **Apparence** : thèmes Lumière, Nuit, Forêt ou Bordeaux ;
+- **Apparence** : thèmes Lumière, Nuit, Forêt ou Bordeaux, typographie et navigation **Tuiles / Corps interactif** ;
 - **Votre entreprise** : nom, sous-titre, adresse, téléphone, e-mail et UID / TVA ;
 - **Logo de l’application** : identité utilisée comme base personnalisée ;
 - **Logo du PDF** : logo utilisé dans les documents imprimés. S’il est vide, le logo de l’application est réutilisé ;

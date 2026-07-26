@@ -245,7 +245,13 @@ async function run() {
       document.querySelector('[data-font="roboto-slab"]').click();
       const settings = document.querySelector("#settingsForm");
       settings.elements.companyName.value = "Clinique Bellecour Test";
+      settings.elements.catalogMode.value = "body";
       settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      if (!document.querySelector(".interactive-body-map")) throw new Error("Le corps interactif ne remplace pas les tuiles après enregistrement");
+      document.querySelector('button[data-body-side="back"]').click();
+      document.querySelector('svg [data-body-family="dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      if (document.querySelector("#bodyResultsTitle").textContent !== "Dos & nuque") throw new Error("La zone du dos n’affiche pas ses prestations");
+      document.querySelector('button[data-body-side="front"]').click();
 
       document.querySelector("#saveButton").click();
       return {
@@ -253,10 +259,11 @@ async function run() {
         lines: document.querySelectorAll(".cart-line").length,
         theme: document.documentElement.dataset.theme,
         font: document.documentElement.dataset.font,
-        company: document.querySelector(".brand-block .eyebrow")?.textContent || ""
+        company: document.querySelector(".brand-block .eyebrow")?.textContent || "",
+        catalogMode: document.querySelector(".interactive-body-map") ? "body" : "tiles"
       };
     })()`);
-    assert.deepEqual(initial, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test" });
+    assert.deepEqual(initial, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test", catalogMode: "body" });
 
     const emailDraft = await window.webContents.executeJavaScript(`(async () => {
       window.__bcdevisEmailPayload = null;
@@ -313,12 +320,13 @@ async function run() {
         font: document.documentElement.dataset.font,
         bodyFont: getComputedStyle(document.body).fontFamily,
         company: document.querySelector(".brand-block .eyebrow")?.textContent || "",
-        savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length
+        savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length,
+        catalogMode: document.querySelector(".interactive-body-map") ? "body" : "tiles"
       };
     })()`);
     assert.match(restored.bodyFont, /Roboto Slab/, "La police sauvegardée doit être appliquée après rechargement");
     delete restored.bodyFont;
-    assert.deepEqual(restored, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test", savedQuotes: 1 });
+    assert.deepEqual(restored, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test", savedQuotes: 1, catalogMode: "body" });
 
     const backupRestored = await window.webContents.executeJavaScript(`(() => {
       const today = new Date().toISOString().slice(0, 10);

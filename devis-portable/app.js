@@ -4,7 +4,7 @@
   const STORAGE_KEY = "bcdevis-v1";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 18;
+  const APP_VERSION = 19;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
@@ -102,6 +102,7 @@
     taxMode: "included",
     showFamilyPrices: false,
     skipTariffChangeConfirmation: false,
+    catalogMode: "tiles",
     visibleFamilies: [],
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
@@ -214,6 +215,7 @@
   let db = loadDatabase();
   let activeFamily = "visage";
   let expandedFamily = "visage";
+  let activeBodySide = "front";
   let selectedOfferMode = "single";
   let searchQuery = "";
   let couponOpen = false;
@@ -520,6 +522,10 @@
     return selectableFamilies().filter((family) => ids.has(family.id));
   }
 
+  function currentCatalogMode() {
+    return db.settings.catalogMode === "body" ? "body" : "tiles";
+  }
+
   function serviceInFamily(item, family) {
     return family.id === "all" || family.categoryIds.includes(Number(item.categoryId));
   }
@@ -640,31 +646,36 @@
     const currentOfferTop = $("#currentOfferTop");
     if (currentOfferTop) currentOfferTop.textContent = content.top;
   }
+  function serviceMatchesSearch(item, needle = normalize(searchQuery)) {
+    if (!needle) return true;
+    const category = categoryFor(item.categoryId);
+    return normalize(`${item.name} ${category.name} ${item.duration} ${item.price}`).includes(needle);
+  }
+
+  function familyServiceOption(item) {
+    const display = offerDisplay();
+    const added = quote.lines.some((line) => String(line.serviceId) === String(item.id) && line.offerType === selectedOfferMode);
+    const durationLabel = item.duration ? ` (${item.duration} min)` : "";
+    const visual = serviceVisual(item);
+    return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)}">
+      <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
+      <span class="family-option-copy"><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong><small>${escapeHTML(visual.zone)}</small></span>
+      <b class="family-option-price">${money(item.price)}</b>
+      <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
+    </button>`;
+  }
+
   function renderFamilies() {
     const services = allServices();
     const needle = normalize(searchQuery);
     const families = visibleFamilies();
     const groups = families.map((family) => {
       const familyServices = services.filter((item) => serviceInFamily(item, family));
-      const visibleServices = needle ? familyServices.filter((item) => {
-        const category = categoryFor(item.categoryId);
-        return normalize(`${item.name} ${category.name} ${item.duration} ${item.price}`).includes(needle);
-      }) : familyServices;
+      const visibleServices = familyServices.filter((item) => serviceMatchesSearch(item, needle));
       if (needle && !visibleServices.length) return "";
       const isActive = activeFamily === family.id;
       const isOpen = needle ? visibleServices.length > 0 : isActive && expandedFamily === family.id;
-      const options = isOpen ? `<div class="family-options" role="group" aria-label="Soins ${escapeHTML(family.name)}">${visibleServices.map((item) => {
-        const display = offerDisplay();
-        const added = quote.lines.some((line) => String(line.serviceId) === String(item.id) && line.offerType === selectedOfferMode);
-        const durationLabel = item.duration ? ` (${item.duration} min)` : "";
-        const visual = serviceVisual(item);
-        return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)}">
-          <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
-          <span class="family-option-copy"><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong><small>${escapeHTML(visual.zone)}</small></span>
-          <b class="family-option-price">${money(item.price)}</b>
-          <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
-        </button>`;
-      }).join("")}</div>` : "";
+      const options = isOpen ? `<div class="family-options" role="group" aria-label="Soins ${escapeHTML(family.name)}">${visibleServices.map(familyServiceOption).join("")}</div>` : "";
       const countLabel = needle ? plural(visibleServices.length, "résultat") : plural(familyServices.length, "soin");
       return `<div class="family-group ${isOpen ? "open" : ""}">
         <button class="family-button ${isActive ? "active" : ""}" type="button" data-family="${family.id}" aria-expanded="${isOpen}">
@@ -676,6 +687,84 @@
       </div>`;
     }).join("");
     $("#familyList").innerHTML = groups || `<div class="family-no-results"><svg><use href="#icon-search"></use></svg><strong>Aucun soin trouvé</strong><small>Essayez un autre terme.</small></div>`;
+    $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
+    renderFamilyPriceToggle();
+  }
+
+  const BODY_FAMILY_IDS = new Set(["visage", "bras", "torse", "dos", "maillot", "jambes"]);
+  const BODY_SIDE_FAMILY_IDS = {
+    front: new Set(["visage", "bras", "torse", "maillot", "jambes"]),
+    back: new Set(["bras", "dos", "maillot", "jambes"])
+  };
+  const BODY_AUXILIARY_FAMILY_IDS = ["electrolyse", "medecine", "combinees", "consultations"];
+
+  function bodyRegionMarkup(familyId, label, shapes, visibleIds) {
+    const enabled = visibleIds.has(familyId);
+    const active = activeFamily === familyId;
+    return `<g class="body-region${active ? " active" : ""}${enabled ? "" : " disabled"}" ${enabled ? `data-body-family="${familyId}" role="button" tabindex="0" aria-label="${escapeHTML(label)}" aria-pressed="${active}"` : 'aria-hidden="true"'}>${shapes}</g>`;
+  }
+
+  function bodyMapMarkup(side, visibleIds) {
+    const region = (familyId, label, shapes) => bodyRegionMarkup(familyId, label, shapes, visibleIds);
+    if (side === "back") {
+      return `<svg class="interactive-body-map" viewBox="0 0 220 560" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
+        <title id="bodyMapBackTitle">Corps humain vu de dos</title>
+        <desc id="bodyMapBackDescription">Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        ${region("medecine", "Cuir chevelu", '<path class="body-region-shape" d="M84 39c0-22 10-34 26-34s26 12 26 34c0 14-5 26-12 33H96c-7-7-12-19-12-33Z"/>')}
+        ${region("dos", "Nuque et dos", '<path class="body-region-shape" d="M96 70h28l4 14 25 10c13 5 19 17 17 32l-11 111c-13 11-30 17-49 17s-36-6-49-17L50 126c-2-15 4-27 17-32l25-10 4-14Z"/><path class="body-region-detail" d="M110 82v154M69 119c24 13 58 13 82 0M64 179c29-10 63-10 92 0"/>')}
+        ${region("bras", "Bras, avant-bras et mains", '<path class="body-region-shape" d="M65 94c-12 1-21 9-25 23L17 242c-2 12 13 16 18 5l38-108 7-35-15-10Zm90 0c12 1 21 9 25 23l23 125c2 12-13 16-18 5l-38-108-7-35 15-10Z"/><path class="body-region-shape" d="M14 241c-7 9-7 24 0 34l11 14c5 6 14 0 11-7l-5-15 9 12c5 6 13-1 9-7l-15-28-20-3Zm192 0c7 9 7 24 0 34l-11 14c-5 6-14 0-11-7l5-15-9 12c-5 6-13-1-9-7l15-28 20-3Z"/>')}
+        ${region("jambes", "Fesses, cuisses, jambes et pieds", '<path class="body-region-shape" d="M61 230c8 21 25 32 49 32s41-11 49-32l5 47-18 108-8 143H91L74 385 56 277l5-47Z"/><path class="body-region-detail" d="M66 258c11-10 26-8 44 7 18-15 33-17 44-7M110 265v263M74 385h72"/><path class="body-region-shape" d="M91 520h31l-3 30H77c-6 0-8-8-3-11l17-19Zm38 0h-31l3 30h42c6 0 8-8 3-11l-17-19Z"/>')}
+        ${region("maillot", "Sillon interfessier", '<path class="body-region-focus" d="M110 264v53"/><circle class="body-region-target" cx="110" cy="290" r="12"/>')}
+      </svg>`;
+    }
+    return `<svg class="interactive-body-map" viewBox="0 0 220 560" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
+      <title id="bodyMapFrontTitle">Corps humain vu de face</title>
+      <desc id="bodyMapFrontDescription">Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      ${region("visage", "Visage et cou", '<path class="body-region-shape" d="M84 39c0-22 10-34 26-34s26 12 26 34c0 20-11 38-26 43-15-5-26-23-26-43Z"/><path class="body-region-shape" d="M97 74h26l4 24H93l4-24Z"/><path class="body-region-detail" d="M96 39h8m12 0h8M103 61c5 3 9 3 14 0"/>')}
+      ${region("torse", "Torse et ventre", '<path class="body-region-shape" d="M93 84c9 7 25 7 34 0l27 11c13 5 18 17 16 32l-11 112c-13 9-29 14-49 14s-36-5-49-14L50 127c-2-15 3-27 16-32l27-11Z"/><path class="body-region-detail" d="M70 126c24-13 56-13 80 0M64 177c29-8 63-8 92 0M110 130v109"/><circle class="body-region-detail-fill" cx="110" cy="194" r="3"/>')}
+      ${region("bras", "Aisselles, bras, avant-bras et mains", '<path class="body-region-shape" d="M65 94c-12 1-21 9-25 23L17 242c-2 12 13 16 18 5l38-108 7-35-15-10Zm90 0c12 1 21 9 25 23l23 125c2 12-13 16-18 5l-38-108-7-35 15-10Z"/><circle class="body-region-detail-fill" cx="69" cy="123" r="7"/><circle class="body-region-detail-fill" cx="151" cy="123" r="7"/><path class="body-region-shape" d="M14 241c-7 9-7 24 0 34l11 14c5 6 14 0 11-7l-5-15 9 12c5 6 13-1 9-7l-15-28-20-3Zm192 0c7 9 7 24 0 34l-11 14c-5 6-14 0-11-7l5-15-9 12c-5 6-13-1-9-7l15-28 20-3Z"/>')}
+      ${region("maillot", "Maillot et zone intime", '<path class="body-region-shape" d="M61 230c13 9 29 14 49 14s36-5 49-14l4 47-29 44h-48l-29-44 4-47Z"/><path class="body-region-detail" d="M61 253 110 296l49-43M110 296v21"/>')}
+      ${region("jambes", "Cuisses, genoux, jambes, pieds et orteils", '<path class="body-region-shape" d="M57 274 86 315l9 68-13 145h38l-2-145-8-67-8 67-2 145h38l-13-145 9-68 29-41-4 4-25 43H86l-25-43-4-4Z"/><circle class="body-region-detail-fill" cx="91" cy="383" r="9"/><circle class="body-region-detail-fill" cx="129" cy="383" r="9"/><path class="body-region-shape" d="M82 520h38l-2 30H76c-6 0-8-8-3-11l9-19Zm56 0h-38l2 30h42c6 0 8-8 3-11l-9-19Z"/>')}
+    </svg>`;
+  }
+
+  function renderBodySelector() {
+    const visible = visibleFamilies();
+    const visibleIds = new Set(visible.map((family) => family.id));
+    let selectedFamily = visible.find((family) => family.id === activeFamily);
+    if (!selectedFamily) {
+      selectedFamily = visible.find((family) => BODY_FAMILY_IDS.has(family.id)) || visible[0];
+      activeFamily = selectedFamily?.id || "visage";
+      expandedFamily = activeFamily;
+    }
+    const needle = normalize(searchQuery);
+    const visibleCategoryIds = new Set(visible.flatMap((family) => family.categoryIds.map(Number)));
+    const services = needle
+      ? allServices().filter((item) => visibleCategoryIds.has(Number(item.categoryId)) && serviceMatchesSearch(item, needle))
+      : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
+    const resultTitle = needle ? "Résultats de recherche" : selectedFamily?.name || "Prestations";
+    const resultDescription = needle
+      ? `${plural(services.length, "soin")} correspondant à « ${searchQuery.trim()} »`
+      : selectedFamily?.description || "Choisissez une zone sur la silhouette.";
+    const options = services.length
+      ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
+      : `<div class="body-results-empty"><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucun soin dans cette zone</strong><small>${needle ? "Essayez un autre terme." : "Cette famille est vide ou masquée dans les réglages."}</small></div>`;
+    const auxiliary = BODY_AUXILIARY_FAMILY_IDS.map((id) => visible.find((family) => family.id === id)).filter(Boolean);
+    $("#familyList").innerHTML = `<div class="body-selector" data-body-side="${activeBodySide}">
+      <div class="body-selector-layout">
+        <section class="body-map-card" aria-labelledby="bodySelectorTitle">
+          <div class="body-map-card-head"><div><span>Navigation corporelle</span><strong id="bodySelectorTitle">Sélectionnez une zone</strong></div><div class="body-side-toggle" role="group" aria-label="Vue du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div></div>
+          <div class="body-map-stage">${bodyMapMarkup(activeBodySide, visibleIds)}</div>
+          <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Cliquez ou utilisez Tab puis Entrée sur une partie du corps.</p>
+        </section>
+        <section class="body-results" aria-live="polite" aria-labelledby="bodyResultsTitle">
+          <div class="body-results-head"><span>Zone sélectionnée</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
+          ${options}
+        </section>
+      </div>
+      ${auxiliary.length ? `<div class="body-auxiliary"><span>Autres prestations</span><div>${auxiliary.map((family) => `<button type="button" data-body-family="${family.id}" class="${activeFamily === family.id ? "active" : ""}"><svg aria-hidden="true"><use href="${prestationIconHref(family.icon)}"></use></svg><strong>${escapeHTML(family.name)}</strong><small>${plural(allServices().filter((item) => serviceInFamily(item, family)).length, "soin")}</small></button>`).join("")}</div></div>` : ""}
+      <p class="body-selector-credit">Silhouette interactive adaptée du principe de <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noreferrer">react-native-body-highlighter</a> (MIT).</p>
+    </div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
     renderFamilyPriceToggle();
   }
@@ -699,7 +788,8 @@
 
   function renderCatalog() {
     renderOfferMode();
-    renderFamilies();
+    if (currentCatalogMode() === "body") renderBodySelector();
+    else renderFamilies();
   }
   function addService(item, offerType = "single") {
     const offer = ["single", "pack", "student"].includes(offerType) ? offerType : "single";
@@ -1613,6 +1703,35 @@
       if (item) addService(item, selectedOfferMode);
       return;
     }
+    const bodySideButton = event.target.closest("[data-body-side]");
+    if (bodySideButton && bodySideButton.matches("button")) {
+      const nextSide = bodySideButton.dataset.bodySide === "back" ? "back" : "front";
+      if (nextSide !== activeBodySide && BODY_FAMILY_IDS.has(activeFamily) && !BODY_SIDE_FAMILY_IDS[nextSide].has(activeFamily)) {
+        const preferredFamily = nextSide === "back" ? "dos" : "visage";
+        const sideFamilies = BODY_SIDE_FAMILY_IDS[nextSide];
+        activeFamily = visibleFamilyIds().find((familyId) => familyId === preferredFamily)
+          || visibleFamilyIds().find((familyId) => sideFamilies.has(familyId))
+          || activeFamily;
+        expandedFamily = activeFamily;
+      }
+      activeBodySide = nextSide;
+      renderCatalog();
+      window.setTimeout(() => $(`[data-body-side="${activeBodySide}"]`)?.focus(), 0);
+      return;
+    }
+    const bodyRegion = event.target.closest("[data-body-family]");
+    if (bodyRegion) {
+      const nextFamily = bodyRegion.dataset.bodyFamily;
+      if (!visibleFamilyIds().includes(nextFamily)) return;
+      activeFamily = nextFamily;
+      expandedFamily = nextFamily;
+      searchQuery = "";
+      $("#catalogSearch").value = "";
+      setCatalogSearchOpen(false, { clear: false });
+      renderCatalog();
+      window.setTimeout(() => $(`[data-body-family="${nextFamily}"]`)?.focus(), 0);
+      return;
+    }
     const button = event.target.closest("[data-family]");
     if (!button) return;
     const nextFamily = button.dataset.family;
@@ -1625,6 +1744,12 @@
     $("#catalogSearch").value = "";
     setCatalogSearchOpen(false, { clear: false });
     renderCatalog();
+  });
+  $("#familyList").addEventListener("keydown", (event) => {
+    const bodyRegion = event.target.closest("svg [data-body-family]");
+    if (!bodyRegion || !["Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    bodyRegion.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
   function changeQuantityFromGesture(control, increase) {
     const line = lineFromElement(control);
@@ -1853,6 +1978,7 @@
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
+      catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),

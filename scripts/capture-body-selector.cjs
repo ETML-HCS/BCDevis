@@ -1,0 +1,124 @@
+"use strict";
+
+const { app, BrowserWindow } = require("electron");
+const fs = require("node:fs/promises");
+const path = require("node:path");
+
+const PROJECT_ROOT = path.resolve(__dirname, "..");
+const APP_PATH = path.join(PROJECT_ROOT, "devis-portable", "index.html");
+const OUTPUT_PATH = path.join(PROJECT_ROOT, "tmp", "body-selector");
+
+app.commandLine.appendSwitch("disable-gpu");
+
+async function capture(window, name) {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  const image = await window.webContents.capturePage();
+  await fs.writeFile(path.join(OUTPUT_PATH, name), image.toPNG());
+}
+
+async function main() {
+  await fs.mkdir(OUTPUT_PATH, { recursive: true });
+  const window = new BrowserWindow({
+    show: false,
+    width: 1440,
+    height: 980,
+    backgroundColor: "#171512",
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      offscreen: true,
+      backgroundThrottling: false,
+      partition: `bcdevis-body-selector-${process.pid}-${Date.now()}`
+    }
+  });
+  try {
+    await window.loadFile(APP_PATH);
+    await window.webContents.executeJavaScript(`document.fonts.ready`);
+    const front = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      const form = document.querySelector("#settingsForm");
+      form.elements.catalogMode.value = "body";
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      const map = document.querySelector(".interactive-body-map");
+      const layout = document.querySelector(".body-selector-layout");
+      const results = document.querySelector(".body-results");
+      const family = document.querySelector("#familyPanel");
+      return {
+        side: document.querySelector(".body-selector").dataset.bodySide,
+        services: document.querySelectorAll(".body-service-options .family-option").length,
+        mapVisible: Boolean(map && map.getBoundingClientRect().height > 300),
+        layoutContained: layout.getBoundingClientRect().right <= family.getBoundingClientRect().right + 1,
+        resultsContained: results.scrollWidth <= results.clientWidth + 1,
+        title: document.querySelector("#bodyResultsTitle").textContent
+      };
+    })()`);
+    if (!front.mapVisible || !front.layoutContained || !front.resultsContained || front.services < 1 || front.side !== "front") {
+      throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
+    }
+    await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
+    await capture(window, "01-corps-avant.png");
+
+    const back = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('button[data-body-side="back"]').click();
+      document.querySelector('svg [data-body-family="dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return {
+        side: document.querySelector(".body-selector").dataset.bodySide,
+        title: document.querySelector("#bodyResultsTitle").textContent,
+        services: document.querySelectorAll(".body-service-options .family-option").length,
+        activeBack: Boolean(document.querySelector('svg [data-body-family="dos"].active')),
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (back.side !== "back" || back.title !== "Dos & nuque" || back.services !== 5 || !back.activeBack || back.horizontalOverflow) {
+      throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
+    }
+    await capture(window, "02-corps-arriere-dos.png");
+
+    window.setContentSize(740, 900);
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    const narrow = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('button[data-body-side="front"]').click();
+      const layout = document.querySelector(".body-selector-layout");
+      const map = document.querySelector(".interactive-body-map");
+      const results = document.querySelector(".body-results");
+      return {
+        width: innerWidth,
+        columns: getComputedStyle(layout).gridTemplateColumns.split(" ").length,
+        mapVisible: map.getBoundingClientRect().height >= 380,
+        title: document.querySelector("#bodyResultsTitle").textContent,
+        activeFrontRegion: Boolean(document.querySelector('svg [data-body-family="visage"].active')),
+        resultsBelowMap: results.getBoundingClientRect().top >= map.getBoundingClientRect().bottom,
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (narrow.columns !== 1 || !narrow.mapVisible || narrow.title !== "Visage" || !narrow.activeFrontRegion || !narrow.resultsBelowMap || narrow.horizontalOverflow) {
+      throw new Error(`Vue étroite invalide : ${JSON.stringify(narrow)}`);
+    }
+    await capture(window, "03-corps-responsive-760.png");
+
+    window.setContentSize(390, 844);
+    await new Promise((resolve) => setTimeout(resolve, 180));
+    const mobile = await window.webContents.executeJavaScript(`(() => ({
+      width: innerWidth,
+      mapVisible: document.querySelector(".interactive-body-map").getBoundingClientRect().height >= 345,
+      sideButtonsVisible: [...document.querySelectorAll(".body-side-toggle button")].every((button) => button.getBoundingClientRect().width > 80),
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    }))()`);
+    if (!mobile.mapVisible || !mobile.sideButtonsVisible || mobile.horizontalOverflow) {
+      throw new Error(`Vue mobile invalide : ${JSON.stringify(mobile)}`);
+    }
+    console.log("BODY_SELECTOR_VISUAL_OK");
+    console.log(JSON.stringify({ front, back, narrow, mobile, output: OUTPUT_PATH }, null, 2));
+  } finally {
+    if (!window.isDestroyed()) window.destroy();
+  }
+}
+
+app.whenReady()
+  .then(main)
+  .then(() => app.quit())
+  .catch((error) => {
+    console.error(error);
+    app.exit(1);
+  });
