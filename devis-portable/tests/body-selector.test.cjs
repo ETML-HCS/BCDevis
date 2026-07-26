@@ -29,6 +29,30 @@ assert.match(app, /let activeBodyModel = "female"/, "La silhouette féminine doi
 assert.match(app, /data-body-model="female"[^>]+>Femme</, "Le sélecteur doit proposer une morphologie féminine");
 assert.match(app, /data-body-model="male"[^>]+>Homme</, "Le sélecteur doit proposer une morphologie masculine");
 assert.match(app, /button\[data-body-model\]/, "Le changement de morphologie doit être interactif");
+assert.match(app, /function faceMapMarkup\(\)/, "Le visage doit disposer d’une carte anatomique dédiée");
+assert.match(app, /Détail du visage \$\{female \? "féminin" : "masculin"\}/, "Les deux visages doivent être décrits distinctement");
+assert.match(app, /data-body-detail="body"/, "Le détail du visage doit permettre de revenir au corps complet");
+
+const expectedFaceRegions = {
+  "face-full": 29,
+  "face-temples": 23,
+  "face-brows": 21,
+  "face-glabella": 22,
+  "face-nose": 25,
+  "face-cheeks": 26,
+  "face-upper-lip": 19,
+  "face-beard": 27,
+  "face-beard-line": 28,
+  "face-chin": 20,
+  "face-ears": 24,
+  "face-neck": 30
+};
+const faceRegionIds = [...app.matchAll(/\{ id: "(face-[^"]+)", title: "[^"]+", description: "[^"]+", serviceIds: \[(\d+)\] \}/g)];
+assert.equal(faceRegionIds.length, 12, "Le détail du visage doit conserver douze sous-zones exactes");
+for (const [, regionId, serviceId] of faceRegionIds) {
+  assert.equal(Number(serviceId), expectedFaceRegions[regionId], `La prestation faciale de ${regionId} doit être exacte`);
+  assert.match(app, new RegExp(`region\\("${regionId}"`), `Le visage doit exposer ${regionId}`);
+}
 
 const expectedRegionCounts = {
   "front-visage": 13,
@@ -100,8 +124,8 @@ assert.match(
 );
 assert.match(
   app,
-  /event\.target\.closest\("svg \[data-body-region\]"\)[\s\S]*\["Enter", " "\]/,
-  "Chaque région SVG doit être activable avec Entrée ou Espace"
+  /event\.target\.closest\("svg \[data-body-region\], svg \[data-face-region\]"\)[\s\S]*\["Enter", " "\]/,
+  "Chaque région corporelle ou faciale doit être activable avec Entrée ou Espace"
 );
 assert.match(
   app,
@@ -120,6 +144,9 @@ assert.match(styles, /\.body-region:focus-visible \.body-region-shape/, "Le focu
 assert.match(styles, /\.body-region:focus-visible \.body-region-target\{stroke-width:4\}/, "Le focus du SIF doit rester visible");
 assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-torse"\]/, "La morphologie féminine doit adapter le torse");
 assert.match(styles, /\.interactive-body-map\.body-model-female \[data-body-region="front-maillot"\]\{transform:scaleX\(1\.08\)\}/, "La morphologie féminine doit adapter le bassin");
+assert.match(styles, /\.interactive-face-map\{[^}]*min-height:390px/, "Le visage détaillé doit rester lisible");
+assert.match(styles, /\.face-region\.active \.face-region-shape\{fill:var\(--taupe\);stroke:#fff\}/, "La sous-zone faciale active doit être clairement visible");
+assert.match(styles, /\.face-region:focus-visible \.face-region-shape/, "Le focus clavier doit être visible sur le visage");
 assert.match(styles, /@media screen and \(max-width:760px\)\{[\s\S]*?\.body-selector-layout\{grid-template-columns:1fr\}/, "Le sélecteur doit s’empiler sur mobile");
 
 assert.match(notices, /react-native-body-highlighter/, "La source du principe interactif doit être attribuée");

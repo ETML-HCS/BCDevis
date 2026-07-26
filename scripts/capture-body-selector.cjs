@@ -85,6 +85,61 @@ async function main() {
     await capture(window, "02-corps-avant-homme.png");
     await window.webContents.executeJavaScript(`document.querySelector('button[data-body-model="female"]').click()`);
 
+    const faceDetail = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('[data-body-region="front-visage"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const initialServices = document.querySelectorAll(".body-service-options .family-option").length;
+      const femaleWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
+      document.querySelector('[data-face-region="face-cheeks"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const cheeks = {
+        title: document.querySelector("#bodyResultsTitle").textContent,
+        ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId))
+      };
+      return {
+        mapVisible: document.querySelector(".interactive-face-map").getBoundingClientRect().height >= 390,
+        regions: document.querySelectorAll("[data-face-region]").length,
+        initialServices,
+        femaleWidth,
+        cheeks,
+        backButton: Boolean(document.querySelector("[data-body-detail='body']")),
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (!faceDetail.mapVisible
+      || faceDetail.regions !== 12
+      || faceDetail.initialServices !== 13
+      || faceDetail.cheeks.title !== "Joues"
+      || faceDetail.cheeks.ids.join(",") !== "26"
+      || !faceDetail.backButton
+      || faceDetail.horizontalOverflow) {
+      throw new Error(`Détail du visage féminin invalide : ${JSON.stringify(faceDetail)}`);
+    }
+    await capture(window, "03-visage-femme-joues.png");
+
+    const maleFace = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('button[data-body-model="male"]').click();
+      const maleWidth = document.querySelector('[data-face-region="face-full"]').getBoundingClientRect().width;
+      document.querySelector('[data-face-region="face-nose"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return {
+        model: document.querySelector(".interactive-face-map").dataset.bodyModel,
+        maleWidth,
+        title: document.querySelector("#bodyResultsTitle").textContent,
+        ids: [...document.querySelectorAll(".body-service-options [data-family-service-id]")].map((item) => Number(item.dataset.familyServiceId)),
+        activeNose: Boolean(document.querySelector('[data-face-region="face-nose"].active'))
+      };
+    })()`);
+    if (maleFace.model !== "male"
+      || maleFace.maleWidth <= faceDetail.femaleWidth
+      || maleFace.title !== "Nez & narines"
+      || maleFace.ids.join(",") !== "25"
+      || !maleFace.activeNose) {
+      throw new Error(`Détail du visage masculin invalide : ${JSON.stringify(maleFace)}`);
+    }
+    await capture(window, "04-visage-homme-nez.png");
+    await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('button[data-body-model="female"]').click();
+      document.querySelector("[data-body-detail='body']").click();
+    })()`);
+
     const back = await window.webContents.executeJavaScript(`(() => {
       document.querySelector('button[data-body-side="back"]').click();
       document.querySelector('svg [data-body-region="back-dos"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -99,7 +154,7 @@ async function main() {
     if (back.side !== "back" || back.title !== "Dos & nuque" || back.services !== 5 || !back.activeBack || back.horizontalOverflow) {
       throw new Error(`Vue arrière invalide : ${JSON.stringify(back)}`);
     }
-    await capture(window, "03-corps-arriere-dos.png");
+    await capture(window, "05-corps-arriere-dos.png");
 
     const exactRegions = await window.webContents.executeJavaScript(`(() => {
       const clickRegion = (regionId) => {
@@ -152,7 +207,7 @@ async function main() {
     if (narrow.columns !== 1 || !narrow.mapVisible || narrow.title !== "Visage & cou" || !narrow.activeFrontRegion || !narrow.resultsBelowMap || narrow.horizontalOverflow) {
       throw new Error(`Vue étroite invalide : ${JSON.stringify(narrow)}`);
     }
-    await capture(window, "04-corps-responsive-760.png");
+    await capture(window, "06-corps-responsive-760.png");
 
     window.setContentSize(390, 844);
     await new Promise((resolve) => setTimeout(resolve, 180));
@@ -185,9 +240,9 @@ async function main() {
     if (settings.cards !== 2 || !settings.bodyChecked || !settings.cardsBalanced || !settings.contained || settings.horizontalOverflow) {
       throw new Error(`Réglage du sélecteur invalide : ${JSON.stringify(settings)}`);
     }
-    await capture(window, "05-reglage-navigation.png");
+    await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, modelToggle, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, modelToggle, faceDetail, maleFace, back, exactRegions, narrow, mobile, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

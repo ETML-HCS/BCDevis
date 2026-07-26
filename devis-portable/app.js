@@ -23,6 +23,9 @@
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  if (new URLSearchParams(window.location.search).get("windowShell") === "windows") {
+    document.documentElement.classList.add("bcdevis-window-overlay");
+  }
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const { roundMoney, clamp, calculate, installmentMonths } = window.QuoteCore;
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -218,6 +221,8 @@
   let activeBodySide = "front";
   let activeBodyModel = "female";
   let activeBodyRegion = "front-visage";
+  let activeBodyDetail = "body";
+  let activeFaceRegion = "";
   let selectedOfferMode = "single";
   let searchQuery = "";
   let couponOpen = false;
@@ -697,6 +702,20 @@
   const BODY_AUXILIARY_FAMILY_IDS = ["electrolyse", "medecine", "combinees", "consultations"];
   const BODY_DEFAULT_REGION_IDS = { front: "front-visage", back: "back-dos" };
   const BODY_REGION_DEFINITIONS = new Map(window.QUOTE_BODY_REGIONS.map((region) => [region.id, region]));
+  const FACE_REGION_DEFINITIONS = new Map([
+    { id: "face-full", title: "Visage complet", description: "Ensemble du visage.", serviceIds: [29] },
+    { id: "face-temples", title: "Tempes", description: "Tempes gauche et droite.", serviceIds: [23] },
+    { id: "face-brows", title: "Sourcils", description: "Contour des deux sourcils.", serviceIds: [21] },
+    { id: "face-glabella", title: "Entre-sourcils", description: "Zone située entre les sourcils.", serviceIds: [22] },
+    { id: "face-nose", title: "Nez & narines", description: "Nez et contour des narines.", serviceIds: [25] },
+    { id: "face-cheeks", title: "Joues", description: "Joues gauche et droite.", serviceIds: [26] },
+    { id: "face-upper-lip", title: "Lèvre supérieure", description: "Zone située au-dessus de la lèvre supérieure.", serviceIds: [19] },
+    { id: "face-beard", title: "Barbe", description: "Bas du visage et zone de barbe.", serviceIds: [27] },
+    { id: "face-beard-line", title: "Ligne de barbe", description: "Contour supérieur et latéral de la barbe.", serviceIds: [28] },
+    { id: "face-chin", title: "Menton", description: "Zone centrale du menton.", serviceIds: [20] },
+    { id: "face-ears", title: "Oreilles", description: "Oreilles gauche et droite.", serviceIds: [24] },
+    { id: "face-neck", title: "Cou", description: "Face antérieure et côtés du cou.", serviceIds: [30] }
+  ].map((region) => [region.id, region]));
 
   function bodyRegionsForSide(side) {
     return window.QUOTE_BODY_REGIONS.filter((region) => region.side === side);
@@ -767,6 +786,66 @@
     </svg>`;
   }
 
+  function faceRegionDefinition(regionId = activeFaceRegion) {
+    return FACE_REGION_DEFINITIONS.get(regionId) || null;
+  }
+
+  function servicesForFaceRegion(region) {
+    const serviceIds = new Set((region?.serviceIds || []).map(Number));
+    return allServices().filter((service) => serviceIds.has(Number(service.id)));
+  }
+
+  function faceRegionMarkup(regionId, shapes) {
+    const region = faceRegionDefinition(regionId);
+    if (!region) return "";
+    const active = activeFaceRegion === region.id;
+    const label = escapeHTML(region.title);
+    return `<g class="face-region${active ? " active" : ""}" data-face-region="${region.id}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${active}"><title>${label}</title>${shapes}</g>`;
+  }
+
+  function faceMapMarkup() {
+    const female = activeBodyModel === "female";
+    const region = faceRegionMarkup;
+    const outline = female
+      ? "M104 72C104 34 123 14 150 14s46 20 46 58l-3 120c-3 55-19 104-43 122-24-18-40-67-43-122L104 72Z"
+      : "M96 69C96 31 118 12 150 12s54 19 54 57l-4 122c-2 52-15 98-34 116-8 7-24 7-32 0-19-18-32-64-34-116L96 69Z";
+    const neck = female
+      ? "M126 287c5 18 13 27 24 27s19-9 24-27l2 47 20 23c-13 14-28 21-46 21s-33-7-46-21l20-23 2-47Z"
+      : "M119 286c6 18 16 28 31 28s25-10 31-28l2 48 25 23c-16 14-35 21-58 21s-42-7-58-21l25-23 2-48Z";
+    const ears = female
+      ? '<path class="face-region-shape" d="M105 126c-10-7-17 1-15 18 2 16 8 28 18 29m87-47c10-7 17 1 15 18-2 16-8 28-18 29"/>'
+      : '<path class="face-region-shape" d="M98 124c-11-7-18 2-16 20 2 17 8 29 18 31m102-51c11-7 18 2 16 20-2 17-8 29-18 31"/>';
+    const brows = female
+      ? '<path class="face-region-shape" d="M116 118c8-10 20-12 31-3-10 2-20 4-31 3Zm68 0c-8-10-20-12-31-3 10 2 20 4 31 3Z"/>'
+      : '<path class="face-region-shape" d="M112 116c11-7 23-8 35-1l-2 7c-12-5-23-5-33 0v-6Zm76 0c-11-7-23-8-35-1l2 7c12-5 23-5 33 0v-6Z"/>';
+    const nose = female
+      ? '<path class="face-region-shape" d="M143 139c-1 22-3 42-8 58-3 10 4 17 15 17s18-7 15-17c-5-16-7-36-8-58-4-4-10-4-14 0Z"/>'
+      : '<path class="face-region-shape" d="M141 137c-1 21-4 41-9 59-4 12 5 20 18 20s22-8 18-20c-5-18-8-38-9-59-5-5-13-5-18 0Z"/>';
+    const chin = female
+      ? '<path class="face-region-shape" d="M128 267c6-7 14-10 22-10s16 3 22 10c-3 19-11 29-22 29s-19-10-22-29Z"/>'
+      : '<path class="face-region-shape" d="M124 266c8-7 17-10 26-10s18 3 26 10c-2 20-10 30-26 30s-24-10-26-30Z"/>';
+    const beard = female
+      ? '<path class="face-region-shape face-region-soft" d="M107 210c5 49 20 87 43 104 23-17 38-55 43-104-12 18-27 29-43 29s-31-11-43-29Z"/>'
+      : '<path class="face-region-shape face-region-soft" d="M101 205c3 50 16 88 33 102 8 7 24 7 32 0 17-14 30-52 33-102-13 17-29 27-49 27s-36-10-49-27Z"/>';
+    return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" viewBox="0 0 300 390" role="group" aria-labelledby="faceMapTitle faceMapDescription">
+      <title id="faceMapTitle">Détail du visage ${female ? "féminin" : "masculin"}</title>
+      <desc id="faceMapDescription">Choisissez une sous-zone du visage pour filtrer la prestation correspondante.</desc>
+      ${region("face-neck", `<path class="face-region-shape" d="${neck}"/>`)}
+      ${region("face-full", `<path class="face-region-shape face-region-base" d="${outline}"/>`)}
+      ${region("face-beard", beard)}
+      ${region("face-temples", '<path class="face-region-shape" d="M105 105c10-12 20-17 30-18l-3 55c-11 7-20 17-27 30-5-20-5-44 0-67Zm90 0c-10-12-20-17-30-18l3 55c11 7 20 17 27 30 5-20 5-44 0-67Z"/>')}
+      ${region("face-ears", ears)}
+      ${region("face-brows", brows)}
+      ${region("face-glabella", '<path class="face-region-shape" d="M142 113h16l-2 27c-4 5-8 5-12 0l-2-27Z"/>')}
+      ${region("face-cheeks", '<path class="face-region-shape" d="M108 157c12-13 24-18 37-15l-8 57c-8 21-19 33-32 35-7-27-6-52 3-77Zm84 0c-12-13-24-18-37-15l8 57c8 21 19 33 32 35 7-27 6-52-3-77Z"/>')}
+      ${region("face-nose", nose)}
+      ${region("face-upper-lip", '<path class="face-region-shape" d="M126 226c8-4 16-7 24-7s16 3 24 7c-8 11-16 16-24 16s-16-5-24-16Z"/>')}
+      ${region("face-beard-line", '<path class="face-region-stroke" d="M105 207c8 19 20 30 36 34m54-34c-8 19-20 30-36 34"/>')}
+      ${region("face-chin", chin)}
+      <path class="face-anatomy-detail" d="M118 134c8 5 16 5 24 0m16 0c8 5 16 5 24 0M139 250c7 3 15 3 22 0"/>
+    </svg>`;
+  }
+
   function renderBodySelector() {
     const visible = visibleFamilies();
     const visibleIds = new Set(visible.map((family) => family.id));
@@ -795,18 +874,37 @@
         activeBodyRegion = null;
       }
     }
+    const faceDetailActive = activeBodyDetail === "face"
+      && activeBodySide === "front"
+      && activeBodyRegion === "front-visage"
+      && activeFamily === "visage";
+    if (!faceDetailActive) {
+      activeBodyDetail = "body";
+      activeFaceRegion = "";
+    }
+    const selectedFaceRegion = faceDetailActive ? faceRegionDefinition() : null;
     const needle = normalize(searchQuery);
     const visibleCategoryIds = new Set(visible.flatMap((family) => family.categoryIds.map(Number)));
     const services = needle
       ? allServices().filter((item) => visibleCategoryIds.has(Number(item.categoryId)) && serviceMatchesSearch(item, needle))
+      : selectedFaceRegion
+        ? servicesForFaceRegion(selectedFaceRegion)
       : selectedRegion
         ? servicesForBodyRegion(selectedRegion, selectedFamily)
         : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
-    const resultTitle = needle ? "Résultats de recherche" : selectedRegion?.title || selectedFamily?.name || "Prestations";
+    const resultTitle = needle ? "Résultats de recherche" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Prestations";
     const resultDescription = needle
       ? `${plural(services.length, "soin")} correspondant à « ${searchQuery.trim()} »`
-      : selectedRegion?.description || selectedFamily?.description || "Choisissez une zone sur la silhouette.";
-    const availableRegionCount = bodyRegionsForSide(activeBodySide).filter((region) => visibleIds.has(region.familyId)).length;
+      : selectedFaceRegion?.description || selectedRegion?.description || selectedFamily?.description || "Choisissez une zone sur la silhouette.";
+    const availableRegionCount = faceDetailActive
+      ? FACE_REGION_DEFINITIONS.size
+      : bodyRegionsForSide(activeBodySide).filter((region) => visibleIds.has(region.familyId)).length;
+    const mapTitle = faceDetailActive ? "Choisir une zone du visage" : "Choisir une zone";
+    const mapEyebrow = faceDetailActive ? "Détail du visage" : "Navigation corporelle";
+    const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
+    const mapHint = faceDetailActive
+      ? "Sélectionnez une zone précise du visage ou revenez au corps complet."
+      : "Cliquez ou utilisez Tab puis Entrée sur une partie du corps.";
     const options = services.length
       ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
       : `<div class="body-results-empty"><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucun soin dans cette zone</strong><small>${needle ? "Essayez un autre terme." : "Cette famille est vide ou masquée dans les réglages."}</small></div>`;
@@ -815,17 +913,18 @@
       <div class="body-selector-layout">
         <section class="body-map-card" aria-labelledby="bodySelectorTitle">
           <div class="body-map-card-head">
-            <div><span>Navigation corporelle</span><strong id="bodySelectorTitle">Choisir une zone</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div>
+            <div><span>${mapEyebrow}</span><strong id="bodySelectorTitle">${mapTitle}</strong><small>${plural(availableRegionCount, "zone")} sur cette vue</small></div>
+            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><span aria-hidden="true">←</span> Corps complet</button>' : ""}
             <div class="body-map-controls">
               <div class="body-model-toggle" role="group" aria-label="Morphologie du mannequin"><button type="button" data-body-model="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>
               <div class="body-side-toggle" role="group" aria-label="Vue du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Avant</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Arrière</button></div>
             </div>
           </div>
-          <div class="body-map-stage">${bodyMapMarkup(activeBodySide, visibleIds)}</div>
-          <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Cliquez ou utilisez Tab puis Entrée sur une partie du corps.</p>
+          <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
+          <p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>${mapHint}</p>
         </section>
         <section class="body-results" aria-live="polite" aria-labelledby="bodyResultsTitle">
-          <div class="body-results-head"><span>${selectedRegion ? `Vue ${activeBodySide === "back" ? "arrière" : "avant"} · zone sélectionnée` : "Autres prestations"}</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
+          <div class="body-results-head"><span>${selectedFaceRegion ? `Visage ${activeBodyModel === "female" ? "féminin" : "masculin"} · zone sélectionnée` : selectedRegion ? `Vue ${activeBodySide === "back" ? "arrière" : "avant"} · zone sélectionnée` : "Autres prestations"}</span><h3 id="bodyResultsTitle">${escapeHTML(resultTitle)}</h3><p>${escapeHTML(resultDescription)}</p></div>
           ${options}
         </section>
       </div>
@@ -1142,6 +1241,8 @@
     activeBodySide = "front";
     activeBodyModel = "female";
     activeBodyRegion = "front-visage";
+    activeBodyDetail = "body";
+    activeFaceRegion = "";
     selectedOfferMode = "single";
     searchQuery = "";
     $("#catalogSearch").value = "";
@@ -1773,6 +1874,14 @@
       if (item) addService(item, selectedOfferMode);
       return;
     }
+    const bodyDetailButton = event.target.closest("button[data-body-detail]");
+    if (bodyDetailButton) {
+      activeBodyDetail = "body";
+      activeFaceRegion = "";
+      renderCatalog();
+      window.setTimeout(() => $('[data-body-region="front-visage"]')?.focus(), 0);
+      return;
+    }
     const bodyModelButton = event.target.closest("button[data-body-model]");
     if (bodyModelButton) {
       activeBodyModel = bodyModelButton.dataset.bodyModel === "male" ? "male" : "female";
@@ -1789,8 +1898,22 @@
         if (nextRegion) selectBodyRegion(nextRegion.id);
       }
       activeBodySide = nextSide;
+      activeBodyDetail = "body";
+      activeFaceRegion = "";
       renderCatalog();
       window.setTimeout(() => $(`[data-body-side="${activeBodySide}"]`)?.focus(), 0);
+      return;
+    }
+    const faceRegion = event.target.closest("[data-face-region]");
+    if (faceRegion) {
+      const nextFaceRegion = faceRegionDefinition(faceRegion.dataset.faceRegion);
+      if (!nextFaceRegion) return;
+      activeFaceRegion = nextFaceRegion.id;
+      searchQuery = "";
+      $("#catalogSearch").value = "";
+      setCatalogSearchOpen(false, { clear: false });
+      renderCatalog();
+      window.setTimeout(() => $(`[data-face-region="${nextFaceRegion.id}"]`)?.focus(), 0);
       return;
     }
     const bodyRegion = event.target.closest("[data-body-region]");
@@ -1801,8 +1924,10 @@
       searchQuery = "";
       $("#catalogSearch").value = "";
       setCatalogSearchOpen(false, { clear: false });
+      activeBodyDetail = nextRegion.id === "front-visage" ? "face" : "body";
+      activeFaceRegion = "";
       renderCatalog();
-      window.setTimeout(() => $(`[data-body-region="${nextRegion.id}"]`)?.focus(), 0);
+      window.setTimeout(() => (activeBodyDetail === "face" ? $("[data-face-region]") : $(`[data-body-region="${nextRegion.id}"]`))?.focus(), 0);
       return;
     }
     const bodyFamily = event.target.closest("[data-body-family]");
@@ -1810,6 +1935,8 @@
       const nextFamily = bodyFamily.dataset.bodyFamily;
       if (!visibleFamilyIds().includes(nextFamily)) return;
       activeBodyRegion = null;
+      activeBodyDetail = "body";
+      activeFaceRegion = "";
       activeFamily = nextFamily;
       expandedFamily = nextFamily;
       searchQuery = "";
@@ -1833,10 +1960,10 @@
     renderCatalog();
   });
   $("#familyList").addEventListener("keydown", (event) => {
-    const bodyRegion = event.target.closest("svg [data-body-region]");
-    if (!bodyRegion || !["Enter", " "].includes(event.key)) return;
+    const interactiveRegion = event.target.closest("svg [data-body-region], svg [data-face-region]");
+    if (!interactiveRegion || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
-    bodyRegion.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    interactiveRegion.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
   function changeQuantityFromGesture(control, increase) {
     const line = lineFromElement(control);
@@ -2260,6 +2387,20 @@
   window.addEventListener("resize", syncPermanentCheckoutLayout);
   if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("PWA indisponible", error)));
+  }
+
+  const desktopWindow = window.bcdevisDesktop;
+  const windowControls = $("#windowControls");
+  if (windowControls && typeof desktopWindow?.minimizeWindow === "function") {
+    const syncWindowControlState = (isMaximized) => {
+      windowControls.dataset.maximized = String(Boolean(isMaximized));
+      $("#windowMaximizeButton").setAttribute("aria-label", isMaximized ? "Restaurer BCDevis" : "Agrandir BCDevis");
+    };
+    $("#windowMinimizeButton").addEventListener("click", () => desktopWindow.minimizeWindow());
+    $("#windowMaximizeButton").addEventListener("click", async () => syncWindowControlState(await desktopWindow.toggleMaximizeWindow()));
+    $("#windowCloseButton").addEventListener("click", () => desktopWindow.closeWindow());
+    desktopWindow.onWindowMaximized?.(syncWindowControlState);
+    desktopWindow.isWindowMaximized?.().then(syncWindowControlState);
   }
 
   applyTheme(currentTheme());
