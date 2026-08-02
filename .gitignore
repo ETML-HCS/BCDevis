@@ -1,3 +1,13 @@
+# BCDevis local and generated files
+.agents/
+.codex/
+output/
+tmp/
+devis-portable/data/
+node_modules/
+devis-portable/dist/
+
+# Generic Node.js files
 # Logs
 logs
 *.log

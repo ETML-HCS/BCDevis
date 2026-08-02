@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Icône BCDevis</title>
+  <rect x="18" y="18" width="476" height="476" rx="108" fill="#0e0e0e"/>
+  <rect x="24" y="24" width="464" height="464" rx="102" fill="none" stroke="#2b2b2b" stroke-width="12"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="38">
+    <path d="M56 404V206c0-79 40-126 92-126s92 47 92 126v198"/>
+    <path d="M164 404V206c0-79 40-126 92-126s92 47 92 126v198"/>
+    <path d="M272 404V206c0-79 40-126 92-126s92 47 92 126v198"/>
+  </g>
+</svg>

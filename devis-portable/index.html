@@ -1,0 +1,1853 @@
+<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta id="themeColorMeta" name="theme-color" content="#171512">
+  <title>BCDevis</title>
+  <link rel="icon" href="assets/pwa-icon-192.png" type="image/png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+  /* === Système de thèmes (4 palettes) === */
+  /* Thème 1 — Lumière : crème chaud, encre et champagne */
+  html[data-theme="light"]{
+    --black:#171512;--black-2:#1e1c19;--black-3:#2b2824;
+    --paper:#f4f1eb;--soft:#e9e5dd;--line:#d8d1c5;--line-dark:#464039;
+    --taupe:#b69c78;--taupe-light:#eee5d8;--taupe-dark:#725d43;
+    --ink:#191714;--muted:#716c64;
+    --topbar-bg:#171512;--topbar-fg:#fffaf2;--topbar-border:#342f29;
+    --panel-bg:#1e1c19;--panel-border:#37322c;
+    --accent:#b69c78;--accent-ink:#211b14;--contrast:#171512;--contrast-ink:#fffaf2;
+    --action:#171512;--action-ink:#fffaf2;
+    --surface:#fffdfa;--surface-raised:#fffefa;--surface-soft:#f8f5ef;
+    --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
+  }
+  /* Thème 2 — Nuit : miroir sombre élégant, accents taupe doré */
+  html[data-theme="night"]{
+    --black:#ece4d5;--black-2:#171612;--black-3:#29261f;
+    --paper:#11110f;--soft:#181713;--line:#3a362e;--line-dark:#4c463b;
+    --taupe:#d0aa67;--taupe-light:#30291d;--taupe-dark:#e0bd7b;
+    --ink:#f3ecdf;--muted:#aaa295;
+    --topbar-bg:#090906;--topbar-fg:#fff1d9;--topbar-border:#30291d;
+    --panel-bg:#13120f;--panel-border:#302b23;
+    --accent:#d0aa67;--accent-ink:#20170b;--contrast:#080806;--contrast-ink:#fff3df;
+    --action:#d0aa67;--action-ink:#20170b;
+    --surface:#201e19;--surface-raised:#25221c;--surface-soft:#1a1814;
+    --settings-bar-bg:var(--surface-raised);--settings-bar-border:var(--line);
+  }
+  /* Thème 3 — Forêt : ivoire, vert sapin */
+  html[data-theme="forest"]{
+    --black:#1c3429;--black-2:#223a2e;--black-3:#315041;
+    --paper:#f3f1e8;--soft:#e4e7da;--line:#cdd4c5;--line-dark:#55705e;
+    --taupe:#78947d;--taupe-light:#e1e9df;--taupe-dark:#3d654b;
+    --ink:#172019;--muted:#667268;
+    --topbar-bg:#1c3429;--topbar-fg:#f8f5e9;--topbar-border:#11241b;
+    --panel-bg:#223a2e;--panel-border:#183025;
+    --accent:#78947d;--accent-ink:#102017;--contrast:#1c3429;--contrast-ink:#f8f5e9;
+    --action:#1c3429;--action-ink:#f8f5e9;
+    --surface:#fffef9;--surface-raised:#fffffb;--surface-soft:#f4f7f0;
+    --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
+  }
+  /* Thème 4 — Bordeaux : ivoire rosé, lie-de-vin et cuivre */
+  html[data-theme="bordeaux"]{
+    --black:#4a1f2b;--black-2:#3b1b25;--black-3:#572a36;
+    --paper:#f7f0ed;--soft:#eadfdb;--line:#d9c9c5;--line-dark:#81515d;
+    --taupe:#c08e79;--taupe-light:#f1dfd8;--taupe-dark:#7d4050;
+    --ink:#24181b;--muted:#78676b;
+    --topbar-bg:#411923;--topbar-fg:#fff5ef;--topbar-border:#602b38;
+    --panel-bg:#4a1f2b;--panel-border:#693441;
+    --accent:#c08e79;--accent-ink:#2c171c;--contrast:#4a1f2b;--contrast-ink:#fff7f2;
+    --action:#4a1f2b;--action-ink:#fff7f2;
+    --surface:#fffbf8;--surface-raised:#fffdfa;--surface-soft:#faf3f0;
+    --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
+  }
+  /* === Sélecteur de thèmes === */
+  .theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .theme-card{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fafafa;text-align:left;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
+  .theme-card:hover{border-color:var(--accent);box-shadow:0 8px 18px rgba(22,18,14,.08);transform:translateY(-1px)}
+  .theme-card[aria-checked="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 8px 18px rgba(22,18,14,.08);background:var(--taupe-light)}
+  .theme-card-swatch{position:relative;display:grid;height:78px;overflow:hidden;border:1px solid rgba(30,24,20,.1);border-radius:10px;grid-template-columns:48px 1fr;grid-template-rows:22px 1fr;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+  .ts-top{grid-column:1/-1;border-bottom:1px solid rgba(0,0,0,.1)}
+  .ts-panel{}
+  .ts-accent{width:18px;height:18px;margin:8px 0 0 8px;border-radius:50%;align-self:start;justify-self:start;grid-column:2;grid-row:2}
+  /* Swatch Lumière */
+  .theme-card-swatch.light{background:#f4f1eb}
+  .theme-card-swatch.light .ts-top{background:#171512}
+  .theme-card-swatch.light .ts-panel{background:#1e1c19}
+  .theme-card-swatch.light .ts-accent{background:#b69c78}
+  /* Swatch Nuit */
+  .theme-card-swatch.night{background:#11110f}
+  .theme-card-swatch.night .ts-top{background:#090906}
+  .theme-card-swatch.night .ts-panel{background:#13120f;border-right:1px solid #302b23}
+  .theme-card-swatch.night .ts-accent{background:#d0aa67}
+  /* Swatch Forêt */
+  .theme-card-swatch.forest{background:#f3f1e8}
+  .theme-card-swatch.forest .ts-top{background:#1c3429}
+  .theme-card-swatch.forest .ts-panel{background:#223a2e}
+  .theme-card-swatch.forest .ts-accent{background:#78947d}
+  /* Swatch Bordeaux */
+  .theme-card-swatch.bordeaux{background:#f7f0ed}
+  .theme-card-swatch.bordeaux .ts-top{background:#411923}
+  .theme-card-swatch.bordeaux .ts-panel{background:#4a1f2b;border-right:1px solid #693441}
+  .theme-card-swatch.bordeaux .ts-accent{background:#c08e79}
+  .theme-card-copy{display:flex;flex-direction:column;gap:3px}
+  .theme-card-copy strong{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink)}
+  .theme-card-copy small{color:var(--muted);font-size:11px;line-height:1.3}
+  .theme-card-check{display:none;align-self:flex-start;margin-top:-4px;color:var(--taupe-dark)}
+  .theme-card-check svg{width:16px;height:16px;stroke-width:2.4}
+  .theme-card[aria-checked="true"] .theme-card-check{display:block;color:var(--taupe-dark)}
+  .settings-subheading{margin:22px 0 10px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase}
+  .font-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .font-card{display:grid;min-width:0;min-height:74px;padding:10px;align-items:center;border:1px solid var(--line);border-radius:10px;color:var(--ink);background:transparent;text-align:left;grid-template-columns:48px minmax(0,1fr) 18px;gap:10px;transition:border-color .16s ease,background .16s ease}
+  .font-card:hover{border-color:var(--line-dark);background:var(--surface-soft)}
+  .font-card[aria-checked="true"]{border-color:var(--line);background:var(--surface-raised);box-shadow:inset 3px 0 0 var(--accent)}
+  .font-card-sample{display:grid;width:48px;height:48px;place-items:center;border:1px solid var(--line);border-radius:7px;color:var(--ink);background:var(--surface-soft);font-size:22px;font-weight:700}
+  .font-card-copy{display:flex;min-width:0;flex-direction:column;gap:3px}
+  .font-card-copy strong{overflow:hidden;font-size:12px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+  .font-card-copy small{color:var(--muted);font-size:9px;line-height:1.25}
+  .font-card-check{display:none;width:18px;height:18px;place-items:center;color:var(--taupe-dark)}
+  .font-card-check svg{width:15px;height:15px;stroke-width:2.4}
+  .font-card[aria-checked="true"] .font-card-check{display:grid}
+  .font-card[data-font="red-hat"] .font-card-sample{font-family:"Red Hat Display","Roboto",Arial,sans-serif}
+  .font-card[data-font="roboto"] .font-card-sample{font-family:"Roboto","Red Hat Display",Arial,sans-serif}
+  .font-card[data-font="roboto-slab"] .font-card-sample{font-family:"Roboto Slab","Roboto",serif}
+  .font-card[data-font="system"] .font-card-sample{font-family:"Segoe UI",Arial,sans-serif}
+  @media(max-width:760px){.theme-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:440px){.theme-picker,.font-picker{grid-template-columns:1fr}}
+  @media screen and (pointer:coarse){
+    .theme-card{padding:16px;border-width:2px;border-radius:16px}
+    .theme-card-swatch{height:88px}
+    .theme-card-copy strong{font-size:16px}
+    .theme-card-copy small{font-size:13px}
+    .font-card{min-height:80px}
+  }
+  /* === Personnalisation : refonte de la modale Réglages === */
+  .settings-modal{width:min(1080px,100%)!important;display:flex;flex-direction:column;max-height:calc(100vh - 48px)!important;padding:0!important;overflow:hidden}
+  /* En-tête : zone fixe en haut (jamais scrollée) */
+  .settings-modal .modal-head{flex:0 0 auto;align-items:flex-start;margin:0;padding:22px 26px 16px;background:var(--settings-bar-bg,#fff);border-bottom:1px solid var(--settings-bar-border,var(--line));position:static}
+  /* Corps scrollable : contient les colonnes */
+  .settings-layout{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+  .settings-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px;align-items:start;flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding:22px 26px;scrollbar-width:thin}
+  /* Chaque colonne empile ses sections */
+  .settings-col{display:flex;flex-direction:column;min-width:0}
+  .settings-col>.settings-section{padding:0 0 22px;margin:0 0 22px;border:0;border-bottom:1px solid var(--line)}
+  .settings-col>.settings-section:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0}
+  .settings-col>.settings-section:first-child{padding-top:0}
+  /* Séparateur vertical entre les 2 colonnes */
+  .settings-col--right{padding-left:26px;border-left:1px solid var(--line)}
+  /* Dans la colonne droite (plus étroite), on empile Pack/Étudiant verticalement */
+  .settings-col--right .settings-grid-offer{grid-template-columns:1fr;gap:12px}
+  .settings-section--mentions .form-grid{gap:14px}
+  .settings-section--mentions textarea{min-height:100px}
+  .settings-section-head{display:flex;align-items:center;gap:14px;margin:0 0 18px}
+  .settings-section-head h3{margin:0;font-family:var(--serif);font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .settings-section-head p{margin:3px 0 0;color:var(--muted);font-size:12px}
+  .settings-layout .form-grid{grid-template-columns:1fr 1fr;gap:14px}
+  .settings-grid-offer{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .settings-offer-block{position:relative;padding:16px 14px 14px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
+  .settings-offer-block.pack{border-color:#d8d8d3}
+  .settings-offer-block.student{border-color:#d8cdbe;background:var(--taupe-light)}
+  .settings-offer-tag{display:inline-block;margin-bottom:10px;padding:3px 9px;border-radius:999px;color:#fff;background:var(--black);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .settings-offer-block.student .settings-offer-tag{background:var(--taupe-dark)}
+  .settings-offer-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .settings-offer-fields label>span{display:block;margin-bottom:6px;font-size:11px}
+  .settings-offer-fields label:only-child{grid-column:1/-1}
+  .settings-offer-summary{margin:10px 0 0;color:var(--muted);font-size:11px;font-style:italic;line-height:1.4}
+  .settings-offer-summary:empty{display:none}
+  .settings-offer-block.pack .settings-offer-summary{color:#555}
+  .settings-offer-block.student .settings-offer-summary{color:var(--taupe-dark)}
+  .hint-box{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fafafa;color:#555;font-size:12px;line-height:1.4}
+  .hint-box svg{width:16px;height:16px;flex:0 0 16px;margin-top:1px;color:#777}
+  .hint-box strong{display:block;font-weight:600;color:#333}
+  .hint-box code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:700;color:var(--black)}
+  /* Grille « Familles de prestations » */
+  .family-visibility-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .family-visibility-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;background:#fafafa;cursor:pointer;transition:.15s;font-size:13px;user-select:none}
+  .family-visibility-item:hover{border-color:#aaa;background:#fff}
+  .family-visibility-item input{accent-color:var(--black);width:16px;height:16px;margin:0;flex:0 0 16px}
+  .family-visibility-icon{display:grid;place-items:center;width:28px;height:28px;flex:0 0 28px;border-radius:8px;background:#fff;border:1px solid var(--line);color:var(--taupe-dark)}
+  .family-visibility-icon svg{width:16px;height:16px}
+  .family-visibility-copy{display:flex;flex-direction:column;min-width:0}
+  .family-visibility-copy strong{font-family:var(--serif);font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .family-visibility-copy small{color:var(--muted);font-size:11px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .family-visibility-item:has(input:checked){border-color:var(--black);background:#fff;box-shadow:0 0 0 1px var(--black) inset}
+  html[data-theme="night"] .family-visibility-item{background:#1a1814;border-color:var(--line)}
+  html[data-theme="night"] .family-visibility-item:hover{background:#221f1a}
+  html[data-theme="night"] .family-visibility-icon{background:#2a2620;border-color:var(--line-dark);color:var(--taupe)}
+  html[data-theme="forest"] .family-visibility-item:has(input:checked){border-color:var(--taupe-dark);box-shadow:0 0 0 1px var(--taupe-dark) inset}
+  /* Footer actions : zone fixe en bas, toujours visible, plus de sticky */
+  .settings-actions{flex:0 0 auto;display:flex;justify-content:flex-end;gap:8px;margin:0;padding:14px 26px;background:var(--settings-bar-bg,#fff);border-top:1px solid var(--settings-bar-border,var(--line));z-index:4;position:static}
+  .settings-actions .button{min-height:44px}
+  @media(max-width:900px){
+    .settings-modal{width:min(720px,100%)!important}
+    .settings-columns{grid-template-columns:1fr;gap:0}
+    .settings-col>.settings-section{padding:22px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--line)!important}
+    .settings-col>.settings-section:last-child{border-bottom:0!important;padding-bottom:0!important;margin-bottom:0!important}
+    .settings-col--right{padding-left:0;border-left:0}
+    /* Mode 1 colonne : Pack/Étudiant reviennent côte à côte */
+    .settings-col--right .settings-grid-offer{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:760px){
+    .settings-layout .form-grid{grid-template-columns:1fr}
+    .settings-grid-offer{grid-template-columns:1fr}
+    .settings-offer-fields{grid-template-columns:1fr 1fr}
+    .settings-modal .modal-head{padding:18px 16px 12px}
+    .settings-columns{padding:18px 16px}
+    .settings-actions{padding:12px 16px;flex-direction:column-reverse}
+    .settings-actions .button{width:100%}
+  }
+  /* Touch / grosses cibles */
+  @media screen and (pointer:coarse){
+    .settings-modal{width:min(1180px,100%)!important}
+    .settings-section-head h3{font-size:19px}
+    .settings-section-head p{font-size:13px}
+    .settings-offer-block{padding:18px 16px 16px;border-width:2px;border-radius:16px}
+    .settings-offer-tag{min-height:30px;padding:6px 12px;font-size:12px}
+    .settings-offer-summary{font-size:13px}
+    .hint-box{padding:14px 15px;font-size:14px}
+    .hint-box svg{width:20px;height:20px;flex-basis:20px}
+    .hint-box code{font-size:14px}
+    .settings-actions .button{min-height:54px}
+  }
+  /* Personnalisation V2 — cartes alignées et options plus lisibles */
+  .settings-modal{width:min(1120px,100%)!important}
+  .settings-columns{grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:16px;padding:18px 20px;align-items:start}
+  .settings-col{gap:14px}
+  .settings-col--right{padding-left:0;border-left:0}
+  .settings-col>.settings-section,
+  .settings-col>.settings-section:first-child,
+  .settings-col>.settings-section:last-child{margin:0;padding:17px;border:1px solid var(--line);border-radius:15px;background:var(--settings-bar-bg,#fff)}
+  .settings-section-head{min-height:38px;margin-bottom:14px;align-items:flex-start;gap:11px}
+  .settings-section-head h3{font-size:15px;line-height:1.2}
+  .settings-section-head p{font-size:11px;line-height:1.35}
+  .settings-layout .form-grid{gap:12px}
+  .settings-layout .form-grid>label{display:flex;min-width:0;flex-direction:column}
+  .settings-layout .form-grid input,.settings-layout .form-grid select,.settings-layout .input-with-suffix{height:44px}
+  .settings-layout .input-with-suffix{width:100%}
+  .settings-layout .input-with-suffix input{height:42px}
+  .settings-col--right .settings-grid-offer{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .settings-offer-block{display:flex;min-width:0;height:100%;padding:14px;flex-direction:column}
+  .settings-offer-fields{align-items:end}
+  .settings-offer-summary{margin-top:auto;padding-top:9px}
+  .family-visibility-grid{gap:8px}
+  .family-visibility-item{min-height:52px;padding:8px 10px}
+  .settings-section--mentions textarea{min-height:86px}
+  .settings-actions{padding:12px 20px}
+  html[data-theme="night"] .settings-col>.settings-section,
+  html[data-theme="night"] .theme-card{background:#1a1814;border-color:var(--line)}
+  html[data-theme="night"] .theme-card[aria-checked="true"]{background:#221f1a;border-color:var(--taupe-dark)}
+  @media(max-width:900px){
+    .settings-columns{grid-template-columns:1fr;gap:12px}
+    .settings-col{gap:12px}
+    .settings-col>.settings-section,
+    .settings-col>.settings-section:first-child,
+    .settings-col>.settings-section:last-child{margin:0!important;padding:16px!important;border:1px solid var(--line)!important;border-radius:14px!important}
+    .settings-col--right .settings-grid-offer{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media(max-width:620px){
+    .settings-columns{padding:14px 12px}
+    .settings-col--right .settings-grid-offer,.family-visibility-grid{grid-template-columns:1fr}
+    .settings-section-head{gap:9px}
+    .settings-actions{padding:10px 12px}
+  }
+  /* Personnalisation V2.1 — finition, focus et hiérarchie */
+  .settings-modal .modal-head{align-items:center;padding-block:17px 14px}
+  .settings-modal .modal-head>div{min-width:0}
+  .settings-modal-intro{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.35}
+  .settings-column-label{margin:0 2px -4px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .settings-col{align-content:start}
+  .settings-col>.settings-section{overflow:hidden;box-shadow:0 5px 18px rgba(0,0,0,.035)}
+  .settings-section-head>div{min-width:0}
+  .settings-section-head h3,.settings-section-head p{overflow-wrap:anywhere}
+  .settings-layout .form-grid>label>span:first-child{min-height:18px}
+  .settings-layout input,.settings-layout select,.settings-layout textarea{transition:border-color .15s,box-shadow .15s,background .15s}
+  .settings-layout input:focus,.settings-layout select:focus,.settings-layout textarea:focus{outline:0;border-color:var(--taupe-dark);box-shadow:0 0 0 3px rgba(180,169,150,.18)}
+  .settings-layout .input-with-suffix:focus-within{border-color:var(--taupe-dark);box-shadow:0 0 0 3px rgba(180,169,150,.18)}
+  .settings-layout .input-with-suffix input:focus{box-shadow:none}
+  .theme-picker{align-items:stretch;gap:10px}
+  .theme-card{min-width:0;height:100%;padding:11px;gap:9px}
+  .theme-card-swatch{height:62px}
+  .theme-card[aria-checked="true"] .theme-card-check{display:grid;width:22px;height:22px;place-items:center;margin:-2px 0 0 auto;border-radius:50%;background:var(--taupe-light)}
+  .theme-card-check svg{width:14px;height:14px}
+  .settings-offer-tag{margin-bottom:9px}
+  .settings-actions .button.primary{min-width:190px}
+  html[data-theme="night"] .settings-col>.settings-section{box-shadow:none}
+  html[data-theme="night"] .theme-card[aria-checked="true"] .theme-card-check{background:#302a21}
+  @media(max-width:900px){
+    .settings-column-label{margin-top:4px}
+  }
+  @media(max-width:620px){
+    .settings-modal-intro{font-size:11px}
+    .settings-actions .button.primary{min-width:0}
+  }
+  /* Personnalisation V2.2 — familles en liste compacte */
+  .settings-col--right .family-visibility-grid{grid-template-columns:minmax(0,1fr)}
+  .settings-col--right .family-visibility-item{
+    display:grid;
+    grid-template-columns:32px minmax(0,1fr) 20px;
+    min-height:50px;
+    gap:10px;
+    padding:8px 10px;
+  }
+  .settings-col--right .family-visibility-icon{grid-column:1;grid-row:1}
+  .settings-col--right .family-visibility-copy{grid-column:2;grid-row:1}
+  .settings-col--right .family-visibility-item input{grid-column:3;grid-row:1;justify-self:end}
+  .settings-col--right .family-visibility-copy small{white-space:normal}
+
+  /* === Socle commun de tous les boutons === */
+  html[data-theme] button:not(.layer-backdrop){font:inherit}
+
+  /* === Passe visuelle compacte : contraste, états et surfaces === */
+  html[data-theme]{
+    color-scheme:light;
+    --focus-ring:color-mix(in srgb,var(--accent) 72%,transparent);
+    --shadow-soft:0 8px 22px rgba(18,34,28,.08);
+  }
+  html[data-theme="night"]{color-scheme:dark;--shadow-soft:0 8px 22px rgba(0,0,0,.28)}
+  html[data-theme] body{background:var(--paper);color:var(--ink)}
+  html[data-theme] body,
+  html[data-theme] .topbar,
+  html[data-theme] .family-panel,
+  html[data-theme] .catalog-panel,
+  html[data-theme] .checkout-panel,
+  html[data-theme] .checkout-card,
+  html[data-theme] .service-card{transition:background-color .18s ease,color .18s ease,border-color .18s ease}
+  html[data-theme] .topbar{background:var(--topbar-bg);color:var(--topbar-fg);border-bottom-color:var(--topbar-border)}
+  html[data-theme] .workspace{background:var(--paper)}
+  html[data-theme] .family-panel{background:var(--panel-bg);border-right-color:var(--panel-border)}
+  html[data-theme] .catalog-panel{background:var(--surface)}
+  html[data-theme] .checkout-panel{background:var(--soft);border-left-color:var(--line)}
+  html[data-theme] .checkout-card,
+  html[data-theme] .service-card,
+  html[data-theme] .modal-card,
+  html[data-theme] .drawer{background:var(--surface-raised);border-color:var(--line);box-shadow:var(--shadow-soft)}
+  html[data-theme] .service-card:hover{border-color:var(--accent);box-shadow:var(--shadow-soft)}
+  html[data-theme] .family-button{color:color-mix(in srgb,var(--topbar-fg) 72%,transparent)}
+  html[data-theme] .family-button:hover{color:var(--topbar-fg);border-color:var(--line-dark);background:color-mix(in srgb,var(--panel-bg) 70%,var(--black-3))}
+  html[data-theme] .family-button.active{color:var(--ink);border-color:var(--accent);background:var(--taupe-light);box-shadow:inset 3px 0 0 var(--accent)}
+  html[data-theme] .family-button.active .family-button-icon{color:var(--topbar-fg);background:var(--contrast)}
+  html[data-theme] .family-button-icon{background:var(--black-3);color:var(--taupe)}
+  html[data-theme] .family-option{border-color:var(--panel-border);background:color-mix(in srgb,var(--panel-bg) 72%,var(--black-3));}
+  html[data-theme] .family-option:hover,
+  html[data-theme] .family-option:active{border-color:var(--accent);background:var(--taupe-light);color:var(--ink)}
+  html[data-theme] .family-option:hover small,
+  html[data-theme] .family-option:hover b,
+  html[data-theme] .family-option:active small,
+  html[data-theme] .family-option:active b{color:var(--taupe-dark)}
+  html[data-theme] .service-icon{color:var(--taupe-dark);background:var(--taupe-light)}
+  html[data-theme] .search-field,
+  html[data-theme] .client-card,
+  html[data-theme] .installments,
+  html[data-theme] .checkbox-field,
+  html[data-theme] .settings-offer-block,
+  html[data-theme] .hint-box{background:var(--surface-soft);border-color:var(--line)}
+  html[data-theme] .search-field:focus-within,
+  html[data-theme] .receipt-meta input:focus,
+  html[data-theme] .form-grid input:focus,
+  html[data-theme] .form-grid select:focus,
+  html[data-theme] .form-grid textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--focus-ring)}
+  html[data-theme] .price-option{background:var(--surface-raised);border-color:var(--line)}
+  html[data-theme] .price-option.pack{color:#fff;border-color:var(--contrast);background:var(--contrast)}
+  html[data-theme] .price-option.student{border-color:color-mix(in srgb,var(--accent) 42%,var(--line));background:var(--taupe-light)}
+  html[data-theme] .price-option.selected{box-shadow:0 0 0 2px var(--accent)}
+  html[data-theme] .quote-number,
+  html[data-theme] .catalog-count{color:var(--muted);background:var(--soft)}
+  html[data-theme] .button.primary,
+  html[data-theme] .segmented-control button.active,
+  html[data-theme] .switch-label input:checked+.switch{background:var(--action)}
+  html[data-theme] .button.primary{border-color:var(--action)}
+  html[data-theme] .button.secondary{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .button.secondary:hover{background:var(--taupe-light)}
+  html[data-theme] .totals-list .grand-total{border-top-color:var(--ink)}
+  html[data-theme] button.family-price-toggle{border-color:var(--panel-border);color:color-mix(in srgb,var(--topbar-fg) 72%,transparent)}
+  html[data-theme] button.family-price-toggle:hover,
+  html[data-theme] button.family-price-toggle.active{border-color:var(--accent);color:var(--ink);background:var(--taupe-light)}
+  html[data-theme] button.family-price-toggle small{color:var(--muted);background:var(--black-3)}
+  html[data-theme] button.family-price-toggle.active small{color:var(--ink);background:color-mix(in srgb,var(--surface) 55%,transparent)}
+  html[data-theme] .settings-col>.settings-section,
+  html[data-theme] .theme-card,
+  html[data-theme] .family-visibility-item{background:var(--surface-raised);border-color:var(--line)}
+  html[data-theme] .theme-card[aria-checked="true"],
+  html[data-theme] .family-visibility-item:has(input:checked){border-color:var(--accent);background:var(--taupe-light);box-shadow:inset 0 0 0 1px var(--accent)}
+  html[data-theme] .settings-offer-block.student{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:var(--taupe-light)}
+  html[data-theme] .settings-offer-block.student .settings-offer-tag{background:var(--taupe-dark)}
+  html[data-theme] .toast{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .toast-symbol{background:var(--contrast)}
+  html[data-theme] .settings-offer-tag{background:var(--contrast)}
+  html[data-theme] .toast.error{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));background:color-mix(in srgb,var(--danger) 7%,var(--surface-raised))}
+  html[data-theme] button:focus-visible,
+  html[data-theme] input:focus-visible,
+  html[data-theme] select:focus-visible,
+  html[data-theme] textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){html[data-theme] *{scroll-behavior:auto!important;transition-duration:0s!important}}
+
+  /* === Cohérence des rôles de couleur entre les thèmes === */
+  html[data-theme] .topbar-context{border-left-color:var(--panel-border)}
+  html[data-theme] .topbar-context span,
+  html[data-theme] .local-badge,
+  html[data-theme] .save-state{color:color-mix(in srgb,var(--topbar-fg) 58%,transparent)}
+  html[data-theme] .local-badge>span{background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+  html[data-theme] .save-state.error{color:#ef9a91}
+  html[data-theme] .topbar-context strong{color:var(--topbar-fg)}
+  html[data-theme] .family-head>p:last-child,
+  html[data-theme] .family-custom small{color:color-mix(in srgb,var(--topbar-fg) 52%,transparent)}
+  html[data-theme] .family-arrow{color:color-mix(in srgb,var(--topbar-fg) 45%,transparent)}
+  html[data-theme] .family-button.active .family-arrow{color:var(--accent-ink)}
+  html[data-theme] .family-custom{color:var(--topbar-fg);border-color:var(--panel-border);background:color-mix(in srgb,var(--panel-bg) 68%,var(--black-3))}
+  html[data-theme] .family-custom:hover{border-color:var(--accent)}
+  html[data-theme] .student-promise{color:var(--accent-ink);background:var(--accent)}
+  html[data-theme] .catalog-count,
+  html[data-theme] .quote-number,
+  html[data-theme] .kbd,
+  html[data-theme] .search-field kbd{border-color:var(--line);color:var(--muted);background:var(--surface-soft)}
+  html[data-theme] .search-field>svg,
+  html[data-theme] .service-copy small,
+  html[data-theme] .price-option small,
+  html[data-theme] .cart-section-title,
+  html[data-theme] .cart-line-sub,
+  html[data-theme] .quantity-group>small,
+  html[data-theme] .price-edit>small,
+  html[data-theme] .receipt-meta span,
+  html[data-theme] .form-grid label>span{color:var(--muted)}
+  html[data-theme] input,
+  html[data-theme] select,
+  html[data-theme] textarea,
+  html[data-theme] .input-with-suffix,
+  html[data-theme] .discount-input,
+  html[data-theme] .price-edit>span,
+  html[data-theme] .tax-options label,
+  html[data-theme] .tax-options select,
+  html[data-theme] .quantity-control{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] input::placeholder,
+  html[data-theme] textarea::placeholder{color:color-mix(in srgb,var(--muted) 75%,transparent)}
+  html[data-theme] .quantity-control button{color:var(--muted);background:var(--surface-soft)}
+  html[data-theme] .quantity-control button:hover{color:var(--ink);background:var(--taupe-light)}
+  html[data-theme] .cart-line-offer{color:var(--contrast-ink);background:var(--contrast)}
+  html[data-theme] .offer-student .cart-line-offer{color:var(--accent-ink);background:var(--accent)}
+  html[data-theme] .segmented-control{background:var(--surface-soft)}
+  html[data-theme] .segmented-control button{color:var(--muted)}
+  html[data-theme] .segmented-control button.active{color:var(--action-ink)}
+  html[data-theme] .switch{background:color-mix(in srgb,var(--muted) 38%,var(--surface-soft))}
+  html[data-theme] .installment-option{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .installment-option b,
+  html[data-theme] .installments summary small{color:var(--taupe-dark)}
+  html[data-theme] .round-button{color:var(--muted);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .round-button:hover{color:var(--ink);border-color:var(--accent);background:var(--taupe-light)}
+  html[data-theme] .action-menu{border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .action-menu button{color:var(--ink)}
+  html[data-theme] .action-menu button:hover{background:var(--taupe-light)}
+  html[data-theme] .button.primary{color:var(--action-ink)}
+  html[data-theme] .button.ghost{color:var(--muted)}
+  html[data-theme] .button.ghost:hover{color:var(--ink);background:var(--taupe-light)}
+  html[data-theme] .family-visibility-icon{border-color:var(--line);color:var(--taupe-dark);background:var(--surface-soft)}
+  html[data-theme] .hint-box,
+  html[data-theme] .hint-box strong{color:var(--ink)}
+  html[data-theme] .settings-offer-block.pack{border-color:var(--line);background:var(--surface-soft)}
+  html[data-theme] .settings-offer-block.pack .settings-offer-summary{color:var(--muted)}
+  html[data-theme] .settings-offer-tag{color:var(--contrast-ink);background:var(--contrast)}
+  html[data-theme] .settings-offer-block.student .settings-offer-tag{color:var(--accent-ink);background:var(--accent)}
+  html[data-theme] .settings-offer-block.student .settings-offer-summary{color:var(--taupe-dark)}
+  html[data-theme] .settings-actions{background:var(--settings-bar-bg);border-top-color:var(--settings-bar-border)}
+  html[data-theme] .toast.error{color:var(--danger)}
+
+  /* === Boutons : même logique de thème sur toutes les surfaces === */
+  html[data-theme] button.icon-button{color:color-mix(in srgb,var(--topbar-fg) 72%,transparent);background:transparent}
+  html[data-theme] button.icon-button:hover{color:var(--topbar-fg);background:color-mix(in srgb,var(--topbar-fg) 12%,transparent)}
+  html[data-theme] .offer-mode-selector{border-color:var(--panel-border);background:var(--panel-bg)}
+  html[data-theme] .offer-mode-selector button,
+  html[data-theme] .topbar-context .offer-mode-selector button{color:color-mix(in srgb,var(--topbar-fg) 84%,transparent);border-color:var(--panel-border);background:var(--black-3)}
+  html[data-theme] .offer-mode-selector button small,
+  html[data-theme] .topbar-context .offer-mode-selector button small{color:color-mix(in srgb,var(--topbar-fg) 62%,transparent)}
+  html[data-theme] .offer-mode-selector button:hover,
+  html[data-theme] .topbar-context .offer-mode-selector button:hover{color:var(--topbar-fg);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--black-3))}
+  html[data-theme] .offer-mode-selector button.active,
+  html[data-theme] .topbar-context .offer-mode-selector button.active{color:var(--accent-ink);border-color:var(--accent);background:var(--accent);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 28%,transparent)}
+  html[data-theme] .offer-mode-selector button.active small,
+  html[data-theme] .topbar-context .offer-mode-selector button.active small{color:color-mix(in srgb,var(--accent-ink) 72%,transparent)}
+  html[data-theme] .offer-mode-selector button[data-offer-mode="pack"],
+  html[data-theme] .offer-mode-selector button[data-offer-mode="student"]{border-color:var(--panel-border)}
+  html[data-theme] .offer-mode-selector button[data-offer-mode="pack"].active,
+  html[data-theme] .offer-mode-selector button[data-offer-mode="student"].active{border-color:var(--accent);background:var(--accent)}
+  html[data-theme] .family-search-toggle{color:color-mix(in srgb,var(--topbar-fg) 78%,transparent);border-color:var(--panel-border);background:var(--black-3)}
+  html[data-theme] .family-search-toggle:hover,
+  html[data-theme] .family-search-toggle[aria-expanded="true"]{color:var(--accent-ink);border-color:var(--accent);background:var(--accent)}
+  html[data-theme] .client-card{color:var(--ink);background:var(--surface-soft);border-color:var(--line)}
+  html[data-theme] .client-card:hover{border-color:var(--accent);background:var(--taupe-light)}
+  html[data-theme] .client-card>svg{color:var(--muted)}
+  html[data-theme] .quantity-value{color:var(--ink);background:transparent}
+  html[data-theme] .quantity-value:hover{color:var(--ink);background:var(--taupe-light)}
+  html[data-theme] .remove-line{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 28%,var(--line));background:color-mix(in srgb,var(--danger) 8%,var(--surface-raised))}
+  html[data-theme] .remove-line:hover{color:var(--danger);border-color:var(--danger);background:color-mix(in srgb,var(--danger) 15%,var(--surface-raised))}
+  html[data-theme] .coupon-toggle{color:var(--muted);background:transparent}
+  html[data-theme] .coupon-toggle:hover{color:var(--accent-dark,var(--taupe-dark))}
+  html[data-theme] .student-discount-button{color:var(--accent-ink);border-color:var(--accent);background:var(--taupe-light)}
+  html[data-theme] .student-discount-button:hover,
+  html[data-theme] .student-discount-button.active{color:var(--accent-ink);border-color:var(--accent);background:var(--accent)}
+  html[data-theme] .history-item{color:var(--ink);border-color:var(--line);background:var(--surface-raised)}
+  html[data-theme] .history-item:hover{border-color:var(--accent);background:var(--taupe-light)}
+  html[data-theme] .history-item.current{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+  html[data-theme] .history-item-meta{color:var(--muted)}
+  html[data-theme] .history-status{color:var(--contrast-ink);background:var(--contrast)}
+  html[data-theme] .toast-close{color:var(--muted);background:transparent}
+  html[data-theme] .toast-close:hover{color:var(--ink);background:var(--taupe-light)}
+  html[data-theme] .mobile-tabs{border-color:var(--panel-border);background:color-mix(in srgb,var(--panel-bg) 94%,transparent)}
+  html[data-theme] .mobile-tabs button{color:color-mix(in srgb,var(--topbar-fg) 62%,transparent);background:transparent}
+  html[data-theme] .mobile-tabs button.active{color:var(--accent-ink);background:var(--accent)}
+  html[data-theme] .mobile-tabs strong{color:var(--accent)}
+  html[data-theme] .mobile-tabs button.active strong{color:var(--accent-ink)}
+  html[data-theme] .mobile-cart-icon b{color:var(--accent-ink);border-color:var(--contrast);background:var(--accent)}
+
+  /* === Lisibilité renforcée du thème Nuit et des surfaces sombres === */
+  html[data-theme] .family-button small{color:color-mix(in srgb,var(--topbar-fg) 52%,transparent)}
+  html[data-theme] .offer-legend,
+  html[data-theme] .discount-row>label,
+  html[data-theme] .switch-label,
+  html[data-theme] .tax-rate-label,
+  html[data-theme] .discount-row-controls:before{color:var(--muted)}
+  html[data-theme] .cart-empty,
+  html[data-theme] .empty-catalog,
+  html[data-theme] .history-empty,
+  html[data-theme] .installment-empty{color:var(--muted)}
+  html[data-theme] .cart-empty strong,
+  html[data-theme] .empty-catalog strong,
+  html[data-theme] .history-empty strong{color:var(--ink)}
+  html[data-theme] .cart-empty p,
+  html[data-theme] .empty-catalog p,
+  html[data-theme] .history-empty p{color:var(--muted)}
+  html[data-theme] .totals-list>div{color:var(--muted)}
+  html[data-theme] .totals-list dt,
+  html[data-theme] .totals-list dd,
+  html[data-theme] .totals-list .grand-total{color:var(--ink)}
+  html[data-theme] .tax-options span,
+  html[data-theme] .discount-input span,
+  html[data-theme] .input-with-suffix b{color:var(--muted)}
+  html[data-theme] .checkbox-field>span{color:var(--ink)!important}
+  html[data-theme] .checkbox-field small{color:var(--muted)}
+  html[data-theme] .settings-offer-block.pack .settings-offer-summary,
+  html[data-theme] .settings-offer-block.student .settings-offer-summary{color:var(--muted)}
+  html[data-theme] .settings-section-head p,
+  html[data-theme] .settings-modal-intro,
+  html[data-theme] .settings-column-label{color:var(--muted)}
+  /* Tarification commerciale : hiérarchie et contraste des offres */
+  .settings-section--commercial{position:relative;overflow:hidden}
+  .settings-section--commercial .settings-section-head{padding-bottom:2px}
+  .settings-section--commercial .settings-section-head h3{letter-spacing:-.015em}
+  .settings-section--commercial .settings-grid-offer{gap:12px}
+  .settings-section--commercial .settings-offer-block{gap:12px;padding:15px;border-width:1px;box-shadow:0 3px 10px rgba(17,17,17,.04)}
+  .settings-section--commercial .settings-offer-tag{align-self:flex-start;margin:0;padding:5px 10px;line-height:1.1}
+  .settings-section--commercial .settings-offer-fields{gap:10px}
+  .settings-section--commercial .settings-offer-fields label>span:first-child{color:var(--ink);font-weight:600;line-height:1.25}
+  .settings-section--commercial .settings-offer-fields input{font-weight:700;text-align:center}
+  .settings-section--commercial .settings-offer-summary{min-height:31px;margin:0;padding:9px 10px 0;border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);font-style:normal;font-size:11px;line-height:1.35}
+  html[data-theme] .settings-section--commercial .settings-offer-block{box-shadow:none}
+  html[data-theme] .settings-section--commercial .settings-offer-summary{border-top-color:var(--line)}
+  @media(max-width:620px){
+    .settings-section--commercial .settings-grid-offer{grid-template-columns:1fr}
+    .settings-section--commercial .settings-offer-fields{grid-template-columns:1fr 1fr}
+  }
+  .student-discount-control>span:first-child{display:flex!important;align-items:center;justify-content:space-between;gap:10px}
+  .student-discount-control output{flex:0 0 auto;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:4px 9px;font-size:12px;font-weight:800;line-height:1}
+  .student-discount-control input[type="range"]{width:100%;height:8px;margin:8px 0 2px;accent-color:var(--accent);cursor:pointer}
+  .student-discount-control input[type="range"]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:5px}
+  html[data-theme="night"] .student-discount-control output{color:var(--accent-ink)}
+  .shortcut-help-modal{width:min(780px,100%)}.shortcut-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.shortcut-group{min-width:0;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft,#fafafa)}.shortcut-group h3{margin:0 0 8px;color:var(--ink);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.shortcut-list{display:grid;margin:0;grid-template-columns:1fr;gap:5px}.shortcut-list>div{display:flex;min-width:0;min-height:38px;padding:6px 8px;align-items:center;justify-content:space-between;gap:10px;border-radius:6px;background:var(--surface-raised,#fff)}.shortcut-list dt,.shortcut-list dd{margin:0}.shortcut-list dt{display:flex;flex:0 0 auto;align-items:center;flex-wrap:wrap;gap:4px}.shortcut-list dt span{color:var(--muted);font-size:10px}.shortcut-list dd{min-width:0;color:var(--muted);font-size:10px;font-weight:650;line-height:1.25;text-align:right}.shortcut-list kbd,.shortcut-help-note kbd{display:inline-grid;min-width:25px;min-height:24px;padding:3px 6px;place-items:center;border:1px solid var(--line-dark);border-bottom-width:2px;border-radius:6px;color:var(--ink);background:var(--surface,#fff);font:700 10px/1 var(--sans);text-align:center}.shortcut-help-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.5}@media(max-width:640px){.shortcut-groups{grid-template-columns:1fr}.shortcut-help-modal{width:min(560px,100%)}}
+
+  /* === Finition luxe : hiérarchie calme, surfaces ouvertes et accents rares === */
+  @media screen{
+    /* Trio tarifaire : trois tickets issus du même système graphique */
+    html[data-theme] .topbar-context .offer-mode-selector{
+      padding:0;
+      gap:0;
+      overflow:visible;
+      border:0;
+      border-radius:0;
+      background:transparent;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button{
+      min-height:50px;
+      padding:7px 15px;
+      gap:9px;
+      border:0;
+      border-left:1px solid var(--panel-border);
+      border-radius:0;
+      color:color-mix(in srgb,var(--topbar-fg) 72%,transparent);
+      background:transparent;
+      box-shadow:none;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button:first-child{border-left:0}
+    html[data-theme] .topbar-context .offer-mode-selector button::after{content:none}
+    html[data-theme] .topbar-context .offer-mode-selector button:hover{
+      color:var(--topbar-fg);
+      border-color:var(--panel-border);
+      background:color-mix(in srgb,var(--topbar-fg) 5%,transparent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button.active,
+    html[data-theme] .topbar-context .offer-mode-selector button[data-offer-mode="pack"].active,
+    html[data-theme] .topbar-context .offer-mode-selector button[data-offer-mode="student"].active{
+      color:var(--topbar-fg);
+      border-color:var(--panel-border);
+      background:transparent;
+      box-shadow:inset 0 -2px 0 var(--accent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol{
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+      border:1px solid color-mix(in srgb,var(--topbar-fg) 34%,transparent);
+      border-radius:50%;
+      background:transparent;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button.active .offer-mode-symbol{
+      color:var(--accent-ink);
+      border-color:var(--accent);
+      background:var(--accent);
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{
+      width:16px;
+      height:16px;
+      stroke-width:1.45;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy{
+      font-size:12px;
+      font-weight:600;
+      letter-spacing:.01em;
+      text-transform:none;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small,
+    html[data-theme] .topbar-context .offer-mode-selector button.active .offer-mode-copy small{
+      color:color-mix(in srgb,var(--topbar-fg) 48%,transparent);
+      font-size:8px;
+      font-weight:500;
+      letter-spacing:.025em;
+    }
+
+    /* Graisses : conserver la force sur les montants et les actions seulement */
+    .eyebrow,.section-kicker,.settings-column-label,
+    .cart-section-title,.receipt-meta span,.form-grid label>span{
+      font-weight:600;
+    }
+    .family-title-row h2,.checkout-panel h2,.modal-head h2{
+      font-weight:600;
+      letter-spacing:-.025em;
+    }
+    .family-button strong,.family-option strong,.client-copy strong,
+    .service-name,.cart-line-name,.history-item-client,
+    .theme-card-copy strong,.settings-section-head h3{
+      font-weight:600;
+    }
+    .icon-button,.button,.action-menu button,.coupon-toggle,
+    .student-discount-button,.family-price-toggle,
+    .settings-offer-tag,.logo-upload-button,.logo-remove-button,
+    .discount-row-head>label,.coupon-code-field>span,
+    .brand-asset-copy small,.mobile-tabs button,
+    .price-option.selected::after{
+      font-weight:600;
+    }
+    .family-option-price,.coupon-code-field>input,
+    .cart-line-inline-controls .quantity-value,
+    .cart-line-inline-controls .cart-line-price{
+      font-weight:700;
+    }
+    .family-title-row>strong{
+      padding:0;
+      border-radius:0;
+      color:color-mix(in srgb,var(--topbar-fg) 54%,transparent);
+      background:transparent;
+      font-size:10px;
+      font-weight:500;
+      letter-spacing:.04em;
+    }
+    .quote-number,.catalog-count{
+      padding-inline:8px;
+      border-radius:3px;
+      background:transparent;
+      font-weight:600;
+    }
+
+    /* Moins de boîtes arrondies sur les surfaces principales */
+    html[data-theme] .family-button{border-radius:10px}
+    html[data-theme] .family-button-icon{border-radius:9px}
+    .family-group.open>.family-button{border-radius:10px 10px 5px 5px}
+    .family-option{border-radius:7px}
+    .family-search,.search-field{border-radius:8px}
+    .checkout-card{border-radius:12px}
+    .client-card,.installments{border-radius:8px}
+    .round-button,.button,.action-menu{border-radius:7px}
+    .action-menu button{border-radius:4px}
+    .family-custom,.family-price-toggle,.student-discount-button,
+    .coupon-code-field,.discount-input,.segmented-control,
+    .installment-option,.installment-empty,.history-item,
+    .checkbox-field,.toast{border-radius:7px}
+    .modal-card{border-radius:12px}
+    .history-status{border-radius:4px}
+    .family-price-toggle small{
+      padding-inline:0;
+      border-radius:0;
+      background:transparent!important;
+      font-weight:500;
+    }
+
+    /* Réglages : sections ouvertes, séparateurs fins et respiration */
+    .settings-modal{
+      width:min(1160px,calc(100vw - 48px))!important;
+      border-radius:12px;
+    }
+    .settings-modal .modal-head{
+      padding:27px 34px 23px;
+    }
+    .settings-modal .modal-head h2{
+      font-size:27px;
+      font-weight:600;
+    }
+    .settings-modal-intro{
+      margin-top:7px;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .settings-columns{
+      grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);
+      gap:42px;
+      padding:30px 34px 38px;
+    }
+    .settings-col{gap:0}
+    .settings-col--right{
+      padding-left:42px;
+      border-left:1px solid var(--line);
+    }
+    .settings-column-label{
+      margin:0 0 26px;
+      font-size:9px;
+      letter-spacing:.17em;
+    }
+    .settings-col>.settings-section,
+    .settings-col>.settings-section:first-child,
+    .settings-col>.settings-section:last-child{
+      margin:0 0 30px!important;
+      padding:0 0 30px!important;
+      overflow:visible;
+      border:0!important;
+      border-bottom:1px solid var(--line)!important;
+      border-radius:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+    }
+    .settings-col>.settings-section:last-child{
+      margin-bottom:0!important;
+      padding-bottom:0!important;
+      border-bottom:0!important;
+    }
+    html[data-theme] .settings-section-head{
+      min-height:0;
+      margin:0 0 20px;
+      padding-left:0;
+      border-left:0;
+    }
+    html[data-theme] .settings-section-head h3{
+      font-size:18px;
+      font-weight:600;
+      letter-spacing:-.02em;
+    }
+    .settings-section-head p{
+      margin-top:5px;
+      font-size:12px;
+      line-height:1.45;
+    }
+    .theme-picker{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    html[data-theme] .theme-card{
+      padding:13px;
+      gap:10px;
+      border-radius:8px;
+      background:transparent;
+      box-shadow:none;
+      transform:none;
+    }
+    html[data-theme] .theme-card:hover{
+      border-color:var(--line-dark);
+      box-shadow:none;
+      transform:none;
+    }
+    html[data-theme] .theme-card[aria-checked="true"]{
+      border-color:var(--line);
+      background:var(--surface-raised);
+      box-shadow:inset 3px 0 0 var(--accent);
+    }
+    .theme-card-swatch{height:68px;border-radius:5px}
+    .theme-card[aria-checked="true"] .theme-card-check{
+      width:auto;
+      height:auto;
+      margin:-2px 0 0 auto;
+      border-radius:0;
+      color:var(--taupe-dark);
+      background:transparent!important;
+    }
+    .settings-layout .form-grid{gap:16px 14px}
+    .settings-layout .form-grid input,
+    .settings-layout .form-grid select,
+    .settings-layout .input-with-suffix{
+      height:46px;
+      border-radius:6px;
+    }
+    .settings-layout .input-with-suffix input{height:44px}
+    .settings-layout textarea{border-radius:6px}
+    .brand-assets-editor{gap:0}
+    .brand-asset-card{
+      padding:15px 0;
+      border:0;
+      border-top:1px solid var(--line);
+      border-radius:0;
+      background:transparent;
+    }
+    .brand-asset-card:first-child{border-top:0}
+    .brand-asset-preview{border-radius:6px}
+    .logo-upload-button,.logo-remove-button{border-radius:6px}
+    .hint-box{
+      padding:12px 0 12px 14px;
+      border:0;
+      border-left:2px solid var(--line);
+      border-radius:0;
+      background:transparent!important;
+    }
+    .settings-offer-block,
+    .settings-section--commercial .settings-offer-block{
+      padding:16px;
+      border-radius:7px;
+      background:var(--surface-soft)!important;
+      box-shadow:none;
+    }
+    .settings-offer-tag,
+    .settings-offer-block.student .settings-offer-tag{
+      margin:0 0 14px;
+      padding:0;
+      border-radius:0;
+      color:var(--ink)!important;
+      background:transparent!important;
+      font-size:10px;
+      font-weight:600;
+      letter-spacing:.13em;
+    }
+    .student-discount-control output{font-weight:700}
+    html[data-theme] .family-visibility-item{
+      min-height:56px;
+      padding:10px 11px;
+      border-radius:6px;
+      background:transparent;
+    }
+    html[data-theme] .family-visibility-item:has(input:checked){
+      border-color:var(--line);
+      background:var(--surface-raised);
+      box-shadow:inset 2px 0 0 var(--accent);
+    }
+    html[data-theme] .family-visibility-icon{border-radius:7px}
+    .checkbox-field{border-radius:6px}
+    .settings-actions{
+      padding:16px 34px;
+    }
+  }
+  @media screen and (max-width:900px){
+    .settings-modal{width:min(760px,calc(100vw - 24px))!important}
+    .settings-columns{grid-template-columns:1fr;gap:0;padding:24px 26px 32px}
+    .settings-col--right{padding:28px 0 0;border-top:1px solid var(--line);border-left:0}
+    .settings-column-label{margin-top:0}
+    .settings-col>.settings-section,
+    .settings-col>.settings-section:first-child,
+    .settings-col>.settings-section:last-child{
+      margin:0 0 26px!important;
+      padding:0 0 26px!important;
+      border:0!important;
+      border-bottom:1px solid var(--line)!important;
+      border-radius:0!important;
+    }
+    .settings-col>.settings-section:last-child{border-bottom:0!important}
+  }
+  @media screen and (max-width:760px){
+    html[data-theme] .topbar-context .offer-mode-selector button{
+      min-height:42px;
+      padding:5px 8px;
+      gap:5px;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol{
+      width:22px;
+      height:22px;
+      flex-basis:22px;
+    }
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{width:13px;height:13px}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:10px}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small{font-size:7px}
+    .settings-modal .modal-head{padding:21px 20px 18px}
+    .settings-columns{padding:22px 20px 28px}
+    .settings-actions{padding:13px 20px}
+    .theme-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media screen and (max-width:440px){
+    .theme-picker{grid-template-columns:1fr}
+    html[data-theme] .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
+  }
+  /* Utilitaires puis menu principal placés après le groupe des tarifs. */
+  .topbar-utilities{
+    display:flex;
+    flex:0 0 auto;
+    align-items:center;
+    gap:5px;
+  }
+  .topbar-utility-button{
+    position:relative;
+    display:grid;
+    width:42px;
+    min-width:42px;
+    height:42px;
+    padding:0;
+    place-items:center;
+    border:1px solid color-mix(in srgb,var(--topbar-fg) 18%,transparent);
+    border-radius:9px;
+    color:var(--topbar-fg);
+    background:color-mix(in srgb,var(--topbar-fg) 7%,transparent);
+  }
+  .topbar-utility-button svg{width:18px;height:18px}
+  .topbar-utility-button:hover,.topbar-utility-button:focus-visible{
+    border-color:var(--accent);
+    background:color-mix(in srgb,var(--topbar-fg) 12%,transparent);
+  }
+  .topbar-utility-button::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    z-index:110;
+    top:calc(100% + 8px);
+    right:0;
+    padding:5px 8px;
+    visibility:hidden;
+    border-radius:5px;
+    color:var(--contrast-ink);
+    background:var(--contrast);
+    box-shadow:0 8px 20px rgba(0,0,0,.22);
+    font-size:10px;
+    font-weight:650;
+    line-height:1;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-2px);
+    transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+  }
+  .topbar-utility-button:hover::after,.topbar-utility-button:focus-visible::after{
+    visibility:visible;
+    opacity:1;
+    transform:translateY(0);
+  }
+  @media screen and (min-width:1451px){
+    .topbar{grid-template-columns:180px minmax(360px,1fr) auto 48px;gap:16px}
+  }
+  @media screen and (min-width:1181px) and (max-width:1450px){
+    .topbar{grid-template-columns:160px minmax(300px,1fr) auto 48px;gap:12px}
+  }
+  @media screen and (max-width:1180px){
+    .topbar{gap:8px}
+    .topbar-context{min-width:0}
+    .topbar-utilities{margin-left:auto}
+    .topbar-utility-button{width:40px;min-width:40px;height:40px}
+  }
+  @media screen and (max-width:760px){
+    .topbar{gap:5px}
+    .topbar-utilities{gap:4px}
+    .topbar-utility-button{width:38px;min-width:38px;height:38px}
+    .topbar-utility-button svg{width:16px;height:16px}
+  }
+  @media screen and (max-width:400px){
+    .topbar-utility-button{width:36px;min-width:36px;height:36px}
+  }
+  /* En-tête de caisse : actions essentielles sous forme d’icônes compactes. */
+  .family-title-row h2{font-size:18px}
+  .checkout-panel h2{font-size:22px}
+  .receipt-head{min-height:42px;gap:6px}
+  .quote-title-row{flex:0 0 auto}
+  .quote-head-actions{min-width:0;gap:5px}
+  .tax-header-toggle{min-height:38px;gap:5px;font-size:11px;transform:translateX(-5px)}
+  .tax-header-toggle[hidden]{display:none!important}
+  .tax-header-toggle .switch{width:38px;height:22px}
+  .tax-header-toggle .switch:after{width:16px;height:16px}
+  .tax-header-toggle input:checked+.switch:after{transform:translateX(16px)}
+  .quote-icon-button{
+    position:relative;
+    width:38px;
+    min-width:38px;
+    height:38px;
+    flex:0 0 38px;
+    border-width:1px;
+    border-radius:9px;
+  }
+  .quote-icon-button svg{width:17px;height:17px}
+  .quote-icon-button:hover,.quote-icon-button:focus-visible{
+    color:var(--ink);
+    border-color:var(--accent);
+    background:var(--taupe-light);
+  }
+  .quote-icon-button:disabled{cursor:not-allowed;opacity:.38}
+  .quote-icon-button::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    z-index:30;
+    top:calc(100% + 7px);
+    right:0;
+    padding:5px 8px;
+    visibility:hidden;
+    border-radius:5px;
+    color:var(--contrast-ink);
+    background:var(--contrast);
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+    font-size:10px;
+    font-weight:650;
+    line-height:1;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(-2px);
+    transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+  }
+  .quote-icon-button:hover::after,.quote-icon-button:focus-visible::after{
+    visibility:visible;
+    opacity:1;
+    transform:translateY(0);
+  }
+  #moreQuoteButton[aria-expanded="true"]::after{visibility:hidden;opacity:0}
+  @media screen and (max-width:760px){
+    .checkout-panel h2{font-size:24px}
+  }
+  @media screen and (max-width:400px){
+    .tax-header-toggle>span:last-child{display:none}
+    .quote-head-actions{gap:15px}
+    .quote-icon-button{width:36px;min-width:36px;height:36px;flex-basis:36px}
+  }
+  /* Échelonnement : deux lignes directes, sans panneau ni texte auxiliaire. */
+  html[data-theme] .installments{
+    margin-top:4px;
+    padding:0;
+    overflow:hidden;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--surface-raised);
+  }
+  html[data-theme] .installments[hidden]{display:none}
+  .installment-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    text-align:center;
+  }
+  .installment-table th,.installment-table td{
+    padding:4px 3px;
+    line-height:1.1;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .installment-table th{
+    color:var(--muted);
+    background:var(--surface-soft);
+    font-size:9px;
+    font-weight:700;
+  }
+  .installment-table td{
+    border-top:1px solid var(--line);
+    color:var(--ink);
+    font-size:10px;
+    font-weight:750;
+    font-variant-numeric:tabular-nums;
+  }
+  .installment-table th+th,.installment-table td+td{border-left:1px solid var(--line)}
+
+  /* Personnalisation V5.0 — navigation par groupes, un seul contexte à la fois. */
+  @media screen{
+    .settings-modal{
+      width:min(1100px,calc(100vw - 48px))!important;
+      height:min(820px,calc(100vh - 48px));
+    }
+    .settings-modal .modal-head{padding:21px 28px 18px}
+    .settings-layout{display:flex;min-height:0;flex:1 1 auto;overflow:hidden;flex-direction:column}
+    .settings-tabs{
+      display:flex;
+      flex:0 0 auto;
+      min-height:54px;
+      padding:0 28px;
+      overflow-x:auto;
+      border-bottom:1px solid var(--settings-bar-border,var(--line));
+      background:var(--settings-bar-bg,var(--surface-raised));
+      scrollbar-width:none;
+    }
+    .settings-tabs::-webkit-scrollbar{display:none}
+    .settings-tabs button{
+      position:relative;
+      min-width:112px;
+      padding:0 18px;
+      border:0;
+      color:var(--muted);
+      background:transparent;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.01em;
+    }
+    .settings-tabs button:hover{color:var(--ink);background:var(--surface-soft)}
+    .settings-tabs button[aria-selected="true"]{
+      color:var(--ink);
+      background:color-mix(in srgb,var(--accent) 7%,transparent);
+      box-shadow:inset 0 -2px 0 var(--accent);
+    }
+    .settings-tabs button:focus-visible{z-index:1;outline:2px solid var(--accent);outline-offset:-4px}
+    .settings-panels{flex:1 1 auto;min-height:0;overflow:hidden}
+    .settings-panel{
+      width:100%;
+      height:100%;
+      padding:26px 28px 32px;
+      overflow-x:hidden;
+      overflow-y:auto;
+      scrollbar-width:thin;
+    }
+    .settings-panel[hidden]{display:none!important}
+    .settings-panel-grid{
+      display:grid;
+      min-width:0;
+      align-items:start;
+      gap:22px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .settings-panel-grid--interface{grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr)}
+    .settings-panel-grid--company{grid-template-columns:minmax(0,1fr) minmax(380px,1fr)}
+    .settings-panel-grid--pricing{grid-template-columns:minmax(250px,.65fr) minmax(0,1.35fr)}
+    .settings-panel-grid--document{grid-template-columns:minmax(0,1fr)}
+    .settings-panel-stack{display:grid;min-width:0;align-content:start;gap:22px}
+    .settings-panel-grid--interface>.settings-section--catalog{grid-column:1/-1}
+    .settings-layout section+section{padding-left:0;border-left:0}
+    .settings-panel .settings-section{
+      min-width:0;
+      margin:0;
+      padding:20px;
+      overflow:visible;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:var(--surface-soft);
+      box-shadow:none;
+    }
+    .settings-panel .settings-section-head,
+    html[data-theme] .settings-panel .settings-section-head{
+      min-height:0;
+      margin:0 0 18px;
+      padding:0 0 12px;
+      border-bottom:1px solid var(--line);
+      border-left:0;
+    }
+    .settings-panel .settings-section-head h3,
+    html[data-theme] .settings-panel .settings-section-head h3{
+      font-size:17px;
+      font-weight:650;
+      letter-spacing:-.015em;
+    }
+    .settings-panel .settings-subheading:first-of-type{margin-top:0}
+    .settings-panel .theme-picker{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .settings-panel .font-picker{gap:9px}
+    .settings-panel .catalog-mode-picker{grid-template-columns:1fr}
+    .settings-panel .settings-grid-offer{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .settings-panel .settings-offer-block,
+    .settings-panel .settings-section--commercial .settings-offer-block{height:100%}
+    .settings-panel .family-visibility-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .settings-panel .brand-assets-editor{gap:10px}
+    .settings-panel .brand-asset-card,
+    .settings-panel .brand-asset-card:first-child{
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:var(--surface-raised);
+    }
+    .settings-toggle-card{
+      position:relative;
+      display:grid!important;
+      min-height:78px;
+      padding:12px 13px!important;
+      align-items:center;
+      grid-template-columns:42px minmax(0,1fr) auto;
+      gap:12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:var(--ink);
+      background:var(--surface-raised);
+      cursor:pointer;
+      transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,transform .16s ease;
+    }
+    .settings-toggle-card:hover{border-color:color-mix(in srgb,var(--accent) 72%,var(--line));transform:translateY(-1px)}
+    .settings-toggle-card:has(.settings-toggle-input:checked){
+      border-color:var(--accent);
+      background:color-mix(in srgb,var(--accent) 11%,var(--surface-raised));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent);
+    }
+    .settings-toggle-card:has(.settings-toggle-input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+    .settings-toggle-input{
+      position:absolute;
+      width:1px!important;
+      height:1px!important;
+      margin:0!important;
+      padding:0!important;
+      overflow:hidden;
+      border:0!important;
+      opacity:0;
+      pointer-events:none;
+    }
+    .settings-toggle-card>.settings-toggle-icon,
+    .settings-toggle-card>.settings-toggle-copy,
+    .settings-toggle-card>.settings-toggle-action{
+      min-width:0;
+      margin:0;
+      color:inherit;
+      letter-spacing:normal;
+      text-transform:none;
+    }
+    .settings-toggle-icon{
+      display:grid!important;
+      width:42px;
+      height:42px;
+      place-items:center;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:var(--muted)!important;
+      background:var(--surface-soft);
+      transition:border-color .16s ease,color .16s ease,background-color .16s ease;
+    }
+    .settings-toggle-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .settings-toggle-card:has(.settings-toggle-input:checked) .settings-toggle-icon{border-color:var(--accent);color:var(--accent-ink)!important;background:var(--accent)}
+    .settings-toggle-copy{display:flex!important;flex-direction:column;gap:4px}
+    .settings-toggle-copy strong{color:var(--ink);font-size:13px;font-weight:750;line-height:1.25}
+    .settings-toggle-copy small{max-width:48ch;color:var(--muted);font-size:11px;font-weight:500;line-height:1.38}
+    .settings-toggle-action{display:flex!important;align-items:center;gap:9px}
+    .settings-toggle-status{min-width:52px;color:var(--muted);font-size:10px;font-weight:750;text-align:right}
+    .settings-toggle-status::before{content:"Désactivé"}
+    .settings-toggle-control{position:relative;display:block;width:42px;height:24px;border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));border-radius:99px;background:color-mix(in srgb,var(--muted) 24%,var(--surface-soft));transition:border-color .16s ease,background-color .16s ease}
+    .settings-toggle-control::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface-raised);box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .16s ease}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status{color:var(--taupe-dark)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status::before{content:"Activé"}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control{border-color:var(--action);background:var(--action)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control::after{transform:translateX(18px)}
+    .settings-panel .hint-box{padding:11px 12px;border:1px solid var(--line);border-radius:7px}
+    .settings-panel .settings-section--mentions textarea{min-height:96px}
+    .settings-actions{padding:14px 28px}
+  }
+  @media screen and (max-width:900px){
+    .settings-modal{width:min(760px,calc(100vw - 24px))!important}
+    .settings-tabs{padding:0 20px}
+    .settings-panel{padding:22px 20px 28px}
+    .settings-panel-grid,
+    .settings-panel-grid--interface,
+    .settings-panel-grid--company,
+    .settings-panel-grid--pricing,
+    .settings-panel-grid--document{grid-template-columns:1fr}
+    .settings-panel .catalog-mode-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media screen and (max-width:620px){
+    .settings-modal{width:calc(100vw - 20px)!important;height:calc(100vh - 20px)}
+    .settings-modal .modal-head{padding:18px 16px 15px}
+    .settings-tabs{min-height:50px;padding:0 10px}
+    .settings-tabs button{min-width:104px;padding:0 12px;font-size:11px}
+    .settings-panel{padding:16px 14px 22px}
+    .settings-panel .settings-section{padding:16px}
+    .settings-panel .catalog-mode-picker,
+    .settings-panel .settings-grid-offer,
+    .settings-panel .family-visibility-grid{grid-template-columns:1fr}
+    .settings-toggle-card{grid-template-columns:38px minmax(0,1fr) auto;padding:11px!important;gap:10px}
+    .settings-toggle-icon{width:38px;height:38px}
+    .settings-toggle-status{display:none}
+    .settings-actions{padding:10px 14px}
+  }
+  </style>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+    <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
+    <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
+    <symbol id="icon-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2.4-7.6L3 11Z"></path><path d="m10.6 13.4 4.8-4.8"></path></symbol>
+    <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></symbol>
+    <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
+    <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h6M16 14h1"></path></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></symbol>
+    <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
+    <symbol id="icon-percent" viewBox="0 0 24 24"><path d="M6 18 18 6"></path><circle cx="7.5" cy="7.5" r="2.2"></circle><circle cx="16.5" cy="16.5" r="2.2"></circle></symbol>
+    <symbol id="icon-signature" viewBox="0 0 24 24"><path d="M4 18.5c2.7-4.2 4.7-6.3 6-6.3 1.8 0-1.1 4.7.4 4.7 1.1 0 2.2-2.7 3.3-2.7.8 0-.2 2.4.8 2.4.8 0 1.7-1.3 2.6-1.3.6 0 1 .4 1.4 1.2"></path><path d="M4 20h16"></path><path d="m15.5 9.2 3.8-3.8 1.3 1.3-3.8 3.8-2 .7.7-2Z"></path></symbol>
+     <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
+     <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"></path></symbol>
+    <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"></path></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M4 21h16"></path></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0 5 5m-5-5L7 9M4 21h16"></path></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></symbol>
+    <symbol id="icon-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.3 3.7L17 8l-3.7 1.3L12 13l-1.3-3.7L7 8l3.7-1.3L12 3ZM18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14ZM6 13l.8 2.2L9 16l-2.2.8L6 19l-.8-2.2L3 16l2.2-.8L6 13Z"></path></symbol>
+    <symbol id="icon-droplet" viewBox="0 0 24 24"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11Z"></path></symbol>
+    <symbol id="icon-scan" viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4m6 0h4a1 1 0 0 1 1 1v4m0 6v4a1 1 0 0 1-1 1h-4m-6 0H5a1 1 0 0 1-1-1v-4"></path><circle cx="12" cy="12" r="3"></circle></symbol>
+    <symbol id="icon-session" viewBox="0 0 24 24"><rect x="6" y="4.5" width="12" height="15" rx="2.2"></rect><path d="M9 9h6M9 13h4.5"></path></symbol>
+    <symbol id="icon-pack" viewBox="0 0 24 24"><rect x="7" y="7" width="11" height="12" rx="2.2"></rect><path d="M5 16V6a2 2 0 0 1 2-2h9M10 10.5h5M10 14h5"></path></symbol>
+    <!-- Body map V3, triple passe anatomique 2026-07 : silhouettes communes et zones actives optimisées pour 32–34 px. -->
+    <g id="bodymap-face">
+      <path class="anatomy-base" d="M12 2.2c-4 0-6.3 2.9-6.3 7.2 0 5.5 2.7 10.6 6.3 12.2 3.6-1.6 6.3-6.7 6.3-12.2 0-4.3-2.3-7.2-6.3-7.2Z"></path>
+      <path class="anatomy-base" d="M9.2 19.6v2.1m5.6-2.1v2.1"></path>
+      <path class="anatomy-detail" d="M8.2 10h1.5m4.6 0h1.5M10.1 16.4c1.2.6 2.6.6 3.8 0"></path>
+    </g>
+    <g id="bodymap-face-profile">
+      <path class="anatomy-base" d="M4.3 3.2c4.1.2 6.8 1.8 7.8 4.9M4.3 3.2c1.8 1.8 2.7 4.2 2.7 7v7.1c0 2.3 1 3.8 3 4.5"></path>
+      <path class="anatomy-base" d="M11.3 7.3c1.8-1.2 4.1-.5 5.2 1.5h2.4v2.8l1.8 2.2-1.8 1.1v2.3c0 2.3-1.8 4.1-4.1 4.1h-2.5c-1.6 0-2.9-1.3-2.9-2.9v-8.3c0-1.2.7-2.3 1.9-2.8Z"></path>
+      <path class="anatomy-detail" d="m12.6 10.3 1.6-.8m2.4 7.5h1.5"></path>
+      <circle class="anatomy-dot" cx="14.4" cy="11.7" r=".6"></circle>
+    </g>
+    <g id="bodymap-neck-front">
+      <circle class="anatomy-base" cx="12" cy="5.2" r="3.4"></circle>
+      <path class="anatomy-base" d="M9.3 8v2.5c0 1.7-1.2 2.8-3.6 3.8-1.7.7-2.6 2.1-2.6 4v3.2h17.8v-3.2c0-1.9-.9-3.3-2.6-4-2.4-1-3.6-2.1-3.6-3.8V8c-1.7 1-3.7 1-5.4 0Z"></path>
+      <path class="anatomy-detail" d="M4.9 16.2c4.7 1.8 9.5 1.8 14.2 0"></path>
+    </g>
+    <g id="bodymap-upper-front">
+      <path class="anatomy-base" d="M8.6 2.4c.4 1.4-.5 2.5-2.8 3.5C3.5 6.9 2.6 8.6 3 11l1.5 10.5h15L21 11c.4-2.4-.5-4.1-2.8-5.1-2.3-1-3.2-2.1-2.8-3.5-1.9 1.4-4.9 1.4-6.8 0Z"></path>
+      <path class="anatomy-detail" d="M6.2 8.2c1.5-.8 3.2-1.1 5.1-.8m6.5.8c-1.5-.8-3.2-1.1-5.1-.8M7 10.5c3.2-1 6.8-1 10 0M5.2 14.2c4.4-1 9.2-1 13.6 0M12 11.2v8.5"></path>
+      <circle class="anatomy-dot" cx="12" cy="16.2" r=".55"></circle>
+    </g>
+    <g id="bodymap-upper-back">
+      <path class="anatomy-base" d="M8.6 2.4c.4 1.4-.5 2.5-2.8 3.5C3.5 6.9 2.6 8.6 3 11l1.5 10.5h15L21 11c.4-2.4-.5-4.1-2.8-5.1-2.3-1-3.2-2.1-2.8-3.5-1.9 1.4-4.9 1.4-6.8 0Z"></path>
+      <path class="anatomy-detail" d="M6.2 7.6c1.8.2 3.2 1.1 4.2 2.8m7.4-2.8c-1.8.2-3.2 1.1-4.2 2.8M5 14.1c4.5-1 9.5-1 14 0M12 5.3v14.4"></path>
+    </g>
+    <g id="bodymap-arms">
+      <path class="anatomy-base" d="M9.1 3.1c.8.8 1.8 1.2 2.9 1.2s2.1-.4 2.9-1.2l3.9 2.2c1.2.7 1.7 2 1.3 3.3l-3 10.2c-.4 1.4-2.5.9-2.2-.6l1.7-9.4-1.1 12.6h-7L7.4 8.8l1.7 9.4c.3 1.5-1.8 2-2.2.6l-3-10.2c-.4-1.3.1-2.6 1.3-3.3l3.9-2.2Z"></path>
+      <path class="anatomy-detail" d="M8 9.2c2.6.8 5.4.8 8 0M6.2 12.2l1.7-.5m9.9.5-1.7-.5"></path>
+    </g>
+    <g id="bodymap-hand">
+      <path class="anatomy-base" d="M2.4 12.9V9.1c0-.6.4-1 .9-1s.9.4.9 1v1.7-5.7c0-.6.4-1 .9-1s.9.4.9 1v5-6.7c0-.6.4-1 .9-1s.9.4.9 1v6.7-5.8c0-.6.4-1 .9-1s.9.4.9 1v7.3l.7-1.5c.3-.6.9-.8 1.4-.5s.7.9.5 1.5l-1.6 3.8c-.8 1.9-2.1 2.9-3.8 2.9H6.2c-2.2 0-3.8-1.8-3.8-4.2Z"></path>
+      <path class="anatomy-detail" d="M4.6 12.8h4.4m-3.8 2.5c1.1-.5 2.2-.5 3.3 0"></path>
+    </g>
+    <g id="bodymap-hands-pair">
+      <use href="#bodymap-hand" transform="translate(0 2.1)"></use>
+      <use href="#bodymap-hand" transform="translate(24 2.1) scale(-1 1)"></use>
+    </g>
+    <g id="bodymap-pelvis-front">
+      <path class="anatomy-base" d="M6.1 2.4h11.8c-.3 3.8.5 7 2.1 9.9 1.2 2.2.9 6.2-.8 9.3h-4.4L12 16.8l-2.8 4.8H4.8c-1.7-3.1-2-7.1-.8-9.3 1.6-2.9 2.4-6.1 2.1-9.9Z"></path>
+      <path class="anatomy-detail" d="M5.6 9.5h12.8M12 12.6v7.1"></path>
+    </g>
+    <g id="bodymap-pelvis-back">
+      <path class="anatomy-base" d="M6.2 2.5h11.6c-.1 3.5.7 6.6 2.2 9.2 1.4 2.5.5 7.3-2.3 9.1-2.4 1.6-4.7.4-5.7-1.7-1 2.1-3.3 3.3-5.7 1.7-2.8-1.8-3.7-6.6-2.3-9.1 1.5-2.6 2.3-5.7 2.2-9.2Z"></path>
+      <path class="anatomy-detail" d="M4.2 12c2.5-1.5 5.1-.6 7.8 2.3 2.7-2.9 5.3-3.8 7.8-2.3M12 8.2v11"></path>
+    </g>
+    <g id="bodymap-legs">
+      <path class="anatomy-base" d="M7.2 2.3h9.6l1 7.3-1.3 11.9h-4L12 11.7l-.5 9.8h-4L6.2 9.6l1-7.3Z"></path>
+      <path class="anatomy-detail" d="M7 9.4c3.2 1 6.8 1 10 0M12 3.5v8.2"></path>
+    </g>
+    <g id="bodymap-foot">
+      <path class="anatomy-base" d="M7.7 4.7c1.4-.2 2.4.9 2.7 2.6l1 7.1c.6 4-1 6.8-4.1 6.8-2.3 0-3.7-1.5-3.5-3.8l.6-7.1c.3-3.4 1.4-5.4 3.3-5.6Z"></path>
+      <circle class="anatomy-base" cx="4.3" cy="5.1" r=".55"></circle>
+      <circle class="anatomy-base" cx="5.4" cy="3.9" r=".63"></circle>
+      <circle class="anatomy-base" cx="6.7" cy="3.2" r=".72"></circle>
+      <circle class="anatomy-base" cx="8.2" cy="2.8" r=".82"></circle>
+      <circle class="anatomy-base" cx="9.9" cy="2.9" r="1.05"></circle>
+      <path class="anatomy-detail" d="M4.5 8.4c1.8-1 4-1.2 6.2-.4m-5 5.5c1.2-.6 2.6-.6 3.8 0"></path>
+    </g>
+    <g id="bodymap-feet">
+      <use href="#bodymap-foot"></use>
+      <use href="#bodymap-foot" transform="translate(24 0) scale(-1 1)"></use>
+    </g>
+    <g id="bodymap-full">
+      <circle class="anatomy-base" cx="12" cy="3.2" r="1.8"></circle>
+      <path class="anatomy-base" d="M9.1 6.1c-1.9 1.3-3 3.5-3.2 6.5l-.5 8.8h2.8l1-7.5.7 7.5h4.2l.7-7.5 1 7.5h2.8l-.5-8.8c-.2-3-1.3-5.2-3.2-6.5-1.8 1.2-4 1.2-5.8 0Z"></path>
+    </g>
+
+    <symbol id="icon-navigation-tiles" viewBox="0 0 24 24" data-design="app-navigation-v2">
+      <rect class="navigation-preview-row navigation-preview-row-active" x="2.5" y="2.8" width="19" height="5.2" rx="1.5"></rect>
+      <circle class="navigation-preview-marker" cx="5.5" cy="5.4" r="1.15"></circle>
+      <path class="navigation-preview-line" d="M8.4 5.4h7.2"></path>
+      <path class="navigation-preview-chevron" d="m18.1 4.7 1 .9 1-.9"></path>
+      <rect class="navigation-preview-row" x="2.5" y="9.4" width="19" height="5.2" rx="1.5"></rect>
+      <circle class="navigation-preview-marker navigation-preview-marker-muted" cx="5.5" cy="12" r="1.15"></circle>
+      <path class="navigation-preview-line navigation-preview-line-muted" d="M8.4 12h5.9"></path>
+      <path class="navigation-preview-chevron" d="m18.1 11.3 1 .9 1-.9"></path>
+      <rect class="navigation-preview-row" x="2.5" y="16" width="19" height="5.2" rx="1.5"></rect>
+      <circle class="navigation-preview-marker navigation-preview-marker-muted" cx="5.5" cy="18.6" r="1.15"></circle>
+      <path class="navigation-preview-line navigation-preview-line-muted" d="M8.4 18.6h6.6"></path>
+      <path class="navigation-preview-chevron" d="m18.1 17.9 1 .9 1-.9"></path>
+    </symbol>
+    <symbol id="icon-navigation-body" viewBox="0 0 24 24" data-design="app-navigation-v2">
+      <use href="#bodymap-full"></use>
+      <circle class="anatomy-zone" cx="9" cy="9.2" r="1.55"></circle>
+      <circle class="anatomy-zone" cx="15" cy="13.1" r="1.55"></circle>
+      <circle class="anatomy-zone" cx="10.4" cy="18" r="1.55"></circle>
+    </symbol>
+
+    <symbol id="icon-map-face" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone-soft" d="M12 2.8c-3.6 0-5.7 2.7-5.7 6.6 0 5 2.5 9.6 5.7 11.1 3.2-1.5 5.7-6.1 5.7-11.1 0-3.9-2.1-6.6-5.7-6.6Z"></path></symbol>
+    <symbol id="icon-map-scalp" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone" d="M6.2 8.2C6.7 4.6 8.8 2.7 12 2.7s5.3 1.9 5.8 5.5c-1.7-1-3.6-1.5-5.8-1.5S7.9 7.2 6.2 8.2Z"></path></symbol>
+    <symbol id="icon-map-face-skin" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone-soft" d="M7.1 9.4c0 4.7 2.2 8.7 4.9 10.2 2.7-1.5 4.9-5.5 4.9-10.2-1.5.9-3.1 1.4-4.9 1.4s-3.4-.5-4.9-1.4Z"></path><circle class="anatomy-dot" cx="9.1" cy="13.1" r=".55"></circle><circle class="anatomy-dot" cx="14.9" cy="13.1" r=".55"></circle><circle class="anatomy-dot" cx="12" cy="17" r=".55"></circle></symbol>
+    <symbol id="icon-map-face-neck" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone-soft" d="M6.3 10.8c.5 4.8 2.8 8.5 5.7 9.8 2.9-1.3 5.2-5 5.7-9.8-1.5 1.1-3.4 1.7-5.7 1.7s-4.2-.6-5.7-1.7Z"></path><path class="anatomy-zone" d="M9.2 18.5h5.6v3.3H9.2z"></path></symbol>
+    <symbol id="icon-map-forehead" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone" d="M6.8 7.4c3.4-1.5 7-1.5 10.4 0l-.3 3.2H7.1l-.3-3.2Z"></path></symbol>
+    <symbol id="icon-map-glabella" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><rect class="anatomy-zone" x="10.8" y="7.2" width="2.4" height="4.6" rx="1.2"></rect></symbol>
+    <symbol id="icon-map-cheeks" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><circle class="anatomy-zone" cx="8.5" cy="13.2" r="2.15"></circle><circle class="anatomy-zone" cx="15.5" cy="13.2" r="2.15"></circle></symbol>
+    <symbol id="icon-map-upper-lip" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone" d="M9.4 12.8c1.7.7 3.5.7 5.2 0l.5 2.4c-2-.7-4.2-.7-6.2 0l.5-2.4Z"></path><path class="anatomy-negative-line" d="M9.7 15.6c1.5.8 3.1.8 4.6 0"></path></symbol>
+    <symbol id="icon-map-chin" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face-profile"></use><path class="anatomy-zone" d="M14.9 18.1c1.5.4 2.8.1 4-.9-.4 2.7-1.9 4.1-4.4 4l.4-3.1Z"></path></symbol>
+    <symbol id="icon-map-nose" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone" d="M11 9.1h2l.4 4.5 1.2 1.8c-.6 1.2-1.5 1.8-2.6 1.8s-2-.6-2.6-1.8l1.2-1.8.4-4.5Z"></path><circle class="anatomy-negative" cx="10.9" cy="15.5" r=".48"></circle><circle class="anatomy-negative" cx="13.1" cy="15.5" r=".48"></circle></symbol>
+    <symbol id="icon-map-ears" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><ellipse class="anatomy-zone" cx="5.5" cy="11.4" rx="1.45" ry="2.35"></ellipse><ellipse class="anatomy-zone" cx="18.5" cy="11.4" rx="1.45" ry="2.35"></ellipse></symbol>
+    <symbol id="icon-map-eyebrows" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-focus" d="M7.6 8.8c1.2-.8 2.4-.9 3.5-.2m1.8 0c1.1-.7 2.3-.6 3.5.2" stroke-width="2.1"></path></symbol>
+    <symbol id="icon-map-temples" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><ellipse class="anatomy-zone" cx="6.7" cy="8.8" rx="1.45" ry="2.1"></ellipse><ellipse class="anatomy-zone" cx="17.3" cy="8.8" rx="1.45" ry="2.1"></ellipse></symbol>
+    <symbol id="icon-map-beard" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-zone-soft" d="M6.2 11.7c.5 4.8 2.8 8.2 5.8 9.5 3-1.3 5.3-4.7 5.8-9.5-1.6 1.3-3.6 2-5.8 2s-4.2-.7-5.8-2Z"></path><path class="anatomy-negative-line" d="m8.4 14.2 1.1 1.2m6.1-1.2-1.1 1.2m-4.2 1.7 1.7 1.4 1.7-1.4"></path></symbol>
+    <symbol id="icon-map-beard-line" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face-profile"></use><path class="anatomy-focus" d="M10.1 13.5c1.9 1.2 4 1.4 6.3.6M9.8 16.2c1.7 2.7 4.3 3.8 7.7 2.9" stroke-width="2.25"></path></symbol>
+    <symbol id="icon-map-face-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><circle class="anatomy-patch" cx="15" cy="14.2" r="2.8"></circle></symbol>
+    <symbol id="icon-map-neck" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-neck-front"></use><path class="anatomy-zone" d="M9.3 8v3.2c0 1-.4 1.8-1.2 2.5 2.5.9 5.3.9 7.8 0-.8-.7-1.2-1.5-1.2-2.5V8c-1.7 1-3.7 1-5.4 0Z"></path></symbol>
+
+    <symbol id="icon-map-arms" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-arms"></use><path class="anatomy-zone" d="M4.2 7.1 7 6l2 12.4c.2 1.3-1.7 1.8-2.1.5L4.2 9.3c-.2-.7-.2-1.5 0-2.2Zm15.6 0L17 6l-2 12.4c-.2 1.3 1.7 1.8 2.1.5l2.7-9.6c.2-.7.2-1.5 0-2.2Z"></path></symbol>
+    <symbol id="icon-map-forearms" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-arms"></use><path class="anatomy-zone" d="m5.6 12 1.3 6.8c.3 1.5 2.4.9 2.1-.5L7.7 12H5.6Zm12.8 0-1.3 6.8c-.3 1.5-2.4.9-2.1-.5l1.3-6.3h2.1Z"></path></symbol>
+    <symbol id="icon-map-armpits" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-arms"></use><circle class="anatomy-zone" cx="7.7" cy="8.4" r="1.7"></circle><circle class="anatomy-zone" cx="16.3" cy="8.4" r="1.7"></circle></symbol>
+    <symbol id="icon-map-shoulders" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-arms"></use><path class="anatomy-zone" d="M4.4 6.1 9 3.4l1.3 3.4C7.7 6.7 5.7 7.6 4.5 9l-.1-2.9Zm15.2 0L15 3.4l-1.3 3.4c2.6-.1 4.6.8 5.8 2.2l.1-2.9Z"></path></symbol>
+    <symbol id="icon-map-hands" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-hands-pair"></use><path class="anatomy-zone-soft" d="M3.2 13.1c1.9-1 4.7-1 6.6 0l-.2 1.7c-.4 2.1-1.6 3.2-3.4 3.2-1.9 0-3-1.3-3-3.3v-1.6Zm17.6 0c-1.9-1-4.7-1-6.6 0l.2 1.7c.4 2.1 1.6 3.2 3.4 3.2 1.9 0 3-1.3 3-3.3v-1.6Z"></path><path class="anatomy-negative-line" d="M4.3 13.4h1m.8 0h1m.8 0h1m10.8 0h-1m-.8 0h-1m-.8 0h-1"></path></symbol>
+    <symbol id="icon-map-fingers" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-hands-pair"></use><rect class="anatomy-zone" x="3.25" y="10.15" width=".95" height="2.9" rx=".47"></rect><rect class="anatomy-zone" x="4.95" y="6.2" width="1.05" height="5.9" rx=".52"></rect><rect class="anatomy-zone" x="6.85" y="4.5" width="1.05" height="7.6" rx=".52"></rect><rect class="anatomy-zone" x="8.75" y="5.4" width="1.05" height="6.7" rx=".52"></rect><path class="anatomy-zone" d="m10.2 12.3.9-1.9c.3-.6.9-.8 1.4-.5s.7.9.5 1.5l-1.1 2.6-1.7-1.7Z"></path><rect class="anatomy-zone" x="19.8" y="10.15" width=".95" height="2.9" rx=".47"></rect><rect class="anatomy-zone" x="18" y="6.2" width="1.05" height="5.9" rx=".52"></rect><rect class="anatomy-zone" x="16.1" y="4.5" width="1.05" height="7.6" rx=".52"></rect><rect class="anatomy-zone" x="14.2" y="5.4" width="1.05" height="6.7" rx=".52"></rect><path class="anatomy-zone" d="m13.8 12.3-.9-1.9c-.3-.6-.9-.8-1.4-.5s-.7.9-.5 1.5l1.1 2.6 1.7-1.7Z"></path></symbol>
+    <symbol id="icon-map-arm-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-arms"></use><ellipse class="anatomy-patch" cx="7.2" cy="13.7" rx="2.3" ry="3"></ellipse></symbol>
+
+    <symbol id="icon-map-torso" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-front"></use><path class="anatomy-zone" d="M4.2 8.5c5.1 1.4 10.5 1.4 15.6 0l-.7 5.3c-4.7-1.2-9.5-1.2-14.2 0l-.7-5.3Z"></path></symbol>
+    <symbol id="icon-map-abdomen" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-front"></use><path class="anatomy-zone" d="M4.9 13h14.2l-.9 8.1c-4.1.7-8.3.7-12.4 0L4.9 13Z"></path></symbol>
+    <symbol id="icon-map-areola" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-front"></use><circle class="anatomy-zone" cx="8.7" cy="10.4" r="1.5"></circle><circle class="anatomy-zone" cx="15.3" cy="10.4" r="1.5"></circle></symbol>
+    <symbol id="icon-map-linea-alba" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-front"></use><rect class="anatomy-zone" x="11.1" y="11.3" width="1.8" height="10" rx=".9"></rect></symbol>
+    <symbol id="icon-map-torso-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-front"></use><rect class="anatomy-patch" x="12.3" y="11.4" width="5.5" height="6.1" rx="2.2"></rect></symbol>
+
+    <symbol id="icon-map-back" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-back"></use><path class="anatomy-zone-soft" d="M4.2 7.2c5.1-2.2 10.5-2.2 15.6 0l-.4 13.4c-4.9 1-9.9 1-14.8 0L4.2 7.2Z"></path></symbol>
+    <symbol id="icon-map-upper-back" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-back"></use><path class="anatomy-zone" d="M4 7.3c5.2-2.3 10.8-2.3 16 0l-.6 6.2c-4.8-1.6-10-1.6-14.8 0L4 7.3Z"></path></symbol>
+    <symbol id="icon-map-lower-back" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-back"></use><path class="anatomy-zone" d="M4.7 14.1c4.7-1.4 9.9-1.4 14.6 0l.2 7.1c-5 .7-10 .7-15 0l.2-7.1Z"></path></symbol>
+    <symbol id="icon-map-back-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-back"></use><rect class="anatomy-patch" x="5.6" y="11.8" width="5.8" height="6.3" rx="2.2"></rect></symbol>
+    <symbol id="icon-map-nape" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-upper-back"></use><path class="anatomy-zone" d="M8.7 2.7c.8 1.1 1.9 1.7 3.3 1.7s2.5-.6 3.3-1.7l.8 4.1c-2.7-.9-5.5-.9-8.2 0l.8-4.1Z"></path></symbol>
+
+    <symbol id="icon-map-maillot" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-front"></use><path class="anatomy-zone" d="M5.6 9.5 12 15.3l6.4-5.8-1.1 7.6c-3.5 1.6-7.1 1.6-10.6 0l-1.1-7.6Z"></path></symbol>
+    <symbol id="icon-map-bikini-classic" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-front"></use><path class="anatomy-focus" d="m6.7 10.6 4 3.1m6.6-3.1-4 3.1" stroke-width="2.2"></path></symbol>
+    <symbol id="icon-map-bikini-high" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-front"></use><path class="anatomy-focus" d="m5.5 8.2 5.2 5.6m7.8-5.6-5.2 5.6" stroke-width="2.5"></path></symbol>
+    <symbol id="icon-map-bikini-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-front"></use><ellipse class="anatomy-patch" cx="12" cy="15.8" rx="3" ry="3.5"></ellipse></symbol>
+    <symbol id="icon-map-male-intimate" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-front"></use><path class="anatomy-zone" d="M5.7 9.3h12.6l-1 8.2h-3.5L12 14.7l-1.8 2.8H6.7l-1-8.2Z"></path></symbol>
+    <symbol id="icon-map-sif" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-back"></use><path class="anatomy-focus" d="M12 12.7v7" stroke-width="2.5"></path></symbol>
+    <symbol id="icon-map-buttocks" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-pelvis-back"></use><path class="anatomy-zone-soft" d="M4.2 12c2.5-1.5 5.1-.6 7.8 2.3 2.7-2.9 5.3-3.8 7.8-2.3 1 3.1 0 7.1-2.6 8.7-2.2 1.4-4.3.3-5.2-1.6-.9 1.9-3 3-5.2 1.6C4.2 19.1 3.2 15.1 4.2 12Z"></path></symbol>
+
+    <symbol id="icon-map-legs" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><path class="anatomy-zone-soft" d="M7.2 2.8h4.3L11 21.1H7.9L6.7 9.6l.5-6.8Zm5.3 0h4.3l.5 6.8-1.2 11.5H13l-.5-18.3Z"></path><path class="anatomy-zone" d="M7.4 20.2h3.8v1.7H6.5c-.5 0-.7-.7-.2-1l1.1-.7Zm9.2 0h-3.8v1.7h4.7c.5 0 .7-.7.2-1l-1.1-.7Z"></path></symbol>
+    <symbol id="icon-map-thighs" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><path class="anatomy-zone" d="M7 2.8h4.5L11.2 10H6.7L7 2.8Zm5.5 0H17l.3 7.2h-4.5l-.3-7.2Z"></path></symbol>
+    <symbol id="icon-map-thigh-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><rect class="anatomy-patch" x="6.7" y="3.3" width="4.8" height="5.9" rx="2"></rect></symbol>
+    <symbol id="icon-map-lower-legs" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><path class="anatomy-zone" d="M7.3 10h3.9l-.3 11.1H7.8L7.3 10Zm5.5 0h3.9l-.5 11.1h-3.1L12.8 10Z"></path><circle class="anatomy-zone" cx="9.2" cy="10.2" r="1.65"></circle><circle class="anatomy-zone" cx="14.8" cy="10.2" r="1.65"></circle><path class="anatomy-zone" d="M7.4 20.2h3.8v1.7H6.5c-.5 0-.7-.7-.2-1l1.1-.7Zm9.2 0h-3.8v1.7h4.7c.5 0 .7-.7.2-1l-1.1-.7Z"></path></symbol>
+    <symbol id="icon-map-knees" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><circle class="anatomy-zone" cx="9.2" cy="10.2" r="1.8"></circle><circle class="anatomy-zone" cx="14.8" cy="10.2" r="1.8"></circle></symbol>
+    <symbol id="icon-map-leg-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><rect class="anatomy-patch" x="12.4" y="12.5" width="4.7" height="6.2" rx="2"></rect></symbol>
+    <symbol id="icon-map-feet" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-feet"></use><path class="anatomy-zone-soft" d="M7.6 7.2c1.4-.2 2.3.8 2.5 2.4l.7 5c.5 3.5-.8 5.9-3.5 5.9-2 0-3.1-1.3-3-3.2l.5-6.2c.2-2.4 1.2-3.7 2.8-3.9Zm8.8 0c-1.4-.2-2.3.8-2.5 2.4l-.7 5c-.5 3.5.8 5.9 3.5 5.9 2 0 3.1-1.3 3-3.2l-.5-6.2c-.2-2.4-1.2-3.7-2.8-3.9Z"></path><path class="anatomy-negative-line" d="M5.4 10.5c1.3-.7 3.2-.8 4.4-.1m8.8.1c-1.3-.7-3.2-.8-4.4-.1"></path></symbol>
+    <symbol id="icon-map-toes" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-feet"></use><circle class="anatomy-zone" cx="4.3" cy="5.1" r=".62"></circle><circle class="anatomy-zone" cx="5.4" cy="3.9" r=".7"></circle><circle class="anatomy-zone" cx="6.7" cy="3.2" r=".79"></circle><circle class="anatomy-zone" cx="8.2" cy="2.8" r=".9"></circle><circle class="anatomy-zone" cx="9.9" cy="2.9" r="1.14"></circle><circle class="anatomy-zone" cx="19.7" cy="5.1" r=".62"></circle><circle class="anatomy-zone" cx="18.6" cy="3.9" r=".7"></circle><circle class="anatomy-zone" cx="17.3" cy="3.2" r=".79"></circle><circle class="anatomy-zone" cx="15.8" cy="2.8" r=".9"></circle><circle class="anatomy-zone" cx="14.1" cy="2.9" r="1.14"></circle><path class="anatomy-negative-line" d="M9.35 2.95c.35-.25.75-.25 1.1 0m4.2 0c-.35-.25-.75-.25-1.1 0" stroke-width=".65"></path></symbol>
+
+    <symbol id="icon-map-electrolysis" viewBox="0 0 24 24" data-design="body-map-v3"><path class="anatomy-base" d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0v5H3.5v-5Z"></path><path class="anatomy-focus" d="m20.5 3.5-7.4 11"></path><circle class="anatomy-zone-soft" cx="12.8" cy="15.1" r="2"></circle><path class="anatomy-detail" d="M10.6 14.5c.3-3.2.2-5.7-.4-7.6"></path></symbol>
+    <symbol id="icon-map-injection" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-focus" d="m20.4 3.5-6.7 6.7m4.2-8.2 4.1 4.1m-6.7-1.5 4.1 4.1m-6.2 2-1.3 1.3"></path></symbol>
+    <symbol id="icon-map-injection-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-full"></use><path class="anatomy-focus" d="m20.5 3.4-7 7m4.4-8.5 4.2 4.2m-6.9-1.5 4.2 4.2m-6.4 2.1-1.3 1.3"></path></symbol>
+    <symbol id="icon-map-skin-target" viewBox="0 0 24 24" data-design="body-map-v3"><path class="anatomy-base" d="M3.2 8.2c5.6-1.8 12-1.8 17.6 0v8.3c-5.6 1.8-12 1.8-17.6 0V8.2Z"></path><rect class="anatomy-patch" x="8.2" y="8.4" width="7.6" height="7.8" rx="2.8"></rect><circle class="anatomy-dot" cx="10.4" cy="11" r=".55"></circle><circle class="anatomy-dot" cx="13.4" cy="12.2" r=".55"></circle><circle class="anatomy-dot" cx="11.7" cy="14.4" r=".55"></circle></symbol>
+    <symbol id="icon-map-body-vessels" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-full"></use><path class="anatomy-focus" d="M12 7.2v4.2m0 0-3 2.8m3-2.8 3 2.8m-3-2.8v8m-3-5.2-1.4 4m7.4-4 1.4 4"></path></symbol>
+    <symbol id="icon-map-zones" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-full"></use><circle class="anatomy-zone" cx="9" cy="9.2" r="1.55"></circle><circle class="anatomy-zone" cx="15" cy="13.1" r="1.55"></circle><circle class="anatomy-zone" cx="10.4" cy="18" r="1.55"></circle></symbol>
+    <symbol id="icon-map-student" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-full"></use><circle class="anatomy-dot" cx="9.2" cy="12.3" r=".9"></circle><circle class="anatomy-dot" cx="14.8" cy="17.2" r=".9"></circle><path class="anatomy-focus" d="m9 17.5 6-6"></path></symbol>
+    <symbol id="icon-map-consultation" viewBox="0 0 24 24" data-design="body-map-v3"><circle class="anatomy-base" cx="8.2" cy="7.6" r="3.1"></circle><path class="anatomy-base" d="M3.2 20c.3-4.6 2-6.9 5-6.9s4.7 2.3 5 6.9H3.2Z"></path><path class="anatomy-focus" d="M14 4.5h6.5v5.4h-2.2l-2.2 2.2V9.9H14V4.5Z"></path></symbol>
+    <symbol id="icon-map-aesthetic" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-face"></use><path class="anatomy-focus" d="m18.8 4 .7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7.7-1.9Z"></path></symbol>
+    <symbol id="icon-map-all" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-full"></use><path class="anatomy-focus" d="M18.6 4.1c.3 2.2 1.1 3 3.3 3.3-2.2.3-3 1.1-3.3 3.3-.3-2.2-1.1-3-3.3-3.3 2.2-.3 3-1.1 3.3-3.3Z"></path></symbol>
+    <symbol id="icon-face" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8M17.1 17.2h1.1"></path><circle cx="13.6" cy="11.7" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-scalp" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M6.2 8.4c.6-3.4 2.7-5.6 5.8-5.6s5.2 2.2 5.8 5.6c-1.7-1-3.6-1.5-5.8-1.5s-4.1.5-5.8 1.5Z" fill="currentColor" stroke="none" opacity=".28"></path><path d="M8.2 5.8c2.4-1.2 5.2-1.2 7.6 0"></path></symbol>
+    <symbol id="icon-face-skin" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="8.7" cy="13" r="2" fill="currentColor" stroke="none" opacity=".24"></circle><circle cx="15.3" cy="13" r="2" fill="currentColor" stroke="none" opacity=".24"></circle><path d="M8.5 9.6h1M14.5 9.6h1M10 16c1.3.7 2.7.7 4 0"></path></symbol>
+    <symbol id="icon-face-neck" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.6 0-5.8 2.8-5.8 6.6 0 4.7 2.5 8.2 5.8 9.3 3.3-1.1 5.8-4.6 5.8-9.3 0-3.8-2.2-6.6-5.8-6.6Z"></path><path d="M9 17.1v4m6-4v4M9 20.8c2-.9 4-.9 6 0"></path><path d="M9.2 17.2c.9 1 1.8 1.5 2.8 1.5s1.9-.5 2.8-1.5v3.2H9.2v-3.2Z" fill="currentColor" stroke="none" opacity=".25"></path></symbol>
+    <symbol id="icon-forehead" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M7 6.1c1.4-2.2 3-3.3 5-3.3s3.6 1.1 5 3.3l-.6 2.3H7.6L7 6.1Z" fill="currentColor" stroke="none" opacity=".27"></path><path d="M8.3 9.8h1.4m4.6 0h1.4"></path></symbol>
+    <symbol id="icon-glabella" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M8.1 9.2h2.2m3.4 0h2.2"></path><rect x="10.8" y="7.5" width="2.4" height="4.2" rx="1.2" fill="currentColor" stroke="none" opacity=".3"></rect></symbol>
+    <symbol id="icon-cheeks" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="8.5" cy="13.2" r="2.2" fill="currentColor" stroke="none" opacity=".3"></circle><circle cx="15.5" cy="13.2" r="2.2" fill="currentColor" stroke="none" opacity=".3"></circle><path d="M8.4 9.6h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-upper-lip" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8"></path><path d="M18.1 15.5h1.2" stroke-width="2.8" opacity=".72"></path><circle cx="13.6" cy="11.7" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-chin" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8M17.1 17.2h1.1"></path><path d="M15.6 20.8c1.7-.4 2.7-1.5 3.1-3.3" stroke-width="2.7" opacity=".48"></path><circle cx="13.6" cy="11.7" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-nose" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8M17.1 17.2h1.1"></path><path d="m18.7 11.8 1.8 2.4-1.8 1.2Z" fill="currentColor" stroke="none" opacity=".4"></path><circle cx="13.6" cy="11.7" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-ears" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.5 0-5.7 3-5.7 7.2 0 5.5 2.5 9.7 5.7 11 3.2-1.3 5.7-5.5 5.7-11 0-4.2-2.2-7.2-5.7-7.2Z"></path><path d="M6.4 9.3c-2-1-2.5 1.1-1.4 3.5.5 1 1.1 1.5 1.8 1.4m10.8-4.9c2-1 2.5 1.1 1.4 3.5-.5 1-1.1 1.5-1.8 1.4"></path><circle cx="5.8" cy="11.6" r="1.7" fill="currentColor" stroke="none" opacity=".27"></circle><circle cx="18.2" cy="11.6" r="1.7" fill="currentColor" stroke="none" opacity=".27"></circle></symbol>
+    <symbol id="icon-eyebrows" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M7.7 8.9c1.1-.8 2.2-.9 3.2-.2m2.2 0c1-.7 2.1-.6 3.2.2" stroke-width="2.5"></path><path d="M10 15.7c1.3.7 2.7.7 4 0"></path></symbol>
+    <symbol id="icon-temples" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><circle cx="6.8" cy="9" r="1.8" fill="currentColor" stroke="none" opacity=".3"></circle><circle cx="17.2" cy="9" r="1.8" fill="currentColor" stroke="none" opacity=".3"></circle><path d="M8.4 10h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-beard" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M12 2.8c-3.9 0-6.3 3-6.3 7.2 0 5.5 2.8 9.7 6.3 11 3.5-1.3 6.3-5.5 6.3-11 0-4.2-2.4-7.2-6.3-7.2Z"></path><path d="M6.4 12.5c.8 4.3 3 7.4 5.6 8.5 2.6-1.1 4.8-4.2 5.6-8.5-1.7 1.1-3.5 1.6-5.6 1.6s-3.9-.5-5.6-1.6Z" fill="currentColor" stroke="none" opacity=".27"></path><path d="M8.4 9.5h1.2m4.8 0h1.2"></path></symbol>
+    <symbol id="icon-beard-line" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8"></path><path d="M9.5 20.2c3.9 2.1 7.7.9 9.2-2.8" stroke-width="2.5" opacity=".62"></path><circle cx="13.6" cy="11.7" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-face-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 3.4c3.9.2 6.4 1.8 7.3 4.8M4 3.4c1.7 1.7 2.5 4 2.5 6.8v7.3c0 2.2 1 3.7 3 4.3"></path><path d="M10.4 7.3c1.8-1.2 4.1-.5 5.2 1.5h3.1v3l1.8 2.4-1.8 1.2v2.1c0 2.2-1.8 4-4 4h-3.1c-1.5 0-2.7-1.2-2.7-2.7V10c0-1.1.6-2.1 1.5-2.7Z"></path><path d="m12 10.4 1.5-.8"></path><circle cx="14.8" cy="15" r="2.4"></circle><circle cx="14.8" cy="15" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-neck" viewBox="0 0 24 24" data-design="anatomical-v2"><circle cx="12" cy="6.8" r="4.2"></circle><path d="M8.7 10v3.4c0 1.7-1.3 2.7-3.4 3.4M15.3 10v3.4c0 1.7 1.3 2.7 3.4 3.4M5.3 16.8c2 2.8 4.2 4.2 6.7 4.2s4.7-1.4 6.7-4.2"></path><path d="M9 10.3h6v5.3H9z" fill="currentColor" stroke="none" opacity=".27"></path></symbol>
+    <symbol id="icon-arms" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4.3 5.1c.8-1.8 3.1-2.5 4.6-1.2 1.6 1.4 1.3 3.8-.6 4.7l-1.5.8 4.8 5.7 5.6-4.8c1.3-1.1 3.2-.9 4.2.4 1 1.3.8 3.2-.5 4.3l-6.8 5.7c-1.7 1.4-4.2 1.2-5.6-.5L2.4 13c-1.4-1.7-1.6-4.2-.3-6.1l2.2-1.8Z"></path><path d="M5.5 6.8c.8-.7 1.9-.7 2.6.1.7.8.5 2-.4 2.6l-.9.5" opacity=".72"></path></symbol>
+    <symbol id="icon-forearms" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.4 4.2C5.9 5.4 4.6 7.5 4.7 10.4l.3 8.1c.1 1.5 1.3 2.6 2.8 2.5 1.5-.1 2.5-1.4 2.3-2.9L9 10.2M15.6 4.2c2.5 1.2 3.8 3.3 3.7 6.2l-.3 8.1c-.1 1.5-1.3 2.6-2.8 2.5-1.5-.1-2.5-1.4-2.3-2.9l1.1-7.9M8.4 4.2c2.2 1.5 5 1.5 7.2 0"></path><path d="m4.8 12.1.2 6.4m14.2-6.4-.2 6.4" stroke-width="3.1" opacity=".6"></path></symbol>
+    <symbol id="icon-armpits" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="m9.4 6.1-2.7-2.3c-.9-.8-2.3-.7-3.1.2-.8.9-.7 2.3.2 3.1l3.4 3.1.8 9.5M14.6 6.1l2.7-2.3c.9-.8 2.3-.7 3.1.2.8.9.7 2.3-.2 3.1l-3.4 3.1-.8 9.5M9.4 6.1c.7 1.1 1.6 1.7 2.6 1.7s1.9-.6 2.6-1.7M8.5 12.5c2.3 1 4.7 1 7 0"></path><circle cx="7.7" cy="9.8" r="1.7" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="16.3" cy="9.8" r="1.7" fill="currentColor" stroke="none" opacity=".35"></circle></symbol>
+    <symbol id="icon-shoulders" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M9 4.5c.8 1.3 1.8 1.9 3 1.9s2.2-.6 3-1.9M9 4.5C6.3 6 4.6 8.4 4.2 12M15 4.5c2.7 1.5 4.4 3.9 4.8 7.5M8 20l.8-8.4c2.1.9 4.3.9 6.4 0L16 20"></path><path d="M4.4 11.4c.7-2.8 2.2-4.9 4.6-6.3l1.1 3c-2.4.7-4.3 1.8-5.7 3.3Zm15.2 0c-.7-2.8-2.2-4.9-4.6-6.3l-1.1 3c2.4.7 4.3 1.8 5.7 3.3Z" fill="currentColor" stroke="none" opacity=".26"></path></symbol>
+    <symbol id="icon-hands" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 11V5.4a1.1 1.1 0 0 1 2.2 0v4.1-5.6a1.1 1.1 0 0 1 2.2 0v5.6-4.7a1.1 1.1 0 0 1 2.2 0v5.1-3.5a1.1 1.1 0 0 1 2.2 0v6.8c0 5-2.7 7.8-7 7.8-2.5 0-4.2-1.2-5.5-3.4l-2-3.5a1.4 1.4 0 0 1 2.3-1.6l2.1 2.3c.6.7 1.3.3 1.3-.6V11Z"></path><path d="M8.2 10.5h8.7v5.9c0 2.9-2.6 4.6-6.4 4.6-1.8 0-3.2-.7-4.2-2l-1.8-2.5 3.7-2.1v-3.9Z" fill="currentColor" stroke="none" opacity=".18"></path></symbol>
+    <symbol id="icon-fingers" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.5 13V6.2a1 1 0 0 1 2 0v5.1-7.4a1 1 0 0 1 2 0v7-6.1a1 1 0 0 1 2 0v6.1-4.7a1 1 0 0 1 2 0v7c0 4.8-2.3 7.8-6.3 7.8-2.3 0-4-1.3-5.2-3.5l-1.5-2.8a1.3 1.3 0 0 1 2.1-1.5l1.7 1.9c.6.6 1.2.2 1.2-.6V13Z"></path><path d="M8.5 4.6v6.2m2-7.9v7.5m2-6.5v6.5m2-4.9v5.3" stroke-width="2.4" opacity=".55"></path></symbol>
+    <symbol id="icon-arm-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7 4.2c2.4.9 4 2.8 4.9 5.8l2.7 8.3c.6 1.8 2.1 2.4 4.4 1.7M5 5.7l4.1 12.7c.7 2.2 2.4 3 5 2.4"></path><circle cx="10.6" cy="13.3" r="2.4"></circle><circle cx="10.6" cy="13.3" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-torso" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M2.5 3.2c1 2 2.3 3.3 3.7 4.2h4.2M21.5 3.2c-1 2-2.3 3.3-3.7 4.2h-4.2M6.2 7.4c-.4 4.2-.3 8.6.3 13.1M17.8 7.4c.4 4.2.3 8.6-.3 13.1M6.5 20.5c3.7.7 7.3.7 11 0M7.7 10.4c2.8-.8 5.8-.8 8.6 0"></path><path d="M6.2 8.3c3.8.8 7.8.8 11.6 0l-.6 4.8c-3.5-1-6.9-1-10.4 0l-.6-4.8Z" fill="currentColor" stroke="none" opacity=".24"></path><circle cx="12" cy="16.3" r=".75" fill="currentColor" stroke="none" opacity=".5"></circle></symbol>
+    <symbol id="icon-abdomen" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M2.5 3.2c1 2 2.3 3.3 3.7 4.2h4.2M21.5 3.2c-1 2-2.3 3.3-3.7 4.2h-4.2M6.2 7.4c-.4 4.2-.3 8.6.3 13.1M17.8 7.4c.4 4.2.3 8.6-.3 13.1M6.5 20.5c3.7.7 7.3.7 11 0M6.5 12.1h11"></path><path d="M6.4 12.1h11.2l-.1 8.4c-3.7.7-7.3.7-11 0l-.1-8.4Z" fill="currentColor" stroke="none" opacity=".28"></path><circle cx="12" cy="16.3" r=".85" fill="currentColor" stroke="none" opacity=".7"></circle></symbol>
+    <symbol id="icon-areola" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M2.5 3.2c1 2 2.3 3.3 3.7 4.2h4.2M21.5 3.2c-1 2-2.3 3.3-3.7 4.2h-4.2M6.2 7.4c-.4 4.2-.3 8.6.3 13.1M17.8 7.4c.4 4.2.3 8.6-.3 13.1M6.5 20.5c3.7.7 7.3.7 11 0M7.6 12.2c2.9.7 5.9.7 8.8 0"></path><circle cx="9.4" cy="10.5" r="1.35" fill="currentColor" stroke="none" opacity=".38"></circle><circle cx="14.6" cy="10.5" r="1.35" fill="currentColor" stroke="none" opacity=".38"></circle><circle cx="12" cy="16.3" r=".65" fill="currentColor" stroke="none" opacity=".45"></circle></symbol>
+    <symbol id="icon-linea-alba" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M2.5 3.2c1 2 2.3 3.3 3.7 4.2h4.2M21.5 3.2c-1 2-2.3 3.3-3.7 4.2h-4.2M6.2 7.4c-.4 4.2-.3 8.6.3 13.1M17.8 7.4c.4 4.2.3 8.6-.3 13.1M6.5 20.5c3.7.7 7.3.7 11 0M7.6 11.6c2.9.7 5.9.7 8.8 0"></path><path d="M11.1 11.4h1.8v9.1h-1.8z" fill="currentColor" stroke="none" opacity=".42"></path><circle cx="12" cy="16.3" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-torso-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M2.5 3.2c1 2 2.3 3.3 3.7 4.2h4.2M21.5 3.2c-1 2-2.3 3.3-3.7 4.2h-4.2M6.2 7.4c-.4 4.2-.3 8.6.3 13.1M17.8 7.4c.4 4.2.3 8.6-.3 13.1M6.5 20.5c3.7.7 7.3.7 11 0"></path><circle cx="14.2" cy="13.2" r="2.5"></circle><circle cx="14.2" cy="13.2" r=".7" fill="currentColor" stroke="none"></circle><circle cx="12" cy="16.8" r=".6" fill="currentColor" stroke="none" opacity=".45"></circle></symbol>
+    <symbol id="icon-back" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M9.2 3.3c-.3 1.2-1.3 2.2-2.9 3C5.1 7.6 4.7 9.1 4.9 11l.7 8.8M14.8 3.3c.3 1.2 1.3 2.2 2.9 3 1.2 1.3 1.6 2.8 1.4 4.7l-.7 8.8M9.2 3.3c.9.7 1.8 1.1 2.8 1.1s1.9-.4 2.8-1.1"></path><path d="M8.4 8.9c-1.2 1.3-1.3 3.5-.2 5.2 1.5-1 2.4-2.4 2.7-4.2M15.6 8.9c1.2 1.3 1.3 3.5.2 5.2-1.5-1-2.4-2.4-2.7-4.2"></path><path d="M12 6.8V7m0 2.8v.2m0 2.8v.2m0 2.8v.2m0 2.8v.2" stroke-width="2.2"></path></symbol>
+    <symbol id="icon-upper-back" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M9.2 3.3c-.3 1.2-1.3 2.2-2.9 3C5.1 7.6 4.7 9.1 4.9 11l.7 8.8M14.8 3.3c.3 1.2 1.3 2.2 2.9 3 1.2 1.3 1.6 2.8 1.4 4.7l-.7 8.8M9.2 3.3c.9.7 1.8 1.1 2.8 1.1s1.9-.4 2.8-1.1"></path><path d="M6.2 6.5c1.8-.9 3.7-1.3 5.8-1.3s4 .4 5.8 1.3l.6 5.8c-2-1.3-4.2-2-6.4-2s-4.4.7-6.4 2l.6-5.8Z" fill="currentColor" stroke="none" opacity=".28"></path><path d="M8.4 8.9c-1.2 1.3-1.3 3.5-.2 5.2 1.5-1 2.4-2.4 2.7-4.2M15.6 8.9c1.2 1.3 1.3 3.5.2 5.2-1.5-1-2.4-2.4-2.7-4.2M12 6.8V7m0 2.8v.2"></path></symbol>
+    <symbol id="icon-lower-back" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M9.2 3.3c-.3 1.2-1.3 2.2-2.9 3C5.1 7.6 4.7 9.1 4.9 11l.7 8.8M14.8 3.3c.3 1.2 1.3 2.2 2.9 3 1.2 1.3 1.6 2.8 1.4 4.7l-.7 8.8M9.2 3.3c.9.7 1.8 1.1 2.8 1.1s1.9-.4 2.8-1.1"></path><path d="M5.3 14.1c2.1-1 4.4-1.5 6.7-1.5s4.6.5 6.7 1.5l-.5 5.9c-2-.9-4.1-1.4-6.2-1.4S7.8 19.1 5.8 20l-.5-5.9Z" fill="currentColor" stroke="none" opacity=".29"></path><path d="M12 12.8v.2m0 2.8v.2m0 2.8v.2" stroke-width="2.2"></path></symbol>
+    <symbol id="icon-back-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M9.2 3.3c-.3 1.2-1.3 2.2-2.9 3C5.1 7.6 4.7 9.1 4.9 11l.7 8.8M14.8 3.3c.3 1.2 1.3 2.2 2.9 3 1.2 1.3 1.6 2.8 1.4 4.7l-.7 8.8M9.2 3.3c.9.7 1.8 1.1 2.8 1.1s1.9-.4 2.8-1.1M12 6.8V7m0 2.8v.2m0 7.8v.2" stroke-width="2"></path><circle cx="9.2" cy="14.1" r="2.4"></circle><circle cx="9.2" cy="14.1" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-nape" viewBox="0 0 24 24" data-design="anatomical-v2"><circle cx="12" cy="6.4" r="4"></circle><path d="M8.8 9.3v4.2c0 1.8-1.4 2.7-3.8 3.5M15.2 9.3v4.2c0 1.8 1.4 2.7 3.8 3.5M5 17c2 2.7 4.3 4 7 4s5-1.3 7-4"></path><path d="M8.9 2.9c2.1 1.5 4.1 1.5 6.2 0M9.5 5.6c1.7 1 3.3 1 5 0"></path><path d="M8.9 9.3h6.2v5.8H8.9z" fill="currentColor" stroke="none" opacity=".34"></path></symbol>
+    <symbol id="icon-maillot" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c-.1 3.5-.9 6.2-2.3 8.5-1.2 2-1.3 5.5-.7 8.5M16.6 3.5c.1 3.5.9 6.2 2.3 8.5 1.2 2 1.3 5.5.7 8.5M6.4 9.4h11.2M6.4 9.4 12 14l5.6-4.6M12 14v6.5"></path><path d="M6.4 9.4 12 14l5.6-4.6-1.1 11.1h-9L6.4 9.4Z" fill="currentColor" stroke="none" opacity=".28"></path></symbol>
+    <symbol id="icon-bikini-classic" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c-.1 3.5-.9 6.2-2.3 8.5-1.2 2-1.3 5.5-.7 8.5M16.6 3.5c.1 3.5.9 6.2 2.3 8.5 1.2 2 1.3 5.5.7 8.5M6.9 10.2h10.2M6.9 10.2l5.1 4 5.1-4M12 14.2v6.3"></path><path d="m6.9 10.2 5.1 4 5.1-4-.8 4.1c-2.8 1.1-5.8 1.1-8.6 0l-.8-4.1Z" fill="currentColor" stroke="none" opacity=".22"></path></symbol>
+    <symbol id="icon-bikini-high" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c-.1 3.5-.9 6.2-2.3 8.5-1.2 2-1.3 5.5-.7 8.5M16.6 3.5c.1 3.5.9 6.2 2.3 8.5 1.2 2 1.3 5.5.7 8.5M5.8 8.2 12 14.1l6.2-5.9M12 14.1v6.4"></path><path d="M5.8 8.2 12 14.1l6.2-5.9-1.2 5c-3.2 1.7-6.8 1.7-10 0l-1.2-5Z" fill="currentColor" stroke="none" opacity=".24"></path></symbol>
+    <symbol id="icon-bikini-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c-.1 3.5-.9 6.2-2.3 8.5-1.2 2-1.3 5.5-.7 8.5M16.6 3.5c.1 3.5.9 6.2 2.3 8.5 1.2 2 1.3 5.5.7 8.5M6.4 9.4h11.2M6.4 9.4 12 14l5.6-4.6M12 14v.3"></path><circle cx="12" cy="17.3" r="2.4"></circle><circle cx="12" cy="17.3" r=".7" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-male-intimate" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c-.1 3.5-.9 6.2-2.3 8.5-1.2 2-1.3 5.5-.7 8.5M16.6 3.5c.1 3.5.9 6.2 2.3 8.5 1.2 2 1.3 5.5.7 8.5M6.4 9.4h11.2M6.4 9.4l.9 8.3h3.1l1.6-2.3 1.6 2.3h3.1l.9-8.3M12 9.4v6"></path><path d="M6.4 9.4h11.2l-.9 8.3h-3.1L12 15.4l-1.6 2.3H7.3l-.9-8.3Z" fill="currentColor" stroke="none" opacity=".25"></path></symbol>
+    <symbol id="icon-sif" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c.2 3.3-.6 6.1-2.3 8.5-1.8 2.5-.8 7 2.1 8.4 2.1 1 4.1 0 4.8-2 .7 2 2.7 3 4.8 2 2.9-1.4 3.9-5.9 2.1-8.4-1.7-2.4-2.5-5.2-2.3-8.5M5.1 12c2.2-1.5 4.5-.6 6.9 2.2 2.4-2.8 4.7-3.7 6.9-2.2M12 7.3v11.1"></path><path d="M12 13.8v5.1" stroke-width="3.2" opacity=".88"></path></symbol>
+    <symbol id="icon-buttocks" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.4 3.5c.2 3.3-.6 6.1-2.3 8.5-1.8 2.5-.8 7 2.1 8.4 2.1 1 4.1 0 4.8-2 .7 2 2.7 3 4.8 2 2.9-1.4 3.9-5.9 2.1-8.4-1.7-2.4-2.5-5.2-2.3-8.5M5.1 12c2.2-1.5 4.5-.6 6.9 2.2 2.4-2.8 4.7-3.7 6.9-2.2M12 7.3v11.1"></path><path d="M5.1 12c2.2-1.5 4.5-.6 6.9 2.2 2.4-2.8 4.7-3.7 6.9-2.2.8 3-.1 6.9-3.2 8.4-2.1 1-4.1 0-4.8-2-.7 2-2.7 3-4.8 2C5.2 18.9 4.3 15 5.1 12Z" fill="currentColor" stroke="none" opacity=".2"></path></symbol>
+    <symbol id="icon-legs" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><path d="M8.2 3.6h3.4L11 20.2H7.8l.4-16.6Zm4.2 0h3.4l.4 16.6H13l-.6-16.6Z" fill="currentColor" stroke="none" opacity=".22"></path></symbol>
+    <symbol id="icon-thighs" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><path d="M8.2 3.6h3.4v8.2H8.8l-.6-8.2Zm4.2 0h3.4l-.6 8.2h-2.8V3.6Z" fill="currentColor" stroke="none" opacity=".38"></path></symbol>
+    <symbol id="icon-thigh-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><circle cx="9.8" cy="7.3" r="2.2"></circle><circle cx="9.8" cy="7.3" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-lower-legs" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><path d="M8.8 11.1h2.8l-.6 9.1H7.8l1-9.1Zm3.6 0h2.8l1 9.1H13l-.6-9.1Z" fill="currentColor" stroke="none" opacity=".38"></path></symbol>
+    <symbol id="icon-knees" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><circle cx="9.8" cy="11.4" r="2.2"></circle><circle cx="14.2" cy="11.4" r="2.2"></circle><circle cx="9.8" cy="11.4" r=".65" fill="currentColor" stroke="none"></circle><circle cx="14.2" cy="11.4" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-leg-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.2 3.4c.7 5.5.6 10.9-.4 16.8M15.8 3.4c-.7 5.5-.6 10.9.4 16.8M8.7 10.7c1 .8 2.1 1.2 3.3 1.2s2.3-.4 3.3-1.2M7.8 20.2h-3m11.4 0h3"></path><circle cx="14.2" cy="15.4" r="2.2"></circle><circle cx="14.2" cy="15.4" r=".65" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-feet" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M8.7 3.2c.1 5.9-.5 10.1-1.8 13l-2.2 1.9c-1.2 1-.5 2.9 1.1 2.9h4.6c1.4 0 2.4-1.3 2-2.6l-1-3.1M15.3 3.2c-.1 5.9.5 10.1 1.8 13l2.2 1.9c1.2 1 .5 2.9-1.1 2.9h-4.6c-.8 0-1.5-.4-1.9-1"></path><path d="M5.2 18.1h6.9m6.7 0h-6.7" stroke-width="2.8" opacity=".55"></path></symbol>
+    <symbol id="icon-toes" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M7.6 3.3c.3 5.5-.2 9.8-1.7 12.8-1.1 2.2.2 4.7 2.6 4.7h5.2c1.6 0 2.5-1.7 1.7-3.1-1.4-2.3-2.7-5.2-3.8-8.7"></path><circle cx="7.4" cy="18.9" r="1.3" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="10.1" cy="19.5" r="1.1" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="12.5" cy="19.5" r=".9" fill="currentColor" stroke="none" opacity=".35"></circle><circle cx="14.5" cy="18.8" r=".75" fill="currentColor" stroke="none" opacity=".35"></circle></symbol>
+    <symbol id="icon-electrolysis" viewBox="0 0 24 24"><path d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0M10.4 20.5c.8-4.8.9-8.8.2-12.2-.4-1.9.5-3.8 2.2-4.8M20.5 4.1 13.7 14"></path><circle cx="12.9" cy="15" r="1.7" fill="currentColor" opacity=".2"></circle></symbol>
+    <symbol id="icon-injection" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M13.3 3.6C9.2 3.2 6 6.2 6.2 10.3c.1 2.4 1.2 4.2 2.4 5.8.8 1.1 1 2.5.7 4M12.6 6.5c.3 1.6.8 2.9 1.9 4L12.9 12c.4.8 1 1.2 1.9 1.2-.2 2.2-1.7 3.5-4.3 3.7"></path><path d="m19.7 4.3-5.4 5.4m3.4-6.9 3.5 3.5m-5.8-1.1 3.5 3.5m-5.2 1.6-1.4 1.4"></path></symbol>
+    <symbol id="icon-injection-zone" viewBox="0 0 24 24" data-design="anatomical-v2"><circle cx="9" cy="3.8" r="1.7"></circle><path d="M6.5 6.8C5 8.2 4.3 10.3 4.3 13l-.4 7.8M11.5 6.8c1.5 1.4 2.2 3.5 2.2 6.2l.4 7.8M6.5 6.8c1.6 1.1 3.4 1.1 5 0M9 7.8v13"></path><path d="m20.2 3.6-7.3 7.3m4.8-8.8 4 4m-6.6-1.4 4 4m-6.8 1.7-1.4 1.4"></path></symbol>
+    <symbol id="icon-skin-target" viewBox="0 0 24 24" data-design="anatomical-v2"><path d="M4 6.5c4.7-1.4 11.3-1.4 16 0v11c-4.7 1.4-11.3 1.4-16 0v-11Z"></path><circle cx="12" cy="12" r="3.6"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-body-vessels" viewBox="0 0 24 24" data-design="anatomical-v2"><circle cx="12" cy="3.7" r="1.9"></circle><path d="M9.1 6.8c-1.6 1.4-2.4 3.6-2.4 6.4L6.2 21M14.9 6.8c1.6 1.4 2.4 3.6 2.4 6.4l.5 7.8M9.1 6.8c1.9 1.2 3.9 1.2 5.8 0M12 7.8V21"></path><path d="m8.1 10.2 2.1 1.8-1.4 2.1 2.4 2.1m4.7-6-2.1 1.8 1.4 2.1-2.4 2.1" stroke-width="2.1" opacity=".55"></path></symbol>
+    <symbol id="icon-aesthetic" viewBox="0 0 24 24"><path d="M12.8 3.7C8.7 3.2 5.5 6.2 5.7 10.3c.1 2.4 1.2 4.2 2.4 5.8.8 1.1 1 2.5.7 4M12.1 6.6c.3 1.6.8 2.9 1.9 4l-1.6 1.5c.4.8 1 1.2 1.9 1.2-.2 2.2-1.7 3.5-4.3 3.7"></path><path d="m18.2 5 .7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z"></path><circle cx="10.2" cy="8.8" r=".45" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-zones" viewBox="0 0 24 24" data-design="anatomical-v2"><circle cx="12" cy="3.7" r="1.9"></circle><path d="M9.1 6.8c-1.6 1.4-2.4 3.6-2.4 6.4L6.2 21M14.9 6.8c1.6 1.4 2.4 3.6 2.4 6.4l.5 7.8M9.1 6.8c1.9 1.2 3.9 1.2 5.8 0M12 7.8V21"></path><circle cx="9.1" cy="12.6" r="3.25" fill="currentColor" fill-opacity=".12" stroke-width="1.45"></circle><circle cx="14.9" cy="12.6" r="3.25" fill="currentColor" fill-opacity=".12" stroke-width="1.45"></circle><circle cx="12" cy="17.3" r="3.25" fill="currentColor" fill-opacity=".12" stroke-width="1.45"></circle></symbol>
+    <symbol id="icon-consultation" viewBox="0 0 24 24"><circle cx="8.5" cy="8" r="3"></circle><path d="M3.8 19.5c.3-4 2-6 4.7-6 2.1 0 3.6 1.2 4.3 3.6M14 5h6.2v5.2h-2l-2.2 2v-2h-2z"></path></symbol>
+    <symbol id="icon-all" viewBox="0 0 24 24"><path d="M12 3.2c.5 4.7 2.1 6.3 6.8 6.8-4.7.5-6.3 2.1-6.8 6.8-.5-4.7-2.1-6.3-6.8-6.8 4.7-.5 6.3-2.1 6.8-6.8Z"></path><path d="M18.4 15.2c.2 2.2 1 3 3.2 3.2-2.2.2-3 1-3.2 3.2-.2-2.2-1-3-3.2-3.2 2.2-.2 3-1 3.2-3.2ZM5.3 16.2c.2 1.4.7 1.9 2.1 2.1-1.4.2-1.9.7-2.1 2.1-.2-1.4-.7-1.9-2.1-2.1 1.4-.2 1.9-.7 2.1-2.1Z" opacity=".72"></path></symbol>
+    <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></symbol>
+    <symbol id="icon-zap" viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path></symbol>
+    <symbol id="icon-body" viewBox="0 0 24 24"><circle cx="12" cy="4.2" r="2"></circle><path d="M9.2 7.2c-1.7 1.3-2.5 3.4-2.6 6.2L6.2 20M14.8 7.2c1.7 1.3 2.5 3.4 2.6 6.2l.4 6.6M9.2 7.2c1.8 1.2 3.8 1.2 5.6 0M12 8.1V20"></path></symbol>
+    <symbol id="icon-student" viewBox="0 0 24 24" data-design="graduation-v1"><path d="m3 8.5 9-4.5 9 4.5-9 4.5-9-4.5Z"></path><path d="M7 10.5v4.2c1.4 1.1 3.1 1.7 5 1.7s3.6-.6 5-1.7v-4.2M21 8.5v6"></path><circle cx="21" cy="16.6" r="1" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-empty" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7Z"></path><path d="M9 10V6a3 3 0 0 1 6 0v4"></path></symbol>
+  </svg>
+
+  <div class="app-shell" id="appShell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div><p class="eyebrow">Clinique Bellecour</p><h1>BCDevis</h1></div>
+      </div>
+      <div class="topbar-context"><span>Tarif</span><div class="offer-mode-selector" id="offerModeSelector" role="radiogroup" aria-label="Tarif appliqué aux soins">
+        <button class="active" type="button" data-offer-mode="single" role="radio" aria-checked="true"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-session"></use></svg></span><span class="offer-mode-copy">Séance <small>À l’unité</small></span></button>
+        <button type="button" data-offer-mode="pack" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-pack"></use></svg></span><span class="offer-mode-copy">Pack <small>6 + 1 offerte</small></span></button>
+        <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
+      </div></div>
+      <div class="topbar-utilities" aria-label="Application">
+        <button class="topbar-utility-button" id="settingsButton" type="button" aria-label="Ouvrir les réglages" aria-keyshortcuts="Control+Comma Meta+Comma" data-tooltip="Réglages"><svg aria-hidden="true"><use href="#icon-settings"></use></svg></button>
+        <button class="topbar-utility-button" id="shortcutHelpButton" type="button" aria-label="Afficher les raccourcis clavier" aria-keyshortcuts="?" aria-haspopup="dialog" data-tooltip="Raccourcis clavier"><svg aria-hidden="true"><use href="#icon-keyboard"></use></svg></button>
+      </div>
+      <div class="app-actions" id="appActions">
+        <button class="app-menu-trigger" id="appMenuButton" type="button" aria-label="Ouvrir le menu principal" aria-haspopup="menu" aria-controls="appActionsMenu" aria-expanded="false" aria-keyshortcuts="Alt+M" title="Menu principal (Alt+M)">
+          <svg aria-hidden="true"><use href="#icon-menu"></use></svg>
+        </button>
+        <div class="app-actions-menu" id="appActionsMenu" role="menu" aria-label="Menu principal" hidden>
+          <div class="app-menu-group" role="none">
+            <p role="presentation">Catalogue</p>
+            <button id="customItemButton" type="button" role="menuitem" data-app-action="custom" aria-keyshortcuts="Control+Shift+N Meta+Shift+N"><svg><use href="#icon-plus"></use></svg><span><strong>Objet sur mesure</strong><small>Créer une prestation libre</small></span><kbd>Ctrl Maj N</kbd></button>
+            <button id="familyPriceToggle" type="button" role="menuitemcheckbox" data-app-action="prices" aria-checked="false" aria-keyshortcuts="Alt+P"><svg><use href="#icon-eye"></use></svg><span><strong>Prix sur les boutons</strong><small id="familyPriceToggleState">Masqués</small></span><kbd>Alt P</kbd></button>
+          </div>
+        </div>
+      </div>
+      <div class="window-controls" id="windowControls" data-maximized="false" aria-label="Contrôles de la fenêtre">
+        <button id="windowMinimizeButton" type="button" aria-label="Réduire BCDevis" title="Réduire">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16h12"></path></svg>
+        </button>
+        <button id="windowMaximizeButton" type="button" aria-label="Agrandir la fenêtre" title="Agrandir la fenêtre">
+          <svg class="window-icon-maximize" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx=".5"></rect></svg>
+          <svg class="window-icon-restore" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 9V6.5h9.5V16H15M6.5 9H15v8.5H6.5z"></path></svg>
+        </button>
+        <button class="window-close-button" id="windowCloseButton" type="button" aria-label="Fermer BCDevis" title="Fermer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="family-panel active-panel" id="familyPanel" aria-labelledby="familyNavTitle">
+        <div class="family-head">
+          <div class="family-title-row"><div class="family-title-actions"><h2 id="familyNavTitle">Prestations</h2><button class="family-search-toggle" id="catalogSearchToggle" type="button" aria-label="Rechercher une prestation" aria-controls="catalogSearchPanel" aria-expanded="false" title="Rechercher une prestation (Ctrl/Cmd+K ou /)" aria-keyshortcuts="Control+K Meta+K /"><svg><use href="#icon-search"></use></svg></button></div><strong id="activeOfferHint">Prix par séance</strong></div>
+          <label class="family-search" id="catalogSearchPanel" for="catalogSearch" hidden><svg><use href="#icon-search"></use></svg><input id="catalogSearch" type="search" autocomplete="off" placeholder="Rechercher un soin…"></label>
+        </div>
+        <nav class="family-list" id="familyList" aria-label="Familles de prestations"></nav>
+      </aside>
+
+      <aside class="checkout-panel" id="checkoutPanel" aria-labelledby="checkoutTitle">
+        <div class="checkout-card">
+          <div class="receipt-head">
+            <div class="quote-title-row"><h2 id="checkoutTitle">Caisse</h2></div>
+            <div class="quote-head-actions" id="quoteHeadActions">
+              <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked aria-label="TVA"><span class="switch"></span><span>TVA</span></label>
+              <button class="round-button quote-icon-button" id="newQuoteButton" type="button" aria-label="Nouveau devis" aria-keyshortcuts="Control+N Meta+N" data-tooltip="Nouveau devis"><svg aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+              <button class="round-button quote-icon-button" id="saveButton" type="button" aria-label="Enregistrer le devis" aria-keyshortcuts="Control+S Meta+S" data-tooltip="Enregistrer" disabled><svg aria-hidden="true"><use href="#icon-save"></use></svg></button>
+              <button class="round-button quote-icon-button" id="historyButton" type="button" aria-label="Ouvrir l’historique" aria-keyshortcuts="Control+H Meta+H" data-tooltip="Historique"><svg aria-hidden="true"><use href="#icon-history"></use></svg></button>
+              <button class="round-button quote-icon-button" id="moreQuoteButton" type="button" aria-label="Ouvrir les actions du devis" aria-haspopup="menu" aria-controls="quoteActionMenu" aria-expanded="false" data-tooltip="Actions du devis"><svg aria-hidden="true"><use href="#icon-more"></use></svg></button>
+              <div class="action-menu" id="quoteActionMenu" role="menu" aria-label="Actions du devis" hidden>
+                <button type="button" role="menuitem" data-action="duplicate" aria-label="Dupliquer le devis" title="Dupliquer le devis (Ctrl/Cmd+D)" aria-keyshortcuts="Control+D Meta+D"><svg><use href="#icon-copy"></use></svg><span>Dupliquer le devis</span><kbd>Ctrl D</kbd></button>
+                <button type="button" role="menuitem" data-action="export" aria-label="Exporter ce devis" title="Exporter ce devis (Ctrl/Cmd+E)" aria-keyshortcuts="Control+E Meta+E"><svg><use href="#icon-download"></use></svg><span>Exporter ce devis</span><kbd>Ctrl E</kbd></button>
+                <button type="button" role="menuitem" data-action="import" aria-label="Importer un devis" title="Importer un devis (Ctrl/Cmd+O)" aria-keyshortcuts="Control+O Meta+O"><svg><use href="#icon-upload"></use></svg><span>Importer un devis</span><kbd>Ctrl O</kbd></button>
+                <button class="danger-text" type="button" role="menuitem" data-action="clear" aria-label="Vider la caisse" title="Vider la caisse"><svg><use href="#icon-trash"></use></svg><span>Vider la caisse</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="checkout-context">
+            <button class="client-card" id="clientButton" type="button"><span class="client-avatar" id="clientInitials">+</span><span class="client-copy"><strong id="clientName">Ajouter un client</strong><small id="clientDetails">Nom, téléphone et e-mail</small></span><svg><use href="#icon-chevron"></use></svg></button>
+            <div class="receipt-meta">
+              <label><span>Date du devis</span><input id="quoteDate" type="date"></label>
+            </div>
+          </div>
+          <div class="cart-section"><div class="cart-section-title"><span id="cartItemCount">Aucune prestation</span></div><div class="cart-lines" id="cartLines"></div></div>
+          <div class="totals-section">
+            <div class="discount-row"><button class="coupon-toggle" id="couponToggle" type="button" aria-label="Ajouter un coupon" title="Ajouter un coupon" aria-expanded="false"><svg aria-hidden="true"><use href="#icon-plus"></use></svg><span>Ajouter un coupon</span></button><div class="coupon-editor" id="couponEditor" hidden><div class="discount-row-head"><label for="couponCode">Coupon</label><small id="couponRule">Réduction en % ou en CHF</small></div><div class="discount-row-controls"><label class="coupon-code-field" for="couponCode"><span>Code</span><input id="couponCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="EX. BIENVENUE"></label><div class="segmented-control" aria-label="Type de réduction du coupon"><button class="active" type="button" data-discount-type="percent">%</button><button type="button" data-discount-type="fixed">CHF</button></div><label class="discount-input" for="discountValue"><input id="discountValue" type="number" min="0" step="0.01" value="0" aria-label="Valeur du coupon"><span id="discountSuffix">%</span></label></div></div></div>
+            <dl class="totals-list">
+              <div><dt>Total avant offres</dt><dd id="subtotalValue">CHF 0.00</dd></div>
+              <div id="totalDiscountRow" hidden><dt>Rabais total</dt><dd class="negative" id="totalDiscountValue">− CHF 0.00</dd></div>
+              <div id="netTotalRow" hidden><dt>Net HT</dt><dd id="netTotalValue">CHF 0.00</dd></div>
+              <div id="taxTotalRow" hidden><dt id="taxTotalLabel">TVA 8.1%</dt><dd id="taxTotalValue">CHF 0.00</dd></div>
+              <div class="grand-total"><dt>Total à payer</dt><dd id="grandTotalValue">CHF 0.00</dd></div>
+            </dl>
+            <div class="installments" id="installmentTableWrap" hidden><table class="installment-table" aria-label="Paiement échelonné indicatif en CHF"><tbody id="installmentGrid"></tbody></table></div>
+          </div>
+          <div class="checkout-primary-actions" aria-label="Actions rapides du devis">
+            <button class="button secondary" id="checkoutPrintButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg aria-hidden="true"><use href="#icon-print"></use></svg><span>Imprimer</span></button>
+            <button class="button primary" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg aria-hidden="true"><use href="#icon-download"></use></svg><span>PDF</span></button>
+            <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Envoyer</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+            <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden>
+              <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
+              <button class="transmission-option transmission-option-outlook" id="checkoutOutlookWebButton" type="button" role="menuitem" aria-label="Préparer le devis dans Outlook Web" title="Préparer le devis dans Outlook Web"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Outlook Web</strong><small id="checkoutOutlookWebRecipient">Destinataire à saisir</small></span></button>
+              <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis dans l’application e-mail" title="Préparer le devis dans l’application e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Application e-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
+              <p class="transmission-note">Outlook Web ouvre le message prérempli : joignez le PDF créé dans Téléchargements. L’application e-mail joint le PDF automatiquement.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <nav class="mobile-tabs" id="mobileTabs" aria-label="Navigation mobile">
+      <button class="active" type="button" data-panel="familyPanel"><svg><use href="#icon-sparkles"></use></svg>Prestations</button>
+      <button type="button" data-panel="checkoutPanel"><span class="mobile-cart-icon"><svg><use href="#icon-empty"></use></svg><b id="mobileCartCount">0</b></span>Caisse<strong id="mobileTotal">CHF 0.00</strong></button>
+    </nav>
+  </div>
+
+  <div class="drawer-layer" id="historyLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="historyLayer" aria-label="Fermer" tabindex="-1"></button>
+    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div class="modal-head"><div><p class="section-kicker">Archives locales</p><h2 id="historyTitle">Mes devis</h2></div><button class="round-button" type="button" data-close="historyLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <div class="history-list" id="historyList"></div>
+      <div class="drawer-footer"><button class="button secondary" id="exportBackupButton" type="button"><svg><use href="#icon-download"></use></svg>Sauvegarde complète</button><button class="button secondary" id="importBackupButton" type="button"><svg><use href="#icon-upload"></use></svg>Restaurer</button></div>
+    </aside>
+  </div>
+
+  <div class="modal-layer" id="clientLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="clientLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
+      <div class="modal-head"><div><p class="section-kicker">Destinataire</p><h2 id="clientModalTitle">Coordonnées du client</h2></div><button class="round-button" type="button" data-close="clientLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <form id="clientForm" class="form-grid">
+        <label class="full-field"><span>Nom complet</span><input name="name" type="text" autocomplete="name" placeholder="Ex. Camille Martin" autofocus></label>
+        <label><span>Téléphone</span><input name="phone" type="tel" autocomplete="tel" placeholder="+41 79 000 00 00"></label>
+        <label><span>E-mail</span><input name="email" type="email" autocomplete="email" placeholder="client@exemple.ch"></label>
+        <label class="full-field"><span>Adresse</span><input name="address" type="text" autocomplete="street-address" placeholder="Rue, NPA, ville"></label>
+        <div class="form-actions full-field"><button class="button ghost" type="button" id="clearClientButton">Effacer</button><button class="button primary" type="submit">Valider le client</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="customItemLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="customItemLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="customItemTitle">
+      <div class="modal-head"><div><p class="section-kicker">Prestation libre</p><h2 id="customItemTitle">Créer un objet sur mesure</h2></div><button class="round-button" type="button" data-close="customItemLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <form id="customItemForm" class="form-grid">
+        <label class="full-field"><span>Nom de la prestation</span><input name="name" type="text" placeholder="Ex. Soin personnalisé" required autofocus></label>
+        <label><span>Prix unitaire (CHF)</span><input name="price" type="number" min="0" step="0.01" value="0" required></label>
+        <label><span>Durée (minutes)</span><input name="duration" type="number" min="0" step="5" value="30"></label>
+        <label class="full-field"><span>Catégorie</span><select name="category" id="customCategorySelect"></select></label>
+        <label class="checkbox-field full-field"><input name="saveToCatalog" type="checkbox" checked><span><strong>Conserver dans le catalogue</strong><small>Cette prestation sera disponible dans les prochains devis.</small></span></label>
+        <div class="form-actions full-field"><button class="button ghost" type="button" data-close="customItemLayer">Annuler</button><button class="button primary" type="submit">Ajouter à la caisse</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="tariffChangeLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="tariffChangeLayer" aria-label="Annuler le changement de tarif" tabindex="-1"></button>
+    <section class="modal-card compact-modal tariff-change-modal" role="dialog" aria-modal="true" aria-labelledby="tariffChangeTitle" aria-describedby="tariffChangeMessage">
+      <div class="modal-head"><div><p class="section-kicker">Modification du devis</p><h2 id="tariffChangeTitle">Changer de tarif ?</h2></div><button class="round-button" type="button" data-close="tariffChangeLayer" aria-label="Annuler"><svg><use href="#icon-x"></use></svg></button></div>
+      <form id="tariffChangeForm" class="form-grid">
+        <p class="tariff-change-message full-field" id="tariffChangeMessage"></p>
+        <label class="checkbox-field full-field"><input id="tariffChangeSkipConfirmation" name="skipTariffChangeConfirmation" type="checkbox"><span><strong>Ne plus afficher ce message</strong><small>Les prochains changements de tarif seront appliqués immédiatement.</small></span></label>
+        <div class="form-actions full-field"><button class="button ghost" type="button" data-close="tariffChangeLayer">Annuler</button><button class="button primary" type="submit">Appliquer le tarif</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="settingsLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="settingsLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head"><h2 id="settingsTitle">Personnalisation</h2><button class="round-button" type="button" data-close="settingsLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <form id="settingsForm" class="settings-layout">
+        <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation">
+          <button id="settingsTabInterface" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelInterface" data-settings-tab="interface">Interface</button>
+          <button id="settingsTabCompany" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelCompany" data-settings-tab="company" tabindex="-1">Entreprise</button>
+          <button id="settingsTabPricing" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelPricing" data-settings-tab="pricing" tabindex="-1">Tarifs</button>
+          <button id="settingsTabDocument" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelDocument" data-settings-tab="document" tabindex="-1">Devis</button>
+        </div>
+        <div class="settings-panels">
+          <section class="settings-panel settings-panel--interface" id="settingsPanelInterface" role="tabpanel" aria-labelledby="settingsTabInterface" data-settings-panel="interface" tabindex="0">
+            <div class="settings-panel-grid settings-panel-grid--interface">
+              <section class="settings-section">
+                <div class="settings-section-head"><h3>Apparence</h3></div>
+                <p class="settings-subheading">Thème</p>
+                <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
+                  <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="theme-card" type="button" data-theme="bordeaux" role="radio" aria-checked="false"><span class="theme-card-swatch bordeaux"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Bordeaux</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                </div>
+                <p class="settings-subheading">Police</p>
+                <div class="font-picker" id="fontPicker" role="radiogroup" aria-label="Choix de la police">
+                  <button class="font-card" type="button" data-font="red-hat" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Red Hat Display</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="font-card" type="button" data-font="roboto" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="font-card" type="button" data-font="roboto-slab" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto Slab</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  <button class="font-card" type="button" data-font="system" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Système</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                </div>
+              </section>
+              <div class="settings-panel-stack">
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Navigation</h3></div>
+                  <div class="catalog-mode-picker" role="radiogroup" aria-label="Navigation des prestations">
+                    <label class="catalog-mode-card"><input name="catalogMode" type="radio" value="tiles"><span class="catalog-mode-visual" aria-hidden="true"><svg><use href="#icon-navigation-tiles"></use></svg></span><span><strong>Tuiles</strong><small>Familles en accordéon</small></span></label>
+                    <label class="catalog-mode-card"><input name="catalogMode" type="radio" value="body"><span class="catalog-mode-visual" aria-hidden="true"><svg><use href="#icon-navigation-body"></use></svg></span><span><strong>Corps interactif</strong><small>Sélection sur silhouette</small></span></label>
+                  </div>
+                </section>
+                <section class="settings-section settings-section--system">
+                  <div class="settings-section-head"><h3>Démarrage</h3></div>
+                  <label class="startup-setting" for="launchAtLogin">
+                    <span class="startup-app-icon" aria-hidden="true"><img src="assets/bcdevis-app-icon.png" alt=""></span>
+                    <span class="startup-setting-copy"><strong>Lancer au démarrage</strong><small id="launchAtLoginStatus" aria-live="polite">Vérification…</small></span>
+                    <span class="startup-toggle"><input id="launchAtLogin" name="launchAtLogin" type="checkbox" aria-describedby="launchAtLoginStatus launchAtLoginNote" disabled><span aria-hidden="true"></span></span>
+                  </label>
+                  <p class="startup-setting-note" id="launchAtLoginNote">Windows · macOS · Linux</p>
+                </section>
+              </div>
+              <section class="settings-section settings-section--catalog">
+                <div class="settings-section-head"><h3>Catalogue</h3></div>
+                <div class="family-visibility-grid" id="familyVisibilityGrid" role="group" aria-label="Familles de prestations affichées"></div>
+                <p class="settings-offer-summary" data-summary="families"></p>
+              </section>
+            </div>
+          </section>
+
+          <section class="settings-panel settings-panel--company" id="settingsPanelCompany" role="tabpanel" aria-labelledby="settingsTabCompany" data-settings-panel="company" tabindex="0" hidden>
+            <div class="settings-panel-grid settings-panel-grid--company">
+              <section class="settings-section">
+                <div class="settings-section-head"><h3>Coordonnées</h3></div>
+                <div class="form-grid">
+                  <label><span>Nom</span><input name="companyName" type="text"></label><label><span>Sous-titre</span><input name="companySubtitle" type="text"></label>
+                  <label class="full-field"><span>Adresse</span><input name="companyAddress" type="text"></label><label><span>Téléphone</span><input name="companyPhone" type="text"></label>
+                  <label><span>E-mail</span><input name="companyEmail" type="email"></label><label class="full-field"><span>UID / TVA</span><input name="companyUid" type="text"></label>
+                </div>
+              </section>
+              <div class="settings-panel-stack">
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Logos</h3></div>
+                  <div class="brand-assets-editor">
+                    <article class="brand-asset-card">
+                      <div class="brand-asset-preview brand-asset-preview--header"><img id="headerLogoPreview" src="assets/clinique-bellecour-logo-officiel.png" alt="Aperçu du logo principal"></div>
+                      <div class="brand-asset-copy"><strong>Logo principal</strong><small id="headerLogoStatus">Bellecour</small></div>
+                      <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="header"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="header" hidden><button class="logo-remove-button" type="button" data-remove-logo="header" hidden>Retirer</button></div>
+                    </article>
+                    <article class="brand-asset-card">
+                      <div class="brand-asset-preview brand-asset-preview--pdf"><img id="pdfLogoPreview" src="assets/clinique-bellecour-logo-officiel.png" alt="Aperçu du logo du PDF"></div>
+                      <div class="brand-asset-copy"><strong>Logo PDF</strong><small id="pdfLogoStatus">Bellecour</small></div>
+                      <div class="brand-asset-actions"><button class="logo-upload-button" type="button" data-logo-picker="pdf"><svg><use href="#icon-upload"></use></svg>Choisir</button><input type="file" accept="image/png,image/jpeg,image/webp" data-logo-input="pdf" hidden><button class="logo-remove-button" type="button" data-remove-logo="pdf" hidden>Retirer</button></div>
+                    </article>
+                    <p class="brand-asset-hint">PNG, JPG ou WebP · 4 Mo max · stockage local.</p>
+                  </div>
+                </section>
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Numérotation</h3></div>
+                  <div class="form-grid">
+                    <label><span>Préfixe</span><input name="quotePrefix" type="text" maxlength="8"></label><label><span>Poste</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"></label>
+                    <div class="hint-box full-field" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span>Prochain : <code id="settingsQuotePreview">DEV-20260718A001</code></span></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-panel settings-panel--pricing" id="settingsPanelPricing" role="tabpanel" aria-labelledby="settingsTabPricing" data-settings-panel="pricing" tabindex="0" hidden>
+            <div class="settings-panel-grid settings-panel-grid--pricing">
+              <section class="settings-section">
+                <div class="settings-section-head"><h3>TVA</h3></div>
+                <div class="form-grid">
+                  <label><span>Taux</span><span class="input-with-suffix"><input name="taxRate" type="number" min="0" max="100" step="0.1"><b>%</b></span></label><label><span>Calcul</span><select name="taxMode"><option value="included">Incluse</option><option value="excluded">En plus</option></select></label>
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="showTaxInformation" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-toggle-copy"><strong>Afficher et calculer la TVA</strong><small>Désactivé, les prix sont conservés tels quels, sans ajout ni déduction de TVA.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                </div>
+              </section>
+              <section class="settings-section settings-section--commercial">
+                <div class="settings-section-head"><h3>Offres</h3></div>
+                <div class="settings-grid-offer">
+                  <div class="settings-offer-block pack"><span class="settings-offer-tag">Pack</span><div class="settings-offer-fields"><label><span>Payées</span><input name="packPaidDefault" type="number" min="1" max="24"></label><label><span>Offertes</span><input name="packFreeDefault" type="number" min="0" max="12"></label></div><p class="settings-offer-summary" data-summary="pack"></p></div>
+                  <div class="settings-offer-block student"><span class="settings-offer-tag">Étudiant</span><div class="settings-offer-fields"><label class="student-discount-control"><span><span>Réduction</span><output data-student-discount>50 %</output></span><input name="studentDiscount" type="range" min="0" max="100" step="1" value="50" aria-label="Réduction étudiant en pourcentage"></label></div><p class="settings-offer-summary" data-summary="student"></p></div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="settings-panel settings-panel--document" id="settingsPanelDocument" role="tabpanel" aria-labelledby="settingsTabDocument" data-settings-panel="document" tabindex="0" hidden>
+            <div class="settings-panel-grid settings-panel-grid--document">
+              <section class="settings-section settings-section--mentions">
+                <div class="settings-section-head"><h3>Mentions</h3></div>
+                <div class="form-grid">
+                  <label class="full-field"><span>Paiement</span><textarea name="conditions" rows="5"></textarea></label><label class="full-field"><span>Tarif étudiant</span><textarea name="studentConditions" rows="3"></textarea></label><label class="full-field"><span>Pied de page</span><textarea name="footerNote" rows="3"></textarea></label>
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="showSignatures" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-signature"></use></svg></span><span class="settings-toggle-copy"><strong>Zones de signature</strong><small>Ajoute « Date et lieu » et « Signature du client » à la fin du devis.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+        <div class="form-actions settings-actions"><button class="button ghost" type="button" data-close="settingsLayer">Annuler</button><button class="button primary" type="submit">Enregistrer</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="shortcutHelpLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="shortcutHelpLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal shortcut-help-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle">
+      <div class="modal-head"><div><p class="section-kicker">Utilisation rapide</p><h2 id="shortcutHelpTitle">Raccourcis clavier</h2></div><button class="round-button" type="button" data-close="shortcutHelpLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <div class="shortcut-groups">
+        <section class="shortcut-group" aria-labelledby="shortcutCatalogTitle">
+          <h3 id="shortcutCatalogTitle">Catalogue</h3>
+          <dl class="shortcut-list">
+            <div><dt><kbd>Alt</kbd><kbd>M</kbd></dt><dd>Ouvrir le menu Catalogue</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>K</kbd> <span>ou</span> <kbd>/</kbd></dt><dd>Rechercher une prestation</dd></div>
+            <div><dt><kbd>Alt</kbd><kbd>P</kbd></dt><dd>Afficher ou masquer les prix</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>N</kbd></dt><dd>Créer un objet sur mesure</dd></div>
+          </dl>
+        </section>
+        <section class="shortcut-group" aria-labelledby="shortcutQuoteTitle">
+          <h3 id="shortcutQuoteTitle">Devis</h3>
+          <dl class="shortcut-list">
+            <div><dt><kbd>Ctrl</kbd><kbd>N</kbd></dt><dd>Nouveau devis</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Enregistrer le devis</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>H</kbd></dt><dd>Ouvrir l’historique</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>D</kbd></dt><dd>Dupliquer le devis</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>O</kbd></dt><dd>Importer un devis</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>E</kbd></dt><dd>Exporter le devis</dd></div>
+          </dl>
+        </section>
+        <section class="shortcut-group" aria-labelledby="shortcutOutputTitle">
+          <h3 id="shortcutOutputTitle">Impression et partage</h3>
+          <dl class="shortcut-list">
+            <div><dt><kbd>Ctrl</kbd><kbd>P</kbd></dt><dd>Imprimer le devis</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>S</kbd></dt><dd>Télécharger le PDF</dd></div>
+            <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>W</kbd></dt><dd>Préparer via WhatsApp</dd></div>
+          </dl>
+        </section>
+        <section class="shortcut-group" aria-labelledby="shortcutAppTitle">
+          <h3 id="shortcutAppTitle">Application</h3>
+          <dl class="shortcut-list">
+            <div><dt><kbd>Ctrl</kbd><kbd>,</kbd></dt><dd>Ouvrir les réglages</dd></div>
+            <div><dt><kbd>?</kbd></dt><dd>Afficher cette aide</dd></div>
+            <div><dt><kbd>Échap</kbd></dt><dd>Fermer un menu, une fenêtre ou la recherche</dd></div>
+          </dl>
+        </section>
+      </div>
+      <p class="shortcut-help-note">Sur Mac, remplacez <kbd>Ctrl</kbd> par <kbd>⌘</kbd>. Utilisez les flèches pour parcourir les tarifs, les thèmes, les onglets et les menus.</p>
+    </section>
+  </div>
+
+  <input id="quoteImportInput" type="file" accept="application/json,.json" hidden>
+  <input id="backupImportInput" type="file" accept="application/json,.json" hidden>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <section class="print-quote" id="printQuote" aria-hidden="true"></section>
+  <script src="quote-core.js"></script>
+  <script src="catalog.js"></script>
+  <script src="body-anatomy.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

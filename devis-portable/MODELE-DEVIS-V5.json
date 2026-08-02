@@ -1,0 +1,21 @@
+{
+  "type": "atelier-devis-quote",
+  "version": 19,
+  "template": "BCDevis V5 - devis vierge",
+  "quote": {
+    "status": "draft",
+    "client": {
+      "name": "",
+      "phone": "",
+      "email": "",
+      "address": ""
+    },
+    "lines": [],
+    "discount": {
+      "code": "",
+      "type": "percent",
+      "value": 0
+    },
+    "note": ""
+  }
+}

@@ -1,0 +1,86 @@
+BCDevis 5.1.0 - Livrable pour Aleksandra
+Clinique Bellecour
+
+NOUVEAUTES 5.1.0
+
+- Les totaux distinguent la valeur avant offres, le rabais total et le montant
+  à payer. Les séances offertes d'un pack sont valorisées sans être facturées.
+- La TVA est masquée et désactivée par défaut. Elle reste disponible dans les
+  réglages lorsqu'elle doit apparaître sur le devis.
+- Le choix Outlook Web ouvre un message prérempli dans le navigateur. Le PDF
+  est créé dans Téléchargements afin de pouvoir le joindre au message.
+
+CONTENU
+
+1-Windows
+  BCDevis-5.1.0.exe
+
+2-Linux
+  BCDevis-5.1.0-linux-x86_64.AppImage
+
+3-ChromeOS
+  BCDevis-5.1.0-chromeos.zip
+
+4-Documentation
+  BCDevis-V5-Utilisation-rapide.pdf
+  BCDevis-V5-Raccourcis-clavier.pdf
+  BCDevis-V5-Mode-d-emploi.pdf
+
+5-Modele-devis
+  MODELE-DEVIS-V5.json
+  BCDevis-V5-Modele-devis.pdf
+
+INSTALLATION WINDOWS
+
+Double-cliquer sur BCDevis-5.1.0.exe. L'application est portable et ne
+demande pas d'installation.
+
+Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
+conserver et déplacer l'EXE avec ce dossier afin de garder les réglages,
+le brouillon et l'historique.
+
+L'EXE n'est pas signé numériquement. Windows peut donc demander une
+confirmation au premier lancement.
+
+INSTALLATION LINUX X64
+
+Dans un terminal placé dans le dossier du fichier :
+
+  chmod +x BCDevis-5.1.0-linux-x86_64.AppImage
+  ./BCDevis-5.1.0-linux-x86_64.AppImage
+
+Les données sont enregistrées dans le profil local de l'utilisateur.
+
+INSTALLATION CHROMEOS
+
+L'archive BCDevis-5.1.0-chromeos.zip contient la PWA statique à publier
+sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
+fichier ZIP.
+
+1. Décompresser l'archive.
+2. Publier le contenu du dossier site sur une adresse HTTPS.
+3. Ouvrir cette adresse dans Chrome sur le Chromebook.
+4. Choisir le menu Chrome > Caster, enregistrer et partager >
+   Installer la page en tant qu'application.
+
+Les devis et réglages restent dans le profil Chrome utilisé. Avant de
+changer de Chromebook ou de profil, créer une sauvegarde complète JSON.
+Sous ChromeOS, le bouton PDF ouvre l'impression : choisir Enregistrer au
+format PDF.
+
+MODELE DE DEVIS
+
+Dans BCDevis, ouvrir le menu ... en haut de la caisse, choisir Importer un
+devis, puis sélectionner MODELE-DEVIS-V5.json. La date et le prochain
+numéro sont attribués automatiquement.
+
+SAUVEGARDE
+
+Avant un changement d'ordinateur, ouvrir Historique puis Sauvegarde
+complète. Sur le nouveau poste, utiliser Historique puis Restaurer.
+
+VERIFICATION
+
+Le fichier SHA256SUMS.txt permet de contrôler l'intégrité des trois
+applications et des documents. Les détails d'utilisation se trouvent
+dans le dossier 4-Documentation.
