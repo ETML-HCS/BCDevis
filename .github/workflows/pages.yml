@@ -28,8 +28,11 @@ jobs:
       - run: npm ci
       - name: Configurer la sandbox Electron sous Linux
         run: |
-          sudo chown root:root node_modules/electron/dist/chrome-sandbox
-          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+          electron_path="$(node -p "require('electron')")"
+          sandbox_path="$(dirname "${electron_path}")/chrome-sandbox"
+          test -f "${sandbox_path}"
+          sudo chown root:root "${sandbox_path}"
+          sudo chmod 4755 "${sandbox_path}"
       - name: Vérifier et assembler la version web
         run: xvfb-run -a npm run chromeos
       - name: Préparer le site GitHub Pages
