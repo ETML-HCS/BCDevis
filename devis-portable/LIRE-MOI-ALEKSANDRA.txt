@@ -1,22 +1,25 @@
-BCDevis 5.0.1 - Livrable pour Aleksandra
+BCDevis 5.1.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-CORRECTIFS 5.0.1
+NOUVEAUTES 5.1.0
 
-- Les PDF téléchargés conservent désormais un fond blanc, sans grandes
-  marges noires, y compris lorsque le thème Nuit est utilisé.
-- Les notifications restent visibles au-dessus de la caisse et des menus.
+- Les totaux distinguent la valeur avant offres, le rabais total et le montant
+  à payer. Les séances offertes d'un pack sont valorisées sans être facturées.
+- La TVA est masquée et désactivée par défaut. Elle reste disponible dans les
+  réglages lorsqu'elle doit apparaître sur le devis.
+- Le choix Outlook Web ouvre un message prérempli dans le navigateur. Le PDF
+  est créé dans Téléchargements afin de pouvoir le joindre au message.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.0.1.exe
+  BCDevis-5.1.0.exe
 
 2-Linux
-  BCDevis-5.0.1-linux-x86_64.AppImage
+  BCDevis-5.1.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.0.1-chromeos.zip
+  BCDevis-5.1.0-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -29,7 +32,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.0.1.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.1.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -43,14 +46,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.0.1-linux-x86_64.AppImage
-  ./BCDevis-5.0.1-linux-x86_64.AppImage
+  chmod +x BCDevis-5.1.0-linux-x86_64.AppImage
+  ./BCDevis-5.1.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.0.1-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.1.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

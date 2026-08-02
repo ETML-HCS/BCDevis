@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.0.1 - Windows - Linux - macOS - ChromeOS</p>
+  <p class="cover-version">Version 5.1.0 - Windows - Linux - macOS - ChromeOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.0.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.0.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.0.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.1.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.1.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.1.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 
 Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V5** et un **modèle de devis** importable.
@@ -387,11 +387,12 @@ Les trois commandes de sortie restent visibles au bas de la caisse. L’enregist
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
 - **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
-- **Envoyer** : affiche deux choix :
+- **Envoyer** : affiche trois choix :
   - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
-  - **E-mail** ouvre dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
+  - **Outlook Web** crée le PDF dans **Téléchargements**, puis ouvre Outlook dans le navigateur avec le destinataire, l’objet et le texte préremplis. Joignez ensuite le PDF téléchargé ;
+  - **Application e-mail** ouvre dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe ; sinon, saisissez le destinataire dans la messagerie.
 
-Sous Windows, BCDevis utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. Aucun message e-mail sans pièce jointe n’est ouvert. WhatsApp exige toujours l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
+Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement le PDF dans **Téléchargements**. Aucun message `mailto:` sans pièce jointe n’est ouvert. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
 
 Le PDF reprend le détail des prestations, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 

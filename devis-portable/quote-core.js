@@ -14,24 +14,38 @@
     return [3, 4, 6, 10, 12];
   }
 
+  function referenceUnitPrice(line) {
+    return line?.offerType === "student"
+      ? Number(line.basePrice ?? line.price) || 0
+      : Number(line?.price) || 0;
+  }
+
+  function referenceLineTotal(line) {
+    const paidQuantity = Math.max(0, Number(line?.quantity) || 0);
+    const freeQuantity = line?.offerType === "pack" ? Math.max(0, Number(line?.freeQuantity) || 0) : 0;
+    return roundMoney(referenceUnitPrice(line) * (paidQuantity + freeQuantity));
+  }
+
   function calculate(target) {
     const lines = Array.isArray(target?.lines) ? target.lines : [];
-    const lineAmount = (line) => {
-      const unitPrice = line?.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line?.price) || 0;
-      return unitPrice * (Number(line?.quantity) || 0);
-    };
-    const subtotal = roundMoney(lines.reduce((sum, line) => sum + lineAmount(line), 0));
+    const paidLineAmount = (line) => roundMoney(referenceUnitPrice(line) * Math.max(0, Number(line?.quantity) || 0));
+    const subtotal = roundMoney(lines.reduce((sum, line) => sum + referenceLineTotal(line), 0));
+    const packDiscount = roundMoney(lines.reduce((sum, line) => {
+      if (line?.offerType !== "pack") return sum;
+      return sum + referenceUnitPrice(line) * Math.max(0, Number(line?.freeQuantity) || 0);
+    }, 0));
     const studentLines = lines.filter((line) => line?.offerType === "student");
     const hasStudentPricing = studentLines.length > 0;
     const studentRate = hasStudentPricing ? clamp(target?.studentDiscount ?? studentLines[0]?.studentDiscount, 0, 100) : 0;
-    const studentBase = roundMoney(studentLines.reduce((sum, line) => sum + lineAmount(line), 0));
+    const studentBase = roundMoney(studentLines.reduce((sum, line) => sum + paidLineAmount(line), 0));
     const studentDiscount = roundMoney(studentBase * studentRate / 100);
-    const afterStudentDiscount = roundMoney(Math.max(0, subtotal - studentDiscount));
+    const afterOfferDiscounts = roundMoney(Math.max(0, subtotal - packDiscount - studentDiscount));
     const rawDiscount = Math.max(0, Number(target?.discount?.value) || 0);
     const discount = target?.discount?.type === "fixed"
-      ? Math.min(afterStudentDiscount, rawDiscount)
-      : hasStudentPricing ? 0 : roundMoney(subtotal * clamp(rawDiscount, 0, 100) / 100);
-    const discounted = roundMoney(Math.max(0, afterStudentDiscount - discount));
+      ? Math.min(afterOfferDiscounts, rawDiscount)
+      : hasStudentPricing ? 0 : roundMoney(afterOfferDiscounts * clamp(rawDiscount, 0, 100) / 100);
+    const discounted = roundMoney(Math.max(0, afterOfferDiscounts - discount));
+    const totalDiscount = roundMoney(packDiscount + studentDiscount + discount);
     let net = discounted;
     let tax = 0;
     let total = discounted;
@@ -45,8 +59,8 @@
         tax = roundMoney(discounted - net);
       }
     }
-    return { subtotal, studentDiscount, studentRate, discount, discounted, net, tax, total, rate };
+    return { subtotal, packDiscount, studentDiscount, studentRate, discount, totalDiscount, discounted, net, tax, total, rate };
   }
 
-  return { roundMoney, clamp, calculate, installmentMonths };
+  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal };
 });

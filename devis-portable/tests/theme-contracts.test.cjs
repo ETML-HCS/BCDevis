@@ -157,6 +157,33 @@ assert.deepEqual(
 );
 assert.match(
   html,
+  /name="showTaxInformation" type="checkbox"[\s\S]*?<strong>Afficher et calculer la TVA<\/strong>[\s\S]*?les prix sont conservés tels quels/,
+  "Le réglage TVA doit expliquer que sa désactivation conserve les prix existants"
+);
+assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 2, "TVA et signatures doivent partager le même contrôle premium");
+assert.match(html, /id="icon-percent"[\s\S]*?id="icon-signature"/, "Les deux réglages doivent utiliser des pictogrammes explicites");
+assert.match(html, /name="showSignatures" type="checkbox"[\s\S]*?<strong>Zones de signature<\/strong>[\s\S]*?Date et lieu/, "Le réglage des signatures doit expliquer son effet sur le devis");
+assert.doesNotMatch(html, /class="checkbox-field full-field"><input[^>]*name="(?:showTaxInformation|showSignatures)"/, "Les deux réglages ne doivent plus ressembler à des cases à cocher génériques");
+assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:checked\)/, "La carte doit rendre son état actif immédiatement visible");
+assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:focus-visible\)/, "Le nouveau contrôle doit conserver un focus clavier visible");
+assert.match(app, /showTaxInformation: false/, "La TVA doit être masquée et désactivée par défaut");
+assert.match(
+  app,
+  /function calculateQuote\(item\)[\s\S]*?tax: \{ \.\.\.\(item\?\.tax \|\| \{\}\), enabled: false \}/,
+  "Les totaux sans TVA doivent conserver les prix sans appliquer de conversion fiscale"
+);
+assert.match(
+  app,
+  /taxToggle\.closest\("\.tax-header-toggle"\)\.hidden = !showTaxInformation/,
+  "Le réglage global doit retirer le contrôle TVA de la caisse"
+);
+assert.match(
+  app,
+  /<tr><td>Total avant offres<\/td>[\s\S]*?<td>Rabais total<\/td>[\s\S]*?Total à payer/,
+  "Le PDF doit reprendre le même récapitulatif commercial que la caisse"
+);
+assert.match(
+  html,
   /data-settings-panel="interface"[\s\S]*?<h3>Catalogue<\/h3>[\s\S]*?data-settings-panel="company"/,
   "Le catalogue doit rester avec les réglages d’interface"
 );

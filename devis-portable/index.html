@@ -966,6 +966,7 @@
   .quote-title-row{flex:0 0 auto}
   .quote-head-actions{min-width:0;gap:5px}
   .tax-header-toggle{min-height:38px;gap:5px;font-size:11px;transform:translateX(-5px)}
+  .tax-header-toggle[hidden]{display:none!important}
   .tax-header-toggle .switch{width:38px;height:22px}
   .tax-header-toggle .switch:after{width:16px;height:16px}
   .tax-header-toggle input:checked+.switch:after{transform:translateX(16px)}
@@ -1158,6 +1159,73 @@
       border-radius:8px;
       background:var(--surface-raised);
     }
+    .settings-toggle-card{
+      position:relative;
+      display:grid!important;
+      min-height:78px;
+      padding:12px 13px!important;
+      align-items:center;
+      grid-template-columns:42px minmax(0,1fr) auto;
+      gap:12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:var(--ink);
+      background:var(--surface-raised);
+      cursor:pointer;
+      transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,transform .16s ease;
+    }
+    .settings-toggle-card:hover{border-color:color-mix(in srgb,var(--accent) 72%,var(--line));transform:translateY(-1px)}
+    .settings-toggle-card:has(.settings-toggle-input:checked){
+      border-color:var(--accent);
+      background:color-mix(in srgb,var(--accent) 11%,var(--surface-raised));
+      box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent);
+    }
+    .settings-toggle-card:has(.settings-toggle-input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+    .settings-toggle-input{
+      position:absolute;
+      width:1px!important;
+      height:1px!important;
+      margin:0!important;
+      padding:0!important;
+      overflow:hidden;
+      border:0!important;
+      opacity:0;
+      pointer-events:none;
+    }
+    .settings-toggle-card>.settings-toggle-icon,
+    .settings-toggle-card>.settings-toggle-copy,
+    .settings-toggle-card>.settings-toggle-action{
+      min-width:0;
+      margin:0;
+      color:inherit;
+      letter-spacing:normal;
+      text-transform:none;
+    }
+    .settings-toggle-icon{
+      display:grid!important;
+      width:42px;
+      height:42px;
+      place-items:center;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:var(--muted)!important;
+      background:var(--surface-soft);
+      transition:border-color .16s ease,color .16s ease,background-color .16s ease;
+    }
+    .settings-toggle-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .settings-toggle-card:has(.settings-toggle-input:checked) .settings-toggle-icon{border-color:var(--accent);color:var(--accent-ink)!important;background:var(--accent)}
+    .settings-toggle-copy{display:flex!important;flex-direction:column;gap:4px}
+    .settings-toggle-copy strong{color:var(--ink);font-size:13px;font-weight:750;line-height:1.25}
+    .settings-toggle-copy small{max-width:48ch;color:var(--muted);font-size:11px;font-weight:500;line-height:1.38}
+    .settings-toggle-action{display:flex!important;align-items:center;gap:9px}
+    .settings-toggle-status{min-width:52px;color:var(--muted);font-size:10px;font-weight:750;text-align:right}
+    .settings-toggle-status::before{content:"Désactivé"}
+    .settings-toggle-control{position:relative;display:block;width:42px;height:24px;border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));border-radius:99px;background:color-mix(in srgb,var(--muted) 24%,var(--surface-soft));transition:border-color .16s ease,background-color .16s ease}
+    .settings-toggle-control::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface-raised);box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .16s ease}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status{color:var(--taupe-dark)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status::before{content:"Activé"}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control{border-color:var(--action);background:var(--action)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control::after{transform:translateX(18px)}
     .settings-panel .hint-box{padding:11px 12px;border:1px solid var(--line);border-radius:7px}
     .settings-panel .settings-section--mentions textarea{min-height:96px}
     .settings-actions{padding:14px 28px}
@@ -1183,6 +1251,9 @@
     .settings-panel .catalog-mode-picker,
     .settings-panel .settings-grid-offer,
     .settings-panel .family-visibility-grid{grid-template-columns:1fr}
+    .settings-toggle-card{grid-template-columns:38px minmax(0,1fr) auto;padding:11px!important;gap:10px}
+    .settings-toggle-icon{width:38px;height:38px}
+    .settings-toggle-status{display:none}
     .settings-actions{padding:10px 14px}
   }
   </style>
@@ -1205,6 +1276,8 @@
     <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
+    <symbol id="icon-percent" viewBox="0 0 24 24"><path d="M6 18 18 6"></path><circle cx="7.5" cy="7.5" r="2.2"></circle><circle cx="16.5" cy="16.5" r="2.2"></circle></symbol>
+    <symbol id="icon-signature" viewBox="0 0 24 24"><path d="M4 18.5c2.7-4.2 4.7-6.3 6-6.3 1.8 0-1.1 4.7.4 4.7 1.1 0 2.2-2.7 3.3-2.7.8 0-.2 2.4.8 2.4.8 0 1.7-1.3 2.6-1.3.6 0 1 .4 1.4 1.2"></path><path d="M4 20h16"></path><path d="m15.5 9.2 3.8-3.8 1.3 1.3-3.8 3.8-2 .7.7-2Z"></path></symbol>
      <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
      <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"></path></symbol>
     <symbol id="icon-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"></path></symbol>
@@ -1512,12 +1585,11 @@
           <div class="totals-section">
             <div class="discount-row"><button class="coupon-toggle" id="couponToggle" type="button" aria-label="Ajouter un coupon" title="Ajouter un coupon" aria-expanded="false"><svg aria-hidden="true"><use href="#icon-plus"></use></svg><span>Ajouter un coupon</span></button><div class="coupon-editor" id="couponEditor" hidden><div class="discount-row-head"><label for="couponCode">Coupon</label><small id="couponRule">Réduction en % ou en CHF</small></div><div class="discount-row-controls"><label class="coupon-code-field" for="couponCode"><span>Code</span><input id="couponCode" type="text" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="EX. BIENVENUE"></label><div class="segmented-control" aria-label="Type de réduction du coupon"><button class="active" type="button" data-discount-type="percent">%</button><button type="button" data-discount-type="fixed">CHF</button></div><label class="discount-input" for="discountValue"><input id="discountValue" type="number" min="0" step="0.01" value="0" aria-label="Valeur du coupon"><span id="discountSuffix">%</span></label></div></div></div>
             <dl class="totals-list">
-              <div><dt>Sous-total</dt><dd id="subtotalValue">CHF 0.00</dd></div>
-              <div id="studentDiscountTotalRow" hidden><dt id="studentDiscountTotalLabel">Rabais étudiant</dt><dd class="negative" id="studentDiscountTotalValue">− CHF 0.00</dd></div>
-              <div id="discountTotalRow" hidden><dt id="discountTotalLabel">Coupon</dt><dd class="negative" id="discountTotalValue">− CHF 0.00</dd></div>
+              <div><dt>Total avant offres</dt><dd id="subtotalValue">CHF 0.00</dd></div>
+              <div id="totalDiscountRow" hidden><dt>Rabais total</dt><dd class="negative" id="totalDiscountValue">− CHF 0.00</dd></div>
               <div id="netTotalRow" hidden><dt>Net HT</dt><dd id="netTotalValue">CHF 0.00</dd></div>
               <div id="taxTotalRow" hidden><dt id="taxTotalLabel">TVA 8.1%</dt><dd id="taxTotalValue">CHF 0.00</dd></div>
-              <div class="grand-total"><dt>Total</dt><dd id="grandTotalValue">CHF 0.00</dd></div>
+              <div class="grand-total"><dt>Total à payer</dt><dd id="grandTotalValue">CHF 0.00</dd></div>
             </dl>
             <div class="installments" id="installmentTableWrap" hidden><table class="installment-table" aria-label="Paiement échelonné indicatif en CHF"><tbody id="installmentGrid"></tbody></table></div>
           </div>
@@ -1527,8 +1599,9 @@
             <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Envoyer</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
             <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden>
               <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
-              <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis par e-mail" title="Préparer le devis par e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>E-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
-              <p class="transmission-note">Dans l’application de bureau, E-mail ouvre un brouillon avec le PDF joint. Pour WhatsApp, ajoutez-le depuis Téléchargements.</p>
+              <button class="transmission-option transmission-option-outlook" id="checkoutOutlookWebButton" type="button" role="menuitem" aria-label="Préparer le devis dans Outlook Web" title="Préparer le devis dans Outlook Web"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Outlook Web</strong><small id="checkoutOutlookWebRecipient">Destinataire à saisir</small></span></button>
+              <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis dans l’application e-mail" title="Préparer le devis dans l’application e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Application e-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
+              <p class="transmission-note">Outlook Web ouvre le message prérempli : joignez le PDF créé dans Téléchargements. L’application e-mail joint le PDF automatiquement.</p>
             </div>
           </div>
         </div>
@@ -1692,6 +1765,7 @@
                 <div class="settings-section-head"><h3>TVA</h3></div>
                 <div class="form-grid">
                   <label><span>Taux</span><span class="input-with-suffix"><input name="taxRate" type="number" min="0" max="100" step="0.1"><b>%</b></span></label><label><span>Calcul</span><select name="taxMode"><option value="included">Incluse</option><option value="excluded">En plus</option></select></label>
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="showTaxInformation" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-toggle-copy"><strong>Afficher et calculer la TVA</strong><small>Désactivé, les prix sont conservés tels quels, sans ajout ni déduction de TVA.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
                 </div>
               </section>
               <section class="settings-section settings-section--commercial">
@@ -1710,7 +1784,7 @@
                 <div class="settings-section-head"><h3>Mentions</h3></div>
                 <div class="form-grid">
                   <label class="full-field"><span>Paiement</span><textarea name="conditions" rows="5"></textarea></label><label class="full-field"><span>Tarif étudiant</span><textarea name="studentConditions" rows="3"></textarea></label><label class="full-field"><span>Pied de page</span><textarea name="footerNote" rows="3"></textarea></label>
-                  <label class="checkbox-field full-field"><input name="showSignatures" type="checkbox"><span><strong>Zones de signature</strong></span></label>
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="showSignatures" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-signature"></use></svg></span><span class="settings-toggle-copy"><strong>Zones de signature</strong><small>Ajoute « Date et lieu » et « Signature du client » à la fin du devis.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
                 </div>
               </section>
             </div>

@@ -131,7 +131,9 @@ async function run() {
       if (shortcutGroups.scrollWidth > shortcutGroups.clientWidth + 1 || getComputedStyle(shortcutGroups).gridTemplateColumns.trim().split(/\\s+/).length !== 2) throw new Error("L’aide des raccourcis n’utilise pas correctement ses deux colonnes");
       if (shortcutLists.length !== 4 || shortcutLists.some((list) => getComputedStyle(list).gridTemplateColumns.trim().split(/\\s+/).length !== 1) || shortcutCard.querySelectorAll(".shortcut-list>div").length !== 16) throw new Error("Les groupes de raccourcis sont incomplets ou mal structurés");
       document.querySelector('#shortcutHelpLayer [data-close="shortcutHelpLayer"]').click();
-      if (document.querySelector(".tax-header-toggle").textContent.trim() !== "TVA") throw new Error("Le toggle TVA conserve un libellé inutilement long");
+      const taxHeaderToggle = document.querySelector(".tax-header-toggle");
+      if (taxHeaderToggle.textContent.trim() !== "TVA") throw new Error("Le toggle TVA conserve un libellé inutilement long");
+      if (!taxHeaderToggle.hidden) throw new Error("La TVA doit être masquée par défaut dans la caisse");
       document.querySelector("#moreQuoteButton").click();
       const quoteMenu = document.querySelector("#quoteActionMenu");
       const quoteMenuRect = quoteMenu.getBoundingClientRect();
@@ -163,6 +165,19 @@ async function run() {
       if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-gesture="free"]')?.textContent.trim() !== "1") {
         throw new Error("La conversion en pack ne conserve pas correctement la séance offerte");
       }
+      const totalsQuote = JSON.parse(localStorage.getItem("bcdevis-v1")).current;
+      const totalsPackLine = totalsQuote.lines.find((line) => line.offerType === "pack");
+      const displayMoney = (value) => new Intl.NumberFormat("fr-CH", { style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0).replaceAll(" ", " ");
+      const catalogTotal = totalsQuote.lines.reduce((sum, line) => {
+        const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
+        return sum + unitPrice * (Number(line.quantity) + (line.offerType === "pack" ? Number(line.freeQuantity) : 0));
+      }, 0);
+      const packDiscount = Number(totalsPackLine.price) * Number(totalsPackLine.freeQuantity);
+      const paidTotal = catalogTotal - packDiscount;
+      if (convertedPackLine.querySelector(".cart-line-price").textContent !== displayMoney(Number(totalsPackLine.price) * (Number(totalsPackLine.quantity) + Number(totalsPackLine.freeQuantity)))) throw new Error("La ligne Pack n’affiche pas sa valeur complète avant offre");
+      if (document.querySelector("#subtotalValue").textContent !== displayMoney(catalogTotal)) throw new Error("Le total avant offres ne reprend pas toutes les séances");
+      if (document.querySelector("#totalDiscountRow").hidden || document.querySelector("#totalDiscountValue").textContent !== "− " + displayMoney(packDiscount)) throw new Error("Le rabais total ne valorise pas la séance offerte");
+      if (document.querySelector("#grandTotalValue").textContent !== displayMoney(paidTotal)) throw new Error("Le total à payer facture encore une séance offerte");
       if (/undefined/i.test(document.querySelector("#toastRegion").textContent)) throw new Error("Le message de conversion en pack contient une valeur indéfinie");
       const specialLineName = [...document.querySelectorAll(".cart-line-name")].find((input) => input.value === "Zone spéciale 100 cm²");
       if (!specialLineName) throw new Error("Zone spéciale 100 cm² n’apparaît pas dans la caisse");
@@ -196,6 +211,48 @@ async function run() {
       if (Math.max(...actionRects.map((rect) => rect.width)) - Math.min(...actionRects.map((rect) => rect.width)) > 1) throw new Error("Les trois actions rapides doivent avoir la même largeur");
       if (document.querySelector("#couponToggle").textContent.trim() !== "Ajouter un coupon") throw new Error("L’action coupon reste réduite à un signe ambigu");
 
+      const priceWithoutTax = document.querySelector("#grandTotalValue").textContent;
+      window.dispatchEvent(new Event("beforeprint"));
+      if (/TVA|Net HT|Total TTC/.test(document.querySelector("#printQuote").textContent)) throw new Error("Le devis affiche encore une information TVA par défaut");
+      document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="pricing"]').click();
+      const taxVisibilitySetting = document.querySelector('#settingsForm [name="showTaxInformation"]');
+      if (taxVisibilitySetting.checked) throw new Error("Le réglage TVA devrait être désactivé par défaut");
+      const taxSettingCard = taxVisibilitySetting.closest(".settings-toggle-card");
+      if (!taxSettingCard || getComputedStyle(taxSettingCard).display !== "grid" || taxSettingCard.querySelector(".settings-toggle-icon use")?.getAttribute("href") !== "#icon-percent") throw new Error("Le réglage TVA n’utilise pas la nouvelle carte-interrupteur");
+      if (!getComputedStyle(taxSettingCard.querySelector(".settings-toggle-status"), "::before").content.includes("Désactivé")) throw new Error("L’état désactivé de la TVA n’est pas lisible");
+      taxVisibilitySetting.checked = true;
+      if (!getComputedStyle(taxSettingCard.querySelector(".settings-toggle-status"), "::before").content.includes("Activé")) throw new Error("L’état activé de la TVA n’est pas lisible");
+      document.querySelector("#settingsForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      if (taxHeaderToggle.hidden || document.querySelector("#taxEnabled").checked) throw new Error("L’activation globale doit afficher le contrôle TVA sans modifier le devis courant");
+      document.querySelector("#taxEnabled").click();
+      if (document.querySelector("#taxTotalRow").hidden || document.querySelector("#grandTotalValue").textContent !== priceWithoutTax) throw new Error("L’affichage TVA ne doit pas modifier les prix finaux existants");
+      window.dispatchEvent(new Event("beforeprint"));
+      if (!/TVA/.test(document.querySelector("#printQuote").textContent)) throw new Error("Le devis n’affiche pas la TVA lorsqu’elle est explicitement activée");
+      document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="pricing"]').click();
+      const activeTaxVisibilitySetting = document.querySelector('#settingsForm [name="showTaxInformation"]');
+      if (!activeTaxVisibilitySetting.checked) throw new Error("Le réglage TVA activé n’est pas restauré");
+      activeTaxVisibilitySetting.checked = false;
+      document.querySelector('[data-settings-tab="interface"]').click();
+      document.querySelector("#settingsForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      if (!taxHeaderToggle.hidden || !document.querySelector("#taxTotalRow").hidden || document.querySelector("#grandTotalValue").textContent !== priceWithoutTax) throw new Error("La désactivation TVA ne conserve pas la caisse et les prix attendus");
+      window.dispatchEvent(new Event("beforeprint"));
+      if (/TVA|Net HT|Total TTC/.test(document.querySelector("#printQuote").textContent)) throw new Error("Le devis conserve une information TVA après désactivation");
+      const savedTaxSetting = JSON.parse(localStorage.getItem("bcdevis-v1")).settings.showTaxInformation;
+      if (savedTaxSetting !== false) throw new Error("Le choix de masquer la TVA n’est pas sauvegardé localement");
+      document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="document"]').click();
+      const signatureSetting = document.querySelector('#settingsForm [name="showSignatures"]');
+      const signatureSettingCard = signatureSetting.closest(".settings-toggle-card");
+      if (!signatureSetting.checked || !signatureSettingCard || signatureSettingCard.querySelector(".settings-toggle-icon use")?.getAttribute("href") !== "#icon-signature") throw new Error("Le réglage des signatures n’utilise pas la nouvelle carte-interrupteur");
+      if (!getComputedStyle(signatureSettingCard.querySelector(".settings-toggle-status"), "::before").content.includes("Activé")) throw new Error("L’état actif des signatures n’est pas lisible");
+      signatureSetting.click();
+      if (!getComputedStyle(signatureSettingCard.querySelector(".settings-toggle-status"), "::before").content.includes("Désactivé")) throw new Error("L’état désactivé des signatures n’est pas lisible");
+      signatureSetting.click();
+      document.querySelector('[data-settings-tab="interface"]').click();
+      document.querySelector('#settingsLayer .modal-head [data-close="settingsLayer"]').click();
+
       document.querySelector("#clientButton").click();
       const client = document.querySelector("#clientForm");
       client.elements.name.value = "Sophie Martin";
@@ -203,9 +260,12 @@ async function run() {
       client.elements.email.value = "sophie@example.test";
       client.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       document.querySelector("#checkoutTransmitButton").click();
-      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp et E-mail");
+      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp, Outlook Web et application e-mail");
+      const transmissionMenuRect = document.querySelector("#checkoutTransmissionMenu").getBoundingClientRect();
+      if (transmissionMenuRect.top < 0 || transmissionMenuRect.bottom > innerHeight || transmissionMenuRect.left < 0 || transmissionMenuRect.right > innerWidth) throw new Error("Le menu Envoyer sort de la fenêtre avec ses trois choix");
+      if (document.querySelector("#checkoutOutlookWebRecipient").textContent !== "sophie@example.test") throw new Error("Le choix Outlook Web ne reprend pas l’adresse du contact");
       if (document.querySelector("#checkoutEmailRecipient").textContent !== "sophie@example.test") throw new Error("Le choix E-mail ne reprend pas l’adresse du contact");
-      if (!document.querySelector("#checkoutWhatsAppButton") || !document.querySelector("#checkoutEmailButton")) throw new Error("Un choix de transmission est absent");
+      if (!document.querySelector("#checkoutWhatsAppButton") || !document.querySelector("#checkoutOutlookWebButton") || !document.querySelector("#checkoutEmailButton")) throw new Error("Un choix de transmission est absent");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
       if (!document.querySelector("#checkoutTransmissionMenu").hidden || document.activeElement !== document.querySelector("#checkoutTransmitButton")) throw new Error("Échap ne referme pas correctement Envoyer");
 
@@ -304,11 +364,32 @@ async function run() {
     })()`);
     assert.equal(emailDraft.payload.to, "sophie@example.test");
     assert.match(emailDraft.payload.attachmentPath, /DEV-\d{8}[A-Z0-9]*\d{3}\.pdf$/);
-    assert.match(emailDraft.payload.body, /Sous-total :/);
-    assert.match(emailDraft.payload.body, /Total :/);
+    assert.match(emailDraft.payload.body, /Total avant offres :/);
+    assert.match(emailDraft.payload.body, /Rabais total :/);
+    assert.match(emailDraft.payload.body, /Total à payer :/);
     assert.doesNotMatch(emailDraft.payload.body, /\+/);
     assert.doesNotMatch(emailDraft.payload.body, /—\s*—| — /);
     assert.equal(emailDraft.fallbackUrl, null, "Outlook ne doit pas être remplacé par mailto lorsque le PDF est joint");
+
+    const outlookWebDraft = await window.webContents.executeJavaScript(`(async () => {
+      window.__bcdevisFallbackUrl = null;
+      document.querySelector("#checkoutTransmitButton").click();
+      document.querySelector("#checkoutOutlookWebButton").click();
+      for (let attempt = 0; attempt < 40 && document.querySelector("#checkoutOutlookWebButton").hasAttribute("aria-busy"); attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      return {
+        url: window.__bcdevisFallbackUrl,
+        toast: document.querySelector("#toastRegion").textContent
+      };
+    })()`);
+    const outlookWebUrl = new URL(outlookWebDraft.url);
+    assert.equal(outlookWebUrl.origin, "https://outlook.office.com");
+    assert.equal(outlookWebUrl.pathname, "/mail/deeplink/compose");
+    assert.equal(outlookWebUrl.searchParams.get("to"), "sophie@example.test");
+    assert.match(outlookWebUrl.searchParams.get("subject"), /Votre devis DEV-/);
+    assert.match(outlookWebUrl.searchParams.get("body"), /Total à payer :/);
+    assert.match(outlookWebDraft.toast, /Outlook Web ouvert — joignez .* depuis Téléchargements/);
 
     const emailFailure = await window.webContents.executeJavaScript(`(async () => {
       window.__bcdevisFallbackUrl = null;

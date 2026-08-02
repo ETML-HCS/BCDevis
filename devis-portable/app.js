@@ -30,7 +30,7 @@
     document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const { roundMoney, clamp, calculate, installmentMonths } = window.QuoteCore;
+  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal } = window.QuoteCore;
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const todayISO = () => {
     const date = new Date();
@@ -107,6 +107,7 @@
     studentDiscount: 50,
     taxRate: 8.1,
     taxMode: "included",
+    showTaxInformation: false,
     showFamilyPrices: false,
     skipTariffChangeConfirmation: false,
     catalogMode: "tiles",
@@ -129,6 +130,15 @@
     if (settings?.taxRate === "" || settings?.taxRate === null || settings?.taxRate === undefined) return defaultSettings.taxRate;
     const rate = Number(settings.taxRate);
     return Number.isFinite(rate) && rate >= 0 && rate <= 100 ? rate : defaultSettings.taxRate;
+  }
+
+  function taxInformationEnabled(item) {
+    return db.settings.showTaxInformation === true && item?.tax?.enabled !== false;
+  }
+
+  function calculateQuote(item) {
+    if (taxInformationEnabled(item)) return calculate(item);
+    return calculate({ ...item, tax: { ...(item?.tax || {}), enabled: false } });
   }
 
   function freshDatabase() {
@@ -326,7 +336,7 @@
       client: { name: "", phone: "", email: "", address: "" },
       lines: [],
       discount: { code: "", type: "percent", value: 0 },
-      tax: { enabled: true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
+      tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
       conditions: db.settings.conditions,
       note: "",
       createdAt: new Date().toISOString(),
@@ -342,7 +352,7 @@
       validUntil: addDaysISO(date, QUOTE_VALIDITY_DAYS),
       client: { name: "", phone: "", email: "", address: "" },
       lines: [], discount: { code: "", type: "percent", value: 0 },
-      tax: { enabled: true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
+      tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
       conditions: db.settings.conditions, note: "",
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
     };
@@ -369,7 +379,7 @@
         value: Math.max(0, Number(source.discount?.value) || 0)
       },
       tax: {
-        enabled: source.tax?.enabled !== false,
+        enabled: source.tax?.enabled === undefined ? base.tax.enabled : source.tax.enabled !== false,
         rate: boundedNumber(source.tax?.rate, 0, 100, base.tax.rate),
         mode: source.tax?.mode === "excluded" ? "excluded" : "included"
       },
@@ -1029,8 +1039,10 @@
     const client = quote.client;
     const clientEmail = String(client.email || "").trim();
     const emailRecipient = $("#checkoutEmailRecipient");
+    const outlookWebRecipient = $("#checkoutOutlookWebRecipient");
     const desktopEmailAvailable = typeof window.bcdevisDesktop?.composeEmail === "function"
       && typeof window.bcdevisDesktop?.savePdf === "function";
+    if (outlookWebRecipient) outlookWebRecipient.textContent = clientEmail || "Destinataire à saisir";
     if (emailRecipient) {
       emailRecipient.textContent = desktopEmailAvailable
         ? clientEmail || "Destinataire à saisir"
@@ -1067,22 +1079,19 @@
       const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
         <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
-        <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price">${money(line.price)}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
+        <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
       </article>`;
     }).join("");
   }
   function renderTotals() {
-    const totals = calculate(quote);
+    const totals = calculateQuote(quote);
+    const taxEnabled = taxInformationEnabled(quote);
     $("#subtotalValue").textContent = money(totals.subtotal);
-    $("#studentDiscountTotalRow").hidden = totals.studentDiscount <= 0;
-    $("#studentDiscountTotalLabel").textContent = `Rabais étudiant (${totals.studentRate}%)`;
-    $("#studentDiscountTotalValue").textContent = `− ${money(totals.studentDiscount)}`;
-    $("#discountTotalRow").hidden = totals.discount <= 0;
-    $("#discountTotalLabel").textContent = quote.discount.code ? `Coupon · ${quote.discount.code}` : "Coupon";
-    $("#discountTotalValue").textContent = `− ${money(totals.discount)}`;
-    $("#netTotalRow").hidden = !quote.tax.enabled;
+    $("#totalDiscountRow").hidden = totals.totalDiscount <= 0;
+    $("#totalDiscountValue").textContent = `− ${money(totals.totalDiscount)}`;
+    $("#netTotalRow").hidden = !taxEnabled;
     $("#netTotalValue").textContent = money(totals.net);
-    $("#taxTotalRow").hidden = !quote.tax.enabled;
+    $("#taxTotalRow").hidden = !taxEnabled;
     $("#taxTotalLabel").textContent = `TVA ${totals.rate}%${quote.tax.mode === "included" ? " incluse" : ""}`;
     $("#taxTotalValue").textContent = money(totals.tax);
     $("#grandTotalValue").textContent = money(totals.total);
@@ -1125,7 +1134,7 @@
     if (quote.discount.type !== previousCouponType) saveLocal(false);
     const hasLines = quote.lines.length > 0;
     $("#checkoutPanel").classList.toggle("is-empty", !hasLines);
-    ["saveButton", "checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton"].forEach((id) => {
+    ["saveButton", "checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton", "checkoutOutlookWebButton"].forEach((id) => {
       const button = $(`#${id}`);
       if (button) button.disabled = !hasLines;
     });
@@ -1162,7 +1171,11 @@
       button.title = percentBlocked ? "Non cumulable avec le tarif étudiant" : "";
       button.classList.toggle("active", button.dataset.discountType === quote.discount.type);
     });
-    $("#taxEnabled").checked = Boolean(quote.tax.enabled);
+    const taxToggle = $("#taxEnabled");
+    const showTaxInformation = db.settings.showTaxInformation === true;
+    taxToggle.checked = showTaxInformation && Boolean(quote.tax.enabled);
+    taxToggle.disabled = !showTaxInformation;
+    taxToggle.closest(".tax-header-toggle").hidden = !showTaxInformation;
   }
 
   function renderAll() {
@@ -1321,7 +1334,7 @@
       return;
     }
     list.innerHTML = quotes.map((item) => {
-      const totals = calculate(item);
+      const totals = calculateQuote(item);
       return `<button class="history-item ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${item.id}">
         <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
         <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
@@ -1458,6 +1471,7 @@
     const form = $("#settingsForm");
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
     if (form.elements.showSignatures) form.elements.showSignatures.checked = db.settings.showSignatures !== false;
+    if (form.elements.showTaxInformation) form.elements.showTaxInformation.checked = db.settings.showTaxInformation === true;
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
       form.elements.launchAtLogin.disabled = true;
@@ -1597,9 +1611,8 @@
     const footerNote = String(db.settings.footerNote || "").trim();
     const conditionsLength = conditions.length + footerNote.length + studentConditions.length;
     const adjustmentRows = 2
-      + (totals.studentDiscount > 0 ? 1 : 0)
-      + (totals.discount > 0 ? 1 : 0)
-      + (quote.tax.enabled ? 2 : 0);
+      + (totals.totalDiscount > 0 ? 1 : 0)
+      + (taxInformationEnabled(quote) ? 2 : 0);
     const longLineCount = quote.lines.filter((line) => String(line.name || "").length > 44).length;
     const singlePageEligible = quote.lines.length <= 5
       && longLineCount <= 2
@@ -1618,7 +1631,8 @@
   }
 
   function renderPrint() {
-    const totals = calculate(quote);
+    const totals = calculateQuote(quote);
+    const taxEnabled = taxInformationEnabled(quote);
     const settings = db.settings;
     const client = quote.client;
     const months = installmentMonths(totals.total);
@@ -1627,10 +1641,8 @@
     const rows = quote.lines.map((line) => {
       const quantityLabel = line.offerType === "pack" ? `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}` : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
-      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${escapeHTML(offerLabel(line))} · ${escapeHTML(categoryFor(line.categoryId).name)}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(unitPrice * line.quantity)}</td></tr>`;
+      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${escapeHTML(offerLabel(line))} · ${escapeHTML(categoryFor(line.categoryId).name)}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(referenceLineTotal(line))}</td></tr>`;
     }).join("");
-    const couponName = quote.discount.code ? `Coupon ${quote.discount.code}` : "Coupon";
-    const discountLabel = quote.discount.type === "percent" ? `${couponName} (${Number(quote.discount.value) || 0} %)` : couponName;
     const studentConditions = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
     const customLogoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl);
     const logoSource = customLogoSource || defaultLogoForPrint();
@@ -1639,7 +1651,7 @@
     const signatureBlock = settings.showSignatures !== false
       ? `<div class="print-signature"><div><span>Date et lieu</span></div><div><span>Signature du client et mention « Bon pour accord »</span></div></div>`
       : "";
-    const totalLabel = quote.tax.enabled ? "Total TTC" : "Total";
+    const totalLabel = taxEnabled ? "Total à payer TTC" : "Total à payer";
     const printRoot = $("#printQuote");
     const layoutClass = printLayoutClass(totals, months, studentConditions);
     printRoot.className = `print-quote ${layoutClass}`;
@@ -1659,7 +1671,7 @@
         <table class="print-table"><thead><tr><th>Prestation</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
-        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>Sous-total</td><td>${money(totals.subtotal)}</td></tr>${totals.studentDiscount > 0 ? `<tr class="discount"><td>Rabais étudiant (${totals.studentRate} %)</td><td>− ${money(totals.studentDiscount)}</td></tr>` : ""}${totals.discount > 0 ? `<tr class="discount"><td>${escapeHTML(discountLabel)}</td><td>− ${money(totals.discount)}</td></tr>` : ""}${quote.tax.enabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>Total avant offres</td><td>${money(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>Rabais total</td><td>− ${money(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
         <section class="print-followup">
           ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>Modalités de paiement</strong></div></div><p class="print-installment-intro">Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier.</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} mois</b><span>${money(totals.total / month)}</span><small>mensualité indicative</small></div>`).join("")}</div>` : ""}
           <div class="print-legal-block">
@@ -1731,7 +1743,7 @@
 
   function transmissionMessage() {
     if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
-    const totals = calculate(quote);
+    const totals = calculateQuote(quote);
     const clientName = String(quote.client?.name || "").trim();
     const lines = quote.lines.map((line) => {
       const name = String(line.name || "Prestation").trim().replace(/[\s—–-]+$/u, "").trim() || "Prestation";
@@ -1743,20 +1755,16 @@
         const paid = `${quantity} payée${quantity > 1 ? "s" : ""}`;
         const offeredQuantity = Math.max(0, Number(line.freeQuantity) || 0);
         const offered = offeredQuantity ? ` et ${offeredQuantity} offerte${offeredQuantity > 1 ? "s" : ""}` : "";
-        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(unitPrice * quantity)}`;
+        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(referenceLineTotal(line))} avant offre`;
       }
-      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(unitPrice * quantity)}`;
+      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(referenceLineTotal(line))}`;
     });
-    const summary = [`Sous-total : ${money(totals.subtotal)}`];
-    if (totals.studentDiscount > 0) summary.push(`Rabais étudiant (${totals.studentRate} %) : ${money(totals.studentDiscount)}`);
-    if (totals.discount > 0) {
-      const label = quote.discount.code ? `Coupon ${quote.discount.code}` : "Réduction";
-      summary.push(`${label} : ${money(totals.discount)}`);
-    }
-    if (quote.tax.enabled && totals.tax > 0) {
+    const summary = [`Total avant offres : ${money(totals.subtotal)}`];
+    if (totals.totalDiscount > 0) summary.push(`Rabais total : − ${money(totals.totalDiscount)}`);
+    if (taxInformationEnabled(quote) && totals.tax > 0) {
       summary.push(`TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""} : ${money(totals.tax)}`);
     }
-    summary.push(`Total : ${money(totals.total)}`);
+    summary.push(`Total à payer : ${money(totals.total)}`);
     const message = [
       `Bonjour${clientName ? ` ${clientName}` : ""},`,
       "",
@@ -1792,8 +1800,12 @@
     return `Votre devis ${quote.number} — ${String(db.settings.companyName || "Clinique Bellecour").trim()}`;
   }
 
+  function outlookWebComposeUrl(recipient, subject, body) {
+    return `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
   function setTransmissionBusy(busy) {
-    ["#checkoutTransmitButton", "#checkoutWhatsAppButton", "#checkoutEmailButton"]
+    ["#checkoutTransmitButton", "#checkoutWhatsAppButton", "#checkoutOutlookWebButton", "#checkoutEmailButton"]
       .map((selector) => $(selector))
       .filter(Boolean)
       .forEach((button) => {
@@ -1852,6 +1864,28 @@
     } catch (error) {
       console.error(error);
       toast("Impossible d’ouvrir un e-mail avec le PDF joint. Le PDF reste dans Téléchargements.", "error");
+    } finally {
+      setTransmissionBusy(false);
+    }
+  }
+
+  async function shareQuoteViaOutlookWeb() {
+    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    saveQuote();
+    renderPrint();
+    setTransmissionMenuOpen(false);
+    setTransmissionBusy(true);
+    const message = transmissionMessage();
+    const recipient = String(quote.client?.email || "").trim();
+    try {
+      const result = await prepareTransmissionPdf();
+      await openExternalUrl(outlookWebComposeUrl(recipient, emailSubject(), message));
+      toast(result?.saved
+        ? `Outlook Web ouvert — joignez ${result.fileName || "le PDF"} depuis Téléchargements.`
+        : "Outlook Web ouvert — créez puis joignez le PDF avant l’envoi.");
+    } catch (error) {
+      console.error(error);
+      toast("Outlook Web n’a pas pu être ouvert. Le PDF reste dans Téléchargements.", "error");
     } finally {
       setTransmissionBusy(false);
     }
@@ -2262,6 +2296,10 @@
     setTransmissionMenuOpen(false);
     shareQuoteViaWhatsApp();
   });
+  $("#checkoutOutlookWebButton").addEventListener("click", () => {
+    setTransmissionMenuOpen(false);
+    shareQuoteViaOutlookWeb();
+  });
   $("#checkoutEmailButton").addEventListener("click", () => {
     setTransmissionMenuOpen(false);
     shareQuoteViaEmail();
@@ -2388,6 +2426,7 @@
       quotePrefix: String(data.get("quotePrefix") || "DEV").trim().toUpperCase(), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName, validityDays: QUOTE_VALIDITY_DAYS,
       taxRate: configuredTaxRate({ taxRate: data.get("taxRate") }),
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
+      showTaxInformation: data.has("showTaxInformation"),
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
       catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",

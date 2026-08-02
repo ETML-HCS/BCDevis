@@ -86,6 +86,11 @@ assert.doesNotMatch(html, />Sortie<|id="printButton"|id="downloadPdfButton"|id="
 assert.doesNotMatch(html, />Gestion du devis</, "La gestion du devis ne doit pas être répétée dans le menu principal");
 assert.match(html, /<span>TVA<\/span>/, "Le toggle de caisse doit être libellé simplement TVA");
 assert.doesNotMatch(html, />Afficher TVA</, "Le libellé TVA ne doit pas être inutilement long");
+assert.match(html, /name="showTaxInformation" type="checkbox"/, "La visibilité et le calcul de la TVA doivent être configurables dans les réglages");
+assert.match(html, /\.tax-header-toggle\[hidden\]\{display:none!important\}/, "Le contrôle TVA masqué ne doit conserver aucune place dans la caisse");
+assert.match(html, /<dt>Total avant offres<\/dt>[\s\S]*?id="totalDiscountRow" hidden><dt>Rabais total<\/dt>[\s\S]*?<dt>Total à payer<\/dt>/, "La caisse doit présenter le total catalogue, le rabais global et le montant payé");
+assert.doesNotMatch(html, /studentDiscountTotalRow|discountTotalRow/, "Les rabais ne doivent plus être dispersés sur plusieurs lignes de totaux");
+assert.match(app, /money\(referenceLineTotal\(line\)\)/, "Chaque prestation doit afficher sa valeur complète avant offre");
 assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro de devis ne doit plus encombrer l’en-tête de caisse");
 assert.match(styles, /\.family-title-row h2\{font-size:16px;line-height:1\}/, "Le titre Prestations doit rester compact");
 assert.match(html, /\.checkout-panel h2\{font-size:22px\}/, "Le titre Caisse doit être réduit avec mesure");
@@ -115,13 +120,16 @@ for (const id of ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitB
   assert.match(html, new RegExp(`id="${id}"`), `${id} doit rester directement accessible dans la caisse`);
 }
 assert.equal((html.match(/id="checkout(?:Print|Pdf|Transmit)Button"/g) || []).length, 3, "La caisse doit contenir exactement trois actions rapides");
-assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"[^>]*>[\s\S]*?<span>Envoyer<\/span>/, "Envoyer doit annoncer ses deux choix avec un libellé court");
+assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"[^>]*>[\s\S]*?<span>Envoyer<\/span>/, "Envoyer doit annoncer ses choix avec un libellé court");
 assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden/, "Le menu d’envoi doit être identifié");
-for (const id of ["checkoutWhatsAppButton", "checkoutEmailButton"]) {
+for (const id of ["checkoutWhatsAppButton", "checkoutOutlookWebButton", "checkoutEmailButton"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Envoyer`);
 }
+assert.match(html, /id="checkoutOutlookWebRecipient">Destinataire à saisir</, "Outlook Web doit expliquer le destinataire manquant");
 assert.match(html, /id="checkoutEmailRecipient">Destinataire à saisir</, "Le choix E-mail doit expliquer le destinataire manquant");
 assert.match(app, /function setTransmissionMenuOpen/, "Le menu Envoyer doit exposer un état ouvert et fermé");
+assert.match(app, /function shareQuoteViaOutlookWeb/, "Le transfert par Outlook Web doit être implémenté");
+assert.match(app, /https:\/\/outlook\.office\.com\/mail\/deeplink\/compose\?to=\$\{encodeURIComponent\(recipient\)\}&subject=\$\{encodeURIComponent\(subject\)\}&body=\$\{encodeURIComponent\(body\)\}/, "Outlook Web doit recevoir le destinataire, l’objet et le message encodés");
 assert.match(app, /function shareQuoteViaEmail/, "Le transfert par e-mail doit être implémenté");
 assert.match(app, /quote\.client\?\.email/, "L’adresse e-mail du contact doit être réutilisée lorsqu’elle existe");
 assert.doesNotMatch(app, /mailto:/, "Le transfert e-mail ne doit plus ouvrir un brouillon sans pièce jointe");

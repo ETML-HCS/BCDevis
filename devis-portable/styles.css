@@ -1232,6 +1232,7 @@ html[data-theme] .family-visibility-icon svg{
 .checkout-transmission-menu .transmission-option strong{font-size:12px}
 .checkout-transmission-menu .transmission-option small{margin-top:2px;color:var(--muted);font-size:9px}
 .checkout-transmission-menu .transmission-option-whatsapp>svg{color:#178f4a}
+.checkout-transmission-menu .transmission-option-outlook>svg{color:#1473e6}
 .checkout-transmission-menu .transmission-option-email>svg{color:var(--taupe-dark)}
 .checkout-transmission-menu .transmission-note{margin:1px 3px 0;color:var(--muted);font-size:9px;line-height:1.35}
 .quote-head-actions{position:relative;display:flex;flex:0 0 auto;align-items:center;gap:6px}
@@ -1603,6 +1604,7 @@ html[data-theme] .checkout-transmission-menu .transmission-option:hover{
   background:var(--taupe-light);
 }
 html[data-theme] .checkout-transmission-menu .transmission-option-whatsapp>svg{color:var(--success)}
+html[data-theme] .checkout-transmission-menu .transmission-option-outlook>svg{color:#4d9cff}
 html[data-theme] .checkout-transmission-menu .transmission-option-email>svg{color:var(--taupe-dark)}
 
 html[data-theme] .service-zone-icon{

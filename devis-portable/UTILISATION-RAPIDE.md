@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.0.1 - Windows, Linux et ChromeOS</p>
+  <p class="version">Version 5.1.0 - Windows, Linux et ChromeOS</p>
 </div>
 
 <style>
@@ -25,7 +25,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-5.0.1.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-5.1.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -34,15 +34,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-5.0.1-linux-x86_64.AppImage
-./BCDevis-5.0.1-linux-x86_64.AppImage
+chmod +x BCDevis-5.1.0-linux-x86_64.AppImage
+./BCDevis-5.1.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-5.0.1-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-5.1.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -85,7 +85,8 @@ Le fichier `MODELE-DEVIS-V5.json` fourni avec le livrable peut être importé de
 
 - **PDF** crée le devis A4 dans le dossier Téléchargements. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d'impression.
 - **Imprimer** ouvre l'impression du système.
-- **Envoyer > E-mail** prépare un message avec le PDF joint.
+- **Envoyer > Outlook Web** ouvre un message prérempli dans le navigateur ; joignez le PDF créé dans **Téléchargements**.
+- **Envoyer > Application e-mail** prépare un message avec le PDF joint.
 - **Envoyer > WhatsApp** prépare le PDF et ouvre le message ; ajoutez ensuite manuellement le fichier dans WhatsApp.
 
 Un PDF existant n'est jamais écrasé : BCDevis ajoute un numéro au nouveau fichier.
