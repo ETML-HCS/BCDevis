@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
       - name: Configurer la sandbox Electron sous Linux
         run: |
+          node -e "require('electron')"
           electron_path="$(node -p "require('electron')")"
           sandbox_path="$(dirname "${electron_path}")/chrome-sandbox"
           test -f "${sandbox_path}"
