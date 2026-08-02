@@ -26,6 +26,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Configurer la sandbox Electron sous Linux
+        run: |
+          sudo chown root:root node_modules/electron/dist/chrome-sandbox
+          sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
       - name: Vérifier et assembler la version web
         run: xvfb-run -a npm run chromeos
       - name: Préparer le site GitHub Pages
