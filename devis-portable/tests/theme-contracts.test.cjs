@@ -33,13 +33,13 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.2\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "5\.2\.5";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.2\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 5\.2\.5[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /Éditeur des tuiles[\s\S]*?SVG, nom, temps et prix/, "L’éditeur des tuiles doit annoncer les champs personnalisables");
+assert.match(html, /Quantités explicites[\s\S]*?Prestation sur mesure[\s\S]*?Documentation alignée/, "Les nouveautés doivent annoncer les corrections de la version 5.2.5");
 assert.match(app, /catalogOverrides: sanitizeCatalogOverrides/, "Les personnalisations du catalogue doivent être restaurées de façon sûre");
 
 function themeToken(block, token) {
@@ -263,9 +263,17 @@ assert.match(
 );
 assert.match(
   styles,
-  /html\[data-theme\] \.cart-line-inline-controls \.cart-line-price\{[\s\S]*?color:var\(--ink\)/,
-  "Le prix d’une ligne de caisse doit rester lisible dans les quatre thèmes"
+  /html\[data-theme\] \.cart-line-inline-controls \.quantity-stepper\{[\s\S]*?background:var\(--surface-raised\)/,
+  "Les contrôles de quantité doivent rester lisibles dans les quatre thèmes"
 );
+assert.match(
+  styles,
+  /html\[data-ipad-layout="optimized"\] \.cart-line-inline-controls \.quantity-stepper\{min-height:40px;grid-template-columns:34px minmax\(28px,auto\) 34px\}/,
+  "Le mode iPad doit conserver des boutons de quantité tactiles"
+);
+assert.match(app, /decreaseAction: "decrease"[\s\S]*?increaseAction: "increase"/, "La quantité payée doit proposer des contrôles −/+ explicites");
+assert.match(app, /decreaseAction: "decrease-free"[\s\S]*?increaseAction: "increase-free"/, "La quantité offerte doit proposer des contrôles −/+ explicites");
+assert.doesNotMatch(app, /data-quantity-gesture|contextmenu[\s\S]*?changeQuantityFromGesture/, "Les quantités ne doivent plus dépendre du clic droit");
 assert.match(
   styles,
   /html\[data-theme\] \.body-map-card,[\s\S]*?background:color-mix\(in srgb,var\(--panel-bg\)/,

@@ -1,27 +1,26 @@
-BCDevis 5.2.0 - Livrable pour Aleksandra
+BCDevis 5.2.5 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.2.0
+NOUVEAUTES 5.2.5
 
-- L'optimisation iPad est désactivée par défaut et peut être activée en mode
-  automatique ou forcé dans les réglages.
-- Les prestations longues restent compactes et leur détail complet est
-  accessible avec le bouton oeil.
-- L'éditeur des tuiles permet d'adapter localement le SVG, le nom, le temps
-  et le prix d'une prestation.
-- Le corps interactif et les zones du visage sont plus lisibles.
-- Cet écran de nouveautés apparaît une seule fois pour la version 5.2.0.
+- Les quantités payées et offertes disposent de boutons - et + explicites,
+  utilisables à la souris, au clavier et au toucher.
+- Le menu compact affiche Sur mesure ; son libellé complet Créer une
+  prestation sur mesure apparaît au survol.
+- La documentation correspond aux 87 prestations actives et au comportement
+  réel des logos et de la caisse.
+- Cet écran de nouveautés apparaît une seule fois pour la version 5.2.5.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.2.0.exe
+  BCDevis-5.2.5.exe
 
 2-Linux
-  BCDevis-5.2.0-linux-x86_64.AppImage
+  BCDevis-5.2.5-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.2.0-chromeos.zip
+  BCDevis-5.2.5-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -34,7 +33,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.2.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.2.5.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -48,14 +47,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.2.0-linux-x86_64.AppImage
-  ./BCDevis-5.2.0-linux-x86_64.AppImage
+  chmod +x BCDevis-5.2.5-linux-x86_64.AppImage
+  ./BCDevis-5.2.5-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.2.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.2.5-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

@@ -60,6 +60,25 @@ async function audit(window, label, { minColumns = 2 } = {}) {
   return result;
 }
 
+async function auditCheckoutQuantities(window) {
+  const result = await window.webContents.executeJavaScript(`(() => {
+    const stepper = document.querySelector(".quantity-stepper");
+    const buttons = [...(stepper?.querySelectorAll(".quantity-stepper-button") || [])];
+    return {
+      visible: Boolean(stepper && getComputedStyle(stepper).display !== "none"),
+      buttonCount: buttons.length,
+      touchTargets: buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { width: Math.round(rect.width), height: Math.round(rect.height) };
+      }),
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!result.visible || result.buttonCount !== 2 || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles de quantité invalides ${JSON.stringify(result)}`);
+  if (result.touchTargets.some(({ width, height }) => width < 34 || height < 34)) throw new Error(`Caisse iPad : cibles tactiles trop petites ${JSON.stringify(result)}`);
+  return result;
+}
+
 async function main() {
   await fs.mkdir(OUTPUT_PATH, { recursive: true });
   const window = new BrowserWindow({
@@ -80,7 +99,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.2.0.png");
+    await capture(window, "00-nouveautes-5.2.5.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
@@ -94,7 +113,11 @@ async function main() {
     await window.webContents.executeJavaScript(`document.querySelector(".toast-close")?.click()`);
     const landscape = await audit(window, "iPad paysage");
     await capture(window, "01-ipad-paysage-prestations.png");
-    await window.webContents.executeJavaScript(`document.querySelector('[data-panel="checkoutPanel"]').click()`);
+    await window.webContents.executeJavaScript(`(() => {
+      document.querySelector(".family-option")?.click();
+      document.querySelector('[data-panel="checkoutPanel"]').click();
+    })()`);
+    const checkout = await auditCheckoutQuantities(window);
     await capture(window, "02-ipad-paysage-caisse.png");
 
     await setViewport(window, 820, 1180);
@@ -115,7 +138,7 @@ async function main() {
     await capture(window, "05-ipad-split-view.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, portrait, splitView, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, checkout, portrait, splitView, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.2.0 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.2.0") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.2.5 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.2.5") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -163,7 +163,7 @@ async function run() {
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", code: "KeyP", altKey: true, bubbles: true, cancelable: true }));
       if (document.querySelector("#familyPanel").classList.contains("show-family-prices") || document.querySelector("#familyPriceToggle").getAttribute("aria-checked") !== "false") throw new Error("Alt+P ne masque pas les prix");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "N", code: "KeyN", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }));
-      if (document.querySelector("#customItemLayer").hidden) throw new Error("Ctrl+Maj+N n’ouvre pas l’objet sur mesure");
+      if (document.querySelector("#customItemLayer").hidden) throw new Error("Ctrl+Maj+N n’ouvre pas la prestation sur mesure");
       document.querySelector('#customItemLayer [data-close="customItemLayer"]').click();
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "h", code: "KeyH", ctrlKey: true, bubbles: true, cancelable: true }));
       if (document.querySelector("#historyLayer").hidden) throw new Error("Ctrl+H n’ouvre pas l’historique");
@@ -247,9 +247,25 @@ async function run() {
       if (!packOfferAction) throw new Error("La proposition de séance offerte n’apparaît pas au seuil du pack");
       packOfferAction.click();
       const convertedPackLine = document.querySelector(".cart-line.offer-pack");
-      if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-gesture="free"]')?.textContent.trim() !== "1") {
+      if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-value="free"]')?.textContent.trim() !== "1") {
         throw new Error("La conversion en pack ne conserve pas correctement la séance offerte");
       }
+      const increasePaid = convertedPackLine.querySelector('[data-line-action="increase"]');
+      const decreasePaid = convertedPackLine.querySelector('[data-line-action="decrease"]');
+      const increaseFree = convertedPackLine.querySelector('[data-line-action="increase-free"]');
+      const decreaseFree = convertedPackLine.querySelector('[data-line-action="decrease-free"]');
+      if (![increasePaid, decreasePaid, increaseFree, decreaseFree].every(Boolean)) throw new Error("Les boutons tactiles −/+ du Pack sont incomplets");
+      increaseFree.click();
+      let adjustedPackLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.offerType === "pack");
+      if (adjustedPackLine?.freeQuantity !== 2 || document.querySelector('.cart-line.offer-pack [data-quantity-value="free"]')?.textContent.trim() !== "2") throw new Error("Le bouton + des séances offertes ne fonctionne pas");
+      document.querySelector('.cart-line.offer-pack [data-line-action="decrease-free"]').click();
+      adjustedPackLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.offerType === "pack");
+      if (adjustedPackLine?.freeQuantity !== 1) throw new Error("Le bouton − des séances offertes ne fonctionne pas");
+      document.querySelector('.cart-line.offer-pack [data-line-action="decrease"]').click();
+      document.querySelector('.cart-line.offer-pack [data-line-action="increase"]').click();
+      adjustedPackLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.offerType === "pack");
+      if (adjustedPackLine?.quantity !== 6) throw new Error("Les boutons −/+ des séances payées ne restaurent pas la quantité");
+      if (!document.querySelector('.cart-line:not(.offer-pack) [data-line-action="decrease"]')?.disabled) throw new Error("Le bouton − doit être désactivé à la quantité minimale");
       const totalsQuote = JSON.parse(localStorage.getItem("bcdevis-v1")).current;
       const totalsPackLine = totalsQuote.lines.find((line) => line.offerType === "pack");
       const displayMoney = (value) => new Intl.NumberFormat("fr-CH", { style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0).replaceAll(" ", " ");

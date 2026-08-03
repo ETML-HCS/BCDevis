@@ -1,13 +1,12 @@
-# BCDevis - version 5.2.0
+# BCDevis - version 5.2.5
 
 Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
 
-## Nouveautés 5.2.0
+## Nouveautés 5.2.5
 
-- Une adaptation **iPad** facultative améliore les zones tactiles, les champs, les marges sûres et le comportement avec le clavier virtuel. Elle est désactivée par défaut et peut être activée dans `Réglages` > `Interface`.
-- Les prestations aux intitulés longs utilisent une présentation compacte et proposent leur détail complet via le bouton œil.
-- L’**éditeur des tuiles** permet de personnaliser localement le SVG, le nom, le temps et le prix d’une prestation sans modifier le catalogue d’origine.
-- Le corps interactif et les zones du visage ont été affinés pour rendre la sélection anatomique plus lisible.
+- Les quantités payées et offertes disposent de boutons **−** et **+** explicites, utilisables à la souris, au clavier et au toucher.
+- Le parcours **Prestation sur mesure** utilise le libellé compact **Sur mesure** dans le menu et affiche son intitulé complet au survol.
+- La documentation est réalignée sur les 87 prestations actives, le fonctionnement réel des logos et les gestes actuels de la caisse.
 - Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
 
 Documents maintenus avec la version 5 :
@@ -19,7 +18,7 @@ Documents maintenus avec la version 5 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-5.2.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-5.2.5.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -49,13 +48,13 @@ Documents maintenus avec la version 5 :
 
 ## Fonctions incluses
 
-- 82 prestations tarifables issues du catalogue fourni, regroupées en 10 familles pratiques.
+- 87 prestations tarifables issues du catalogue fourni, regroupées en 10 familles pratiques.
 - Un sélecteur Séance/Pack/Étudiant : le passage vers ou depuis le tarif étudiant applique le nouveau tarif à toutes les prestations du devis, après confirmation. Cette confirmation peut être désactivée depuis sa case « Ne plus afficher ce message ». Le rabais étudiant, configurable et fixé à 50 % par défaut, est affiché séparément dans les totaux pour rendre l’économie visible.
 - Réglages globaux du pack et du pourcentage du tarif étudiant.
 - Recherche simultanée dans toutes les familles et prestations personnalisées réutilisables.
 - Navigation corporelle facultative, accessible au clavier, avec morphologies femme/homme, vues face/dos et accès conservé aux consultations, à l’électrolyse, à la médecine esthétique et aux zones combinées.
 - Démarrage automatique facultatif avec la session Windows, Linux ou macOS, configurable dans `Réglages` > `Interface`.
-- Caisse avec prix unitaire modifiable et coupon manuel : pourcentage ou montant CHF. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
+- Caisse avec quantités explicites et coupon manuel : pourcentage ou montant CHF. Pour un tarif libre, **Catalogue > Sur mesure** crée une prestation personnalisée. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
 - TVA incluse par défaut, désactivable ou ajoutée en plus. Le paiement échelonné propose 3/4/6 mois sous 1’000 CHF, ajoute 10 mois dès 1’000 CHF, puis 12 mois dès 2’000 CHF.
 - Date du devis fixée au jour même par défaut, ajustable jusqu’à J+14 ; validité calculée automatiquement à 30 jours calendaires.
 - Numéro de devis traçable : `DEV-YYYYMMDDMACHINE001`, avec un compteur quotidien propre à chaque machine. Les anciens numéros locaux sont automatiquement convertis à ce format ; le prochain index est déterminé à partir du compteur enregistré et des devis déjà présents dans la sauvegarde locale.
@@ -81,8 +80,8 @@ Le document est composé automatiquement pour le format A4 : les lignes d’un s
 
 Dans `Réglages` > `Votre entreprise`, deux logos peuvent être configurés :
 
-- `Logo de l’application` personnalise l’en-tête à l’écran.
-- `Logo du PDF` personnalise uniquement le document imprimé. S’il est laissé vide, le logo de l’application est réutilisé.
+- `Logo principal` sert d’identité personnalisée et de remplacement pour le document PDF.
+- `Logo du PDF` personnalise uniquement le document imprimé. S’il est laissé vide, le logo principal est réutilisé.
 
 Les formats PNG, JPG et WebP sont acceptés jusqu’à 4 Mo. Un PNG transparent donne généralement le résultat le plus élégant. Les logos sont optimisés avant d’être conservés dans la sauvegarde locale.
 
@@ -106,7 +105,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-5.2.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-5.2.5-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -156,7 +155,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-5.2.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-5.2.5.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -166,7 +165,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.5-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -174,7 +173,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.5-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

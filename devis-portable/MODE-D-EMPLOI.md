@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.2.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 5.2.5 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.2.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.2.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.2.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.2.5.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.2.5-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.2.5-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -266,7 +266,7 @@ Dans la barre supérieure :
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
 - **Réglages** et **Raccourcis** : les deux boutons utilitaires placés après les tarifs ;
-- **Menu principal** : objet sur mesure et affichage des prix sur les prestations.
+- **Menu Catalogue** : prestation sur mesure et affichage des prix sur les prestations.
 
 Dans l’en-tête de la caisse, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…` du devis.
 
@@ -344,9 +344,9 @@ Au clavier, utilisez `Tab` pour atteindre les boutons ou une zone, puis `Entrée
 
 Dans les deux modes, la loupe recherche un soin dans tout le catalogue. Les prix sont masqués sur les boutons par défaut ; utilisez **Menu principal > Prix sur les boutons** ou `Alt + P` pour les afficher.
 
-### Étape 3 : Ajouter un objet sur mesure
+### Étape 3 : Ajouter une prestation sur mesure
 
-Utilisez **Menu principal** > **Objet sur mesure** pour créer une prestation libre. Renseignez :
+Utilisez **Menu Catalogue** > **Sur mesure** pour créer une prestation sur mesure. Le libellé complet est disponible au survol. Renseignez :
 
 - le nom de la prestation ;
 - le prix unitaire en CHF ;
@@ -370,9 +370,9 @@ La date du devis est celle du jour par défaut. Elle peut être choisie jusqu’
 
 Chaque ligne affiche le nom, la catégorie, la quantité, le prix et un bouton de suppression.
 
-- Cliquez sur le nombre de séances pour diminuer la quantité.
-- Faites un clic droit sur le nombre pour l’augmenter.
-- Les flèches du clavier permettent également d’augmenter ou de diminuer la quantité lorsque le contrôle est sélectionné.
+- Cliquez sur **−** pour diminuer la quantité et sur **+** pour l’augmenter.
+- Dans un pack, les séances payées et offertes disposent chacune de leurs propres boutons **−** et **+**.
+- Le bouton **−** devient indisponible lorsque la quantité minimale est atteinte.
 - Le nom d’une ligne peut être corrigé directement dans la caisse.
 - Le bouton corbeille retire la ligne.
 
@@ -452,7 +452,7 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 | `Alt` + `M` | Ouvrir le menu Catalogue |
 | `Ctrl` + `K` ou `/` | Rechercher une prestation |
 | `Alt` + `P` | Afficher ou masquer les prix |
-| `Ctrl` + `Maj` + `N` | Créer un objet sur mesure |
+| `Ctrl` + `Maj` + `N` | Créer une prestation sur mesure |
 | `Ctrl` + `N` | Nouveau devis |
 | `Ctrl` + `S` | Enregistrer le devis |
 | `Ctrl` + `H` | Ouvrir l’historique |

@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.2.0";
+  const RELEASE_VERSION = "5.2.5";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -1320,6 +1320,19 @@
     }
   }
 
+  function quantityStepper({ kind, value, label, decreaseAction, increaseAction, minimum, maximum = MAX_LINE_QUANTITY }) {
+    const singularLabel = label.toLocaleLowerCase("fr-CH");
+    const packClass = ["paid", "free"].includes(kind) ? ` is-pack${kind === "free" ? " free" : ""}` : "";
+    return `<span class="quantity-group quantity-group-inline${packClass}">
+      ${kind === "paid" ? "<small>Payées</small>" : kind === "free" ? "<small>Offertes</small>" : ""}
+      <span class="quantity-stepper" role="group" aria-label="${escapeHTML(label)}">
+        <button class="quantity-stepper-button" type="button" data-line-action="${decreaseAction}" aria-label="Diminuer ${escapeHTML(singularLabel)}"${value <= minimum ? " disabled" : ""}><span aria-hidden="true">−</span></button>
+        <output class="quantity-value" data-quantity-value="${kind}" aria-live="polite">${value}</output>
+        <button class="quantity-stepper-button" type="button" data-line-action="${increaseAction}" aria-label="Augmenter ${escapeHTML(singularLabel)}"${value >= maximum ? " disabled" : ""}><span aria-hidden="true">+</span></button>
+      </span>
+    </span>`;
+  }
+
   function renderCart() {
     const container = $("#cartLines");
     $("#cartItemCount").textContent = quote.lines.length ? plural(quote.lines.length, "prestation") : "Aucune prestation";
@@ -1334,8 +1347,22 @@
       const pack = packDefaults();
       const canAddPackOffer = line.offerType === "single" && pack.free > 0 && line.quantity >= pack.paid;
       const categoryLabel = category.short.toLocaleLowerCase("fr-CH");
-      const paidControl = `<span class="quantity-group quantity-group-inline${isPack ? " is-pack" : ""}">${isPack ? "<small>Payées</small>" : ""}<button class="quantity-value" type="button" data-quantity-gesture="paid" aria-label="${line.quantity} séance${line.quantity > 1 ? "s" : ""} payée${line.quantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.quantity}</button></span>`;
-      const freeControl = isPack ? `<span class="quantity-group quantity-group-inline is-pack free"><small>Offertes</small><button class="quantity-value" type="button" data-quantity-gesture="free" aria-label="${line.freeQuantity} séance${line.freeQuantity > 1 ? "s" : ""} offerte${line.freeQuantity > 1 ? "s" : ""}. Clic gauche pour diminuer, clic droit pour augmenter." title="Clic gauche : diminuer · clic droit : augmenter">${line.freeQuantity}</button></span>` : "";
+      const paidControl = quantityStepper({
+        kind: isPack ? "paid" : "quantity",
+        value: line.quantity,
+        label: isPack ? "Séances payées" : "Quantité",
+        decreaseAction: "decrease",
+        increaseAction: "increase",
+        minimum: 1
+      });
+      const freeControl = isPack ? quantityStepper({
+        kind: "free",
+        value: line.freeQuantity,
+        label: "Séances offertes",
+        decreaseAction: "decrease-free",
+        increaseAction: "increase-free",
+        minimum: 0
+      }) : "";
       const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
         <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
@@ -1470,9 +1497,6 @@
     if (!line) return;
     const field = input.dataset.lineField;
     if (field === "name") line.name = input.value.trim() || "Prestation";
-    if (field === "quantity") line.quantity = boundedInteger(input.value, 1, MAX_LINE_QUANTITY, 1);
-    if (field === "price") line.price = boundedNumber(input.value, 0, MAX_LINE_PRICE, 0);
-    if (field === "freeQuantity") line.freeQuantity = boundedInteger(input.value, 0, MAX_LINE_QUANTITY, 0);
     saveLocal();
     renderCart();
     renderTotals();
@@ -2622,24 +2646,7 @@
     if (event.target.closest("[data-tile-detail-close]") || $("#tileDetailCard").contains(event.target) || activeShell?.contains(event.target)) return;
     closeTileDetail();
   }, true);
-  function changeQuantityFromGesture(control, increase) {
-    const line = lineFromElement(control);
-    if (!line) return;
-    const kind = control.dataset.quantityGesture;
-    if (kind === "free") {
-      line.freeQuantity = boundedInteger(line.freeQuantity + (increase ? 1 : -1), 0, MAX_LINE_QUANTITY, 0);
-    } else {
-      line.quantity = boundedInteger(line.quantity + (increase ? 1 : -1), 1, MAX_LINE_QUANTITY, 1);
-    }
-    saveLocal(); renderCatalog(); renderCheckout();
-    const quantity = kind === "free" ? line.freeQuantity : line.quantity;
-    const restoredControl = $(`[data-line-id="${line.id}"] [data-quantity-gesture="${kind}"]`);
-    if (restoredControl) window.setTimeout(() => restoredControl.focus(), 0);
-    toast(`${kind === "free" ? "Séances offertes" : "Quantité"} : ${quantity}`);
-  }
   $("#cartLines").addEventListener("click", (event) => {
-    const quantityGesture = event.target.closest("[data-quantity-gesture]");
-    if (quantityGesture) { changeQuantityFromGesture(quantityGesture, false); return; }
     const actionButton = event.target.closest("[data-line-action]");
     if (!actionButton) return;
     const line = lineFromElement(actionButton);
@@ -2661,21 +2668,17 @@
     if (action === "decrease-free") line.freeQuantity = Math.max(0, line.freeQuantity - 1);
     if (action === "remove") quote.lines = quote.lines.filter((item) => item.id !== line.id);
     saveLocal(); renderCatalog(); renderCheckout();
-  });
-  $("#cartLines").addEventListener("contextmenu", (event) => {
-    const quantityGesture = event.target.closest("[data-quantity-gesture]");
-    if (!quantityGesture) return;
-    event.preventDefault();
-    changeQuantityFromGesture(quantityGesture, true);
+    if (["increase", "decrease", "increase-free", "decrease-free"].includes(action)) {
+      let restoredControl = $(`[data-line-id="${line.id}"] [data-line-action="${action}"]`);
+      if (restoredControl?.disabled) {
+        const fallbackAction = action.startsWith("decrease") ? action.replace("decrease", "increase") : action.replace("increase", "decrease");
+        restoredControl = $(`[data-line-id="${line.id}"] [data-line-action="${fallbackAction}"]`);
+      }
+      if (restoredControl) window.setTimeout(() => restoredControl.focus(), 0);
+    }
   });
   $("#cartLines").addEventListener("change", (event) => { if (event.target.matches("[data-line-field]")) updateLineInput(event.target); });
   $("#cartLines").addEventListener("keydown", (event) => {
-    const quantityGesture = event.target.closest("[data-quantity-gesture]");
-    if (quantityGesture && ["ArrowUp", "ArrowRight", "+", "=", "ArrowDown", "ArrowLeft", "-"].includes(event.key)) {
-      event.preventDefault();
-      changeQuantityFromGesture(quantityGesture, ["ArrowUp", "ArrowRight", "+", "="].includes(event.key));
-      return;
-    }
     if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); }
   });
   $("#quoteDate").addEventListener("change", (event) => {
@@ -2888,7 +2891,7 @@
       const value = await readLogoFile(target.files?.[0]);
       if (value) pendingLogos[key] = value;
       renderLogoPreviews();
-      toast(kind === "pdf" ? "Logo du PDF prêt à être enregistré" : "Logo de l’application prêt à être enregistré");
+      toast(kind === "pdf" ? "Logo du PDF prêt à être enregistré" : "Logo principal prêt à être enregistré");
     } catch (error) {
       toast(error.message || "Impossible d’ajouter ce logo.", "error");
     } finally {

@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Raccourcis clavier V5</h1>
   <p>Les 16 commandes rapides disponibles dans BCDevis.</p>
-  <p class="version">Version 5.2.0 - Windows, Linux, macOS et ChromeOS</p>
+  <p class="version">Version 5.2.5 - Windows, Linux, macOS et ChromeOS</p>
 </div>
 
 ## Catalogue
@@ -12,7 +12,7 @@
 | `Alt + M` | Ouvrir le menu Catalogue |
 | `Ctrl + K` ou `/` | Rechercher une prestation |
 | `Alt + P` | Afficher ou masquer les prix |
-| `Ctrl + Maj + N` | Créer un objet sur mesure |
+| `Ctrl + Maj + N` | Créer une prestation sur mesure |
 
 ## Devis
 
@@ -47,6 +47,6 @@
 - Utilisez `Tab` pour atteindre les boutons, champs et zones du corps.
 - Utilisez `Entrée` ou `Espace` pour activer une zone corporelle.
 - Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus.
-- Sur une quantité sélectionnée, les flèches haut/droite augmentent et les flèches bas/gauche diminuent.
+- Pour ajuster une quantité, utilisez `Tab` afin d’atteindre les boutons `−` et `+`, puis `Entrée` ou `Espace` pour agir.
 
 <div class="callout"><strong>Astuce :</strong> appuyez simplement sur <code>?</code> dans BCDevis pour retrouver cette aide à tout moment.</div>

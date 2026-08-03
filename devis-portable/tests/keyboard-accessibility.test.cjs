@@ -42,6 +42,12 @@ assert.doesNotMatch(html, /app-menu-status|100% local|id="saveState"/, "Le menu 
 for (const id of ["customItemButton", "familyPriceToggle"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem`), `${id} doit appartenir au menu Actions`);
 }
+assert.match(
+  html,
+  /id="customItemButton"[^>]*aria-label="Créer une prestation sur mesure"[^>]*title="Créer une prestation sur mesure"[\s\S]*?<strong>Sur mesure<\/strong>/,
+  "Le menu compact doit abréger Prestation sur mesure tout en exposant son libellé complet"
+);
+assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
 for (const [id, label, shortcut] of [
   ["settingsButton", "Ouvrir les réglages", "Control\\+Comma Meta\\+Comma"],

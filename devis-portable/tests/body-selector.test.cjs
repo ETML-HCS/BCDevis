@@ -127,7 +127,8 @@ const auxiliaryServiceIds = services
   .map((service) => Number(service.id));
 const bodyModeServiceIds = [...new Set([...coveredBodyServiceIds, ...auxiliaryServiceIds])].sort((left, right) => left - right);
 const expectedServiceIds = Array.from(services, (service) => Number(service.id)).sort((left, right) => left - right);
-assert.deepEqual(bodyModeServiceIds, expectedServiceIds, "Les 82 prestations actives doivent rester accessibles dans le mode corporel");
+assert.equal(expectedServiceIds.length, 87, "Le catalogue doit exposer les 87 prestations actives documentées");
+assert.deepEqual(bodyModeServiceIds, expectedServiceIds, "Les 87 prestations actives doivent rester accessibles dans le mode corporel");
 
 for (const family of ["electrolyse", "medecine", "combinees", "consultations"]) {
   assert.match(app, new RegExp(`"${family}"`), `La navigation complémentaire doit conserver ${family}`);

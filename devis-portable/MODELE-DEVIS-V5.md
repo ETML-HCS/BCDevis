@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Modèle de devis V5</h1>
   <p>Importer le modèle vierge fourni avec le livrable client.</p>
-  <p class="version">BCDevis 5.2.0</p>
+  <p class="version">BCDevis 5.2.5</p>
 </div>
 
 <style>
@@ -17,7 +17,7 @@
 
 ## Fichier fourni
 
-Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.2.0.
+Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.2.5.
 
 Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'import :
 
@@ -43,7 +43,7 @@ Pour réutiliser ce fichier :
 
 1. importez-le ;
 2. BCDevis lui attribue une nouvelle identité si le numéro existe déjà ;
-3. adaptez le client, la date, les quantités et les prix ;
+3. adaptez le client, la date, les quantités et les prestations ;
 4. enregistrez le nouveau devis.
 
 <div class="callout"><strong>Important :</strong> utilisez Importer un devis pour un modèle unique. Utilisez Historique > Restaurer uniquement pour une sauvegarde complète, car cette action remplace toutes les données locales.</div>

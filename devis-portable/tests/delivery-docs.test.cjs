@@ -19,11 +19,11 @@ const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
 const template = readJSON("devis-portable/MODELE-DEVIS-V5.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 
-assert.equal(packageJson.version, "5.2.0", "La livraison doit annoncer la version 5.2.0");
+assert.equal(packageJson.version, "5.2.5", "La livraison doit annoncer la version 5.2.5");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
-assert.match(serviceWorker, /bcdevis-pwa-v5\.2\.0/, "Le cache PWA doit suivre la version livrée");
+assert.match(serviceWorker, /bcdevis-pwa-v5\.2\.5/, "Le cache PWA doit suivre la version livrée");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -32,7 +32,7 @@ assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /5\.2\.0/, "Chaque document client doit annoncer la version 5.2.0");
+  assert.match(document, /5\.2\.5/, "Chaque document client doit annoncer la version 5.2.5");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -46,22 +46,29 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-5\.2\.0\.exe/);
-assert.match(quick, /BCDevis-5\.2\.0-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-5\.2\.0-chromeos\.zip/);
+assert.match(quick, /BCDevis-5\.2\.5\.exe/);
+assert.match(quick, /BCDevis-5\.2\.5-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-5\.2\.5-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.2\.0-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.2\.5-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
 assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);
+assert.match(readme, /87 prestations tarifables/, "Le README doit reprendre le nombre réel de prestations actives");
+assert.match(quick, /Bouton \*\*−\*\*[\s\S]*Bouton \*\*\+\*\*/, "La fiche rapide doit expliquer les contrôles de quantité tactiles");
+for (const document of [readme, manual, quick, shortcuts, clientReadme]) {
+  assert.doesNotMatch(document, /Objet sur mesure|objet sur mesure|Clic droit sur (?:la quantité|le nombre)|Clic sur le prix|prix unitaire modifiable/i, "Les documents ne doivent plus décrire les anciennes interactions");
+}
+assert.doesNotMatch(shortcuts, /Sur une quantité sélectionnée, les flèches/i, "La fiche clavier ne doit plus décrire l’ancien contrôle de quantité");
+assert.doesNotMatch(templateGuide, /adaptez[^\n]*les prix/i, "Le guide du modèle ne doit pas suggérer une édition directe des prix de ligne");
 
 const expectedShortcutLabels = [
   "Ouvrir le menu Catalogue",
   "Rechercher une prestation",
   "Afficher ou masquer les prix",
-  "Créer un objet sur mesure",
+  "Créer une prestation sur mesure",
   "Nouveau devis",
   "Enregistrer le devis",
   "Ouvrir l'historique",
