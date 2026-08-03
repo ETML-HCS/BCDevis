@@ -33,6 +33,15 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
+assert.match(app, /const RELEASE_VERSION = "5\.2\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
+assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
+assert.match(html, /Mise à jour 5\.2\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
+assert.match(html, /Éditeur des tuiles[\s\S]*?SVG, nom, temps et prix/, "L’éditeur des tuiles doit annoncer les champs personnalisables");
+assert.match(app, /catalogOverrides: sanitizeCatalogOverrides/, "Les personnalisations du catalogue doivent être restaurées de façon sûre");
+
 function themeToken(block, token) {
   return block.match(new RegExp(`${token}:(#[0-9a-f]{6})`, "i"))?.[1];
 }
@@ -152,9 +161,17 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3><\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Navigation", "Démarrage", "Catalogue", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Mentions"],
+  ["Apparence", "Navigation", "iPad", "Démarrage", "Catalogue", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Mentions"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
+assert.match(app, /ipadLayoutMode: "off"/, "L’optimisation iPad doit être désactivée par défaut");
+assert.match(app, /const preference = IPAD_LAYOUT_MODES\.includes\(mode\) \? mode : "off"/, "Une valeur iPad invalide doit conserver le rendu standard");
+assert.equal((html.match(/name="ipadLayoutMode" type="radio"/g) || []).length, 3, "Le réglage iPad doit proposer Automatique, Toujours et Désactivée");
+assert.match(html, /value="auto"[\s\S]*?value="always"[\s\S]*?value="off"/, "Les trois modes iPad doivent rester explicites et ordonnés");
+assert.match(app, /function isLikelyIpad\(\)[\s\S]*?navigator\.maxTouchPoints/, "iPadOS en mode bureau doit être reconnu sans dépendre uniquement du user-agent");
+assert.match(app, /document\.documentElement\.dataset\.ipadLayout = optimized \? "optimized" : "standard"/, "Le choix iPad doit piloter un état de rendu unique");
+assert.match(html, /html\[data-ipad-layout="optimized"\][\s\S]*?touch-action:manipulation/, "Le mode iPad doit supprimer le délai des interactions tactiles");
+assert.match(html, /html\[data-ipad-layout="optimized"\] input,[\s\S]*?font-size:16px/, "Les champs iPad doivent éviter le zoom automatique de Safari");
 assert.match(
   html,
   /name="showTaxInformation" type="checkbox"[\s\S]*?<strong>Afficher et calculer la TVA<\/strong>[\s\S]*?les prix sont conservés tels quels/,

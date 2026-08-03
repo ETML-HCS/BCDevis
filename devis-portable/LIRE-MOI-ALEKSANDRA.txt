@@ -1,25 +1,27 @@
-BCDevis 5.1.0 - Livrable pour Aleksandra
+BCDevis 5.2.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.1.0
+NOUVEAUTES 5.2.0
 
-- Les totaux distinguent la valeur avant offres, le rabais total et le montant
-  à payer. Les séances offertes d'un pack sont valorisées sans être facturées.
-- La TVA est masquée et désactivée par défaut. Elle reste disponible dans les
-  réglages lorsqu'elle doit apparaître sur le devis.
-- Le choix Outlook Web ouvre un message prérempli dans le navigateur. Le PDF
-  est créé dans Téléchargements afin de pouvoir le joindre au message.
+- L'optimisation iPad est désactivée par défaut et peut être activée en mode
+  automatique ou forcé dans les réglages.
+- Les prestations longues restent compactes et leur détail complet est
+  accessible avec le bouton oeil.
+- L'éditeur des tuiles permet d'adapter localement le SVG, le nom, le temps
+  et le prix d'une prestation.
+- Le corps interactif et les zones du visage sont plus lisibles.
+- Cet écran de nouveautés apparaît une seule fois pour la version 5.2.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.1.0.exe
+  BCDevis-5.2.0.exe
 
 2-Linux
-  BCDevis-5.1.0-linux-x86_64.AppImage
+  BCDevis-5.2.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.1.0-chromeos.zip
+  BCDevis-5.2.0-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -32,7 +34,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.1.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.2.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -46,14 +48,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.1.0-linux-x86_64.AppImage
-  ./BCDevis-5.1.0-linux-x86_64.AppImage
+  chmod +x BCDevis-5.2.0-linux-x86_64.AppImage
+  ./BCDevis-5.2.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.1.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.2.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -67,6 +69,11 @@ Les devis et réglages restent dans le profil Chrome utilisé. Avant de
 changer de Chromebook ou de profil, créer une sauvegarde complète JSON.
 Sous ChromeOS, le bouton PDF ouvre l'impression : choisir Enregistrer au
 format PDF.
+
+OUTLOOK WEB
+
+Outlook Web ouvre un message prérempli dans le navigateur. BCDevis crée le
+PDF dans Téléchargements afin de pouvoir le joindre manuellement au message.
 
 MODELE DE DEVIS
 

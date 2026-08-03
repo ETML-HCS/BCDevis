@@ -2,8 +2,11 @@
 <html lang="fr" data-theme="light">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta id="themeColorMeta" name="theme-color" content="#171512">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BCDevis">
   <title>BCDevis</title>
   <link rel="icon" href="assets/pwa-icon-192.png" type="image/png">
   <link rel="manifest" href="manifest.webmanifest">
@@ -1256,6 +1259,109 @@
     .settings-toggle-status{display:none}
     .settings-actions{padding:10px 14px}
   }
+
+  /* iPad : confort tactile activable, avec adaptation automatique d’iPadOS. */
+  :root{
+    --app-viewport-height:100vh;
+    --safe-area-top:env(safe-area-inset-top,0px);
+    --safe-area-right:env(safe-area-inset-right,0px);
+    --safe-area-bottom:env(safe-area-inset-bottom,0px);
+    --safe-area-left:env(safe-area-inset-left,0px);
+  }
+  .ipad-layout-intro{margin:0 0 11px;color:var(--muted);font-size:11px;line-height:1.45}
+  .ipad-layout-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .ipad-layout-option{
+    position:relative;
+    display:grid;
+    min-width:0;
+    min-height:76px;
+    padding:10px;
+    align-content:center;
+    border:1px solid var(--line);
+    border-radius:9px;
+    color:var(--ink);
+    background:var(--surface-raised);
+    cursor:pointer;
+  }
+  .ipad-layout-option input{position:absolute;width:1px!important;height:1px!important;opacity:0;pointer-events:none}
+  .ipad-layout-option strong,.ipad-layout-option small{display:block}
+  .ipad-layout-option strong{font-size:12px;font-weight:750}
+  .ipad-layout-option small{margin-top:4px;color:var(--muted);font-size:9px;line-height:1.3}
+  .ipad-layout-option:hover{border-color:var(--accent)}
+  .ipad-layout-option:has(input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 11%,var(--surface-raised));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 34%,transparent)}
+  .ipad-layout-option:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+
+  @media screen and (max-width:1180px){
+    .app-shell{padding-bottom:calc(76px + var(--safe-area-bottom))}
+    .mobile-tabs{
+      right:max(12px,var(--safe-area-right));
+      bottom:calc(10px + var(--safe-area-bottom));
+      left:max(12px,var(--safe-area-left));
+    }
+    .toast-region{top:auto;bottom:calc(88px + var(--safe-area-bottom))}
+  }
+  @media screen and (max-width:620px){.ipad-layout-picker{grid-template-columns:1fr}}
+
+  @media screen{
+    html[data-ipad-layout="optimized"]{-webkit-text-size-adjust:100%}
+    html[data-ipad-layout="optimized"] body{overscroll-behavior:none}
+    html[data-ipad-layout="optimized"] button,
+    html[data-ipad-layout="optimized"] label,
+    html[data-ipad-layout="optimized"] [role="button"]{touch-action:manipulation}
+    html[data-ipad-layout="optimized"] input,
+    html[data-ipad-layout="optimized"] select,
+    html[data-ipad-layout="optimized"] textarea{font-size:16px}
+    html[data-ipad-layout="optimized"] .family-panel,
+    html[data-ipad-layout="optimized"] .family-list,
+    html[data-ipad-layout="optimized"] .checkout-card,
+    html[data-ipad-layout="optimized"] .cart-lines,
+    html[data-ipad-layout="optimized"] .settings-panel,
+    html[data-ipad-layout="optimized"] .drawer{-webkit-overflow-scrolling:touch}
+    html[data-ipad-layout="optimized"] .family-title-row{min-height:44px}
+    html[data-ipad-layout="optimized"] .family-search-toggle{width:44px;height:44px;flex-basis:44px;border-radius:11px}
+    html[data-ipad-layout="optimized"] .family-option-detail-toggle{min-width:44px}
+    html[data-ipad-layout="optimized"] .coupon-toggle{min-height:44px}
+    html[data-ipad-layout="optimized"] .action-menu button{min-height:44px;height:auto}
+    html[data-ipad-layout="optimized"] .settings-tabs button{min-height:52px}
+    html[data-ipad-layout="optimized"] .modal-card{max-height:calc(var(--app-viewport-height) - 24px)}
+    html[data-ipad-layout="optimized"] .settings-modal{height:calc(var(--app-viewport-height) - 24px)}
+  }
+  @media screen and (max-width:1180px){
+    html[data-ipad-layout="optimized"] .app-shell{
+      height:var(--app-viewport-height);
+      grid-template-rows:calc(74px + var(--safe-area-top)) minmax(0,1fr);
+    }
+    html[data-ipad-layout="optimized"] .topbar{
+      height:calc(74px + var(--safe-area-top));
+      padding-top:var(--safe-area-top);
+      padding-right:max(16px,var(--safe-area-right));
+      padding-left:max(16px,var(--safe-area-left));
+    }
+    html[data-ipad-layout="optimized"] .modal-layer{padding:max(12px,var(--safe-area-top)) max(12px,var(--safe-area-right)) max(12px,var(--safe-area-bottom)) max(12px,var(--safe-area-left))}
+    html[data-ipad-layout="optimized"] .tile-detail-card{bottom:calc(84px + var(--safe-area-bottom))!important}
+  }
+  @media screen and (max-width:900px){
+    html[data-ipad-layout="optimized"] .brand-block{display:none}
+    html[data-ipad-layout="optimized"] .topbar-context{min-width:0;padding-left:0;border-left:0}
+    html[data-ipad-layout="optimized"] .topbar-context>span{display:none}
+    html[data-ipad-layout="optimized"] .topbar-context .offer-mode-selector{width:100%}
+  }
+  @media screen and (min-width:761px) and (max-width:900px){
+    html[data-ipad-layout="optimized"] body{overflow:hidden}
+    html[data-ipad-layout="optimized"] .app-shell{display:grid;min-height:0}
+    html[data-ipad-layout="optimized"] .workspace{min-height:0}
+    html[data-ipad-layout="optimized"] .family-panel,
+    html[data-ipad-layout="optimized"] .checkout-panel{height:100%;min-height:0}
+    html[data-ipad-layout="optimized"] .family-panel{overflow:hidden}
+    html[data-ipad-layout="optimized"] .family-list{display:block;margin:6px -4px 0;padding:0 4px 24px;overflow-x:hidden;overflow-y:auto}
+    html[data-ipad-layout="optimized"] .family-group{width:100%}
+    html[data-ipad-layout="optimized"] .family-button{width:100%;min-width:0}
+    html[data-ipad-layout="optimized"] .family-arrow{display:block}
+    html[data-ipad-layout="optimized"] .family-options{margin-left:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media screen and (max-width:700px){
+    html[data-ipad-layout="optimized"] .topbar-context .offer-mode-selector button small{display:none}
+  }
   </style>
 </head>
 <body>
@@ -1703,6 +1809,15 @@
                     <label class="catalog-mode-card"><input name="catalogMode" type="radio" value="body"><span class="catalog-mode-visual" aria-hidden="true"><svg><use href="#icon-navigation-body"></use></svg></span><span><strong>Corps interactif</strong><small>Sélection sur silhouette</small></span></label>
                   </div>
                 </section>
+                <section class="settings-section settings-section--ipad">
+                  <div class="settings-section-head"><h3>iPad</h3></div>
+                  <p class="ipad-layout-intro">Adapte les zones tactiles, les champs, les marges sûres et le clavier virtuel sans modifier le PDF.</p>
+                  <div class="ipad-layout-picker" role="radiogroup" aria-label="Optimisation de l’affichage iPad">
+                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="auto"><span><strong>Automatique</strong><small>Reconnaît iPadOS</small></span></label>
+                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="always"><span><strong>Toujours</strong><small>Force le confort tactile</small></span></label>
+                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="off"><span><strong>Désactivée</strong><small>Par défaut · responsive standard</small></span></label>
+                  </div>
+                </section>
                 <section class="settings-section settings-section--system">
                   <div class="settings-section-head"><h3>Démarrage</h3></div>
                   <label class="startup-setting" for="launchAtLogin">
@@ -1717,6 +1832,11 @@
                 <div class="settings-section-head"><h3>Catalogue</h3></div>
                 <div class="family-visibility-grid" id="familyVisibilityGrid" role="group" aria-label="Familles de prestations affichées"></div>
                 <p class="settings-offer-summary" data-summary="families"></p>
+                <button class="tile-catalog-editor-entry" id="tileCatalogEditorButton" type="button" aria-haspopup="dialog" aria-controls="tileCatalogEditorLayer">
+                  <span aria-hidden="true"><svg><use href="#icon-navigation-tiles"></use></svg></span>
+                  <span><strong>Éditeur des tuiles</strong><small>Accès avancé · SVG, nom, temps et prix</small></span>
+                  <svg aria-hidden="true"><use href="#icon-chevron"></use></svg>
+                </button>
               </section>
             </div>
           </section>
@@ -1795,6 +1915,33 @@
     </section>
   </div>
 
+  <div class="modal-layer" id="tileCatalogEditorLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="tileCatalogEditorLayer" aria-label="Fermer l’éditeur des tuiles" tabindex="-1"></button>
+    <section class="modal-card tile-catalog-modal" role="dialog" aria-modal="true" aria-labelledby="tileCatalogEditorTitle" aria-describedby="tileCatalogEditorIntro">
+      <form id="tileCatalogEditorForm" class="tile-catalog-editor-form">
+        <div class="modal-head tile-catalog-modal-head">
+          <div><p class="section-kicker">Catalogue avancé</p><h2 id="tileCatalogEditorTitle">Toutes les tuiles</h2><p id="tileCatalogEditorIntro">Personnalisez les prestations sans modifier le catalogue d’origine.</p></div>
+          <div class="tile-catalog-head-actions"><button class="button ghost" id="tileCatalogResetAllButton" type="button">Tout réinitialiser</button><button class="round-button" type="button" data-close="tileCatalogEditorLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+        </div>
+        <div class="tile-catalog-toolbar">
+          <label for="tileCatalogEditorSearch"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="tileCatalogEditorSearch" type="search" autocomplete="off" placeholder="Rechercher une tuile…" autofocus></label>
+          <div><strong id="tileCatalogEditorCount">0 tuile</strong><span id="tileCatalogEditorChanges" aria-live="polite">Aucune modification en attente</span></div>
+        </div>
+        <div class="tile-catalog-editor-list" id="tileCatalogEditorList"></div>
+        <div class="form-actions tile-catalog-actions"><button class="button ghost" type="button" data-close="tileCatalogEditorLayer">Retour aux réglages</button><button class="button primary" id="tileCatalogEditorSave" type="submit">Enregistrer</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="tileIconPickerLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="tileIconPickerLayer" aria-label="Fermer le choix du pictogramme" tabindex="-1"></button>
+    <section class="modal-card tile-icon-picker-modal" role="dialog" aria-modal="true" aria-labelledby="tileIconPickerTitle">
+      <div class="modal-head"><div><p class="section-kicker">Bibliothèque intégrée</p><h2 id="tileIconPickerTitle">Choisir un SVG</h2></div><button class="round-button" type="button" data-close="tileIconPickerLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <p class="tile-icon-picker-intro">Sélectionnez un pictogramme anatomique. Les SVG restent locaux et s’adaptent automatiquement au thème.</p>
+      <div class="tile-icon-picker-grid" id="tileIconPickerGrid" role="group" aria-label="Pictogrammes SVG disponibles"></div>
+    </section>
+  </div>
+
   <div class="modal-layer" id="shortcutHelpLayer" hidden>
     <button class="layer-backdrop" type="button" data-close="shortcutHelpLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card compact-modal shortcut-help-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle">
@@ -1841,8 +1988,30 @@
     </section>
   </div>
 
+  <div class="modal-layer" id="releaseNotesLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="releaseNotesLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
+      <div class="release-notes-hero">
+        <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
+        <p class="release-notes-version">Mise à jour 5.2.0</p>
+        <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
+        <p id="releaseNotesIntro">Trois améliorations pour travailler plus confortablement.</p>
+      </div>
+      <ul class="release-notes-list">
+        <li><span><svg aria-hidden="true"><use href="#icon-sparkles"></use></svg></span><div><strong>Confort iPad</strong><p>Une option dédiée permet d’adapter les zones tactiles, les champs et les marges à iPadOS.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-navigation-tiles"></use></svg></span><div><strong>Catalogue personnalisable</strong><p>Le nom, le temps, le prix et le SVG des tuiles peuvent être adaptés ; les intitulés longs restent lisibles.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-navigation-body"></use></svg></span><div><strong>Corps interactif affiné</strong><p>Les silhouettes et les zones du visage sont plus nettes pour choisir le bon soin.</p></div></li>
+      </ul>
+      <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
+    </section>
+  </div>
+
   <input id="quoteImportInput" type="file" accept="application/json,.json" hidden>
   <input id="backupImportInput" type="file" accept="application/json,.json" hidden>
+  <div class="tile-detail-layer" id="tileDetailLayer" hidden>
+    <button class="tile-detail-backdrop" type="button" data-tile-detail-close aria-label="Fermer le détail de la prestation"></button>
+    <article class="tile-detail-card" id="tileDetailCard" role="region" aria-labelledby="tileDetailTitle"></article>
+  </div>
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <section class="print-quote" id="printQuote" aria-hidden="true"></section>
   <script src="quote-core.js"></script>

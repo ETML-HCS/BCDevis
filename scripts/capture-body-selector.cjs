@@ -102,7 +102,11 @@ async function main() {
         },
         layoutContained: layout.getBoundingClientRect().right <= family.getBoundingClientRect().right + 1,
         resultsContained: results.scrollWidth <= results.clientWidth + 1,
-        title: document.querySelector(".body-results").dataset.bodyResultsTitle
+        title: document.querySelector(".body-results").dataset.bodyResultsTitle,
+        firstServiceCopy: {
+          strong: document.querySelector(".body-service-options .family-option-copy strong")?.textContent.trim(),
+          small: document.querySelector(".body-service-options .family-option-copy small")?.textContent.trim()
+        }
       };
     })()`);
     if (!front.mapVisible
@@ -114,14 +118,16 @@ async function main() {
       || !front.resultsContained
       || front.services !== 13
       || front.side !== "front"
-      || front.title !== "Visage & cou") {
+      || front.title !== "Visage & cou"
+      || front.firstServiceCopy.strong !== "Barbe"
+      || front.firstServiceCopy.small !== "35 min") {
       throw new Error(`Vue avant invalide : ${JSON.stringify(front)}`);
     }
     validateBodyGeometry("homme/Face", front.geometry);
     await window.webContents.executeJavaScript(`document.querySelector("#toastRegion").replaceChildren()`);
     const initialModel = await window.webContents.executeJavaScript(`(() => ({
       model: document.querySelector(".interactive-body-map").dataset.bodyModel,
-      modelToggleArea: Boolean(document.querySelector("[data-body-model-toggle]")),
+      implicitModelToggle: Boolean(document.querySelector("[data-body-model-toggle]")),
       sideButtons: document.querySelectorAll(".body-side-toggle button").length,
       modelButtons: [...document.querySelectorAll("[data-body-model-choice]")].map((button) => ({
         label: button.textContent.trim(),
@@ -129,11 +135,26 @@ async function main() {
       }))
     }))()`);
     if (initialModel.model !== "male"
-      || !initialModel.modelToggleArea
+      || initialModel.implicitModelToggle
       || initialModel.sideButtons !== 2
       || initialModel.modelButtons.map((button) => button.label).join(",") !== "Femme,Homme"
       || initialModel.modelButtons.map((button) => button.pressed).join(",") !== "false,true") {
       throw new Error(`Mannequin masculin initial invalide : ${JSON.stringify(initialModel)}`);
+    }
+    const stageClickAudit = await window.webContents.executeJavaScript(`(() => {
+      const stage = document.querySelector(".body-map-stage");
+      const beforeModel = document.querySelector(".interactive-body-map").dataset.bodyModel;
+      const beforeRegion = document.querySelector("[data-body-region].active")?.dataset.bodyRegion;
+      stage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return {
+        beforeModel,
+        afterModel: document.querySelector(".interactive-body-map").dataset.bodyModel,
+        beforeRegion,
+        afterRegion: document.querySelector("[data-body-region].active")?.dataset.bodyRegion
+      };
+    })()`);
+    if (stageClickAudit.beforeModel !== stageClickAudit.afterModel || stageClickAudit.beforeRegion !== stageClickAudit.afterRegion) {
+      throw new Error(`L’espace neutre autour du mannequin a modifié la sélection : ${JSON.stringify(stageClickAudit)}`);
     }
     await capture(window, "01-corps-avant-homme.png");
     const femaleToggle = await window.webContents.executeJavaScript(`(() => {
@@ -443,7 +464,7 @@ async function main() {
     }
     const femaleBack = await window.webContents.executeJavaScript(`(() => {
       const beforeRegion = document.querySelector("[data-body-region].active")?.dataset.bodyRegion;
-      document.querySelector(".interactive-body-map").dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.querySelector('[data-body-model-choice="female"]').click();
       const figure = document.querySelector(".body-figure").getBoundingClientRect();
       const figureBox = document.querySelector(".body-figure").getBBox();
       const map = document.querySelector(".interactive-body-map");
@@ -502,8 +523,7 @@ async function main() {
       throw new Error(`Zone féminine Dos invalide : ${JSON.stringify(invalidFemaleBackRegion)}`);
     }
     const restoredMaleBack = await window.webContents.executeJavaScript(`(() => {
-      const stage = document.querySelector("[data-body-model-toggle]");
-      stage.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+      document.querySelector('[data-body-model-choice="male"]').click();
       return {
         model: document.querySelector(".interactive-body-map").dataset.bodyModel,
         region: document.querySelector("[data-body-region].active")?.dataset.bodyRegion
@@ -687,7 +707,7 @@ async function main() {
     }
     await capture(window, "07-reglage-navigation.png");
     console.log("BODY_SELECTOR_VISUAL_OK");
-    console.log(JSON.stringify({ front, initialModel, modelToggle, femaleFrontRegionsAudit, maleFrontRegionsAudit, faceDetail, faceNose, faceRegionsAudit, back, maleBack, maleBackRegionsAudit, femaleBack, femaleBackRegionsAudit, restoredMaleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ front, initialModel, stageClickAudit, modelToggle, femaleFrontRegionsAudit, maleFrontRegionsAudit, faceDetail, faceNose, faceRegionsAudit, back, maleBack, maleBackRegionsAudit, femaleBack, femaleBackRegionsAudit, restoredMaleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

@@ -19,11 +19,11 @@ const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
 const template = readJSON("devis-portable/MODELE-DEVIS-V5.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 
-assert.equal(packageJson.version, "5.1.0", "La livraison doit annoncer la version 5.1.0");
+assert.equal(packageJson.version, "5.2.0", "La livraison doit annoncer la version 5.2.0");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
-assert.match(serviceWorker, /bcdevis-pwa-v5\.1\.0/, "Le cache PWA doit suivre la version livrée");
+assert.match(serviceWorker, /bcdevis-pwa-v5\.2\.0/, "Le cache PWA doit suivre la version livrée");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -32,11 +32,13 @@ assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /5\.1\.0/, "Chaque document client doit annoncer la version 5.1.0");
+  assert.match(document, /5\.2\.0/, "Chaque document client doit annoncer la version 5.2.0");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
 assert.match(manual, /Lancer au démarrage/);
+assert.match(manual, /\*\*iPadOS\*\*[\s\S]*?Réglages > Interface > iPad/);
+assert.match(quick, /### iPadOS[\s\S]*?Désactivée[^\n]*par défaut[\s\S]*?Automatique[\s\S]*?Toujours/);
 assert.match(manual, /Mode Mannequin/);
 assert.match(manual, /\*\*Tuiles\*\* reste le mode activé par défaut/);
 assert.match(manual, /Corps complet/);
@@ -44,13 +46,13 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-5\.1\.0\.exe/);
-assert.match(quick, /BCDevis-5\.1\.0-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-5\.1\.0-chromeos\.zip/);
+assert.match(quick, /BCDevis-5\.2\.0\.exe/);
+assert.match(quick, /BCDevis-5\.2\.0-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-5\.2\.0-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.1\.0-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.2\.0-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
 assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);
@@ -77,7 +79,7 @@ for (const label of expectedShortcutLabels) assert.match(shortcuts, new RegExp(l
 assert.equal(expectedShortcutLabels.length, 16);
 
 assert.equal(template.type, "atelier-devis-quote");
-assert.equal(template.version, 19);
+assert.equal(template.version, 20);
 assert.ok(Array.isArray(template.quote.lines));
 assert.equal(template.quote.lines.length, 0);
 for (const generatedField of ["id", "number", "date", "validUntil"]) {

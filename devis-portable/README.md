@@ -1,12 +1,14 @@
-# BCDevis - version 5.1.0
+# BCDevis - version 5.2.0
 
-Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS et ChromeOS.
+Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
 
-## Nouveautés 5.1.0
+## Nouveautés 5.2.0
 
-- La caisse et le PDF distinguent désormais clairement le **total avant offres**, le **rabais total** et le **total à payer**. Les séances offertes d’un pack sont valorisées sans être facturées.
-- La TVA est masquée et désactivée par défaut. Elle peut être affichée et calculée explicitement depuis les réglages, sans modifier les prix finaux existants.
-- **Outlook Web** ouvre dans le navigateur un message prérempli avec le destinataire, l’objet et le détail du devis ; le PDF est créé dans **Téléchargements** pour être joint manuellement.
+- Une adaptation **iPad** facultative améliore les zones tactiles, les champs, les marges sûres et le comportement avec le clavier virtuel. Elle est désactivée par défaut et peut être activée dans `Réglages` > `Interface`.
+- Les prestations aux intitulés longs utilisent une présentation compacte et proposent leur détail complet via le bouton œil.
+- L’**éditeur des tuiles** permet de personnaliser localement le SVG, le nom, le temps et le prix d’une prestation sans modifier le catalogue d’origine.
+- Le corps interactif et les zones du visage ont été affinés pour rendre la sélection anatomique plus lisible.
+- Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
 
 Documents maintenus avec la version 5 :
 
@@ -17,7 +19,7 @@ Documents maintenus avec la version 5 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-5.1.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-5.2.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -86,7 +88,7 @@ Les formats PNG, JPG et WebP sont acceptés jusqu’à 4 Mo. Un PNG transparent 
 
 Dans `Réglages` > `Mentions légales`, l’option `Afficher les zones de signature` ajoute ou retire les lignes `Date et lieu` et `Bon pour accord` du PDF et de l’impression. Elle est activée par défaut.
 
-## Chrome OS / PWA
+## Chrome OS, iPadOS / PWA
 
 Le dossier `devis-portable` constitue aussi une PWA installable. Le logo officiel et la famille Red Hat Display sont embarqués : aucun chargement de ressource externe n’est nécessaire pour l’affichage ou l’impression.
 
@@ -96,7 +98,7 @@ Pour la contrôler localement depuis la racine du projet :
 npm run pwa
 ```
 
-Ouvrir ensuite `http://127.0.0.1:4173/` dans Chrome. Sur Chromebook, une mise à disposition réelle doit utiliser HTTPS ; Chrome propose alors l’installation depuis sa barre d’adresse ou son menu. Les devis et réglages restent dans le stockage local du profil Chrome utilisé. Le bouton PDF ouvre l’impression Chrome OS, où `Enregistrer au format PDF` produit le même gabarit A4.
+Ouvrir ensuite `http://127.0.0.1:4173/` dans Chrome. Sur Chromebook, une mise à disposition réelle doit utiliser HTTPS ; Chrome propose alors l’installation depuis sa barre d’adresse ou son menu. Sur iPad, ouvrez la même adresse HTTPS dans Safari puis utilisez **Partager > Sur l’écran d’accueil**. Les devis et réglages restent dans le stockage local du profil qui a installé la PWA. Le bouton PDF ouvre l’impression du système, où l’enregistrement produit le même gabarit A4.
 
 Pour assembler l’archive ChromeOS à remettre :
 
@@ -104,12 +106,18 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-5.1.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-5.2.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
 ```powershell
 npm run test:chromeos
+```
+
+Le contrôle visuel iPad vérifie le paysage, le portrait et Split View, ainsi que les cibles tactiles et l’absence de débordement :
+
+```powershell
+npm run test:ipad:visual
 ```
 
 Les deux PDF de référence avec signatures activées et désactivées sont écrits dans `output/pdf`.
@@ -148,7 +156,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-5.1.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-5.2.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -158,7 +166,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.1.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -166,7 +174,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.1.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.2.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

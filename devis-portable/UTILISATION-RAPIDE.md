@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.1.0 - Windows, Linux et ChromeOS</p>
+  <p class="version">Version 5.2.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -25,7 +25,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-5.1.0.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-5.2.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -34,23 +34,31 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-5.1.0-linux-x86_64.AppImage
-./BCDevis-5.1.0-linux-x86_64.AppImage
+chmod +x BCDevis-5.2.0-linux-x86_64.AppImage
+./BCDevis-5.2.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-5.1.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-5.2.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
+
+### iPadOS
+
+Ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Le responsive standard reste actif par défaut en portrait, en paysage et en Split View.
 
 <div class="callout"><strong>Option pratique :</strong> dans Réglages > Interface, activez Lancer au démarrage si BCDevis doit s'ouvrir automatiquement avec la session Windows ou Linux.</div>
 
 ## 2. Créer un devis en 8 gestes
 
 Dans **Réglages > Interface > Navigation**, choisissez **Tuiles** pour parcourir les familles en accordéon ou **Corps interactif** pour utiliser le mannequin Femme/Homme et Face/Dos. Le choix est mémorisé.
+
+L’optimisation iPad est **Désactivée** par défaut. Choisissez **Automatique** pour l’activer uniquement lorsque iPadOS est reconnu, ou **Toujours** pour la forcer. Ce choix ne change pas le PDF.
+
+Pour corriger le nom, le temps, le prix ou le pictogramme d’une prestation, utilisez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Les changements restent locaux et réversibles.
 
 1. Choisissez le tarif en haut : **Séance**, **Pack** ou **Étudiant -50 %**.
 2. Recherchez un soin avec `Ctrl + K`, ou ouvrez une famille de prestations.

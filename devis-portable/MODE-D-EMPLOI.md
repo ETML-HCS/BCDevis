@@ -234,17 +234,18 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.1.0 - Windows - Linux - macOS - ChromeOS</p>
+  <p class="cover-version">Version 5.2.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.1.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.1.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.1.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.2.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.2.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.2.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
+- **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
 Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V5** et un **modèle de devis** importable.
 
@@ -298,11 +299,25 @@ Le mode choisi est mémorisé pour les prochains lancements. **Tuiles** reste le
 
 ![Choix Tuiles ou Corps interactif dans les réglages](captures/02-reglages.png)
 
-<p class="capture-caption">Réglages > Interface : choix de la navigation, du thème, de la police et du lancement automatique.</p>
+<p class="capture-caption">Réglages > Interface : choix de la navigation, du thème, de la police, du confort iPad et du lancement automatique.</p>
+
+#### Confort iPad
+
+Dans **Réglages > Interface > iPad**, trois choix sont disponibles :
+
+- **Automatique** reconnaît iPadOS et adapte les zones tactiles, les champs, les marges sûres et le clavier virtuel ;
+- **Toujours** force ce confort tactile si Safari ou un navigateur intégré n’est pas reconnu ;
+- **Désactivée** — valeur par défaut — conserve uniquement le responsive standard.
+
+Le choix est mémorisé. En portrait, les prestations utilisent deux colonnes ; en paysage, elles exploitent davantage la largeur ; en Split View, elles repassent sur une colonne. La navigation **Prestations / Caisse** reste toujours accessible en bas. Cette optimisation ne modifie ni les prix, ni les données, ni le PDF A4.
 
 #### Mode Tuiles
 
 Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées**. Les soins de la famille apparaissent sous la tuile ; cliquez sur le `+` du soin souhaité pour l’ajouter à la caisse.
+
+La famille **Zones combinées** propose quatorze associations tarifées. En mode **Séance**, le catalogue affiche le prix d’une séance. Avec le **Pack 6 + 1**, il affiche le prix moyen par session communiqué pour ce pack ; le devis conserve le détail exact de six séances payées et d’une séance offerte.
+
+Pour adapter une tuile, ouvrez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Recherchez la prestation, puis modifiez son pictogramme SVG, son nom, son temps ou son prix et cliquez sur **Enregistrer**. Ces personnalisations restent locales, sont incluses dans la sauvegarde complète et s’appliquent aux prochains ajouts ; elles ne réécrivent pas les lignes déjà présentes dans un devis. **Réinitialiser** restaure une tuile, tandis que **Tout réinitialiser** restaure le catalogue d’origine.
 
 #### Mode Mannequin — Corps interactif
 
@@ -321,11 +336,11 @@ La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin do
 
 En sélectionnant le visage, BCDevis ouvre un schéma plus précis avec douze zones : visage complet, tempes, sourcils, entre-sourcils, nez et narines, joues, lèvre supérieure, barbe, ligne de barbe, menton, oreilles et cou. Utilisez **Corps complet** pour revenir au mannequin.
 
-Les filtres évitent les mélanges : les **fesses** et le **SIF** se sélectionnent uniquement à l’arrière, le maillot avant n’affiche pas le SIF et **Cuir chevelu** propose uniquement la mésothérapie capillaire. Les familles **Consultations**, **Électrolyse**, **Médecine esthétique** et **Zones combinées** restent disponibles sous le mannequin. Les 82 prestations actives restent donc accessibles dans les deux modes.
+Les filtres évitent les mélanges : les **fesses** et le **SIF** se sélectionnent uniquement à l’arrière, le maillot avant n’affiche pas le SIF et **Cuir chevelu** propose uniquement la mésothérapie capillaire. Les familles **Consultations**, **Électrolyse**, **Médecine esthétique** et **Zones combinées** restent disponibles sous le mannequin. Les 87 prestations actives restent donc accessibles dans les deux modes.
 
-Pour changer rapidement de morphologie, utilisez de préférence les boutons **Femme** et **Homme**. Un clic dans l’espace libre autour du mannequin permet aussi de basculer de l’un à l’autre.
+Pour changer de morphologie, utilisez les boutons **Femme** et **Homme**. L’espace libre autour du mannequin reste neutre afin d’éviter tout changement involontaire.
 
-Au clavier, utilisez `Tab` pour atteindre une zone, puis `Entrée` ou `Espace` pour la sélectionner. Lorsque le cadre du mannequin est sélectionné, `Entrée` ou `Espace` change de morphologie.
+Au clavier, utilisez `Tab` pour atteindre les boutons ou une zone, puis `Entrée` ou `Espace` pour l’activer.
 
 Dans les deux modes, la loupe recherche un soin dans tout le catalogue. Les prix sont masqués sur les boutons par défaut ; utilisez **Menu principal > Prix sur les boutons** ou `Alt + P` pour les afficher.
 

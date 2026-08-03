@@ -4,7 +4,7 @@ window.QUOTE_CATEGORIES = [
   { id: 7, name: "Première consultation", short: "Consultations", icon: "user", tone: "blue" },
   { id: 16, name: "Traitements par injections", short: "Injections", icon: "aesthetic", tone: "rose" },
   { id: 17, name: "Traitements par laser", short: "Laser médical", icon: "scan", tone: "violet" },
-  { id: 35, name: "Zones combinées · réservation par durée", short: "Zones combinées", icon: "zones", tone: "slate" },
+  { id: 35, name: "Zones combinées", short: "Zones combinées", icon: "zones", tone: "slate" },
   { id: 15, name: "Épilation électrique · électrolyse", short: "Électrolyse", icon: "electrolysis", tone: "amber" },
   { id: 9, name: "Médecine esthétique avec Dr. Poiraud", short: "Médecine esthétique", icon: "aesthetic", tone: "sand" },
   { id: 20, name: "Visage", short: "Visage", icon: "face", tone: "rose" },
@@ -54,6 +54,11 @@ const PRESTATION_VISUALS = {
   127: ["zones", "Zones multiples du corps"],
   128: ["zones", "Zones multiples du corps"],
   129: ["zones", "Zones multiples du corps"],
+  131: ["zones", "Zones multiples du corps"],
+  132: ["zones", "Zones multiples du corps"],
+  133: ["zones", "Zones multiples du corps"],
+  134: ["zones", "Zones multiples du corps"],
+  135: ["zones", "Zones multiples du corps"],
 
   101: ["consultation", "Consultation d’électrolyse"],
   62: ["electrolysis", "Zone pileuse à traiter"],
@@ -124,10 +129,19 @@ const PRESTATION_VISUALS = {
   121: ["student", "Zone du corps définie lors de la séance"]
 };
 
-const service = (id, name, price, duration, categoryId) => {
+const service = (id, name, price, duration, categoryId, packAveragePrice = null) => {
   const visual = PRESTATION_VISUALS[id];
   if (!visual) throw new Error(`Pictogramme de prestation manquant pour ${id} · ${name}`);
-  return { id, name, price, duration, categoryId, icon: visual[0], zone: visual[1] };
+  return {
+    id,
+    name,
+    price,
+    duration,
+    categoryId,
+    icon: visual[0],
+    zone: visual[1],
+    ...(Number.isFinite(packAveragePrice) ? { packAveragePrice } : {})
+  };
 };
 
 window.QUOTE_FAMILIES = [
@@ -139,7 +153,7 @@ window.QUOTE_FAMILIES = [
   { id: "jambes", name: "Jambes & pieds", description: "Cuisses, demi-jambes, jambes complètes, genoux et pieds.", icon: "legs", categoryIds: [25] },
   { id: "electrolyse", name: "Électrolyse", description: "Épilation électrique facturée selon la durée.", icon: "electrolysis", categoryIds: [15] },
   { id: "medecine", name: "Médecine esthétique", description: "Injections, lasers médicaux, peau et cheveux.", icon: "aesthetic", categoryIds: [16, 17, 32] },
-  { id: "combinees", name: "Zones combinées", description: "Réservations multi-zones organisées par durée.", icon: "zones", categoryIds: [35] },
+  { id: "combinees", name: "Zones combinées", description: "Associations multi-zones avec tarifs Séance et Pack 6 + 1.", icon: "zones", categoryIds: [35] },
   { id: "consultations", name: "Consultations", description: "", icon: "consultation", categoryIds: [7, 13] },
   { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "all", categoryIds: [] }
 ];
@@ -180,15 +194,20 @@ window.QUOTE_SERVICES = [
   service(98, "Consultation avec Docteur Mickaël Poiraud", 100, 15, 17),
   service(80, "Couperose du visage", 300, 30, 17),
   service(81, "Vaisseaux inesthétiques du corps", 300, 30, 17),
-  service(111, "Réservation", 0, 15, 35),
-  service(122, "Réservation", 0, 20, 35),
-  service(123, "Réservation", 0, 30, 35),
-  service(124, "Réservation", 0, 45, 35),
-  service(125, "Réservation", 0, 60, 35),
-  service(126, "Réservation", 0, 90, 35),
-  service(127, "Réservation", 0, 120, 35),
-  service(128, "Réservation", 0, 150, 35),
-  service(129, "Réservation", 0, 180, 35),
+  service(111, "Lèvre supérieure + menton", 179, 0, 35, 153),
+  service(122, "Maillot classique + aisselles + SIF", 276, 0, 35, 237),
+  service(123, "Maillot échancré + aisselles + SIF", 306, 0, 35, 262),
+  service(124, "Maillot complet + aisselles + SIF", 406, 0, 35, 348),
+  service(125, "Demi-jambes, maillot classique, SIF et aisselles", 605, 0, 35, 519),
+  service(126, "Demi-jambes, maillot échancré, SIF et aisselles", 635, 0, 35, 545),
+  service(127, "Demi-jambes, maillot complet, SIF et aisselles", 735, 0, 35, 630),
+  service(128, "Jambes complètes, maillot classique, SIF et aisselles", 758, 0, 35, 650),
+  service(129, "Jambes complètes, maillot échancré, SIF et aisselles", 793, 0, 35, 680),
+  service(131, "Jambes complètes, maillot complet, SIF et aisselles", 888, 0, 35, 762),
+  service(132, "Torse et abdomen", 439, 0, 35, 376),
+  service(133, "Torse, abdomen, cou et épaules", 678, 0, 35, 581),
+  service(134, "Dos complet, épaules et nuque", 661, 0, 35, 566),
+  service(135, "Torse, abdomen, cou, dos complet, épaules, nuque, aisselles et demi-bras", 999, 0, 35, 856),
   service(101, "Consultation offerte sans engagement", 0, 30, 15),
   service(62, "Moins de 15 minutes", 68, 15, 15),
   service(61, "15 minutes", 78, 20, 15),

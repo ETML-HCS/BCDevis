@@ -51,6 +51,11 @@ const printItemMetaTemplate = appSource.match(/<span class="print-item-meta">([\
 assert.ok(printItemMetaTemplate, "Le détail secondaire des prestations doit être présent dans le PDF");
 assert.doesNotMatch(printItemMetaTemplate, /duration|\bmin\b/, "La durée ne doit pas apparaître dans le PDF");
 assert.match(index, /name="showSignatures" type="checkbox"/);
+assert.match(index, /name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/, "La PWA doit exploiter les marges sûres de l’iPad");
+assert.match(index, /name="apple-mobile-web-app-capable" content="yes"/, "BCDevis doit pouvoir s’ouvrir comme application iPad");
+assert.match(index, /name="apple-mobile-web-app-status-bar-style" content="black-translucent"/, "La barre d’état iPad doit s’intégrer au header");
+assert.match(index, /--safe-area-bottom:env\(safe-area-inset-bottom,0px\)/, "La navigation iPad doit respecter la zone de geste système");
+assert.match(appSource, /window\.visualViewport\?\.addEventListener\("resize", syncViewportMetrics\)/, "Le clavier virtuel iPad doit redimensionner la surface utile");
 assert.doesNotMatch(index, /id="headerLogo"/);
 assert.match(index, /id="headerLogoPreview"/);
 assert.match(index, /<script src="body-anatomy\.js"><\/script>/);

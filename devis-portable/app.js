@@ -2,9 +2,11 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
+  const RELEASE_VERSION = "5.2.0";
+  const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 19;
+  const APP_VERSION = 20;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
@@ -86,6 +88,7 @@
   };
   const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
   const KNOWN_FONTS = ["red-hat", "roboto", "roboto-slab", "system"];
+  const IPAD_LAYOUT_MODES = ["auto", "always", "off"];
   const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document"];
 
   const defaultSettings = {
@@ -111,6 +114,7 @@
     showFamilyPrices: false,
     skipTariffChangeConfirmation: false,
     catalogMode: "tiles",
+    ipadLayoutMode: "off",
     launchAtLogin: false,
     visibleFamilies: [],
     conditions: DEFAULT_PAYMENT_CONDITIONS,
@@ -142,7 +146,7 @@
   }
 
   function freshDatabase() {
-    return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], quotes: {}, current: null };
+    return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], catalogOverrides: {}, quotes: {}, current: null };
   }
 
   function sanitizeCustomServices(items) {
@@ -164,6 +168,27 @@
         custom: true
       };
     }).filter(Boolean).slice(0, MAX_CUSTOM_SERVICES);
+  }
+
+  function sanitizeCatalogOverrides(source) {
+    if (!isRecord(source)) return {};
+    return Object.fromEntries(Object.entries(source).slice(0, MAX_CUSTOM_SERVICES + window.QUOTE_SERVICES.length).map(([rawId, rawOverride]) => {
+      const id = safeLocalId(rawId);
+      if (!id || !isRecord(rawOverride)) return null;
+      const override = {};
+      if (Object.hasOwn(rawOverride, "name")) {
+        const name = String(rawOverride.name || "").trim().slice(0, 240);
+        if (name) override.name = name;
+      }
+      if (Object.hasOwn(rawOverride, "price")) override.price = boundedNumber(rawOverride.price, 0, MAX_LINE_PRICE, 0);
+      if (Object.hasOwn(rawOverride, "duration")) override.duration = boundedInteger(rawOverride.duration, 0, 1440, 0);
+      if (Object.hasOwn(rawOverride, "packAveragePrice")) override.packAveragePrice = boundedNumber(rawOverride.packAveragePrice, 0, MAX_LINE_PRICE, 0);
+      if (Object.hasOwn(rawOverride, "icon")) {
+        const icon = String(rawOverride.icon || "").trim();
+        if (/^[a-z0-9-]{1,80}$/.test(icon)) override.icon = icon;
+      }
+      return Object.keys(override).length ? [id, override] : null;
+    }).filter(Boolean));
   }
 
   function removeExampleQuote(database) {
@@ -219,6 +244,7 @@
         settings: { ...defaultSettings, ...(parsed.settings || {}) },
         quoteCounters: parsed.quoteCounters && typeof parsed.quoteCounters === "object" && !Array.isArray(parsed.quoteCounters) ? parsed.quoteCounters : {},
         customServices: sanitizeCustomServices(parsed.customServices),
+        catalogOverrides: sanitizeCatalogOverrides(parsed.catalogOverrides),
         quotes: isRecord(parsed.quotes) ? parsed.quotes : {}
       };
       database.settings.headerLogoDataUrl = safeLogoDataUrl(database.settings.headerLogoDataUrl);
@@ -248,6 +274,13 @@
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
   let activeSettingsTab = "interface";
   let activeLayerId = "";
+  let tileDetailServiceId = "";
+  let tileDetailPinned = false;
+  let tileDetailReturnFocus = null;
+  let tileDetailOpenTimer = 0;
+  let tileDetailCloseTimer = 0;
+  let tileDetailHideTimer = 0;
+  let tileDensityResizeFrame = 0;
   const layerReturnFocus = new Map();
 
   function compactMachineCode(value) {
@@ -432,6 +465,7 @@
     });
     db.quotes = normalized;
     db.customServices = sanitizeCustomServices(db.customServices);
+    db.catalogOverrides = sanitizeCatalogOverrides(db.catalogOverrides);
     if (!db.current) return;
     try {
       db.current = sanitizeQuote(db.current);
@@ -464,6 +498,16 @@
       console.error(error);
       return false;
     }
+  }
+
+  function showReleaseNotesOnce() {
+    try {
+      if (localStorage.getItem(RELEASE_NOTES_SEEN_KEY) === RELEASE_VERSION) return;
+      localStorage.setItem(RELEASE_NOTES_SEEN_KEY, RELEASE_VERSION);
+    } catch (error) {
+      console.warn("État des nouveautés indisponible", error);
+    }
+    openLayer("releaseNotesLayer");
   }
 
   function syncToastPlacement() {
@@ -506,8 +550,15 @@
     toastTimer = window.setTimeout(dismiss, type === "error" ? 5600 : 2600);
   }
 
-  function allServices() {
+  function baseCatalogServices() {
     return [...window.QUOTE_SERVICES, ...db.customServices].filter((item) => Number(item.categoryId) !== 36);
+  }
+
+  function allServices() {
+    return baseCatalogServices().map((item) => ({
+      ...item,
+      ...(db.catalogOverrides?.[String(item.id)] || {})
+    }));
   }
 
   function categoryFor(id) {
@@ -528,7 +579,10 @@
   function prestationIconHref(icon) {
     const normalized = /^[a-z0-9-]+$/.test(String(icon || "")) ? String(icon) : "skin-target";
     const bodyMapId = `icon-map-${normalized}`;
-    return `#${document.getElementById(bodyMapId) ? bodyMapId : `icon-${normalized}`}`;
+    const legacyId = `icon-${normalized}`;
+    if (document.getElementById(bodyMapId)) return `#${bodyMapId}`;
+    if (document.getElementById(legacyId)) return `#${legacyId}`;
+    return "#icon-map-skin-target";
   }
 
   function familyFor(id = activeFamily) {
@@ -679,20 +733,217 @@
   function serviceMatchesSearch(item, needle = normalize(searchQuery)) {
     if (!needle) return true;
     const category = categoryFor(item.categoryId);
-    return normalize(`${item.name} ${category.name} ${item.duration} ${item.price}`).includes(needle);
+    return normalize(`${item.name} ${category.name} ${item.duration} ${item.price} ${item.packAveragePrice ?? ""}`).includes(needle);
+  }
+
+  function catalogPriceDisplay(item) {
+    const pack = packDefaults();
+    const configuredAverage = Number(item.packAveragePrice);
+    const usesConfiguredPack = selectedOfferMode === "pack"
+      && pack.paid === 6
+      && pack.free === 1
+      && Number.isFinite(configuredAverage)
+      && configuredAverage > 0;
+    return {
+      value: usesConfiguredPack ? configuredAverage : Math.max(0, Number(item.price) || 0),
+      title: usesConfiguredPack ? "Prix moyen par session du Pack 6 + 1" : "Prix d’une session"
+    };
   }
 
   function familyServiceOption(item) {
     const display = offerDisplay();
     const added = quote.lines.some((line) => String(line.serviceId) === String(item.id) && line.offerType === selectedOfferMode);
     const durationLabel = item.duration ? ` (${item.duration} min)` : "";
+    const durationText = item.duration ? `${item.duration} min` : "";
     const visual = serviceVisual(item);
-    return `<button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)}">
-      <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
-      <span class="family-option-copy"><strong>${escapeHTML(item.name)}${escapeHTML(durationLabel)}</strong><small>${escapeHTML(visual.zone)}</small></span>
-      <b class="family-option-price">${money(item.price)}</b>
-      <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
-    </button>`;
+    const priceDisplay = catalogPriceDisplay(item);
+    return `<div class="family-option-shell" data-density-card data-density="normal" data-density-service-id="${escapeHTML(item.id)}">
+      <button class="family-option ${added ? "added" : ""}" type="button" data-family-service-id="${escapeHTML(item.id)}" aria-label="Ajouter ${escapeHTML(item.name)}${escapeHTML(durationLabel)} · Zone : ${escapeHTML(visual.zone)} · ${escapeHTML(display.label)} · ${escapeHTML(money(priceDisplay.value))}">
+        <span class="service-zone-icon" title="${escapeHTML(visual.zone)}" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
+        <span class="family-option-copy"><strong>${escapeHTML(item.name)}</strong>${durationText ? `<small>${escapeHTML(durationText)}</small>` : ""}</span>
+        <b class="family-option-price" title="${escapeHTML(priceDisplay.title)}">${money(priceDisplay.value)}</b>
+        <svg class="family-option-add" aria-hidden="true"><use href="#icon-plus"></use></svg>
+      </button>
+      <button class="family-option-detail-toggle" type="button" data-tile-detail-toggle aria-expanded="false" aria-controls="tileDetailLayer" aria-label="Afficher le détail de ${escapeHTML(item.name)}" title="Afficher le détail" hidden>
+        <svg aria-hidden="true"><use href="#icon-eye"></use></svg>
+      </button>
+    </div>`;
+  }
+
+  function tileTextLength(value) {
+    const text = String(value || "").trim();
+    if (typeof Intl.Segmenter !== "function") return Array.from(text).length;
+    return [...new Intl.Segmenter("fr", { granularity: "grapheme" }).segment(text)].length;
+  }
+
+  function tileDensityPercentile(values, ratio) {
+    if (!values.length) return 0;
+    const sorted = [...values].sort((left, right) => left - right);
+    return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil((sorted.length - 1) * ratio)))];
+  }
+
+  function tileDensityMetric(shell) {
+    const item = allServices().find((service) => String(service.id) === shell.dataset.densityServiceId);
+    const title = $(".family-option-copy strong", shell);
+    const titleLength = tileTextLength(item?.name || title?.textContent);
+    const usableWidth = Math.max(120, title?.clientWidth || shell.clientWidth - 86 || 220);
+    const widthPressure = clamp(260 / usableWidth, 0.9, 1.8);
+    const score = titleLength * widthPressure + (item?.duration ? 6 : 0) + (db.settings.showFamilyPrices ? 9 : 0);
+    const titleStyle = title ? window.getComputedStyle(title) : null;
+    const lineHeight = Math.max(1, Number.parseFloat(titleStyle?.lineHeight) || Number.parseFloat(titleStyle?.fontSize) * 1.2 || 16);
+    const naturalLines = title ? Math.max(1, Math.round(title.scrollHeight / lineHeight)) : 1;
+    const clipped = naturalLines > 2 || Boolean(title && title.scrollHeight > title.clientHeight + 1);
+    return { shell, score, titleLength, clipped };
+  }
+
+  function analyzeTileDensity() {
+    $$(".family-options", $("#familyList")).forEach((group) => {
+      const metrics = $$("[data-density-card]", group).map(tileDensityMetric);
+      const groupThreshold = clamp(tileDensityPercentile(metrics.map((metric) => metric.score), 0.72) + 10, 64, 88);
+      metrics.forEach((metric) => {
+        const compact = metric.clipped
+          || metric.score >= 88
+          || (metric.titleLength >= 38 && metric.score >= groupThreshold);
+        metric.shell.dataset.density = compact ? "compact" : "normal";
+        metric.shell.dataset.densityLevel = compact && (metric.score >= 108 || metric.titleLength >= 72) ? "high" : compact ? "medium" : "low";
+        const toggle = $("[data-tile-detail-toggle]", metric.shell);
+        if (toggle) {
+          toggle.hidden = !compact;
+          toggle.tabIndex = compact ? 0 : -1;
+          toggle.setAttribute("aria-expanded", String(compact && tileDetailServiceId === metric.shell.dataset.densityServiceId));
+        }
+      });
+    });
+    if (tileDetailServiceId) {
+      const activeShell = $(`[data-density-service-id="${CSS.escape(tileDetailServiceId)}"]`);
+      if (!activeShell || activeShell.dataset.density !== "compact") closeTileDetail({ immediate: true });
+    }
+  }
+
+  function scheduleTileDensityAnalysis() {
+    window.cancelAnimationFrame(tileDensityResizeFrame);
+    tileDensityResizeFrame = window.requestAnimationFrame(() => {
+      analyzeTileDensity();
+      tileDensityResizeFrame = 0;
+    });
+  }
+
+  function isCoarseTileInterface() {
+    return window.matchMedia("(hover: none), (pointer: coarse)").matches || window.innerWidth <= 760;
+  }
+
+  function clearTileDetailTimers() {
+    window.clearTimeout(tileDetailOpenTimer);
+    window.clearTimeout(tileDetailCloseTimer);
+    window.clearTimeout(tileDetailHideTimer);
+    tileDetailOpenTimer = 0;
+    tileDetailCloseTimer = 0;
+    tileDetailHideTimer = 0;
+  }
+
+  function positionTileDetail(shell) {
+    const card = $("#tileDetailCard");
+    if (!card) return;
+    card.style.removeProperty("left");
+    card.style.removeProperty("right");
+    card.style.removeProperty("top");
+    card.style.removeProperty("bottom");
+    card.style.removeProperty("width");
+    if (isCoarseTileInterface()) return;
+    const shellRect = shell.getBoundingClientRect();
+    const checkoutRect = $("#checkoutPanel")?.getBoundingClientRect();
+    const rightBoundary = checkoutRect?.width ? checkoutRect.left : window.innerWidth;
+    const width = Math.min(410, Math.max(330, shellRect.width + 70), Math.max(280, rightBoundary - 24));
+    let left = shellRect.right + 10;
+    if (left + width > rightBoundary - 12) left = shellRect.left - width - 10;
+    if (left < 12) left = clamp(shellRect.left, 12, Math.max(12, rightBoundary - width - 12));
+    card.style.width = `${width}px`;
+    card.style.left = `${left}px`;
+    const height = card.getBoundingClientRect().height;
+    const overlapsShellHorizontally = left < shellRect.right && left + width > shellRect.left;
+    let top = shellRect.top;
+    if (overlapsShellHorizontally) {
+      top = shellRect.bottom + 10;
+      if (top + height > window.innerHeight - 12) top = shellRect.top - height - 10;
+    }
+    card.style.top = `${clamp(top, 12, Math.max(12, window.innerHeight - height - 12))}px`;
+  }
+
+  function closeTileDetail({ immediate = false, restoreFocus = false } = {}) {
+    clearTileDetailTimers();
+    const layer = $("#tileDetailLayer");
+    const returnFocus = tileDetailReturnFocus;
+    $$("[data-density-card][data-detail-open]").forEach((shell) => shell.removeAttribute("data-detail-open"));
+    $$("[data-tile-detail-toggle][aria-expanded='true']").forEach((toggle) => toggle.setAttribute("aria-expanded", "false"));
+    tileDetailServiceId = "";
+    tileDetailPinned = false;
+    tileDetailReturnFocus = null;
+    if (layer) {
+      layer.classList.remove("is-open", "is-pinned");
+      layer.removeAttribute("data-service-id");
+      if (immediate) layer.hidden = true;
+      else tileDetailHideTimer = window.setTimeout(() => { layer.hidden = true; tileDetailHideTimer = 0; }, 160);
+    }
+    if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
+  }
+
+  function openTileDetail(shell, { pinned = false, focusCard = false } = {}) {
+    if (!shell || shell.dataset.density !== "compact") return;
+    const item = allServices().find((service) => String(service.id) === shell.dataset.densityServiceId);
+    const layer = $("#tileDetailLayer");
+    const card = $("#tileDetailCard");
+    if (!item || !layer || !card) return;
+    clearTileDetailTimers();
+    $$("[data-density-card][data-detail-open]").forEach((openShell) => openShell.removeAttribute("data-detail-open"));
+    $$("[data-tile-detail-toggle][aria-expanded='true']").forEach((toggle) => toggle.setAttribute("aria-expanded", "false"));
+    const visual = serviceVisual(item);
+    const priceDisplay = catalogPriceDisplay(item);
+    const display = offerDisplay();
+    const added = quote.lines.some((line) => String(line.serviceId) === String(item.id) && line.offerType === selectedOfferMode);
+    tileDetailServiceId = String(item.id);
+    tileDetailPinned = pinned;
+    tileDetailReturnFocus = $("[data-tile-detail-toggle]", shell) || $("[data-family-service-id]", shell);
+    shell.dataset.detailOpen = "true";
+    $("[data-tile-detail-toggle]", shell)?.setAttribute("aria-expanded", "true");
+    card.innerHTML = `<button class="tile-detail-close" type="button" data-tile-detail-close aria-label="Fermer le détail" title="Fermer"><svg aria-hidden="true"><use href="#icon-x"></use></svg></button>
+      <div class="tile-detail-heading">
+        <span class="tile-detail-icon service-zone-icon" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
+        <div><small>Détail de la prestation</small><h3 id="tileDetailTitle">${escapeHTML(item.name)}</h3><p>${escapeHTML(visual.zone)}</p></div>
+      </div>
+      <dl class="tile-detail-meta">
+        ${item.duration ? `<div><dt>Durée</dt><dd>${escapeHTML(item.duration)} min</dd></div>` : ""}
+        <div><dt>Tarif</dt><dd>${escapeHTML(display.label)}</dd></div>
+        <div><dt>Prix</dt><dd title="${escapeHTML(priceDisplay.title)}">${money(priceDisplay.value)}</dd></div>
+      </dl>
+      <button class="tile-detail-add" type="button" data-tile-detail-add="${escapeHTML(item.id)}"><svg aria-hidden="true"><use href="#icon-plus"></use></svg>${added ? "Ajouter encore" : "Ajouter à la caisse"}</button>`;
+    layer.dataset.serviceId = String(item.id);
+    layer.hidden = false;
+    layer.classList.toggle("is-pinned", pinned);
+    void layer.offsetWidth;
+    layer.classList.add("is-open");
+    positionTileDetail(shell);
+    if (focusCard) $("[data-tile-detail-close]", card)?.focus();
+  }
+
+  function scheduleTileDetailOpenFromEye(toggle) {
+    const shell = toggle?.closest("[data-density-card][data-density='compact']");
+    if (!shell) return;
+    window.clearTimeout(tileDetailCloseTimer);
+    window.clearTimeout(tileDetailOpenTimer);
+    tileDetailOpenTimer = window.setTimeout(() => {
+      openTileDetail(shell);
+      tileDetailOpenTimer = 0;
+    }, 130);
+  }
+
+  function scheduleTileDetailClose() {
+    window.clearTimeout(tileDetailOpenTimer);
+    window.clearTimeout(tileDetailCloseTimer);
+    if (tileDetailPinned) return;
+    tileDetailCloseTimer = window.setTimeout(() => {
+      closeTileDetail();
+      tileDetailCloseTimer = 0;
+    }, 110);
   }
 
   function renderFamilies() {
@@ -791,10 +1042,15 @@
 
   function anonymousBodyHeadMarkup(side, headGeometry) {
     const cx = headGeometry.cx;
-    const headMarkup = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140c27 0 43 17 43 44v27c0 30-18 54-43 58-25-4-43-28-43-58v-27c0-27 16-44 43-44Z"/>`;
-    if (side === "back") return headMarkup;
-    const neck = `<path class="body-region-shape body-anonymous-neck" d="M${cx - 28} 246c2 20 0 34-10 49q38 28 76 0c-10-15-12-29-10-49-8 14-18 21-28 21s-20-7-28-21Z"/>`;
-    return `${headMarkup}${neck}`;
+    const headMarkup = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140C${cx - 27} 140 ${cx - 43} 158 ${cx - 43} 185L${cx - 42} 210C${cx - 40} 239 ${cx - 23} 260 ${cx} 269C${cx + 23} 260 ${cx + 40} 239 ${cx + 42} 210L${cx + 43} 185C${cx + 43} 158 ${cx + 27} 140 ${cx} 140Z"/>`;
+    const ears = `<path class="body-region-shape body-anonymous-ear" d="M${cx - 42} 184C${cx - 53} 183 ${cx - 55} 198 ${cx - 50} 215C${cx - 48} 222 ${cx - 44} 225 ${cx - 39} 220M${cx + 42} 184C${cx + 53} 183 ${cx + 55} 198 ${cx + 50} 215C${cx + 48} 222 ${cx + 44} 225 ${cx + 39} 220"/>`;
+    if (side === "back") {
+      const backDetails = `<path class="body-region-detail body-head-landmarks" d="M${cx - 28} 236Q${cx} 250 ${cx + 28} 236M${cx} 247v18"/>`;
+      return `${headMarkup}${ears}${backDetails}`;
+    }
+    const neck = `<path class="body-region-shape body-anonymous-neck" d="M${cx - 26} 250C${cx - 24} 270 ${cx - 29} 285 ${cx - 39} 297Q${cx} 323 ${cx + 39} 297C${cx + 29} 285 ${cx + 24} 270 ${cx + 26} 250C${cx + 18} 262 ${cx + 9} 268 ${cx} 269C${cx - 9} 268 ${cx - 18} 262 ${cx - 26} 250Z"/>`;
+    const faceDetails = `<path class="body-region-detail body-face-landmarks" d="M${cx - 28} 187Q${cx - 18} 181 ${cx - 8} 187M${cx + 8} 187Q${cx + 18} 181 ${cx + 28} 187M${cx - 27} 196Q${cx - 18} 189 ${cx - 9} 196Q${cx - 18} 202 ${cx - 27} 196M${cx + 9} 196Q${cx + 18} 189 ${cx + 27} 196Q${cx + 18} 202 ${cx + 9} 196M${cx} 194Q${cx - 5} 208 ${cx} 215M${cx - 15} 233Q${cx} 235 ${cx + 15} 233"/><circle class="body-region-detail-fill body-face-pupil" cx="${cx - 18}" cy="196" r="2.4"/><circle class="body-region-detail-fill body-face-pupil" cx="${cx + 18}" cy="196" r="2.4"/>`;
+    return `${headMarkup}${ears}${neck}${faceDetails}`;
   }
 
   function bodyModelGeometry(side) {
@@ -812,10 +1068,6 @@
     activeBodyModel = model;
     renderCatalog();
     window.setTimeout(() => $(focusSelector)?.focus(), 0);
-  }
-
-  function toggleBodyModel() {
-    setBodyModel(activeBodyModel === "male" ? "female" : "male", "[data-body-model-toggle]");
   }
 
   function bodyMapMarkup(side, visibleIds) {
@@ -889,11 +1141,14 @@
     const temples = "M350 284c-16 23-21 61-12 102 9 13 22 11 31-3 8-30 9-64 0-90-6-8-13-12-19-9Zm324 0c16 23 21 61 12 102-9 13-22 11-31-3-8-30-9-64 0-90 6-8 13-12 19-9Z";
     const glabella = "M490 346c7-6 15-9 22-9s15 3 22 9l-4 43c-6 8-12 12-18 12s-12-4-18-12l-4-43Z";
     const lowerFace = "M369 505c14 65 54 122 145 148 91-26 131-83 145-148-25 36-74 63-145 63s-120-27-145-63Z";
-    const landmarks = "M378 382c20-17 52-18 78 0-22 17-53 17-78 0Zm268 0c-20-17-52-18-78 0 22 17 53 17 78 0Z";
+    const eyeLandmarks = "M378 382Q417 360 456 382Q417 401 378 382ZM646 382Q607 360 568 382Q607 401 646 382Z";
+    const facialLandmarks = "M512 352C507 387 506 418 510 447M488 478Q512 493 536 478M492 525Q512 517 532 525M466 548Q512 570 558 548M482 611Q512 623 542 611";
     return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="user-reference" viewBox="260 45 505 740" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="faceMapTitle faceMapDescription">
       <title id="faceMapTitle">Détail du visage neutre</title>
       <desc id="faceMapDescription">Schéma médical neutre et anonyme, sans cheveux ni identité reconnaissable. Choisissez une zone anatomique pour filtrer la prestation correspondante.</desc>
       <g class="face-figure">
+        <path class="face-anatomy-base face-anatomy-neck-base" d="${neck}"/>
+        <path class="face-anatomy-base" d="${outline}"/>
         ${region("face-neck", shape(neck, "face-region-soft"))}
         ${region("face-full", shape(outline, "face-region-base"))}
         ${region("face-beard", shape(lowerFace, "face-region-soft"))}
@@ -906,7 +1161,10 @@
         ${region("face-upper-lip", shape(upperLip))}
         ${region("face-beard-line", '<path class="face-region-hitarea" d="M369 505c14 65 54 122 95 135m195-135c-14 65-54 122-95 135"/><path class="face-region-stroke" d="M369 505c14 65 54 122 95 135m195-135c-14 65-54 122-95 135"/>')}
         ${region("face-chin", shape(chin))}
-        <path class="face-anatomy-landmark" d="${landmarks}"/>
+        <path class="face-anatomy-landmark face-eye-landmark" d="${eyeLandmarks}"/>
+        <circle class="face-anatomy-pupil" cx="417" cy="382" r="5"/>
+        <circle class="face-anatomy-pupil" cx="607" cy="382" r="5"/>
+        <path class="face-anatomy-landmark face-feature-landmark" d="${facialLandmarks}"/>
       </g>
     </svg>`;
   }
@@ -959,7 +1217,6 @@
         : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
     const resultTitle = needle ? "Résultats de recherche" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Prestations";
     const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
-    const nextBodyModelLabel = activeBodyModel === "male" ? "féminin" : "masculin";
     const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>`;
     const mapHint = faceDetailActive
       ? '<p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Sélectionnez une zone précise du visage ou revenez au corps complet.</p>'
@@ -977,7 +1234,7 @@
               <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Orientation du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Face</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Dos</button></div></div>
             </div>
           </div>
-          <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}"${faceDetailActive ? "" : ` data-body-model-toggle tabindex="0" role="group" aria-label="Corps ${activeBodyModel === "female" ? "féminin" : "masculin"}. Cliquez à côté de la silhouette ou appuyez sur Entrée pour afficher le corps ${nextBodyModelLabel}."`}>${mapMarkup}</div>
+          <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
           ${mapHint}
         </section>
         <section class="body-results" aria-live="polite" aria-label="Prestations : ${escapeHTML(resultTitle)}" data-body-results-title="${escapeHTML(resultTitle)}">${options}</section>
@@ -1003,13 +1260,16 @@
   function toggleFamilyPrices() {
     db.settings.showFamilyPrices = !Boolean(db.settings.showFamilyPrices);
     renderFamilyPriceToggle();
+    analyzeTileDensity();
     saveLocal(false);
   }
 
   function renderCatalog() {
+    closeTileDetail({ immediate: true });
     renderOfferMode();
     if (currentCatalogMode() === "body") renderBodySelector();
     else renderFamilies();
+    analyzeTileDensity();
   }
   function addService(item, offerType = "single") {
     const offer = ["single", "pack", "student"].includes(offerType) ? offerType : "single";
@@ -1126,6 +1386,23 @@
   function applyFont(font) {
     const value = KNOWN_FONTS.includes(font) ? font : "red-hat";
     document.documentElement.setAttribute("data-font", value);
+    if ($("#familyList")?.children.length) scheduleTileDensityAnalysis();
+  }
+  function currentIpadLayoutMode() { return IPAD_LAYOUT_MODES.includes(db.settings.ipadLayoutMode) ? db.settings.ipadLayoutMode : "off"; }
+  function isLikelyIpad() {
+    const userAgent = String(navigator.userAgent || "");
+    const platform = String(navigator.userAgentData?.platform || navigator.platform || "");
+    return /iPad/i.test(userAgent) || ((/Mac/i.test(platform) || /Macintosh/i.test(userAgent)) && Number(navigator.maxTouchPoints || 0) > 1);
+  }
+  function applyIpadLayout(mode = currentIpadLayoutMode()) {
+    const preference = IPAD_LAYOUT_MODES.includes(mode) ? mode : "off";
+    const optimized = preference === "always" || (preference === "auto" && isLikelyIpad());
+    document.documentElement.dataset.ipadPreference = preference;
+    document.documentElement.dataset.ipadLayout = optimized ? "optimized" : "standard";
+  }
+  function syncViewportMetrics() {
+    const height = Math.max(320, Math.round(window.visualViewport?.height || window.innerHeight || 0));
+    document.documentElement.style.setProperty("--app-viewport-height", `${height}px`);
   }
 
   function renderCheckout() {
@@ -1204,12 +1481,16 @@
   function openLayer(id) {
     const layer = $(`#${id}`);
     if (!layer) return;
+    closeTileDetail({ immediate: true });
     const previousFocus = document.activeElement;
     if (previousFocus instanceof HTMLElement) layerReturnFocus.set(id, previousFocus);
     layer.hidden = false;
     activeLayerId = id;
     [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = true; });
-    const initialFocus = $("[autofocus], [data-initial-focus], .history-list button, button[data-close]", layer);
+    const initialFocus = $("[autofocus]", layer)
+      || $("[data-initial-focus]", layer)
+      || $(".history-list button", layer)
+      || $("button[data-close]:not(.layer-backdrop)", layer);
     if (initialFocus) window.setTimeout(() => initialFocus.focus(), 50);
   }
 
@@ -1224,14 +1505,15 @@
     }
     layer.hidden = true;
     if (activeLayerId === id) activeLayerId = "";
+    const previousFocus = layerReturnFocus.get(id);
+    layerReturnFocus.delete(id);
     const remainingLayer = $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").at(-1);
     if (remainingLayer) {
       activeLayerId = remainingLayer.id;
+      if (previousFocus?.isConnected) window.setTimeout(() => previousFocus.focus(), 0);
       return;
     }
     [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = false; });
-    const previousFocus = layerReturnFocus.get(id);
-    layerReturnFocus.delete(id);
     if (previousFocus?.isConnected) window.setTimeout(() => previousFocus.focus(), 0);
   }
 
@@ -1409,6 +1691,167 @@
       const checked = initiallyAll || configured.has(family.id);
       return `<label class="family-visibility-item" data-family-id="${family.id}">\n        <input type="checkbox" name="visibleFamilies" value="${family.id}" ${checked ? "checked" : ""}>\n        <span class="family-visibility-icon" aria-hidden="true"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>\n        <span class="family-visibility-copy"><strong>${escapeHTML(family.name)}</strong></span>\n      </label>`;
     }).join("");
+  }
+
+  let tileIconTargetCard = null;
+  let catalogIconChoiceCache = null;
+
+  function baseCatalogService(id) {
+    return baseCatalogServices().find((item) => String(item.id) === String(id));
+  }
+
+  function catalogIconLabel(icon) {
+    const service = window.QUOTE_SERVICES.find((item) => item.icon === icon && item.zone);
+    const family = window.QUOTE_FAMILIES.find((item) => item.icon === icon);
+    const category = window.QUOTE_CATEGORIES.find((item) => item.icon === icon);
+    return String(service?.zone || family?.name || category?.short || icon.replaceAll("-", " "));
+  }
+
+  function catalogIconChoices() {
+    if (catalogIconChoiceCache) return catalogIconChoiceCache;
+    catalogIconChoiceCache = [...document.querySelectorAll('symbol[id^="icon-map-"]')]
+      .map((symbol) => symbol.id.replace(/^icon-map-/, ""))
+      .filter((icon, index, icons) => /^[a-z0-9-]+$/.test(icon) && icons.indexOf(icon) === index)
+      .sort((left, right) => catalogIconLabel(left).localeCompare(catalogIconLabel(right), "fr", { sensitivity: "base" }));
+    return catalogIconChoiceCache;
+  }
+
+  function catalogEditorIconValue(item) {
+    const icon = String(item.icon || serviceVisual(item).icon || "");
+    return catalogIconChoices().includes(icon) ? icon : "skin-target";
+  }
+
+  function catalogEditorCard(base) {
+    const item = { ...base, ...(db.catalogOverrides?.[String(base.id)] || {}) };
+    const category = categoryFor(item.categoryId);
+    const icon = catalogEditorIconValue(item);
+    const packPriceField = Number.isFinite(Number(base.packAveragePrice)) || Number.isFinite(Number(item.packAveragePrice))
+      ? `<label><span>Prix Pack moyen (CHF)</span><input data-tile-field="packAveragePrice" type="number" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.packAveragePrice ?? base.packAveragePrice ?? 0)}"></label>`
+      : "";
+    return `<article class="tile-catalog-card" data-tile-editor-card data-service-id="${escapeHTML(base.id)}" data-tile-search="${escapeHTML(normalize(`${item.name} ${category.name} ${item.id}`))}">
+      <header class="tile-catalog-card-head">
+        <button class="tile-catalog-icon-button" type="button" data-tile-icon-picker aria-label="Changer le pictogramme SVG de ${escapeHTML(item.name)}" title="Choisir un pictogramme SVG">
+          <span aria-hidden="true"><svg><use href="${prestationIconHref(icon)}"></use></svg></span><small>Changer le SVG</small>
+        </button>
+        <div><span>${escapeHTML(category.short || category.name)}</span><code>#${escapeHTML(item.id)}</code></div>
+        <button class="tile-catalog-reset" type="button" data-tile-reset title="Rétablir cette tuile">Réinitialiser</button>
+        <input data-tile-field="icon" type="hidden" value="${escapeHTML(icon)}">
+      </header>
+      <div class="tile-catalog-fields">
+        <label class="tile-catalog-name"><span>Nom</span><input data-tile-field="name" type="text" maxlength="240" value="${escapeHTML(item.name)}" required></label>
+        <label><span>Temps (min)</span><input data-tile-field="duration" type="number" min="0" max="1440" step="5" value="${escapeHTML(item.duration ?? 0)}" required></label>
+        <label><span>Prix (CHF)</span><input data-tile-field="price" type="number" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.price ?? 0)}" required></label>
+        ${packPriceField}
+      </div>
+    </article>`;
+  }
+
+  function tileEditorCardOverride(card) {
+    const base = baseCatalogService(card.dataset.serviceId);
+    if (!base) return null;
+    const name = String($('[data-tile-field="name"]', card)?.value || "").trim().slice(0, 240);
+    const price = boundedNumber($('[data-tile-field="price"]', card)?.value, 0, MAX_LINE_PRICE, 0);
+    const duration = boundedInteger($('[data-tile-field="duration"]', card)?.value, 0, 1440, 0);
+    const icon = catalogEditorIconValue({ ...base, icon: $('[data-tile-field="icon"]', card)?.value });
+    const override = {};
+    if (name && name !== String(base.name)) override.name = name;
+    if (price !== Number(base.price || 0)) override.price = price;
+    if (duration !== Number(base.duration || 0)) override.duration = duration;
+    if (icon !== catalogEditorIconValue(base)) override.icon = icon;
+    const packInput = $('[data-tile-field="packAveragePrice"]', card);
+    if (packInput) {
+      const packAveragePrice = boundedNumber(packInput.value, 0, MAX_LINE_PRICE, 0);
+      if (packAveragePrice !== Number(base.packAveragePrice || 0)) override.packAveragePrice = packAveragePrice;
+    }
+    return { id: String(base.id), override };
+  }
+
+  function updateTileEditorSummary() {
+    const cards = $$('[data-tile-editor-card]', $("#tileCatalogEditorList"));
+    const changed = cards.filter((card) => Object.keys(tileEditorCardOverride(card)?.override || {}).length).length;
+    const summary = $("#tileCatalogEditorChanges");
+    const saveButton = $("#tileCatalogEditorSave");
+    if (summary) summary.textContent = changed ? plural(changed, "tuile modifiée", "tuiles modifiées") : "Aucune modification en attente";
+    if (saveButton) saveButton.textContent = changed ? `Enregistrer ${changed}` : "Enregistrer";
+  }
+
+  function filterTileCatalogEditor() {
+    const needle = normalize($("#tileCatalogEditorSearch")?.value || "");
+    const cards = $$('[data-tile-editor-card]', $("#tileCatalogEditorList"));
+    let visible = 0;
+    cards.forEach((card) => {
+      const matches = !needle || card.dataset.tileSearch.includes(needle) || normalize($('[data-tile-field="name"]', card)?.value || "").includes(needle);
+      card.hidden = !matches;
+      if (matches) visible += 1;
+    });
+    const count = $("#tileCatalogEditorCount");
+    if (count) count.textContent = `${visible} / ${cards.length} tuiles`;
+  }
+
+  function buildTileCatalogEditor() {
+    const list = $("#tileCatalogEditorList");
+    if (!list) return;
+    list.innerHTML = baseCatalogServices().map(catalogEditorCard).join("");
+    const search = $("#tileCatalogEditorSearch");
+    if (search) search.value = "";
+    filterTileCatalogEditor();
+    updateTileEditorSummary();
+  }
+
+  function openTileCatalogEditor() {
+    buildTileCatalogEditor();
+    openLayer("tileCatalogEditorLayer");
+  }
+
+  function renderCatalogIconPicker(selectedIcon) {
+    const grid = $("#tileIconPickerGrid");
+    if (!grid) return;
+    grid.innerHTML = catalogIconChoices().map((icon) => {
+      const selected = icon === selectedIcon;
+      const label = catalogIconLabel(icon);
+      return `<button type="button" data-tile-icon-choice="${escapeHTML(icon)}" aria-label="${escapeHTML(label)}" aria-pressed="${selected}" title="${escapeHTML(label)}" ${selected ? "data-initial-focus" : ""}><svg aria-hidden="true"><use href="${prestationIconHref(icon)}"></use></svg><span>${escapeHTML(label)}</span></button>`;
+    }).join("");
+  }
+
+  function openCatalogIconPicker(card) {
+    tileIconTargetCard = card;
+    const selectedIcon = $('[data-tile-field="icon"]', card)?.value || "skin-target";
+    renderCatalogIconPicker(selectedIcon);
+    openLayer("tileIconPickerLayer");
+  }
+
+  function resetTileEditorCard(card) {
+    const base = baseCatalogService(card.dataset.serviceId);
+    if (!base) return;
+    $('[data-tile-field="name"]', card).value = base.name;
+    $('[data-tile-field="price"]', card).value = Number(base.price || 0);
+    $('[data-tile-field="duration"]', card).value = Number(base.duration || 0);
+    const packInput = $('[data-tile-field="packAveragePrice"]', card);
+    if (packInput) packInput.value = Number(base.packAveragePrice || 0);
+    const icon = catalogEditorIconValue(base);
+    $('[data-tile-field="icon"]', card).value = icon;
+    $(".tile-catalog-icon-button use", card)?.setAttribute("href", prestationIconHref(icon));
+    updateTileEditorSummary();
+  }
+
+  function saveTileCatalogEditor() {
+    const previousOverrides = clone(db.catalogOverrides || {});
+    const nextOverrides = { ...previousOverrides };
+    $$('[data-tile-editor-card]', $("#tileCatalogEditorList")).forEach((card) => {
+      const result = tileEditorCardOverride(card);
+      if (!result) return;
+      if (Object.keys(result.override).length) nextOverrides[result.id] = result.override;
+      else delete nextOverrides[result.id];
+    });
+    db.catalogOverrides = sanitizeCatalogOverrides(nextOverrides);
+    const changed = Object.keys(db.catalogOverrides).length;
+    if (!saveLocal()) {
+      db.catalogOverrides = previousOverrides;
+      return;
+    }
+    renderAll();
+    closeLayer("tileCatalogEditorLayer");
+    toast(changed ? `${plural(changed, "tuile personnalisée", "tuiles personnalisées")} enregistrée${changed === 1 ? "" : "s"}` : "Catalogue d’origine restauré");
   }
 
   let launchAtLoginState = {
@@ -1892,11 +2335,13 @@
   }
 
   function switchMobilePanel(id) {
+    closeTileDetail({ immediate: true });
     $("#familyPanel").classList.toggle("active-panel", id === "familyPanel");
     $("#checkoutPanel").classList.toggle("active-panel", id === "checkoutPanel");
     $$(".mobile-tabs [data-panel]").forEach((button) => button.classList.toggle("active", button.dataset.panel === id));
     syncToastPlacement();
     window.scrollTo({ top: 0, behavior: "smooth" });
+    if (id === "familyPanel") scheduleTileDensityAnalysis();
   }
 
   function syncPermanentCheckoutLayout() {
@@ -1934,6 +2379,7 @@
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer les choix d’envoi" : "Choisir comment envoyer le devis");
     if (open) {
+      closeTileDetail({ immediate: true });
       setAppMenuOpen(false);
       setQuoteMenuOpen(false);
     }
@@ -1949,6 +2395,7 @@
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer les actions du devis" : "Ouvrir les actions du devis");
     if (open) {
+      closeTileDetail({ immediate: true });
       setAppMenuOpen(false);
       setTransmissionMenuOpen(false);
     }
@@ -1964,6 +2411,7 @@
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer le menu principal" : "Ouvrir le menu principal");
     if (open) {
+      closeTileDetail({ immediate: true });
       setQuoteMenuOpen(false);
       setTransmissionMenuOpen(false);
     }
@@ -2039,15 +2487,18 @@
     moveRadioSelection(event.currentTarget, "[data-offer-mode]", button, ["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   });
   $("#familyList").addEventListener("click", (event) => {
+    const detailToggle = event.target.closest("[data-tile-detail-toggle]");
+    if (detailToggle) {
+      const shell = detailToggle.closest("[data-density-card]");
+      if (!shell) return;
+      if (tileDetailPinned && tileDetailServiceId === shell.dataset.densityServiceId) closeTileDetail({ restoreFocus: true });
+      else openTileDetail(shell, { pinned: true, focusCard: true });
+      return;
+    }
     const bodyModelButton = event.target.closest("button[data-body-model-choice]");
     if (bodyModelButton) {
       const model = bodyModelButton.dataset.bodyModelChoice;
       setBodyModel(model, `[data-body-model-choice="${model}"]`);
-      return;
-    }
-    const bodyModelToggleArea = event.target.closest("[data-body-model-toggle]");
-    if (bodyModelToggleArea && !event.target.closest(".body-figure")) {
-      toggleBodyModel();
       return;
     }
     const serviceButton = event.target.closest("[data-family-service-id]");
@@ -2135,17 +2586,42 @@
     renderCatalog();
   });
   $("#familyList").addEventListener("keydown", (event) => {
-    const bodyModelToggleArea = event.target.closest("[data-body-model-toggle]");
-    if (bodyModelToggleArea && event.target === bodyModelToggleArea && ["Enter", " "].includes(event.key)) {
-      event.preventDefault();
-      toggleBodyModel();
-      return;
-    }
     const interactiveRegion = event.target.closest("svg [data-body-region], svg [data-face-region]");
     if (!interactiveRegion || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     interactiveRegion.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   });
+  $("#familyList").addEventListener("pointerover", (event) => {
+    if (isCoarseTileInterface() || event.pointerType === "touch") return;
+    const toggle = event.target.closest("[data-tile-detail-toggle]");
+    if (!toggle || toggle.contains(event.relatedTarget) || tileDetailPinned) return;
+    scheduleTileDetailOpenFromEye(toggle);
+  });
+  $("#familyList").addEventListener("pointerout", (event) => {
+    if (isCoarseTileInterface() || event.pointerType === "touch") return;
+    const toggle = event.target.closest("[data-tile-detail-toggle]");
+    if (!toggle || toggle.contains(event.relatedTarget) || $("#tileDetailCard")?.contains(event.relatedTarget)) return;
+    scheduleTileDetailClose();
+  });
+  $("#familyList").addEventListener("scroll", () => closeTileDetail({ immediate: true }), { passive: true });
+  $("#tileDetailLayer").addEventListener("click", (event) => {
+    const addButton = event.target.closest("[data-tile-detail-add]");
+    if (addButton) {
+      const item = allServices().find((service) => String(service.id) === addButton.dataset.tileDetailAdd);
+      if (item) addService(item, selectedOfferMode);
+      closeTileDetail({ immediate: true });
+      return;
+    }
+    if (event.target.closest("[data-tile-detail-close]")) closeTileDetail({ restoreFocus: true });
+  });
+  $("#tileDetailCard").addEventListener("pointerenter", () => window.clearTimeout(tileDetailCloseTimer));
+  $("#tileDetailCard").addEventListener("pointerleave", () => scheduleTileDetailClose());
+  document.addEventListener("pointerdown", (event) => {
+    if (!tileDetailPinned) return;
+    const activeShell = tileDetailServiceId ? $(`[data-density-service-id="${CSS.escape(tileDetailServiceId)}"]`) : null;
+    if (event.target.closest("[data-tile-detail-close]") || $("#tileDetailCard").contains(event.target) || activeShell?.contains(event.target)) return;
+    closeTileDetail();
+  }, true);
   function changeQuantityFromGesture(control, increase) {
     const line = lineFromElement(control);
     if (!line) return;
@@ -2355,6 +2831,50 @@
         : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
     setSettingsTab(tabs[nextIndex].dataset.settingsTab, { focus: true, resetScroll: true });
   });
+  $("#tileCatalogEditorButton").addEventListener("click", openTileCatalogEditor);
+  $("#tileCatalogEditorSearch").addEventListener("input", filterTileCatalogEditor);
+  $("#tileCatalogEditorList").addEventListener("input", (event) => {
+    if (!event.target.closest("[data-tile-field]")) return;
+    updateTileEditorSummary();
+    if (event.target.matches('[data-tile-field="name"]')) filterTileCatalogEditor();
+  });
+  $("#tileCatalogEditorList").addEventListener("click", (event) => {
+    const card = event.target.closest("[data-tile-editor-card]");
+    if (!card) return;
+    if (event.target.closest("[data-tile-icon-picker]")) openCatalogIconPicker(card);
+    if (event.target.closest("[data-tile-reset]")) resetTileEditorCard(card);
+  });
+  $("#tileCatalogEditorForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
+    saveTileCatalogEditor();
+  });
+  $("#tileCatalogResetAllButton").addEventListener("click", () => {
+    if (!Object.keys(db.catalogOverrides || {}).length) {
+      toast("Le catalogue utilise déjà ses valeurs d’origine");
+      return;
+    }
+    if (!window.confirm("Rétablir le nom, le temps, le prix et le pictogramme d’origine de toutes les tuiles ?")) return;
+    const previousOverrides = clone(db.catalogOverrides);
+    db.catalogOverrides = {};
+    if (!saveLocal()) {
+      db.catalogOverrides = previousOverrides;
+      return;
+    }
+    buildTileCatalogEditor();
+    renderAll();
+    toast("Toutes les tuiles ont été réinitialisées");
+  });
+  $("#tileIconPickerGrid").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tile-icon-choice]");
+    if (!button || !tileIconTargetCard?.isConnected) return;
+    const icon = button.dataset.tileIconChoice;
+    $('[data-tile-field="icon"]', tileIconTargetCard).value = icon;
+    $(".tile-catalog-icon-button use", tileIconTargetCard)?.setAttribute("href", prestationIconHref(icon));
+    updateTileEditorSummary();
+    closeLayer("tileIconPickerLayer");
+    tileIconTargetCard = null;
+  });
   $("#settingsForm").addEventListener("input", (event) => {
     const name = event.target?.name;
     if (["quotePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
@@ -2430,6 +2950,7 @@
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
       catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",
+      ipadLayoutMode: IPAD_LAYOUT_MODES.includes(data.get("ipadLayoutMode")) ? data.get("ipadLayoutMode") : "off",
       launchAtLogin: savedLaunchAtLogin,
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
@@ -2444,6 +2965,7 @@
     else { const first = visibleFamilies()[0]; activeFamily = first?.id || "all"; expandedFamily = first?.id || "all"; }
     applyTheme(db.settings.theme);
     applyFont(db.settings.fontFamily);
+    applyIpadLayout(db.settings.ipadLayoutMode);
     if (!saveLocal()) return;
     renderAll(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
   });
@@ -2556,6 +3078,7 @@
         settings: { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
         quoteCounters: isRecord(payload.database.quoteCounters) ? payload.database.quoteCounters : {},
         customServices: sanitizeCustomServices(payload.database.customServices),
+        catalogOverrides: sanitizeCatalogOverrides(payload.database.catalogOverrides),
         quotes: isRecord(payload.database.quotes) ? payload.database.quotes : {}
       }, payload.database.version);
       normalizeSavedQuotes();
@@ -2563,12 +3086,14 @@
       couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
       applyTheme(currentTheme());
       applyFont(currentFont());
+      applyIpadLayout(currentIpadLayoutMode());
       if (!saveLocal()) {
         db = previousDatabase;
         quote = previousQuote;
         couponOpen = previousCouponOpen;
         applyTheme(currentTheme());
         applyFont(currentFont());
+        applyIpadLayout(currentIpadLayoutMode());
         renderAll();
         renderHistory();
         return;
@@ -2583,6 +3108,7 @@
     const layer = activeLayerId ? $(`#${activeLayerId}`) : null;
     if (event.key === "Tab" && layer && !layer.hidden) { trapLayerFocus(event, layer); return; }
     if (event.key === "Escape") {
+      if (tileDetailServiceId) { event.preventDefault(); closeTileDetail({ restoreFocus: true }); return; }
       if (!$("#checkoutTransmissionMenu").hidden) { event.preventDefault(); setTransmissionMenuOpen(false, { restoreFocus: true }); return; }
       if (!$("#appActionsMenu").hidden) { event.preventDefault(); setAppMenuOpen(false, { restoreFocus: true }); return; }
       if (!$("#quoteActionMenu").hidden) { event.preventDefault(); setQuoteMenuOpen(false, { restoreFocus: true }); return; }
@@ -2626,6 +3152,12 @@
   window.addEventListener("beforeunload", () => saveLocal(false));
   window.addEventListener("resize", syncPermanentCheckoutLayout);
   window.addEventListener("resize", syncToastPlacement);
+  window.addEventListener("resize", syncViewportMetrics);
+  window.visualViewport?.addEventListener("resize", syncViewportMetrics);
+  window.addEventListener("resize", () => {
+    closeTileDetail({ immediate: true });
+    scheduleTileDensityAnalysis();
+  });
   if ("serviceWorker" in navigator && /^https?:$/.test(window.location.protocol)) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch((error) => console.warn("PWA indisponible", error)));
   }
@@ -2649,8 +3181,11 @@
 
   applyTheme(currentTheme());
   applyFont(currentFont());
+  applyIpadLayout();
+  syncViewportMetrics();
   syncPermanentCheckoutLayout();
   syncToastPlacement();
   saveLocal(false);
   renderAll();
+  showReleaseNotesOnce();
 })();

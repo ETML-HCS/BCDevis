@@ -13,6 +13,7 @@ for (const shortcut of ["event.code === \"KeyM\"", "event.code === \"KeyP\"", "k
   assert.match(app, new RegExp(shortcut.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Raccourci absent : ${shortcut}`);
 }
 assert.match(app, /trapLayerFocus/, "Les modales doivent conserver le focus au clavier");
+assert.match(app, /const initialFocus = \$\("\[autofocus\]"[\s\S]*?button\[data-close\]:not\(\.layer-backdrop\)/, "Le focus initial doit ignorer le fond de modale et respecter les éléments prioritaires");
 assert.match(app, /moveRadioSelection/, "Les groupes de choix doivent accepter les flèches");
 assert.match(app, /function setAppMenuOpen/, "Le menu Actions doit exposer un état ouvert et fermé");
 assert.match(app, /function closeContextMenus/, "Les menus contextuels doivent partager une fermeture fiable");

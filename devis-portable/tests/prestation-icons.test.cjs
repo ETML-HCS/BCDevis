@@ -39,7 +39,8 @@ const expectedIcons = {
   91: "armpits", 92: "male-intimate",
   98: "consultation", 80: "cheeks", 81: "body-vessels",
   111: "zones", 122: "zones", 123: "zones", 124: "zones", 125: "zones",
-  126: "zones", 127: "zones", 128: "zones", 129: "zones",
+  126: "zones", 127: "zones", 128: "zones", 129: "zones", 131: "zones",
+  132: "zones", 133: "zones", 134: "zones", 135: "zones",
   101: "consultation", 62: "electrolysis", 61: "electrolysis",
   60: "electrolysis", 59: "electrolysis", 58: "electrolysis",
   27: "beard", 30: "neck", 22: "glabella", 26: "cheeks",
@@ -61,9 +62,11 @@ const usedIconBodies = [...new Set(services.map((service) => service.icon))].map
   return [icon, match?.[1].replace(/\s+/g, " ").trim()];
 });
 
-assert.equal(services.length, 91, "Le catalogue doit toujours contenir 91 prestations");
-assert.equal(new Set(services.map((service) => service.icon)).size, 57, "Les 91 prestations doivent conserver leurs 57 dessins anatomiques distincts");
+assert.equal(services.length, 96, "Le catalogue doit toujours contenir 96 prestations");
+assert.equal(new Set(services.map((service) => service.icon)).size, 57, "Les 96 prestations doivent conserver leurs 57 dessins anatomiques distincts");
 assert.equal(categories.length, 16, "Les 16 catégories historiques doivent rester disponibles");
+assert.equal(categories.find((category) => category.id === 35)?.name, "Zones combinées", "La catégorie ne doit plus annoncer de réservations génériques par durée");
+assert.match(families.find((family) => family.id === "combinees")?.description || "", /Séance et Pack 6 \+ 1/, "La famille doit annoncer ses deux tarifs réels");
 assert.equal(symbolNames.length, symbols.size, "Chaque identifiant de symbole SVG doit être unique");
 assert.deepEqual(
   symbolMatches.filter((match) => match[2] !== "0 0 24 24").map((match) => match[1]),
@@ -71,6 +74,32 @@ assert.deepEqual(
   "Tous les pictogrammes doivent partager le viewBox 24 × 24"
 );
 assert.equal(Object.keys(expectedIcons).length, services.length, "La matrice visuelle doit couvrir chaque prestation");
+const combinedZones = services.filter((service) => Number(service.categoryId) === 35);
+assert.deepEqual(
+  Array.from(combinedZones, (service) => [service.name, service.price, service.packAveragePrice]),
+  [
+    ["Lèvre supérieure + menton", 179, 153],
+    ["Maillot classique + aisselles + SIF", 276, 237],
+    ["Maillot échancré + aisselles + SIF", 306, 262],
+    ["Maillot complet + aisselles + SIF", 406, 348],
+    ["Demi-jambes, maillot classique, SIF et aisselles", 605, 519],
+    ["Demi-jambes, maillot échancré, SIF et aisselles", 635, 545],
+    ["Demi-jambes, maillot complet, SIF et aisselles", 735, 630],
+    ["Jambes complètes, maillot classique, SIF et aisselles", 758, 650],
+    ["Jambes complètes, maillot échancré, SIF et aisselles", 793, 680],
+    ["Jambes complètes, maillot complet, SIF et aisselles", 888, 762],
+    ["Torse et abdomen", 439, 376],
+    ["Torse, abdomen, cou et épaules", 678, 581],
+    ["Dos complet, épaules et nuque", 661, 566],
+    ["Torse, abdomen, cou, dos complet, épaules, nuque, aisselles et demi-bras", 999, 856]
+  ],
+  "Les zones combinées doivent reprendre exactement les tarifs Séance et Pack 6 + 1"
+);
+assert.ok(combinedZones.every((service) => service.price > 0 && service.duration === 0), "Les zones combinées ne doivent plus contenir de réservation à 0 CHF ou de durée inventée");
+assert.match(appSource, /function catalogPriceDisplay\(item\)/, "Le catalogue doit distinguer le prix Séance du prix moyen Pack 6 + 1");
+assert.match(appSource, /const durationText = item\.duration \? `\$\{item\.duration\} min` : "";/, "La durée doit disposer de son propre libellé secondaire");
+assert.match(appSource, /family-option-copy"><strong>\$\{escapeHTML\(item\.name\)\}<\/strong>\$\{durationText \? `<small>\$\{escapeHTML\(durationText\)\}<\/small>` : ""\}<\/span>/, "Le nom doit rester seul dans strong et la durée doit passer dans small");
+assert.doesNotMatch(appSource, /<small>\$\{escapeHTML\(visual\.zone\)\}<\/small>/, "Le texte de zone ne doit plus être répété sous le nom de la prestation");
 assert.ok(usedIconBodies.every(([, body]) => body), "Chaque dessin utilisé doit contenir une géométrie SVG");
 assert.equal(
   new Set(usedIconBodies.map(([, body]) => body)).size,
@@ -298,8 +327,19 @@ assert.match(
   "Le Catalogue des réglages doit réutiliser les pictogrammes actuels des familles"
 );
 assert.match(appSource, /class="service-zone-icon"/, "Le pictogramme anatomique doit être visible dans chaque prestation");
-assert.match(appSource, /<small>\$\{escapeHTML\(visual\.zone\)\}<\/small>/, "La zone doit aussi être explicitée en texte");
+assert.match(appSource, /class="service-zone-icon" title="\$\{escapeHTML\(visual\.zone\)\}"/, "La zone doit rester disponible dans l’infobulle du pictogramme");
+assert.match(appSource, /data-density-card data-density="normal"/, "Chaque prestation doit exposer sa structure de densité adaptative");
+assert.match(appSource, /function analyzeTileDensity\(\)/, "Le catalogue doit analyser la densité de chaque groupe après son rendu");
+assert.match(appSource, /tileDensityPercentile\(metrics\.map\(\(metric\) => metric\.score\), 0\.72\)/, "Le seuil doit s’adapter au groupe de prestations");
+assert.match(appSource, /data-tile-detail-toggle/, "Les prestations compactes doivent disposer d’un contrôle de détail distinct de l’ajout");
+assert.match(appSource, /function openTileDetail\(shell/, "Le libellé complet doit pouvoir être affiché sans modifier la prestation");
+assert.match(appSource, /pointerover[\s\S]*?event\.target\.closest\("\[data-tile-detail-toggle\]"\)/, "Le survol doit être limité au bouton œil");
+assert.doesNotMatch(appSource, /pointerover[\s\S]{0,300}?event\.target\.closest\("\[data-density-card/, "Le survol de la tuile complète ne doit pas ouvrir le détail");
 assert.match(styles, /Prestations : cartes corporelles compactes, inspirées des body highlighters/);
+assert.match(styles, /Prestations : densité adaptative et aperçu complet des libellés longs/);
+assert.match(styles, /\.family-option-shell\[data-density="compact"\]\{grid-template-columns:minmax\(0,1fr\) 34px\}/, "Seules les prestations denses doivent réserver une commande de détail");
+assert.match(styles, /\.tile-detail-layer\{[\s\S]*?z-index:260;[\s\S]*?pointer-events:none;/, "L’aperçu doit rester au-dessus des tuiles sans bloquer l’interface");
+assert.match(styles, /\.tile-detail-layer\.is-open \.tile-detail-card\{opacity:1;pointer-events:auto;transform:translateY\(0\) scale\(1\)\}/, "L’ouverture du détail doit être animée et interactive");
 assert.match(styles, /\.anatomy-base\{[\s\S]*?fill-opacity:\.1;[\s\S]*?stroke-opacity:\.82;/);
 assert.match(styles, /\.anatomy-zone\{[\s\S]*?fill-opacity:\.96;[\s\S]*?stroke:none;/);
 assert.match(styles, /\.anatomy-patch\{[\s\S]*?stroke-dasharray:1\.35 1\.15;/);
