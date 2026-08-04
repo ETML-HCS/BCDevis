@@ -19,11 +19,11 @@ const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
 const template = readJSON("devis-portable/MODELE-DEVIS-V5.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 
-assert.equal(packageJson.version, "5.3.3", "La livraison doit annoncer la version 5.3.3");
+assert.equal(packageJson.version, "5.3.4", "La livraison doit annoncer la version 5.3.4");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
-assert.match(serviceWorker, /bcdevis-pwa-v5\.3\.3/, "Le cache PWA doit suivre la version livrée");
+assert.match(serviceWorker, /bcdevis-pwa-v5\.3\.4/, "Le cache PWA doit suivre la version livrée");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -32,7 +32,7 @@ assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /5\.3\.3/, "Chaque document client doit annoncer la version 5.3.3");
+  assert.match(document, /5\.3\.4/, "Chaque document client doit annoncer la version 5.3.4");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -46,13 +46,13 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-5\.3\.3\.exe/);
-assert.match(quick, /BCDevis-5\.3\.3-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-5\.3\.3-chromeos\.zip/);
+assert.match(quick, /BCDevis-5\.3\.4\.exe/);
+assert.match(quick, /BCDevis-5\.3\.4-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-5\.3\.4-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.3\.3-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.3\.4-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
 assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);

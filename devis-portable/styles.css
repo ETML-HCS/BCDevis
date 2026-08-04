@@ -192,9 +192,15 @@ html.bcdevis-window-overlay .window-controls svg{width:16px;height:16px;stroke-w
   }
 }
 @media screen and (min-width:1181px){
+  html.bcdevis-window-overlay .window-controls{
+    top:25px;
+  }
   html.bcdevis-window-overlay .checkout-panel.is-full-height .checkout-card{
-    /* Dedicated title-bar clearance keeps Caisse actions below the window controls. */
-    padding-top:56px;
+    padding-top:13px;
+  }
+  html.bcdevis-window-overlay .checkout-panel.is-full-height .receipt-head{
+    /* La commande de fenêtre et l’en-tête du devis partagent la même ligne. */
+    padding-right:118px;
   }
 }
 @media (hover:none),(pointer:coarse){

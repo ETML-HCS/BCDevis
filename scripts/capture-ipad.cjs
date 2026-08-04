@@ -168,6 +168,33 @@ async function auditDesktopCheckout(window) {
   return result;
 }
 
+async function auditWindowHeader(window) {
+  const result = await window.webContents.executeJavaScript(`(async () => {
+    const receipt = document.querySelector(".receipt-head").getBoundingClientRect();
+    const controls = document.querySelector("#windowControls");
+    const collapsed = controls.getBoundingClientRect();
+    const actionRects = [...document.querySelectorAll("#quoteHeadActions > .quote-icon-button")].map((button) => button.getBoundingClientRect());
+    const overlaps = (target) => actionRects.some((rect) => rect.left < target.right && rect.right > target.left && rect.top < target.bottom && rect.bottom > target.top);
+    controls.querySelector("#windowMinimizeButton").focus();
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    const expanded = controls.getBoundingClientRect();
+    return {
+      receiptTop: Math.round(receipt.top),
+      receiptHeight: Math.round(receipt.height),
+      controlsTop: Math.round(collapsed.top),
+      controlsHeight: Math.round(collapsed.height),
+      centerDelta: Math.abs((receipt.top + receipt.height / 2) - (collapsed.top + collapsed.height / 2)),
+      collapsedWidth: Math.round(collapsed.width),
+      expandedWidth: Math.round(expanded.width),
+      collapsedClear: !overlaps(collapsed),
+      expandedClear: !overlaps(expanded),
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || !result.collapsedClear || !result.expandedClear || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
+  return result;
+}
+
 async function hoverDesktopDelete(window) {
   const point = await window.webContents.executeJavaScript(`(() => {
     const rect = document.querySelector(".cart-line-delete-zone")?.getBoundingClientRect();
@@ -213,7 +240,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.3.3.png");
+    await capture(window, "00-nouveautes-5.3.4.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
@@ -277,8 +304,21 @@ async function main() {
     const desktopDelete = await hoverDesktopDelete(window);
     await capture(window, "08-desktop-caisse-poubelle.png");
 
+    await window.loadFile(APP_PATH, { query: { windowShell: "custom" } });
+    await settle(window);
+    await setViewport(window, 1450, 900);
+    await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
+      document.querySelector('[data-offer-mode="pack"]')?.click();
+      document.querySelector(".family-option")?.click();
+      document.querySelector(".toast-close")?.click();
+    })()`);
+    await capture(window, "09-desktop-entete-fenetre-replie.png");
+    const windowHeader = await auditWindowHeader(window);
+    await capture(window, "10-desktop-entete-fenetre-deplie.png");
+
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, windowHeader, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }
