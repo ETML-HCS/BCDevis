@@ -110,6 +110,9 @@ assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro d
 assert.match(styles, /\.visually-hidden\{[\s\S]*?clip-path:inset\(50%\)/, "Les repères masqués doivent rester accessibles");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Soins et Devis doivent nommer les zones sans rester visibles");
 assert.match(html, /class="family-title-row"><h2[\s\S]*?id="catalogSearchToggle"[\s\S]*?<strong class="visually-hidden" id="activeOfferHint"/, "La ligne Soins ne doit conserver visuellement que la loupe");
+assert.match(styles, /\.family-head\{position:relative;z-index:2;height:0;min-height:0;padding:0;border:0\}/, "La loupe doit sortir du flux sans réserver une ligne");
+assert.match(styles, /\.family-title-row\{position:absolute;z-index:3;top:0;right:0;/, "La loupe doit rester ancrée en position absolue");
+assert.match(styles, /\.family-head:has\(\.family-search:not\(\[hidden\]\)\)\{height:43px\}/, "L’ouverture de la recherche doit seule rendre sa hauteur à l’en-tête");
 assert.doesNotMatch(html, />\s*(?:Prestations|Caisse|Ajouter à la caisse)\s*</, "Les noms visibles doivent rester ultra courts");
 assert.match(html, /id="installmentTableWrap" hidden><table class="installment-table"[^>]*><tbody id="installmentGrid"/, "L’échelonnement doit utiliser un tableau compact");
 assert.doesNotMatch(html, /<details class="installments"|Paiement échelonné \(CHF\)|class="installment-note"/, "La caisse ne doit plus afficher le panneau explicatif de l’échelonnement");

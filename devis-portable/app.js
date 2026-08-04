@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.9";
+  const RELEASE_VERSION = "5.3.10";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];

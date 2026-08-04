@@ -55,7 +55,11 @@ async function audit(window, label, { minColumns = 2 } = {}) {
   const result = await window.webContents.executeJavaScript(`(() => {
     const appShell = document.querySelector(".app-shell").getBoundingClientRect();
     const mobileTabs = document.querySelector("#mobileTabs").getBoundingClientRect();
-    const search = document.querySelector("#catalogSearchToggle").getBoundingClientRect();
+    const searchToggle = document.querySelector("#catalogSearchToggle");
+    const search = searchToggle.getBoundingClientRect();
+    const familyHead = document.querySelector(".family-head").getBoundingClientRect();
+    const firstFamily = document.querySelector(".family-button").getBoundingClientRect();
+    const searchHitTarget = document.elementFromPoint(search.left + search.width / 2, search.top + search.height / 2);
     return {
       width: innerWidth,
       height: innerHeight,
@@ -66,13 +70,17 @@ async function audit(window, label, { minColumns = 2 } = {}) {
       shellContained: appShell.bottom <= innerHeight + 1,
       tabsContained: mobileTabs.left >= 0 && mobileTabs.right <= innerWidth + 1 && mobileTabs.bottom <= innerHeight + 1,
       searchTouchTarget: search.width >= 44 && search.height >= 44,
+      searchAbsolute: getComputedStyle(document.querySelector(".family-title-row")).position === "absolute",
+      searchOwnsClick: searchToggle.contains(searchHitTarget),
+      familyHeadCollapsed: familyHead.height <= 1,
+      searchOverFirstFamily: Math.abs(search.top - firstFamily.top) <= 2,
       inputFontSize: Number.parseFloat(getComputedStyle(document.querySelector("#catalogSearch")).fontSize),
       familyOptionColumns: getComputedStyle(document.querySelector(".family-options")).gridTemplateColumns.split(" ").filter(Boolean).length
     };
   })()`);
   if (result.layout !== "optimized" || result.preference !== "always") throw new Error(`${label} : optimisation iPad inactive`);
   if (!result.tabsVisible || result.horizontalOverflow || !result.shellContained || !result.tabsContained) throw new Error(`${label} : débordement ${JSON.stringify(result)}`);
-  if (!result.searchTouchTarget || result.inputFontSize < 16) throw new Error(`${label} : confort tactile insuffisant ${JSON.stringify(result)}`);
+  if (!result.searchTouchTarget || !result.searchAbsolute || !result.searchOwnsClick || !result.familyHeadCollapsed || !result.searchOverFirstFamily || result.inputFontSize < 16) throw new Error(`${label} : loupe ou confort tactile invalide ${JSON.stringify(result)}`);
   if (result.familyOptionColumns < minColumns) throw new Error(`${label} : l’espace disponible des prestations est sous-utilisé ${JSON.stringify(result)}`);
   return result;
 }
@@ -218,6 +226,28 @@ async function auditWindowHeader(window) {
   return result;
 }
 
+async function auditCatalogSearch(window) {
+  await clickElementCenter(window, "#catalogSearchToggle");
+  const opened = await window.webContents.executeJavaScript(`(() => {
+    const head = document.querySelector(".family-head").getBoundingClientRect();
+    const panel = document.querySelector("#catalogSearchPanel");
+    const panelRect = panel.getBoundingClientRect();
+    const toggleRect = document.querySelector("#catalogSearchToggle").getBoundingClientRect();
+    return {
+      visible: !panel.hidden,
+      focused: document.activeElement === document.querySelector("#catalogSearch"),
+      height: Math.round(head.height),
+      clearOfToggle: panelRect.right <= toggleRect.left - 4,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!opened.visible || !opened.focused || opened.height < 44 || !opened.clearOfToggle || opened.horizontalOverflow) throw new Error(`Recherche prestations invalide ${JSON.stringify(opened)}`);
+  await clickElementCenter(window, "#catalogSearchToggle");
+  const collapsed = await window.webContents.executeJavaScript(`document.querySelector(".family-head").getBoundingClientRect().height <= 1 && document.querySelector("#catalogSearchPanel").hidden`);
+  if (!collapsed) throw new Error("La recherche refermée conserve une ligne vide");
+  return { opened, collapsed };
+}
+
 async function auditQuoteHeaderActions(window) {
   const geometry = await window.webContents.executeJavaScript(`(() => {
     window.confirm = () => true;
@@ -341,6 +371,7 @@ async function main() {
     await window.webContents.executeJavaScript(`document.querySelector(".toast-close")?.click()`);
     const landscape = await audit(window, "iPad paysage");
     await capture(window, "01-ipad-paysage-prestations.png");
+    const catalogSearch = await auditCatalogSearch(window);
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('[data-offer-mode="pack"]')?.click();
       document.querySelector(".family-option")?.click();
@@ -408,7 +439,7 @@ async function main() {
     await capture(window, "10-desktop-entete-fenetre-deplie.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, catalogSearch, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }
