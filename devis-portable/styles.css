@@ -1260,16 +1260,28 @@ html[data-theme] .family-visibility-icon svg{
 .checkout-transmission-menu{
   position:absolute;
   z-index:18;
-  right:0;
+  right:auto;
   bottom:calc(100% + 8px);
   display:grid;
-  width:min(330px,100%);
+  left:50%;
+  width:min(344px,calc(100vw - 28px));
   padding:8px;
   border:1px solid var(--line);
   border-radius:14px;
   background:#fff;
   box-shadow:0 18px 44px rgba(0,0,0,.18);
-  gap:6px;
+  gap:9px;
+  transform:translateX(-50%);
+}
+.checkout-transmission-menu .transmission-group{display:grid;gap:5px}
+.checkout-transmission-menu .transmission-group-label{
+  margin:0 4px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:750;
+  letter-spacing:.08em;
+  line-height:1.2;
+  text-transform:uppercase;
 }
 .checkout-transmission-menu .transmission-option{
   display:grid;
@@ -1286,16 +1298,31 @@ html[data-theme] .family-visibility-icon svg{
   gap:10px;
 }
 .checkout-transmission-menu .transmission-option:hover{border-color:var(--taupe-dark);background:var(--taupe-light)}
+.checkout-transmission-menu .transmission-option:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .checkout-transmission-menu .transmission-option>svg{width:20px;height:20px;justify-self:center}
 .checkout-transmission-menu .transmission-option>span{min-width:0}
 .checkout-transmission-menu .transmission-option strong,
 .checkout-transmission-menu .transmission-option small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .checkout-transmission-menu .transmission-option strong{font-size:12px}
 .checkout-transmission-menu .transmission-option small{margin-top:2px;color:var(--muted);font-size:9px}
+.checkout-transmission-menu .transmission-group-auto .transmission-option{
+  min-height:58px;
+  border-color:var(--taupe-dark);
+  background:var(--taupe-light);
+}
+.checkout-transmission-menu .transmission-manual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.checkout-transmission-menu .transmission-group-manual .transmission-option{
+  min-width:0;
+  min-height:68px;
+  padding:8px 6px;
+  text-align:center;
+  grid-template-columns:26px minmax(0,1fr);
+  gap:6px;
+}
+.checkout-transmission-menu .transmission-group-manual .transmission-option>svg{width:22px;height:22px}
 .checkout-transmission-menu .transmission-option-whatsapp>svg{color:#178f4a}
 .checkout-transmission-menu .transmission-option-outlook>svg{color:#1473e6}
 .checkout-transmission-menu .transmission-option-email>svg{color:var(--taupe-dark)}
-.checkout-transmission-menu .transmission-note{margin:1px 3px 0;color:var(--muted);font-size:9px;line-height:1.35}
 .quote-head-actions{position:relative;display:flex;flex:0 0 auto;align-items:center;gap:6px}
 .quote-head-actions .action-menu{top:calc(100% + 7px);right:0}
 .quote-head-actions .action-menu button{

@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.2";
+  const RELEASE_VERSION = "5.3.3";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -1457,7 +1457,7 @@
     if (emailButton) {
       emailButton.disabled = !hasLines || !desktopEmailAvailable;
       emailButton.title = desktopEmailAvailable
-        ? "Préparer le devis par e-mail"
+        ? "E-mail avec PDF joint"
         : "Le PDF joint automatiquement nécessite l’application de bureau";
     }
     if (!hasLines) setTransmissionMenuOpen(false);

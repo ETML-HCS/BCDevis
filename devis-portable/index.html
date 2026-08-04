@@ -1376,10 +1376,12 @@
     <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
     <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
-    <symbol id="icon-pdf" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4"></path><path d="M8 17v-5h1.2a1.45 1.45 0 0 1 0 2.9H8M12 17v-5h1a2.5 2.5 0 0 1 0 5h-1M17 17v-5h3M17 14.4h2.3"></path></symbol>
+    <symbol id="icon-pdf" viewBox="0 0 24 24"><path d="M6 2.5h8l4 4V21H6zM14 2.5V7h4"></path><path d="M12 10v7m0 0-3-3m3 3 3-3M9 20h6"></path></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2.4-7.6L3 11Z"></path><path d="m10.6 13.4 4.8-4.8"></path></symbol>
     <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></symbol>
+    <symbol id="icon-mail-attach" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path><path d="M17.5 11.5v4.2a2.3 2.3 0 0 1-4.6 0v-4.4a1.4 1.4 0 0 1 2.8 0v4.1a.55.55 0 0 1-1.1 0v-3"></path></symbol>
+    <symbol id="icon-web-mail" viewBox="0 0 24 24"><rect x="3" y="6" width="15" height="12" rx="2"></rect><path d="m4 8 6.5 5L17 8"></path><circle cx="18" cy="7" r="3"></circle><path d="M15 7h6M18 4a5 5 0 0 1 0 6M18 4a5 5 0 0 0 0 6"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
     <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h6M16 14h1"></path></symbol>
@@ -1709,10 +1711,17 @@
             <button class="button primary checkout-icon-action" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S" data-tooltip="PDF"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></button>
             <button class="button checkout-transmit-trigger checkout-icon-action" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis" data-tooltip="Envoyer"><svg aria-hidden="true"><use href="#icon-send"></use></svg></button>
             <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden>
-              <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
-              <button class="transmission-option transmission-option-outlook" id="checkoutOutlookWebButton" type="button" role="menuitem" aria-label="Préparer le devis dans Outlook Web" title="Préparer le devis dans Outlook Web"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Outlook Web</strong><small id="checkoutOutlookWebRecipient">Destinataire à saisir</small></span></button>
-              <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Préparer le devis dans l’application e-mail" title="Préparer le devis dans l’application e-mail"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Application e-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
-              <p class="transmission-note">Outlook Web ouvre le message prérempli : joignez le PDF créé dans Téléchargements. L’application e-mail joint le PDF automatiquement.</p>
+              <div class="transmission-group transmission-group-auto" role="group" aria-labelledby="transmissionAutoLabel">
+                <p class="transmission-group-label" id="transmissionAutoLabel">Joint auto</p>
+                <button class="transmission-option transmission-option-email" id="checkoutEmailButton" type="button" role="menuitem" aria-label="Envoyer par l’application e-mail avec le PDF joint automatiquement" title="E-mail avec PDF joint"><svg aria-hidden="true"><use href="#icon-mail-attach"></use></svg><span><strong>E-mail</strong><small id="checkoutEmailRecipient">Destinataire à saisir</small></span></button>
+              </div>
+              <div class="transmission-group transmission-group-manual" role="group" aria-labelledby="transmissionManualLabel">
+                <p class="transmission-group-label" id="transmissionManualLabel">PDF à joindre</p>
+                <div class="transmission-manual-grid">
+                  <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp, PDF à joindre manuellement" title="WhatsApp — PDF à joindre (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prêt</small></span></button>
+                  <button class="transmission-option transmission-option-outlook" id="checkoutOutlookWebButton" type="button" role="menuitem" aria-label="Préparer le devis dans Outlook Web, PDF à joindre manuellement" title="Outlook Web — PDF à joindre"><svg aria-hidden="true"><use href="#icon-web-mail"></use></svg><span><strong>Outlook</strong><small id="checkoutOutlookWebRecipient">Destinataire à saisir</small></span></button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1998,14 +2007,14 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 5.3.2</p>
+        <p class="release-notes-version">Mise à jour 5.3.3</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">Trois sorties, trois icônes.</p>
+        <p id="releaseNotesIntro">PDF plus net, envoi plus direct.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-print"></use></svg></span><div><strong>Imprimer</strong><p>Une imprimante, sans texte superflu.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>PDF</strong><p>Un document PDF immédiatement reconnaissable.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-send"></use></svg></span><div><strong>Envoyer</strong><p>L’envoi reste accessible en un geste.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>PDF net</strong><p>Un document et une flèche plus lisibles.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-mail-attach"></use></svg></span><div><strong>Joint auto</strong><p>L’e-mail avec PDF reste seul et prioritaire.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-send"></use></svg></span><div><strong>À joindre</strong><p>WhatsApp et Outlook sont regroupés.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
     </section>

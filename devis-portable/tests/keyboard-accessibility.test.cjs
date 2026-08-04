@@ -141,6 +141,11 @@ assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Envoye
 for (const id of ["checkoutWhatsAppButton", "checkoutOutlookWebButton", "checkoutEmailButton"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Envoyer`);
 }
+assert.match(html, /class="transmission-group transmission-group-auto" role="group"[^>]*>[\s\S]*?Joint auto[\s\S]*?id="checkoutEmailButton"[\s\S]*?<\/div>\s*<div class="transmission-group transmission-group-manual"/, "L’e-mail avec PDF joint automatiquement doit être proposé en premier et seul");
+assert.match(html, /class="transmission-group transmission-group-manual" role="group"[^>]*>[\s\S]*?PDF à joindre[\s\S]*?id="checkoutWhatsAppButton"[\s\S]*?id="checkoutOutlookWebButton"/, "WhatsApp et Outlook doivent être regroupés quand le PDF reste à joindre");
+assert.match(html, /id="checkoutEmailButton"[^>]*>[\s\S]*?<use href="#icon-mail-attach">/, "L’e-mail automatique doit montrer la pièce jointe");
+assert.match(html, /id="checkoutOutlookWebButton"[^>]*>[\s\S]*?<use href="#icon-web-mail">/, "Outlook Web doit avoir une icône distincte");
+assert.match(styles, /\.transmission-manual-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/, "Les envois avec ajout manuel doivent rester visibles côte à côte");
 assert.match(html, /id="checkoutOutlookWebRecipient">Destinataire à saisir</, "Outlook Web doit expliquer le destinataire manquant");
 assert.match(html, /id="checkoutEmailRecipient">Destinataire à saisir</, "Le choix E-mail doit expliquer le destinataire manquant");
 assert.match(app, /function setTransmissionMenuOpen/, "Le menu Envoyer doit exposer un état ouvert et fermé");

@@ -1,6 +1,6 @@
 "use strict";
 
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("node:fs/promises");
 const path = require("node:path");
 
@@ -93,6 +93,31 @@ async function auditCheckoutQuantities(window) {
   return result;
 }
 
+async function auditTransmissionMenu(window) {
+  const result = await window.webContents.executeJavaScript(`(() => {
+    document.querySelector("#checkoutEmailButton").disabled = false;
+    document.querySelector("#checkoutTransmitButton").click();
+    const menu = document.querySelector("#checkoutTransmissionMenu");
+    const menuRect = menu.getBoundingClientRect();
+    const autoGroup = menu.querySelector(".transmission-group-auto");
+    const manualGroup = menu.querySelector(".transmission-group-manual");
+    const manualGrid = menu.querySelector(".transmission-manual-grid");
+    return {
+      visible: !menu.hidden,
+      contained: menuRect.left >= 0 && menuRect.right <= innerWidth + 1 && menuRect.top >= 0 && menuRect.bottom <= innerHeight + 1,
+      labels: [...menu.querySelectorAll(".transmission-group-label")].map((label) => label.textContent.trim()),
+      autoOnly: autoGroup?.querySelectorAll('[role="menuitem"]').length === 1 && autoGroup.contains(document.querySelector("#checkoutEmailButton")),
+      manualTogether: manualGroup?.querySelectorAll('[role="menuitem"]').length === 2 && manualGroup.contains(document.querySelector("#checkoutWhatsAppButton")) && manualGroup.contains(document.querySelector("#checkoutOutlookWebButton")),
+      manualColumns: getComputedStyle(manualGrid).gridTemplateColumns.split(" ").filter(Boolean).length,
+      pdfIconPath: document.querySelector('#icon-pdf path:nth-of-type(2)')?.getAttribute("d"),
+      emailIcon: document.querySelector("#checkoutEmailButton use")?.getAttribute("href"),
+      outlookIcon: document.querySelector("#checkoutOutlookWebButton use")?.getAttribute("href")
+    };
+  })()`);
+  if (!result.visible || !result.contained || result.labels.join("|") !== "Joint auto|PDF à joindre" || !result.autoOnly || !result.manualTogether || result.manualColumns !== 2 || !result.pdfIconPath?.includes("M12 10v7") || result.emailIcon !== "#icon-mail-attach" || result.outlookIcon !== "#icon-web-mail") throw new Error(`Envoi groupé invalide ${JSON.stringify(result)}`);
+  return result;
+}
+
 async function revealCheckoutDelete(window) {
   const result = await window.webContents.executeJavaScript(`(async () => {
     const line = document.querySelector(".cart-line");
@@ -168,6 +193,8 @@ async function hoverDesktopDelete(window) {
 
 async function main() {
   await fs.mkdir(OUTPUT_PATH, { recursive: true });
+  ipcMain.handle("bcdevis:window-is-maximized", () => false);
+  ipcMain.handle("bcdevis:startup-get", () => false);
   const window = new BrowserWindow({
     show: false,
     width: 1180,
@@ -186,7 +213,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.3.2.png");
+    await capture(window, "00-nouveautes-5.3.3.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
@@ -207,6 +234,9 @@ async function main() {
     })()`);
     const checkout = await auditCheckoutQuantities(window);
     await capture(window, "02-ipad-paysage-caisse.png");
+    const transmission = await auditTransmissionMenu(window);
+    await capture(window, "02a-ipad-paysage-envoi.png");
+    await window.webContents.executeJavaScript(`document.querySelector("#checkoutTransmitButton").click()`);
     const deleteSwipe = await revealCheckoutDelete(window);
     await capture(window, "02b-ipad-paysage-caisse-suppression.png");
     await window.webContents.executeJavaScript(`document.querySelector('.cart-line-delete-zone [data-line-action="remove"]')?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }))`);
@@ -230,6 +260,9 @@ async function main() {
     await window.webContents.executeJavaScript(`document.querySelector('[data-panel="checkoutPanel"]').click()`);
     const splitCheckout = await auditCheckoutQuantities(window);
     await capture(window, "06-ipad-split-view-caisse.png");
+    const splitTransmission = await auditTransmissionMenu(window);
+    await capture(window, "06a-ipad-split-view-envoi.png");
+    await window.webContents.executeJavaScript(`document.querySelector("#checkoutTransmitButton").click()`);
 
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector("#settingsButton").click();
@@ -245,7 +278,7 @@ async function main() {
     await capture(window, "08-desktop-caisse-poubelle.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, checkout, deleteSwipe, portrait, splitView, splitCheckout, desktopCheckout, desktopDelete, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

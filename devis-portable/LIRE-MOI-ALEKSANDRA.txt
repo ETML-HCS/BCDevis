@@ -1,23 +1,23 @@
-BCDevis 5.3.2 - Livrable pour Aleksandra
+BCDevis 5.3.3 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.3.2
+NOUVEAUTES 5.3.3
 
-- Imprimer, PDF et Envoyer utilisent uniquement des pictogrammes.
-- PDF possède une icône de document dédiée.
-- Les infobulles et libellés d'accessibilité restent disponibles.
-- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.2.
+- PDF utilise une icône de document avec flèche plus nette.
+- Joint auto place l'e-mail avec PDF joint seul et en premier.
+- PDF à joindre regroupe WhatsApp et Outlook côte à côte.
+- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.3.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.3.2.exe
+  BCDevis-5.3.3.exe
 
 2-Linux
-  BCDevis-5.3.2-linux-x86_64.AppImage
+  BCDevis-5.3.3-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.3.2-chromeos.zip
+  BCDevis-5.3.3-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -30,7 +30,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.3.2.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.3.3.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -44,14 +44,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.3.2-linux-x86_64.AppImage
-  ./BCDevis-5.3.2-linux-x86_64.AppImage
+  chmod +x BCDevis-5.3.3-linux-x86_64.AppImage
+  ./BCDevis-5.3.3-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.3.2-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.3.3-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -66,10 +66,11 @@ changer de Chromebook ou de profil, créer une sauvegarde complète JSON.
 Sous ChromeOS, le bouton PDF ouvre l'impression : choisir Enregistrer au
 format PDF.
 
-OUTLOOK WEB
+ENVOYER
 
-Outlook Web ouvre un message prérempli dans le navigateur. BCDevis crée le
-PDF dans Téléchargements afin de pouvoir le joindre manuellement au message.
+Joint auto ouvre l'application e-mail avec le PDF déjà joint. PDF à joindre
+regroupe WhatsApp et Outlook Web ; BCDevis crée alors le PDF dans Téléchargements
+afin de pouvoir l'ajouter manuellement au message.
 
 MODELE DE DEVIS
 
