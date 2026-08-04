@@ -124,6 +124,8 @@ html.bcdevis-window-overlay .window-controls{
   border-radius:8px;
   background:rgba(255,255,255,.08);
   opacity:.58;
+  pointer-events:auto;
+  isolation:isolate;
   transition:width .16s ease,opacity .16s ease,background-color .16s ease,box-shadow .16s ease;
   -webkit-app-region:no-drag;
   backdrop-filter:blur(8px);
@@ -145,8 +147,9 @@ html.bcdevis-window-overlay .window-controls:hover,
 html.bcdevis-window-overlay .window-controls:focus-within{
   width:126px;
   opacity:1;
-  background:rgba(255,255,255,.88);
+  background:#fff;
   box-shadow:0 8px 22px rgba(0,0,0,.14);
+  backdrop-filter:none;
 }
 html.bcdevis-window-overlay .window-controls:hover::before,
 html.bcdevis-window-overlay .window-controls:focus-within::before{
@@ -200,13 +203,16 @@ html.bcdevis-window-overlay .window-controls svg{width:16px;height:16px;stroke-w
   }
   html.bcdevis-window-overlay .checkout-panel.is-full-height .receipt-head{
     /* Le rail replié garde sa place ; son déploiement passe au-dessus par z-index. */
-    padding-right:38px;
+    padding-right:34px;
   }
 }
 @media (hover:none),(pointer:coarse){
   html.bcdevis-window-overlay .window-controls{
     width:126px;
     opacity:1;
+    background:#fff;
+    box-shadow:0 8px 22px rgba(0,0,0,.14);
+    backdrop-filter:none;
   }
   html.bcdevis-window-overlay .window-controls::before{opacity:0}
   html.bcdevis-window-overlay .window-controls button{opacity:1;pointer-events:auto;transform:none}
@@ -1627,7 +1633,10 @@ html[data-theme].bcdevis-window-overlay .window-controls{
 }
 html[data-theme].bcdevis-window-overlay .window-controls:hover,
 html[data-theme].bcdevis-window-overlay .window-controls:focus-within{
-  background:color-mix(in srgb,var(--surface-raised) 92%,transparent);
+  background:var(--surface-raised);
+}
+@media (hover:none),(pointer:coarse){
+  html[data-theme].bcdevis-window-overlay .window-controls{background:var(--surface-raised)}
 }
 html[data-theme].bcdevis-window-overlay .window-controls button:hover{
   color:var(--ink);

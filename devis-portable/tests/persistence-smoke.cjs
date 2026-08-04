@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.7 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.7") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.8 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.8") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -130,6 +130,7 @@ async function run() {
       if (Math.max(...quoteHeaderRects.map((rect) => rect.width)) - Math.min(...quoteHeaderRects.map((rect) => rect.width)) > 1 || quoteHeaderRects.some((rect) => rect.right > checkoutRect.right + 1)) throw new Error("Les actions de l’en-tête de caisse sont déséquilibrées ou débordent");
       const windowControlsRect = document.querySelector("#windowControls").getBoundingClientRect();
       const receiptHeadRect = document.querySelector(".receipt-head").getBoundingClientRect();
+      const restingReceiptPadding = Number.parseFloat(getComputedStyle(document.querySelector(".receipt-head")).paddingRight);
       const centerDelta = Math.abs((receiptHeadRect.top + receiptHeadRect.height / 2) - (windowControlsRect.top + windowControlsRect.height / 2));
       if (centerDelta > 2) throw new Error("Les contrôles de fenêtre et l’en-tête du devis ne partagent pas la même ligne");
       const overlapsWindowControls = quoteHeaderRects.some((rect) => (
@@ -139,8 +140,11 @@ async function run() {
         && rect.bottom > windowControlsRect.top
       ));
       if (overlapsWindowControls) throw new Error("Les actions de l’en-tête de caisse sont recouvertes par les contrôles de la fenêtre");
+      if (restingReceiptPadding < 30 || restingReceiptPadding > 36) throw new Error("Le rail replié réserve encore trop de place dans la caisse");
       document.querySelector("#windowMinimizeButton").focus();
       const expandedWindowControlsRect = document.querySelector("#windowControls").getBoundingClientRect();
+      const expandedWindowControlsStyle = getComputedStyle(document.querySelector("#windowControls"));
+      const expandedHitTarget = document.elementFromPoint(expandedWindowControlsRect.left + 2, expandedWindowControlsRect.top + expandedWindowControlsRect.height / 2);
       const overlapsExpandedWindowControls = quoteHeaderRects.some((rect) => (
         rect.left < expandedWindowControlsRect.right
         && rect.right > expandedWindowControlsRect.left
@@ -149,6 +153,7 @@ async function run() {
       ));
       if (expandedWindowControlsRect.width < 120 || Number.parseInt(getComputedStyle(document.querySelector("#windowControls")).zIndex, 10) <= (Number.parseInt(getComputedStyle(document.querySelector(".receipt-head")).zIndex, 10) || 0)) throw new Error("Les contrôles de fenêtre déployés ne passent pas correctement au-dessus du devis");
       if (!overlapsExpandedWindowControls) throw new Error("Le rail déployé ne récupère pas l’espace réservé inutilement dans l’en-tête du devis");
+      if (expandedWindowControlsStyle.backgroundColor.startsWith("rgba") || !document.querySelector("#windowControls").contains(expandedHitTarget)) throw new Error("Le rail déployé n’est pas opaque ou laisse passer les clics");
       document.querySelector("#newQuoteButton").focus();
       const familyPanelRect = document.querySelector("#familyPanel").getBoundingClientRect();
       const familyHeadRect = document.querySelector(".family-head").getBoundingClientRect();

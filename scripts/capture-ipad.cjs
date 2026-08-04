@@ -179,6 +179,8 @@ async function auditWindowHeader(window) {
     controls.querySelector("#windowMinimizeButton").focus();
     await new Promise((resolve) => setTimeout(resolve, 220));
     const expanded = controls.getBoundingClientRect();
+    const expandedStyle = getComputedStyle(controls);
+    const expandedHitTarget = document.elementFromPoint(expanded.left + 2, expanded.top + expanded.height / 2);
     return {
       receiptTop: Math.round(receipt.top),
       receiptHeight: Math.round(receipt.height),
@@ -189,10 +191,13 @@ async function auditWindowHeader(window) {
       expandedWidth: Math.round(expanded.width),
       collapsedClear: !overlaps(collapsed),
       expandedOverlays: overlaps(expanded),
+      restingPadding: Number.parseFloat(getComputedStyle(document.querySelector(".receipt-head")).paddingRight),
+      expandedOpaque: !expandedStyle.backgroundColor.startsWith("rgba"),
+      expandedOwnsClicks: controls.contains(expandedHitTarget),
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || !result.collapsedClear || !result.expandedOverlays || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
+  if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || result.restingPadding < 30 || result.restingPadding > 36 || !result.collapsedClear || !result.expandedOverlays || !result.expandedOpaque || !result.expandedOwnsClicks || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
   return result;
 }
 

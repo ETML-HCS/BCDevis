@@ -56,6 +56,9 @@ assert.match(styles, /html\.bcdevis-window-overlay \.topbar\{[\s\S]*?-webkit-app
 assert.match(styles, /html\.bcdevis-window-overlay \.topbar\{[\s\S]*?z-index:auto/, "Les contrôles doivent pouvoir apparaître au-dessus de la caisse");
 assert.match(styles, /-webkit-app-region:no-drag/, "Les actions de l'en-tête doivent rester cliquables");
 assert.match(styles, /\.window-controls:hover,[\s\S]*?\.window-controls:focus-within\{[\s\S]*?width:126px/, "Les contrôles doivent se révéler discrètement au survol ou au clavier");
+assert.match(styles, /\.checkout-panel\.is-full-height \.receipt-head\{[\s\S]*?padding-right:34px/, "Le rail replié ne doit réserver que 34 px dans la caisse");
+assert.match(styles, /\.window-controls:hover,[\s\S]*?\.window-controls:focus-within\{[\s\S]*?background:#fff[\s\S]*?backdrop-filter:none/, "Le rail déployé doit être opaque et bloquer les clics au travers");
+assert.match(styles, /@media \(hover:none\),\(pointer:coarse\)\{[\s\S]*?\.window-controls\{[\s\S]*?width:126px[\s\S]*?background:#fff[\s\S]*?receipt-head\{padding-right:118px\}/, "Le rail complet doit rester réservé uniquement sans hover");
 for (const id of ["windowMinimizeButton", "windowMaximizeButton", "windowCloseButton"]) {
   assert.match(index, new RegExp(`id="${id}"[^>]+aria-label="[^"]+"`), `${id} doit rester accessible`);
 }

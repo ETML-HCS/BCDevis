@@ -1,23 +1,23 @@
-BCDevis 5.3.7 - Livrable pour Aleksandra
+BCDevis 5.3.8 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.3.7
+NOUVEAUTES 5.3.8
 
-- La zone des soins ne garde visuellement que la loupe.
-- Le client vide devient une icône, puis affiche uniquement son nom.
-- Les contrôles de fenêtre libèrent leur place au repos.
-- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.7.
+- Le rail de fenêtre ne réserve que 34 px au repos.
+- Au survol, il passe à 126 px au-dessus des actions avec un fond opaque.
+- Sur écran tactile sans hover, sa largeur complète reste visible.
+- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.8.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.3.7.exe
+  BCDevis-5.3.8.exe
 
 2-Linux
-  BCDevis-5.3.7-linux-x86_64.AppImage
+  BCDevis-5.3.8-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.3.7-chromeos.zip
+  BCDevis-5.3.8-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -30,7 +30,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.3.7.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.3.8.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -44,14 +44,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.3.7-linux-x86_64.AppImage
-  ./BCDevis-5.3.7-linux-x86_64.AppImage
+  chmod +x BCDevis-5.3.8-linux-x86_64.AppImage
+  ./BCDevis-5.3.8-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.3.7-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.3.8-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
