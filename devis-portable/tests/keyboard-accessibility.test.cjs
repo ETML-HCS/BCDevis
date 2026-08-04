@@ -129,25 +129,24 @@ assert.match(app, /function setQuoteMenuOpen/, "Le menu du devis doit exposer un
 assert.match(app, /quoteMenuItems/, "Le menu du devis doit être navigable au clavier");
 assert.doesNotMatch(html, /id="checkoutFocusToggle"|id="familyFooter"|class="checkout-actions"/, "Les anciens contrôles inférieurs doivent être retirés");
 assert.match(html, /class="checkout-primary-actions" aria-label="Actions rapides du devis"/, "Les actions essentielles doivent rester dans la caisse");
-for (const id of ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton"]) {
+for (const id of ["checkoutPrintButton", "checkoutPdfButton", "checkoutEmailButton", "checkoutTransmitButton"]) {
   assert.match(html, new RegExp(`id="${id}"`), `${id} doit rester directement accessible dans la caisse`);
   assert.match(html, new RegExp(`id="${id}"[^>]*data-tooltip="[^"]+"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} doit être un SVG seul avec info-bulle`);
 }
-assert.equal((html.match(/id="checkout(?:Print|Pdf|Transmit)Button"/g) || []).length, 3, "La caisse doit contenir exactement trois actions rapides");
+assert.equal((html.match(/id="checkout(?:Print|Pdf|Email|Transmit)Button"/g) || []).length, 4, "Le devis doit contenir exactement quatre actions rapides");
 assert.match(html, /id="checkoutPdfButton"[^>]*aria-label="Télécharger le PDF"[^>]*>[\s\S]*?<use href="#icon-pdf">/, "PDF doit utiliser une icône explicite");
+assert.match(html, /id="checkoutEmailButton"[^>]*aria-label="Envoyer par e-mail avec le PDF joint"[^>]*>[\s\S]*?<use href="#icon-mail-attach">/, "L’e-mail avec pièce jointe doit être directement accessible");
 assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"/, "Envoyer doit annoncer son menu sans texte visible");
-assert.doesNotMatch(html, /id="checkout(?:Print|Pdf|Transmit)Button"[^>]*>[\s\S]*?<span>(?:Imprimer|PDF|Envoyer)<\/span>/, "Les sorties ne doivent plus afficher de texte");
-assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden/, "Le menu d’envoi doit être identifié");
-for (const id of ["checkoutWhatsAppButton", "checkoutOutlookWebButton", "checkoutEmailButton"]) {
+assert.doesNotMatch(html, /id="checkout(?:Print|Pdf|Email|Transmit)Button"[^>]*>\s*<span/, "Les sorties ne doivent plus afficher de texte");
+assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="PDF à joindre" hidden/, "Le menu d’envoi doit annoncer les pièces à joindre");
+for (const id of ["checkoutWhatsAppButton", "checkoutOutlookWebButton"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Envoyer`);
 }
-assert.match(html, /class="transmission-group transmission-group-auto" role="group"[^>]*>[\s\S]*?Joint auto[\s\S]*?id="checkoutEmailButton"[\s\S]*?<\/div>\s*<div class="transmission-group transmission-group-manual"/, "L’e-mail avec PDF joint automatiquement doit être proposé en premier et seul");
 assert.match(html, /class="transmission-group transmission-group-manual" role="group"[^>]*>[\s\S]*?PDF à joindre[\s\S]*?id="checkoutWhatsAppButton"[\s\S]*?id="checkoutOutlookWebButton"/, "WhatsApp et Outlook doivent être regroupés quand le PDF reste à joindre");
-assert.match(html, /id="checkoutEmailButton"[^>]*>[\s\S]*?<use href="#icon-mail-attach">/, "L’e-mail automatique doit montrer la pièce jointe");
+assert.doesNotMatch(html, /transmission-group-auto|Joint auto|id="checkoutEmailButton"[^>]*role="menuitem"/, "Le bouton e-mail direct ne doit plus être caché dans le menu Envoyer");
 assert.match(html, /id="checkoutOutlookWebButton"[^>]*>[\s\S]*?<use href="#icon-web-mail">/, "Outlook Web doit avoir une icône distincte");
 assert.match(styles, /\.transmission-manual-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/, "Les envois avec ajout manuel doivent rester visibles côte à côte");
 assert.match(html, /id="checkoutOutlookWebRecipient">Destinataire à saisir</, "Outlook Web doit expliquer le destinataire manquant");
-assert.match(html, /id="checkoutEmailRecipient">Destinataire à saisir</, "Le choix E-mail doit expliquer le destinataire manquant");
 assert.match(app, /function setTransmissionMenuOpen/, "Le menu Envoyer doit exposer un état ouvert et fermé");
 assert.match(app, /function shareQuoteViaOutlookWeb/, "Le transfert par Outlook Web doit être implémenté");
 assert.match(app, /https:\/\/outlook\.office\.com\/mail\/deeplink\/compose\?to=\$\{encodeURIComponent\(recipient\)\}&subject=\$\{encodeURIComponent\(subject\)\}&body=\$\{encodeURIComponent\(body\)\}/, "Outlook Web doit recevoir le destinataire, l’objet et le message encodés");

@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.4 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.4") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.5 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.5") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -113,7 +113,7 @@ async function run() {
       if (!document.documentElement.classList.contains("checkout-focus")) throw new Error("Le mode caisse permanent n’est pas initialisé");
       if (document.querySelector("#checkoutFocusToggle") || document.querySelector("#familyFooter") || document.querySelector(".checkout-actions")) throw new Error("Les anciens bandeaux d’actions doivent être supprimés");
       const checkoutActions = [...document.querySelectorAll(".checkout-primary-actions > button")];
-      if (checkoutActions.length !== 3) throw new Error("La caisse doit conserver exactement trois actions rapides");
+      if (checkoutActions.length !== 4) throw new Error("Le devis doit conserver exactement quatre actions rapides");
       const checkoutActionRects = checkoutActions.map((button) => button.getBoundingClientRect());
       if (checkoutActions.some((button) => button.textContent.trim() || button.querySelectorAll(":scope > svg").length !== 1 || !button.dataset.tooltip)) throw new Error("Les sorties du devis doivent rester des SVG seuls avec info-bulle");
       if (checkoutActionRects.some((rect) => rect.width < 48 || rect.height < 48) || Math.max(...checkoutActionRects.map((rect) => rect.width)) - Math.min(...checkoutActionRects.map((rect) => rect.width)) > 1) throw new Error("Les sorties SVG ne conservent pas des cibles équilibrées");
@@ -343,7 +343,7 @@ async function run() {
       if (getComputedStyle(installmentRows[0].children[0]).textAlign !== "center" || Number.parseFloat(getComputedStyle(installmentRows[1].children[0]).fontSize) > 11) throw new Error("Le tableau d’échelonnement n’est pas centré et compact");
       const actionRects = checkoutActions.map((button) => button.getBoundingClientRect());
       if (actionRects.some((rect) => rect.bottom > checkoutRect.bottom + 1)) throw new Error("Les actions rapides débordent de la caisse");
-      if (Math.max(...actionRects.map((rect) => rect.width)) - Math.min(...actionRects.map((rect) => rect.width)) > 1) throw new Error("Les trois actions rapides doivent avoir la même largeur");
+      if (Math.max(...actionRects.map((rect) => rect.width)) - Math.min(...actionRects.map((rect) => rect.width)) > 1) throw new Error("Les quatre actions rapides doivent avoir la même largeur");
       if (document.querySelector("#couponToggle").textContent.trim() !== "Coupon") throw new Error("L’action coupon n’utilise pas son libellé court explicite");
 
       const priceWithoutTax = document.querySelector("#grandTotalValue").textContent;
@@ -400,18 +400,16 @@ async function run() {
       client.elements.phone.value = "+41 79 111 22 33";
       client.elements.email.value = "sophie@example.test";
       client.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      if (document.querySelector("#checkoutEmailButton use")?.getAttribute("href") !== "#icon-mail-attach" || document.querySelector("#checkoutEmailButton").closest("#checkoutTransmissionMenu")) throw new Error("L’e-mail avec PDF joint n’est pas directement accessible dans le devis");
       document.querySelector("#checkoutTransmitButton").click();
-      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp, Outlook Web et application e-mail");
+      if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp et Outlook Web");
       const transmissionMenuRect = document.querySelector("#checkoutTransmissionMenu").getBoundingClientRect();
-      if (transmissionMenuRect.top < 0 || transmissionMenuRect.bottom > innerHeight || transmissionMenuRect.left < 0 || transmissionMenuRect.right > innerWidth) throw new Error("Le menu Envoyer sort de la fenêtre avec ses trois choix");
-      const autoGroup = document.querySelector(".transmission-group-auto");
+      if (transmissionMenuRect.top < 0 || transmissionMenuRect.bottom > innerHeight || transmissionMenuRect.left < 0 || transmissionMenuRect.right > innerWidth) throw new Error("Le menu Envoyer sort de la fenêtre avec ses deux choix");
       const manualGroup = document.querySelector(".transmission-group-manual");
-      if (autoGroup?.querySelectorAll('[role="menuitem"]').length !== 1 || !autoGroup.contains(document.querySelector("#checkoutEmailButton"))) throw new Error("L’e-mail avec PDF joint automatiquement doit rester seul et prioritaire");
       if (manualGroup?.querySelectorAll('[role="menuitem"]').length !== 2 || !manualGroup.contains(document.querySelector("#checkoutWhatsAppButton")) || !manualGroup.contains(document.querySelector("#checkoutOutlookWebButton"))) throw new Error("WhatsApp et Outlook Web doivent être regroupés sous PDF à joindre");
       if (getComputedStyle(document.querySelector(".transmission-manual-grid")).gridTemplateColumns.split(" ").filter(Boolean).length !== 2) throw new Error("Les deux envois manuels doivent rester immédiatement visibles côte à côte");
-      if (document.querySelector("#checkoutEmailButton use")?.getAttribute("href") !== "#icon-mail-attach" || document.querySelector("#checkoutOutlookWebButton use")?.getAttribute("href") !== "#icon-web-mail") throw new Error("Les modes d’envoi doivent avoir des icônes distinctes");
+      if (document.querySelector("#checkoutOutlookWebButton use")?.getAttribute("href") !== "#icon-web-mail") throw new Error("Outlook Web doit conserver une icône distincte");
       if (document.querySelector("#checkoutOutlookWebRecipient").textContent !== "sophie@example.test") throw new Error("Le choix Outlook Web ne reprend pas l’adresse du contact");
-      if (document.querySelector("#checkoutEmailRecipient").textContent !== "sophie@example.test") throw new Error("Le choix E-mail ne reprend pas l’adresse du contact");
       if (!document.querySelector("#checkoutWhatsAppButton") || !document.querySelector("#checkoutOutlookWebButton") || !document.querySelector("#checkoutEmailButton")) throw new Error("Un choix de transmission est absent");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
       if (!document.querySelector("#checkoutTransmissionMenu").hidden || document.activeElement !== document.querySelector("#checkoutTransmitButton")) throw new Error("Échap ne referme pas correctement Envoyer");
@@ -499,7 +497,6 @@ async function run() {
         },
         openExternal: async (url) => { window.__bcdevisFallbackUrl = url; }
       };
-      document.querySelector("#checkoutTransmitButton").click();
       document.querySelector("#checkoutEmailButton").click();
       for (let attempt = 0; attempt < 20 && !window.__bcdevisEmailPayload; attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 25));
@@ -541,7 +538,6 @@ async function run() {
     const emailFailure = await window.webContents.executeJavaScript(`(async () => {
       window.__bcdevisFallbackUrl = null;
       window.bcdevisDesktop.composeEmail = async () => { throw new Error("Client e-mail indisponible"); };
-      document.querySelector("#checkoutTransmitButton").click();
       document.querySelector("#checkoutEmailButton").click();
       for (let attempt = 0; attempt < 40 && document.querySelector("#checkoutEmailButton").hasAttribute("aria-busy"); attempt += 1) {
         await new Promise((resolve) => setTimeout(resolve, 25));

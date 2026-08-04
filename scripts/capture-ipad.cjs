@@ -62,6 +62,8 @@ async function audit(window, label, { minColumns = 2 } = {}) {
 
 async function auditCheckoutQuantities(window) {
   const result = await window.webContents.executeJavaScript(`(() => {
+    const emailButton = document.querySelector("#checkoutEmailButton");
+    if (emailButton) emailButton.disabled = false; // Le harnais visuel n’embarque pas le preload de l’application livrée.
     const line = document.querySelector(".cart-line");
     const steppers = [...document.querySelectorAll(".quantity-stepper")];
     const buttons = steppers.flatMap((stepper) => [...stepper.querySelectorAll(".quantity-stepper-button")]);
@@ -78,6 +80,7 @@ async function auditCheckoutQuantities(window) {
       deleteOutsideControls: Boolean(deleteButton && !line.querySelector(".cart-line-inline-controls")?.contains(deleteButton)),
       deleteHiddenUntilRequested: deleteButton ? Number.parseFloat(getComputedStyle(deleteButton).opacity) === 0 : false,
       iconActionCount: iconActions.length,
+      emailDirectEnabled: Boolean(emailButton && !emailButton.disabled),
       iconActionsOnly: iconActions.every((button) => !button.textContent.trim() && button.querySelectorAll(":scope > svg").length === 1 && button.dataset.tooltip),
       iconTouchTargets: iconActions.map((button) => {
         const rect = button.getBoundingClientRect();
@@ -87,7 +90,7 @@ async function auditCheckoutQuantities(window) {
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.iconActionCount !== 3 || !result.iconActionsOnly || result.pdfIcon !== "#icon-pdf" || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles invalides ${JSON.stringify(result)}`);
+  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.iconActionCount !== 4 || !result.emailDirectEnabled || !result.iconActionsOnly || result.pdfIcon !== "#icon-pdf" || result.horizontalOverflow) throw new Error(`Devis iPad : contrôles invalides ${JSON.stringify(result)}`);
   if (result.touchTargets.some(({ width, height }) => width < 34 || height < 34)) throw new Error(`Caisse iPad : cibles tactiles trop petites ${JSON.stringify(result)}`);
   if (result.iconTouchTargets.some(({ width, height }) => width < 48 || height < 48)) throw new Error(`Caisse iPad : sorties SVG trop petites ${JSON.stringify(result)}`);
   return result;
@@ -99,22 +102,20 @@ async function auditTransmissionMenu(window) {
     document.querySelector("#checkoutTransmitButton").click();
     const menu = document.querySelector("#checkoutTransmissionMenu");
     const menuRect = menu.getBoundingClientRect();
-    const autoGroup = menu.querySelector(".transmission-group-auto");
     const manualGroup = menu.querySelector(".transmission-group-manual");
     const manualGrid = menu.querySelector(".transmission-manual-grid");
     return {
       visible: !menu.hidden,
       contained: menuRect.left >= 0 && menuRect.right <= innerWidth + 1 && menuRect.top >= 0 && menuRect.bottom <= innerHeight + 1,
       labels: [...menu.querySelectorAll(".transmission-group-label")].map((label) => label.textContent.trim()),
-      autoOnly: autoGroup?.querySelectorAll('[role="menuitem"]').length === 1 && autoGroup.contains(document.querySelector("#checkoutEmailButton")),
       manualTogether: manualGroup?.querySelectorAll('[role="menuitem"]').length === 2 && manualGroup.contains(document.querySelector("#checkoutWhatsAppButton")) && manualGroup.contains(document.querySelector("#checkoutOutlookWebButton")),
       manualColumns: getComputedStyle(manualGrid).gridTemplateColumns.split(" ").filter(Boolean).length,
       pdfIconPath: document.querySelector('#icon-pdf path:nth-of-type(2)')?.getAttribute("d"),
-      emailIcon: document.querySelector("#checkoutEmailButton use")?.getAttribute("href"),
+      emailDirect: !menu.contains(document.querySelector("#checkoutEmailButton")) && document.querySelector("#checkoutEmailButton use")?.getAttribute("href") === "#icon-mail-attach",
       outlookIcon: document.querySelector("#checkoutOutlookWebButton use")?.getAttribute("href")
     };
   })()`);
-  if (!result.visible || !result.contained || result.labels.join("|") !== "Joint auto|PDF à joindre" || !result.autoOnly || !result.manualTogether || result.manualColumns !== 2 || !result.pdfIconPath?.includes("M12 10v7") || result.emailIcon !== "#icon-mail-attach" || result.outlookIcon !== "#icon-web-mail") throw new Error(`Envoi groupé invalide ${JSON.stringify(result)}`);
+  if (!result.visible || !result.contained || result.labels.join("|") !== "PDF à joindre" || !result.emailDirect || !result.manualTogether || result.manualColumns !== 2 || !result.pdfIconPath?.includes("M12 10v7") || result.outlookIcon !== "#icon-web-mail") throw new Error(`Envoi groupé invalide ${JSON.stringify(result)}`);
   return result;
 }
 
@@ -240,7 +241,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.3.4.png");
+    await capture(window, "00-nouveautes-5.3.5.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
@@ -300,6 +301,7 @@ async function main() {
     })()`);
     await setViewport(window, 1450, 900);
     const desktopCheckout = await auditDesktopCheckout(window);
+    await window.webContents.executeJavaScript(`document.querySelector("#checkoutEmailButton").disabled = false`);
     await capture(window, "07-desktop-caisse-pack.png");
     const desktopDelete = await hoverDesktopDelete(window);
     await capture(window, "08-desktop-caisse-poubelle.png");
@@ -311,6 +313,7 @@ async function main() {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector('[data-offer-mode="pack"]')?.click();
       document.querySelector(".family-option")?.click();
+      document.querySelector("#checkoutEmailButton").disabled = false;
       document.querySelector(".toast-close")?.click();
     })()`);
     await capture(window, "09-desktop-entete-fenetre-replie.png");

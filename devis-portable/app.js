@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.4";
+  const RELEASE_VERSION = "5.3.5";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -1304,16 +1304,8 @@
   function renderClient() {
     const client = quote.client;
     const clientEmail = String(client.email || "").trim();
-    const emailRecipient = $("#checkoutEmailRecipient");
     const outlookWebRecipient = $("#checkoutOutlookWebRecipient");
-    const desktopEmailAvailable = typeof window.bcdevisDesktop?.composeEmail === "function"
-      && typeof window.bcdevisDesktop?.savePdf === "function";
     if (outlookWebRecipient) outlookWebRecipient.textContent = clientEmail || "Destinataire à saisir";
-    if (emailRecipient) {
-      emailRecipient.textContent = desktopEmailAvailable
-        ? clientEmail || "Destinataire à saisir"
-        : "Application de bureau requise";
-    }
     if (client.name) {
       const initials = client.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
       $("#clientInitials").textContent = initials || "C";
@@ -2410,7 +2402,7 @@
     const trigger = $("#checkoutTransmitButton");
     menu.hidden = !open;
     trigger.setAttribute("aria-expanded", String(open));
-    trigger.setAttribute("aria-label", open ? "Fermer les choix d’envoi" : "Choisir comment envoyer le devis");
+    trigger.setAttribute("aria-label", open ? "Fermer les envois avec PDF à joindre" : "Choisir un envoi avec PDF à joindre");
     if (open) {
       closeTileDetail({ immediate: true });
       setAppMenuOpen(false);

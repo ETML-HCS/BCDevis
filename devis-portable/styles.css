@@ -1203,7 +1203,7 @@ html[data-theme] .family-visibility-icon svg{
   .brand-block{display:none}
 }
 
-/* Caisse : trois actions essentielles restent visibles, la liste prend le reste. */
+/* Devis : quatre actions SVG restent visibles, la liste prend le reste. */
 .checkout-primary-actions{
   position:relative;
   display:flex;
@@ -1263,6 +1263,7 @@ html[data-theme] .family-visibility-icon svg{
 }
 .checkout-primary-actions .checkout-transmit-trigger:hover,
 .checkout-primary-actions .checkout-transmit-trigger[aria-expanded="true"]{border-color:var(--ink);background:var(--taupe)}
+.checkout-primary-actions .checkout-email-direct{color:var(--taupe-dark)}
 .checkout-transmission-menu{
   position:absolute;
   z-index:18;
@@ -1270,7 +1271,7 @@ html[data-theme] .family-visibility-icon svg{
   bottom:calc(100% + 8px);
   display:grid;
   left:50%;
-  width:min(344px,calc(100vw - 28px));
+  width:min(300px,calc(100vw - 28px));
   padding:8px;
   border:1px solid var(--line);
   border-radius:14px;
@@ -1311,11 +1312,6 @@ html[data-theme] .family-visibility-icon svg{
 .checkout-transmission-menu .transmission-option small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .checkout-transmission-menu .transmission-option strong{font-size:12px}
 .checkout-transmission-menu .transmission-option small{margin-top:2px;color:var(--muted);font-size:9px}
-.checkout-transmission-menu .transmission-group-auto .transmission-option{
-  min-height:58px;
-  border-color:var(--taupe-dark);
-  background:var(--taupe-light);
-}
 .checkout-transmission-menu .transmission-manual-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .checkout-transmission-menu .transmission-group-manual .transmission-option{
   min-width:0;
@@ -1328,7 +1324,6 @@ html[data-theme] .family-visibility-icon svg{
 .checkout-transmission-menu .transmission-group-manual .transmission-option>svg{width:22px;height:22px}
 .checkout-transmission-menu .transmission-option-whatsapp>svg{color:#178f4a}
 .checkout-transmission-menu .transmission-option-outlook>svg{color:#1473e6}
-.checkout-transmission-menu .transmission-option-email>svg{color:var(--taupe-dark)}
 .quote-head-actions{position:relative;display:flex;flex:0 0 auto;align-items:center;gap:6px}
 .quote-head-actions .action-menu{top:calc(100% + 7px);right:0}
 .quote-head-actions .action-menu button{
@@ -1722,7 +1717,6 @@ html[data-theme] .checkout-transmission-menu .transmission-option:hover{
 }
 html[data-theme] .checkout-transmission-menu .transmission-option-whatsapp>svg{color:var(--success)}
 html[data-theme] .checkout-transmission-menu .transmission-option-outlook>svg{color:#4d9cff}
-html[data-theme] .checkout-transmission-menu .transmission-option-email>svg{color:var(--taupe-dark)}
 
 html[data-theme] .service-zone-icon{
   color:var(--accent);

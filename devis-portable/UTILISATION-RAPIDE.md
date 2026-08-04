@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.3.4 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
+  <p class="version">Version 5.3.5 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -25,7 +25,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-5.3.4.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-5.3.5.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -34,15 +34,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-5.3.4-linux-x86_64.AppImage
-./BCDevis-5.3.4-linux-x86_64.AppImage
+chmod +x BCDevis-5.3.5-linux-x86_64.AppImage
+./BCDevis-5.3.5-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-5.3.4-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-5.3.5-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -67,7 +67,7 @@ Pour corriger le nom, le temps, le prix ou le pictogramme d’un soin, utilisez 
 5. Cliquez sur **Client** et complétez au minimum son nom.
 6. Vérifiez la date, les quantités, le prix, la TVA et le total.
 7. Cliquez sur **Enregistrer** pour placer le devis dans l'historique.
-8. Choisissez l’icône **PDF**, **Imprimer** ou **Envoyer**. Dans Envoyer, **Joint auto** est séparé de **PDF à joindre**.
+8. Choisissez **Imprimer**, **PDF**, **E-mail** ou **À joindre**.
 
 ## 3. Ajuster une ligne
 
@@ -93,9 +93,9 @@ Le fichier `MODELE-DEVIS-V5.json` fourni avec le livrable peut être importé de
 
 - **PDF** crée le devis A4 dans le dossier Téléchargements. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d'impression.
 - **Imprimer** ouvre l'impression du système.
-- **Envoyer > Joint auto > E-mail** prépare un message avec le PDF joint.
-- **Envoyer > PDF à joindre > WhatsApp** prépare le PDF et ouvre le message ; ajoutez ensuite manuellement le fichier.
-- **Envoyer > PDF à joindre > Outlook** ouvre un message prérempli ; joignez le PDF créé dans **Téléchargements**.
+- **E-mail** prépare directement un message avec le PDF joint.
+- **À joindre > WhatsApp** prépare le PDF et ouvre le message ; ajoutez ensuite manuellement le fichier.
+- **À joindre > Outlook** ouvre un message prérempli ; joignez le PDF créé dans **Téléchargements**.
 
 Un PDF existant n'est jamais écrasé : BCDevis ajoute un numéro au nouveau fichier.
 

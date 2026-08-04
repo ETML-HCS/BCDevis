@@ -1,12 +1,12 @@
-# BCDevis - version 5.3.4
+# BCDevis - version 5.3.5
 
 Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
 
-## Nouveautés 5.3.4
+## Nouveautés 5.3.5
 
-- **Devis** et les contrôles de fenêtre partagent désormais la même ligne.
-- Les actions du devis gardent leur place quand les contrôles se déploient au survol ou au clavier.
-- L’ancien espace vide sous les contrôles a été supprimé.
+- **E-mail** est directement accessible au bas du devis avec le PDF joint automatiquement.
+- **À joindre** regroupe uniquement WhatsApp et Outlook.
+- Les quatre actions restent des SVG compacts avec infobulle.
 - Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
 
 Documents maintenus avec la version 5 :
@@ -18,7 +18,7 @@ Documents maintenus avec la version 5 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-5.3.4.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-5.3.5.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -105,7 +105,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-5.3.4-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-5.3.5-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -133,11 +133,11 @@ La fiche [RACCOURCIS-CLAVIER-V5.md](RACCOURCIS-CLAVIER-V5.md) documente les 16 c
 
 ## Envoyer un devis
 
-La commande **Envoyer** au bas du devis sépare les trois choix selon la pièce jointe :
+Quatre icônes restent visibles au bas du devis : **Imprimer**, **PDF**, **E-mail** et **À joindre**.
 
-- **Joint auto : E-mail** : dans l’application de bureau Windows, macOS ou Linux, ouvre un nouveau message avec l’objet, le texte et le PDF déjà joint. Si le client possède une adresse e-mail, elle est utilisée automatiquement ;
-- **PDF à joindre : WhatsApp** : prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message du devis prérempli ;
-- **PDF à joindre : Outlook** : crée le PDF dans **Téléchargements**, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Il reste uniquement à joindre le PDF téléchargé.
+- **E-mail** ouvre directement un nouveau message avec l’objet, le texte et le PDF déjà joint. Si le client possède une adresse e-mail, elle est utilisée automatiquement ;
+- **À joindre > WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message du devis prérempli ;
+- **À joindre > Outlook** crée le PDF dans **Téléchargements**, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Il reste uniquement à joindre le PDF téléchargé.
 
 Sous Windows, le choix **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, il crée dans **Téléchargements** un brouillon `.eml` contenant déjà le message et le PDF, puis l’ouvre avec la messagerie par défaut. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement le PDF dans **Téléchargements**. Il n’ouvre plus de message `mailto:` sans pièce jointe. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez le fichier enregistré.
 
@@ -155,7 +155,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-5.3.4.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-5.3.5.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -165,7 +165,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.4-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.5-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -173,7 +173,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.4-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.5-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 
