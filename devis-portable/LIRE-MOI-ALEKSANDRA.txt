@@ -1,36 +1,36 @@
-BCDevis 5.3.10 - Livrable pour Aleksandra
+BCDevis 6.0.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.3.10
+NOUVEAUTES 6.0.0
 
-- La loupe reste visible sans créer de ligne au-dessus des prestations.
-- La recherche fermée réserve 0 px ; ouverte, elle apparaît à côté.
-- Le clic, le focus et les formats tactile et bureau ont été contrôlés.
-- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.10.
+- Le suivi des devis peut être activé dans Réglages > Devis.
+- L'Historique colore les devis selon leur dernier statut.
+- L'onglet Suivi filtre les devis et le triangle ouvre leur chronologie.
+- Cet écran de nouveautés apparaît une seule fois pour la version 6.0.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.3.10.exe
+  BCDevis-6.0.0.exe
 
 2-Linux
-  BCDevis-5.3.10-linux-x86_64.AppImage
+  BCDevis-6.0.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.3.10-chromeos.zip
+  BCDevis-6.0.0-chromeos.zip
 
 4-Documentation
-  BCDevis-V5-Utilisation-rapide.pdf
-  BCDevis-V5-Raccourcis-clavier.pdf
-  BCDevis-V5-Mode-d-emploi.pdf
+  BCDevis-V6-Utilisation-rapide.pdf
+  BCDevis-V6-Raccourcis-clavier.pdf
+  BCDevis-V6-Mode-d-emploi.pdf
 
 5-Modele-devis
-  MODELE-DEVIS-V5.json
-  BCDevis-V5-Modele-devis.pdf
+  MODELE-DEVIS-V6.json
+  BCDevis-V6-Modele-devis.pdf
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.3.10.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-6.0.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -44,14 +44,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.3.10-linux-x86_64.AppImage
-  ./BCDevis-5.3.10-linux-x86_64.AppImage
+  chmod +x BCDevis-6.0.0-linux-x86_64.AppImage
+  ./BCDevis-6.0.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.3.10-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-6.0.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -75,7 +75,7 @@ afin de pouvoir l'ajouter manuellement au message.
 MODELE DE DEVIS
 
 Dans BCDevis, ouvrir le menu ... en haut du devis, choisir Importer, puis
-sélectionner MODELE-DEVIS-V5.json. La date et le prochain
+sélectionner MODELE-DEVIS-V6.json. La date et le prochain
 numéro sont attribués automatiquement.
 
 SAUVEGARDE

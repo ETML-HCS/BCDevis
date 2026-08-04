@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.3.10 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
+  <p class="version">Version 6.0.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -25,7 +25,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-5.3.10.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-6.0.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -34,15 +34,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-5.3.10-linux-x86_64.AppImage
-./BCDevis-5.3.10-linux-x86_64.AppImage
+chmod +x BCDevis-6.0.0-linux-x86_64.AppImage
+./BCDevis-6.0.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-5.3.10-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-6.0.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -87,7 +87,9 @@ Pour un soin absent du catalogue ou avec tarif libre, utilisez **Catalogue > Sur
 - Un clic sur une carte de l'historique rouvre le devis.
 - Le menu `...` permet de dupliquer, exporter ou importer un devis.
 
-Le fichier `MODELE-DEVIS-V5.json` fourni avec le livrable peut être importé depuis `...` > **Importer**. Il crée un nouveau devis vierge avec la date, la numérotation et les réglages actuels.
+Pour suivre les réponses des clients, activez **Réglages > Devis > Suivi des devis**. L’Historique affiche alors une couleur et un badge selon le dernier statut. L’onglet **Suivi** permet de filtrer les devis ; le triangle ouvre les changements de statut, les notes et la prochaine relance. Désactiver l’option masque ces informations sans les supprimer.
+
+Le fichier `MODELE-DEVIS-V6.json` fourni avec le livrable peut être importé depuis `...` > **Importer**. Il crée un nouveau devis vierge avec la date, la numérotation et les réglages actuels.
 
 ## 5. Créer ou envoyer le PDF
 
@@ -112,4 +114,4 @@ Sur le nouvel ordinateur, ouvrez **Historique > Restaurer**. La restauration rem
 - Données Windows absentes : vérifiez que le dossier `data` se trouve toujours à côté de l'EXE.
 - Données ChromeOS absentes : vérifiez que vous utilisez le même profil Chrome.
 - Application déjà ouverte : fermez l'ancienne fenêtre avant de lancer la nouvelle version.
-- Tous les raccourcis : ouvrez **Raccourcis** dans l'application ou consultez `RACCOURCIS-CLAVIER-V5.pdf`.
+- Tous les raccourcis : ouvrez **Raccourcis** dans l'application ou consultez `RACCOURCIS-CLAVIER-V6.pdf`.

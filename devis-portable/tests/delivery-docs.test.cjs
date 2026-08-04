@@ -13,17 +13,17 @@ const workflow = read(".github/workflows/livrables.yml").replace(/\r\n?/g, "\n")
 const readme = read("devis-portable/README.md");
 const manual = read("devis-portable/MODE-D-EMPLOI.md");
 const quick = read("devis-portable/UTILISATION-RAPIDE.md");
-const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V5.md");
-const templateGuide = read("devis-portable/MODELE-DEVIS-V5.md");
+const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V6.md");
+const templateGuide = read("devis-portable/MODELE-DEVIS-V6.md");
 const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
-const template = readJSON("devis-portable/MODELE-DEVIS-V5.json");
+const template = readJSON("devis-portable/MODELE-DEVIS-V6.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 
-assert.equal(packageJson.version, "5.3.10", "La livraison doit annoncer la version 5.3.10");
+assert.equal(packageJson.version, "6.0.0", "La livraison doit annoncer la version 6.0.0");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
-assert.match(serviceWorker, /bcdevis-pwa-v5\.3\.10/, "Le cache PWA doit suivre la version livrée");
+assert.match(serviceWorker, /bcdevis-pwa-v6\.0\.0/, "Le cache PWA doit suivre la version livrée");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -32,7 +32,7 @@ assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /5\.3\.10/, "Chaque document client doit annoncer la version 5.3.10");
+  assert.match(document, /6\.0\.0/, "Chaque document client doit annoncer la version 6.0.0");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -46,13 +46,13 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-5\.3\.10\.exe/);
-assert.match(quick, /BCDevis-5\.3\.10-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-5\.3\.10-chromeos\.zip/);
+assert.match(quick, /BCDevis-6\.0\.0\.exe/);
+assert.match(quick, /BCDevis-6\.0\.0-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-6\.0\.0-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-5\.3\.10-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-6\.0\.0-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
 assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);
@@ -88,7 +88,7 @@ for (const label of expectedShortcutLabels) assert.match(shortcuts, new RegExp(l
 assert.equal(expectedShortcutLabels.length, 16);
 
 assert.equal(template.type, "atelier-devis-quote");
-assert.equal(template.version, 20);
+assert.equal(template.version, 21);
 assert.ok(Array.isArray(template.quote.lines));
 assert.equal(template.quote.lines.length, 0);
 for (const generatedField of ["id", "number", "date", "validUntil"]) {
@@ -98,8 +98,8 @@ for (const generatedField of ["id", "number", "date", "validUntil"]) {
 for (const pdfName of [
   "MODE-D-EMPLOI.pdf",
   "UTILISATION-RAPIDE.pdf",
-  "RACCOURCIS-CLAVIER-V5.pdf",
-  "MODELE-DEVIS-V5.pdf"
+  "RACCOURCIS-CLAVIER-V6.pdf",
+  "MODELE-DEVIS-V6.pdf"
 ]) {
   const pdfPath = path.join(projectRoot, "devis-portable", pdfName);
   assert.ok(fs.existsSync(pdfPath), `${pdfName} doit être livré`);
@@ -110,7 +110,7 @@ for (const pdfName of [
 
 for (const captureName of ["02-reglages.png", "04-corps-interactif.png"]) {
   const capturePath = path.join(projectRoot, "devis-portable", "captures", captureName);
-  assert.ok(fs.existsSync(capturePath), `${captureName} doit illustrer le manuel V5`);
+  assert.ok(fs.existsSync(capturePath), `${captureName} doit illustrer le manuel V6`);
   assert.ok(fs.statSync(capturePath).size > 100000, `${captureName} semble incomplet`);
 }
 

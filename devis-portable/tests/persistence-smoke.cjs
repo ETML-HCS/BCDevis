@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.10 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.10") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 6.0.0 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "6.0.0") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -545,7 +545,30 @@ async function run() {
     })()`);
     assert.deepEqual(initial, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test", catalogMode: "body" });
 
+    const trackingConfigured = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      document.querySelector("#settingsTabDocument").click();
+      const settings = document.querySelector("#settingsForm");
+      settings.elements.quoteTrackingEnabled.checked = true;
+      settings.elements.quoteTrackingEnabled.dispatchEvent(new Event("input", { bubbles: true }));
+      if (document.querySelector("#trackingSettingsDetails").hidden) throw new Error("Les réglages du suivi ne s’affichent pas après activation");
+      settings.elements.validityDays.value = "45";
+      settings.elements.trackingDefaultFollowUpDays.value = "7";
+      settings.elements.trackingRemindersOnStartup.checked = true;
+      settings.elements.trackingShowCounters.checked = true;
+      settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      return {
+        enabled: stored.settings.quoteTrackingEnabled,
+        validityDays: stored.settings.validityDays,
+        followUpDays: stored.settings.trackingDefaultFollowUpDays,
+        settingsClosed: document.querySelector("#settingsLayer").hidden
+      };
+    })()`);
+    assert.deepEqual(trackingConfigured, { enabled: true, validityDays: 45, followUpDays: 7, settingsClosed: true });
+
     const emailDraft = await window.webContents.executeJavaScript(`(async () => {
+      window.confirm = () => true;
       window.__bcdevisEmailPayload = null;
       window.__bcdevisFallbackUrl = null;
       window.bcdevisDesktop = {
@@ -562,7 +585,8 @@ async function run() {
       }
       return {
         payload: window.__bcdevisEmailPayload,
-        fallbackUrl: window.__bcdevisFallbackUrl
+        fallbackUrl: window.__bcdevisFallbackUrl,
+        tracking: JSON.parse(localStorage.getItem("bcdevis-v1")).current.tracking
       };
     })()`);
     assert.equal(emailDraft.payload.to, "sophie@example.test");
@@ -573,6 +597,9 @@ async function run() {
     assert.doesNotMatch(emailDraft.payload.body, /\+/);
     assert.doesNotMatch(emailDraft.payload.body, /—\s*—| — /);
     assert.equal(emailDraft.fallbackUrl, null, "Outlook ne doit pas être remplacé par mailto lorsque le PDF est joint");
+    assert.equal(emailDraft.tracking.status, "sent", "L’envoi confirmé doit devenir le dernier statut commercial");
+    assert.match(emailDraft.tracking.nextFollowUpAt, /^\d{4}-\d{2}-\d{2}$/, "Une relance doit être programmée après l’envoi");
+    assert.ok(emailDraft.tracking.events.some((event) => event.status === "sent" && event.channel === "E-mail"), "La chronologie doit mémoriser le canal d’envoi");
 
     const outlookWebDraft = await window.webContents.executeJavaScript(`(async () => {
       window.__bcdevisFallbackUrl = null;
@@ -608,6 +635,42 @@ async function run() {
     })()`);
     assert.equal(emailFailure.fallbackUrl, null, "Un échec de pièce jointe ne doit jamais ouvrir mailto");
     assert.match(emailFailure.toast, /Impossible d’ouvrir un e-mail avec le PDF joint/);
+
+    const trackingWorkflow = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#historyButton").click();
+      const historyTabs = document.querySelector("#historyTabs");
+      const sentCard = document.querySelector(".history-item--sent");
+      if (historyTabs.hidden || !sentCard || sentCard.querySelector(".history-status")?.textContent !== "Envoyé") throw new Error("Le statut coloré n’apparaît pas dans l’historique standard");
+      const trackingTab = historyTabs.querySelector('[data-history-view="tracking"]');
+      trackingTab.click();
+      if (trackingTab.getAttribute("aria-selected") !== "true" || document.querySelector("#trackingFilters").hidden) throw new Error("L’onglet Suivi ne commute pas la vue");
+      const sentFilter = document.querySelector('[data-tracking-filter="sent"]');
+      sentFilter.click();
+      const activeSentFilter = document.querySelector('[data-tracking-filter="sent"]');
+      if (activeSentFilter.getAttribute("aria-pressed") !== "true" || activeSentFilter.querySelector("[data-filter-count]").textContent !== "1") throw new Error("Le filtre Envoyés ne compte pas le dernier statut");
+      const disclosure = document.querySelector("[data-tracking-toggle]");
+      disclosure.click();
+      const expandedDisclosure = document.querySelector("[data-tracking-toggle]");
+      if (expandedDisclosure.getAttribute("aria-expanded") !== "true" || document.querySelector(".tracking-detail").hidden) throw new Error("Le triangle n’ouvre pas la chronologie");
+      const timelineCopy = document.querySelector(".tracking-timeline").textContent;
+      if (!timelineCopy.includes("Brouillon créé") || !timelineCopy.includes("Devis envoyé") || !timelineCopy.includes("Canal : E-mail")) throw new Error("La chronologie ne reprend pas les changements de statut");
+      const form = document.querySelector("[data-tracking-form]");
+      form.elements.trackingStatus.value = "accepted";
+      form.elements.trackingNote.value = "Accord confirmé par la cliente";
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      const saved = Object.values(stored.quotes)[0];
+      document.querySelector('[data-history-view="history"]').click();
+      return {
+        status: saved.tracking.status,
+        followUpAt: saved.tracking.nextFollowUpAt,
+        hasAcceptedColor: Boolean(document.querySelector(".history-item--accepted")),
+        hasAcceptedEvent: saved.tracking.events.some((event) => event.status === "accepted" && event.note === "Accord confirmé par la cliente"),
+        tabsVisible: !document.querySelector("#historyTabs").hidden
+      };
+    })()`);
+    assert.deepEqual(trackingWorkflow, { status: "accepted", followUpAt: "", hasAcceptedColor: true, hasAcceptedEvent: true, tabsVisible: true });
+    await window.webContents.executeJavaScript(`document.querySelector('#historyLayer [data-close="historyLayer"]').click()`);
 
     await reload(window.webContents);
     const restored = await window.webContents.executeJavaScript(`(() => {

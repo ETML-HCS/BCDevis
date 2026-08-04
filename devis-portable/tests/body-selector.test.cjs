@@ -19,7 +19,7 @@ const services = catalogContext.window.QUOTE_SERVICES.filter((service) => Number
 const families = catalogContext.window.QUOTE_FAMILIES.filter((family) => family.id !== "all");
 const regions = catalogContext.window.QUOTE_BODY_REGIONS;
 
-assert.match(app, /const APP_VERSION = 20;/, "La migration locale doit intégrer les personnalisations du catalogue");
+assert.match(app, /const APP_VERSION = 21;/, "La migration locale doit intégrer le suivi des devis");
 assert.match(app, /catalogMode: "tiles"/, "Le mode historique doit rester le choix par défaut");
 assert.match(app, /function currentCatalogMode\(\)/, "Le choix sauvegardé doit être normalisé");
 assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doit avoir son propre rendu");

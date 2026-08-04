@@ -1,24 +1,25 @@
-# BCDevis - version 5.3.10
+# BCDevis - version 6.0.0
 
 Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
 
-## Nouveautés 5.3.10
+## Nouveautés 6.0.0
 
-- La loupe reste visible en position absolue sur la première famille.
-- La recherche fermée ne réserve plus aucune hauteur dans la liste.
-- Un clic ouvre le champ à côté de la loupe et lui donne directement le focus.
+- Le suivi commercial des devis peut être activé depuis `Réglages > Devis`.
+- L’Historique standard colore chaque devis selon son dernier statut et conserve son libellé accessible.
+- L’onglet Suivi filtre les brouillons, devis prêts, envoyés, à relancer, acceptés, refusés et expirés.
+- Le triangle de chaque devis ouvre la chronologie, les notes et la prochaine relance.
 - Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
 
-Documents maintenus avec la version 5 :
+Documents maintenus avec la version 6 :
 
 - [Mode d’emploi](MODE-D-EMPLOI.md)
 - [Utilisation rapide](UTILISATION-RAPIDE.md)
-- [Raccourcis clavier V5](RACCOURCIS-CLAVIER-V5.md)
-- [Modèle de devis](MODELE-DEVIS-V5.md) et fichier importable [MODELE-DEVIS-V5.json](MODELE-DEVIS-V5.json)
+- [Raccourcis clavier V6](RACCOURCIS-CLAVIER-V6.md)
+- [Modèle de devis](MODELE-DEVIS-V6.md) et fichier importable [MODELE-DEVIS-V6.json](MODELE-DEVIS-V6.json)
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-5.3.10.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-6.0.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -59,6 +60,7 @@ Documents maintenus avec la version 5 :
 - Date du devis fixée au jour même par défaut, ajustable jusqu’à J+14 ; validité calculée automatiquement à 30 jours calendaires.
 - Numéro de devis traçable : `DEV-YYYYMMDDMACHINE001`, avec un compteur quotidien propre à chaque machine. Les anciens numéros locaux sont automatiquement convertis à ce format ; le prochain index est déterminé à partir du compteur enregistré et des devis déjà présents dans la sauvegarde locale.
 - Sauvegarde automatique, historique, duplication, import et export JSON.
+- Suivi commercial facultatif avec statuts, couleurs accessibles, filtres, chronologie, notes, dates de relance et rappels au démarrage. La désactivation masque le suivi sans effacer les données.
 - Impression ou création d’un PDF A4 avec le détail séance/pack/étudiant et le code coupon appliqué.
 
 ## Données et portabilité
@@ -105,7 +107,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-5.3.10-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-6.0.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -121,7 +123,7 @@ npm run test:ipad:visual
 
 Les deux PDF de référence avec signatures activées et désactivées sont écrits dans `output/pdf`.
 
-## Raccourcis clavier V5
+## Raccourcis clavier V6
 
 - Catalogue : `Alt + M`, `Ctrl + K` ou `/`, `Alt + P`, `Ctrl + Maj + N`.
 - Devis : `Ctrl + N`, `Ctrl + S`, `Ctrl + H`, `Ctrl + D`, `Ctrl + O`, `Ctrl + E`.
@@ -129,7 +131,7 @@ Les deux PDF de référence avec signatures activées et désactivées sont écr
 - Application : `Ctrl + ,`, `?`, `Échap`.
 - Dans les choix de tarif et de thème, les flèches gauche/droite ou haut/bas sélectionnent directement l’option suivante.
 
-La fiche [RACCOURCIS-CLAVIER-V5.md](RACCOURCIS-CLAVIER-V5.md) documente les 16 commandes.
+La fiche [RACCOURCIS-CLAVIER-V6.md](RACCOURCIS-CLAVIER-V6.md) documente les 16 commandes.
 
 ## Envoyer un devis
 
@@ -155,7 +157,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-5.3.10.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-6.0.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -165,7 +167,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.10-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-6.0.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -173,7 +175,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.10-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-6.0.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

@@ -9,30 +9,30 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const APP_ROOT = path.join(PROJECT_ROOT, "devis-portable");
 const TEMP_ROOT = path.join(PROJECT_ROOT, "tmp", "pdfs", "bcdevis-v5");
 const PDF_ARCHIVE_ROOT = path.join(PROJECT_ROOT, "output", "pdf");
-const VERSION_LABEL = "V5.3.6";
+const VERSION_LABEL = "V6.0.0";
 const DOCUMENTS = [
   {
     source: "MODE-D-EMPLOI.md",
     output: "MODE-D-EMPLOI.pdf",
-    archive: "BCDevis-V5-Mode-d-emploi.pdf",
+    archive: "BCDevis-V6-Mode-d-emploi.pdf",
     title: "Mode d'emploi"
   },
   {
     source: "UTILISATION-RAPIDE.md",
     output: "UTILISATION-RAPIDE.pdf",
-    archive: "BCDevis-V5-Utilisation-rapide.pdf",
+    archive: "BCDevis-V6-Utilisation-rapide.pdf",
     title: "Utilisation rapide"
   },
   {
-    source: "RACCOURCIS-CLAVIER-V5.md",
-    output: "RACCOURCIS-CLAVIER-V5.pdf",
-    archive: "BCDevis-V5-Raccourcis-clavier.pdf",
+    source: "RACCOURCIS-CLAVIER-V6.md",
+    output: "RACCOURCIS-CLAVIER-V6.pdf",
+    archive: "BCDevis-V6-Raccourcis-clavier.pdf",
     title: "Raccourcis clavier"
   },
   {
-    source: "MODELE-DEVIS-V5.md",
-    output: "MODELE-DEVIS-V5.pdf",
-    archive: "BCDevis-V5-Modele-devis.pdf",
+    source: "MODELE-DEVIS-V6.md",
+    output: "MODELE-DEVIS-V6.pdf",
+    archive: "BCDevis-V6-Modele-devis.pdf",
     title: "Modele de devis"
   }
 ];

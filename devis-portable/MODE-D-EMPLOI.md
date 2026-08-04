@@ -234,20 +234,20 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.3.10 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 6.0.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.3.10.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.3.10-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.3.10-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-6.0.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-6.0.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-6.0.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
-Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V5** et un **modèle de devis** importable.
+Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V6** et un **modèle de devis** importable.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -419,6 +419,16 @@ Le bouton `…` en haut du devis donne accès à **Dupliquer**, **Exporter**, **
 
 Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de soins et le total. Cliquez sur une carte pour rouvrir le devis.
 
+Le suivi commercial est facultatif. Pour l’activer, ouvrez **Réglages > Devis > Suivi des devis**, puis choisissez la validité par défaut, le délai de relance, les rappels et les compteurs. Lorsqu’il est actif :
+
+- l’onglet **Historique** conserve la liste habituelle et colore chaque carte selon son dernier statut ;
+- l’onglet **Suivi** filtre les devis brouillons, prêts à envoyer, envoyés, à relancer, acceptés, refusés ou expirés ;
+- le triangle d’une carte ouvre la chronologie complète, la prochaine relance et la zone de note interne ;
+- **À relancer** reste un indicateur orange calculé à partir de la date de relance, tandis que le dernier statut commercial demeure **Envoyé** ;
+- après la préparation d’un e-mail, d’un message WhatsApp ou d’Outlook Web, BCDevis demande si le devis doit être marqué comme envoyé.
+
+La désactivation du suivi masque les onglets, les couleurs et les rappels sans supprimer la chronologie enregistrée. Les couleurs sont toujours accompagnées du nom du statut.
+
 En bas de l’historique :
 
 - **Sauvegarde complète** exporte les réglages, l’historique, le brouillon et les soins personnalisés dans un fichier JSON ;
@@ -441,13 +451,13 @@ Les quatre onglets disponibles sont :
 - **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux ; polices Red Hat Display, Roboto, Roboto Slab ou Système ; navigation **Tuiles / Corps interactif** ; familles visibles dans le catalogue ; option **Lancer au démarrage** pour Windows, Linux et macOS ;
 - **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo principal, logo du PDF, préfixe et nom du poste pour la numérotation. Si le logo PDF est vide, le logo principal est réutilisé ;
 - **Tarifs** : taux et mode de TVA, nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
-- **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature et note de bas de page.
+- **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature, note de bas de page, suivi commercial facultatif, validité et délai de relance.
 
 Le format de numéro par défaut ressemble à `DEV-20260718A001`. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
 
 Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés puis conservés uniquement dans les données locales.
 
-## 7. Raccourcis clavier V5
+## 7. Raccourcis clavier V6
 
 | Raccourci | Action |
 | --- | --- |
@@ -468,15 +478,15 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 | `?` | Afficher l’aide des raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V5.pdf` reprend ces 16 commandes.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V6.pdf` reprend ces 16 commandes.
 
 ## 8. Utiliser le modèle de devis
 
-Le livrable contient `MODELE-DEVIS-V5.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
+Le livrable contient `MODELE-DEVIS-V6.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
 
 1. Ouvrez le menu `...` dans l’en-tête du devis.
 2. Cliquez sur **Importer**.
-3. Sélectionnez `MODELE-DEVIS-V5.json`.
+3. Sélectionnez `MODELE-DEVIS-V6.json`.
 4. BCDevis crée un devis vierge avec la date, la numérotation et les réglages actuels.
 5. Ajoutez le client et les soins, puis enregistrez.
 

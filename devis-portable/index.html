@@ -1747,7 +1747,22 @@
     <button class="layer-backdrop" type="button" data-close="historyLayer" aria-label="Fermer" tabindex="-1"></button>
     <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
       <div class="modal-head"><div><p class="section-kicker">Archives locales</p><h2 id="historyTitle">Mes devis</h2></div><button class="round-button" type="button" data-close="historyLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
-      <div class="history-list" id="historyList"></div>
+      <div class="history-tabs" id="historyTabs" role="tablist" aria-label="Vues des devis" hidden>
+        <button id="historyViewHistoryTab" type="button" role="tab" aria-selected="true" aria-controls="historyList" data-history-view="history">Historique</button>
+        <button id="historyViewTrackingTab" type="button" role="tab" aria-selected="false" aria-controls="historyList" data-history-view="tracking" tabindex="-1">Suivi <span id="trackingDueCount" hidden></span></button>
+      </div>
+      <div class="tracking-summary" id="trackingSummary" aria-label="Résumé du suivi" hidden></div>
+      <div class="tracking-filters" id="trackingFilters" role="group" aria-label="Filtrer les devis par dernier statut" hidden>
+        <button type="button" data-tracking-filter="all" aria-pressed="true">Tous <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="draft" aria-pressed="false">Brouillons <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="ready" aria-pressed="false">Prêts <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="sent" aria-pressed="false">Envoyés <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="follow-up" aria-pressed="false">À relancer <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="accepted" aria-pressed="false">Acceptés <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="refused" aria-pressed="false">Refusés <span data-filter-count>0</span></button>
+        <button type="button" data-tracking-filter="expired" aria-pressed="false">Expirés <span data-filter-count>0</span></button>
+      </div>
+      <div class="history-list" id="historyList" role="tabpanel" aria-labelledby="historyViewHistoryTab"></div>
       <div class="drawer-footer"><button class="button secondary" id="exportBackupButton" type="button"><svg><use href="#icon-download"></use></svg>Sauvegarde complète</button><button class="button secondary" id="importBackupButton" type="button"><svg><use href="#icon-upload"></use></svg>Restaurer</button></div>
     </aside>
   </div>
@@ -1923,6 +1938,18 @@
 
           <section class="settings-panel settings-panel--document" id="settingsPanelDocument" role="tabpanel" aria-labelledby="settingsTabDocument" data-settings-panel="document" tabindex="0" hidden>
             <div class="settings-panel-grid settings-panel-grid--document">
+              <section class="settings-section settings-section--tracking">
+                <div class="settings-section-head"><h3>Suivi des devis</h3></div>
+                <div class="form-grid">
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="quoteTrackingEnabled" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-history"></use></svg></span><span class="settings-toggle-copy"><strong>Activer le suivi commercial</strong><small>Ajoute les statuts, les couleurs, les relances et la chronologie dans Mes devis.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                  <div class="tracking-settings-details full-field" id="trackingSettingsDetails">
+                    <label><span>Validité par défaut</span><span class="input-with-suffix"><input name="validityDays" type="number" min="1" max="365" step="1"><b>jours</b></span></label>
+                    <label><span>Relance après l’envoi</span><select name="trackingDefaultFollowUpDays"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option></select></label>
+                    <label class="settings-toggle-card"><input class="settings-toggle-input" name="trackingRemindersOnStartup" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-history"></use></svg></span><span class="settings-toggle-copy"><strong>Rappels au démarrage</strong><small>Signale les relances arrivées ou en retard.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                    <label class="settings-toggle-card"><input class="settings-toggle-input" name="trackingShowCounters" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-toggle-copy"><strong>Compteurs du suivi</strong><small>Affiche les devis à envoyer, à relancer et acceptés.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                  </div>
+                </div>
+              </section>
               <section class="settings-section settings-section--mentions">
                 <div class="settings-section-head"><h3>Mentions</h3></div>
                 <div class="form-grid">
@@ -2016,14 +2043,14 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 5.3.10</p>
+        <p class="release-notes-version">Mise à jour 6.0.0</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">Loupe visible, espace libéré.</p>
+        <p id="releaseNotesIntro">Vos devis continuent après leur création.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-search"></use></svg></span><div><strong>Absolue</strong><p>La loupe reste en haut à droite sans créer de ligne.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-check"></use></svg></span><div><strong>0 px</strong><p>Fermée, la recherche ne réserve aucune hauteur.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-keyboard"></use></svg></span><div><strong>Recherche</strong><p>Un clic ouvre le champ à côté avec le focus direct.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-history"></use></svg></span><div><strong>Suivi</strong><p>Activez les statuts commerciaux depuis les réglages.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-percent"></use></svg></span><div><strong>Couleurs</strong><p>Le dernier statut reste visible dans l’historique standard.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-send"></use></svg></span><div><strong>Relances</strong><p>Planifiez la prochaine action et retrouvez toute la chronologie.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
     </section>

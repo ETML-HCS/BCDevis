@@ -33,13 +33,13 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.3\.10";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "6\.0\.0";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.3\.10[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 6\.0\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /<strong>Absolue<\/strong>[\s\S]*?<strong>0 px<\/strong>[\s\S]*?<strong>Recherche<\/strong>/, "Les nouveautés doivent résumer la loupe hors flux de la version 5.3.10");
+assert.match(html, /<strong>Suivi<\/strong>[\s\S]*?<strong>Couleurs<\/strong>[\s\S]*?<strong>Relances<\/strong>/, "Les nouveautés doivent résumer le suivi commercial de la version 6.0.0");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
 assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Les deux zones principales doivent conserver des noms courts mais non visibles");
@@ -166,7 +166,7 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3><\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Navigation", "iPad", "Démarrage", "Catalogue", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Mentions"],
+  ["Apparence", "Navigation", "iPad", "Démarrage", "Catalogue", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Suivi des devis", "Mentions"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "off"/, "L’optimisation iPad doit être désactivée par défaut");
@@ -182,7 +182,7 @@ assert.match(
   /name="showTaxInformation" type="checkbox"[\s\S]*?<strong>Afficher et calculer la TVA<\/strong>[\s\S]*?les prix sont conservés tels quels/,
   "Le réglage TVA doit expliquer que sa désactivation conserve les prix existants"
 );
-assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 2, "TVA et signatures doivent partager le même contrôle premium");
+assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 3, "TVA, suivi et signatures doivent partager le même contrôle premium");
 assert.match(html, /id="icon-percent"[\s\S]*?id="icon-signature"/, "Les deux réglages doivent utiliser des pictogrammes explicites");
 assert.match(html, /name="showSignatures" type="checkbox"[\s\S]*?<strong>Zones de signature<\/strong>[\s\S]*?Date et lieu/, "Le réglage des signatures doit expliquer son effet sur le devis");
 assert.doesNotMatch(html, /class="checkbox-field full-field"><input[^>]*name="(?:showTaxInformation|showSignatures)"/, "Les deux réglages ne doivent plus ressembler à des cases à cocher génériques");

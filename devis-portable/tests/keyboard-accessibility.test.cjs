@@ -188,8 +188,9 @@ assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la po
 assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les quatre polices doivent rester accessibles au clavier");
 assert.match(app, /moveRadioSelection\(event\.currentTarget, "\.font-card"/, "Les polices doivent accepter les flèches du clavier");
 assert.match(html, /id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation"/, "Les groupes de réglages doivent être annoncés comme des onglets");
-assert.equal((html.match(/role="tab" aria-selected=/g) || []).length, 4, "Les quatre onglets de Personnalisation doivent exposer leur état");
-assert.equal((html.match(/role="tabpanel" aria-labelledby=/g) || []).length, 4, "Chaque onglet de Personnalisation doit piloter un panneau");
+assert.equal((html.match(/id="settingsTab[^"]*" type="button" role="tab" aria-selected=/g) || []).length, 4, "Les quatre onglets de Personnalisation doivent exposer leur état");
+assert.equal((html.match(/data-history-view="(?:history|tracking)"/g) || []).length, 2, "Mes devis doit proposer les vues Historique et Suivi");
+assert.equal((html.match(/data-settings-panel="[^"]+" tabindex="0"(?: hidden)?/g) || []).length, 4, "Chaque onglet de Personnalisation doit piloter un panneau");
 assert.match(app, /const SETTINGS_TAB_IDS = \["interface", "company", "pricing", "document"\]/, "La navigation doit rester limitée aux quatre groupes prévus");
 assert.match(app, /function setSettingsTab\(/, "La navigation de Personnalisation doit synchroniser onglets et panneaux");
 assert.match(app, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Les onglets de Personnalisation doivent accepter les flèches, Début et Fin");

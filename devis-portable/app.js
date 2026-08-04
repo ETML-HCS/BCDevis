@@ -2,11 +2,11 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.10";
+  const RELEASE_VERSION = "6.0.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 20;
+  const APP_VERSION = 21;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
@@ -94,6 +94,17 @@
   const DISPLAY_MODE_PREFERENCES = ["auto", "smartphone", "full"];
   const SMARTPHONE_LAYOUT_MAX_WIDTH = 600;
   const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document"];
+  const TRACKING_STATUSES = ["draft", "ready", "sent", "accepted", "refused", "expired"];
+  const TRACKING_STATUS_META = {
+    draft: { label: "Brouillon", eventLabel: "Brouillon créé" },
+    ready: { label: "Prêt à envoyer", eventLabel: "Prêt à envoyer" },
+    sent: { label: "Envoyé", eventLabel: "Devis envoyé" },
+    accepted: { label: "Accepté", eventLabel: "Devis accepté" },
+    refused: { label: "Refusé", eventLabel: "Devis refusé" },
+    expired: { label: "Expiré", eventLabel: "Devis expiré" }
+  };
+  const TRACKING_FILTERS = ["all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
+  const MAX_TRACKING_EVENTS = 300;
 
   const defaultSettings = {
     companyName: "Clinique Bellecour",
@@ -122,6 +133,10 @@
     displayMode: "auto",
     launchAtLogin: false,
     visibleFamilies: [],
+    quoteTrackingEnabled: false,
+    trackingDefaultFollowUpDays: 7,
+    trackingRemindersOnStartup: true,
+    trackingShowCounters: true,
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
     footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.",
@@ -152,6 +167,57 @@
 
   function freshDatabase() {
     return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], catalogOverrides: {}, quotes: {}, current: null };
+  }
+
+  function configuredValidityDays(settings = defaultSettings) {
+    return boundedInteger(settings?.validityDays, 1, 365, QUOTE_VALIDITY_DAYS);
+  }
+
+  function configuredFollowUpDays(settings = defaultSettings) {
+    return boundedInteger(settings?.trackingDefaultFollowUpDays, 1, 90, 7);
+  }
+
+  function trackingEvent({ id = "", type = "status", status = "draft", at = new Date().toISOString(), note = "", channel = "", followUpAt = "" } = {}) {
+    return {
+      id: safeLocalId(id) || uid(),
+      type: ["status", "note", "follow-up"].includes(type) ? type : "status",
+      status: TRACKING_STATUSES.includes(status) ? status : "draft",
+      at: validTimestamp(at),
+      note: String(note || "").trim().slice(0, 1000),
+      channel: String(channel || "").trim().slice(0, 80),
+      followUpAt: followUpAt ? validISODate(followUpAt, "") : ""
+    };
+  }
+
+  function freshTracking(createdAt = new Date().toISOString()) {
+    return {
+      status: "draft",
+      nextFollowUpAt: "",
+      note: "",
+      sentAt: "",
+      acceptedAt: "",
+      refusedAt: "",
+      events: [trackingEvent({ status: "draft", at: createdAt })]
+    };
+  }
+
+  function sanitizeTracking(source, createdAt = new Date().toISOString()) {
+    const fallback = freshTracking(createdAt);
+    if (!isRecord(source)) return fallback;
+    const status = TRACKING_STATUSES.includes(source.status) ? source.status : "draft";
+    const events = Array.isArray(source.events)
+      ? source.events.filter(isRecord).slice(-MAX_TRACKING_EVENTS).map((event) => trackingEvent(event))
+      : [];
+    if (!events.length) events.push(trackingEvent({ status, at: createdAt }));
+    return {
+      status,
+      nextFollowUpAt: source.nextFollowUpAt ? validISODate(source.nextFollowUpAt, "") : "",
+      note: String(source.note || "").trim().slice(0, 1000),
+      sentAt: source.sentAt ? validTimestamp(source.sentAt, "") : "",
+      acceptedAt: source.acceptedAt ? validTimestamp(source.acceptedAt, "") : "",
+      refusedAt: source.refusedAt ? validTimestamp(source.refusedAt, "") : "",
+      events
+    };
   }
 
   function sanitizeCustomServices(items) {
@@ -278,6 +344,9 @@
   let pendingFont = "red-hat";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
   let activeSettingsTab = "interface";
+  let activeHistoryView = "history";
+  let activeTrackingFilter = "all";
+  const expandedTrackingQuotes = new Set();
   let activeLayerId = "";
   let tileDetailServiceId = "";
   let tileDetailPinned = false;
@@ -366,20 +435,22 @@
 
   function newQuote() {
     const date = todayISO();
+    const createdAt = new Date().toISOString();
     return {
       id: uid(),
       number: nextQuoteNumber(date),
       status: "draft",
       date,
-      validUntil: addDaysISO(date, QUOTE_VALIDITY_DAYS),
+      validUntil: addDaysISO(date, configuredValidityDays(db.settings)),
       client: { name: "", phone: "", email: "", address: "" },
       lines: [],
       discount: { code: "", type: "percent", value: 0 },
       tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
       conditions: db.settings.conditions,
       note: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      tracking: freshTracking(createdAt),
+      createdAt,
+      updatedAt: createdAt
     };
   }
 
@@ -388,11 +459,11 @@
     const date = todayISO();
     const base = {
       id: uid(), number: "", status: "draft", date,
-      validUntil: addDaysISO(date, QUOTE_VALIDITY_DAYS),
+      validUntil: addDaysISO(date, configuredValidityDays(db.settings)),
       client: { name: "", phone: "", email: "", address: "" },
       lines: [], discount: { code: "", type: "percent", value: 0 },
       tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
-      conditions: db.settings.conditions, note: "",
+      conditions: db.settings.conditions, note: "", tracking: freshTracking(),
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
     };
     const quoteDate = validISODate(source.date, base.date);
@@ -409,8 +480,11 @@
       ...source,
       id: safeLocalId(source.id) || uid(),
       number: importedNumber || nextQuoteNumber(quoteDate),
+      status: source.status === "saved" ? "saved" : "draft",
       date: quoteDate,
-      validUntil: addDaysISO(quoteDate, QUOTE_VALIDITY_DAYS),
+      validUntil: source.validUntil
+        ? validISODate(source.validUntil, addDaysISO(quoteDate, configuredValidityDays(db.settings)))
+        : addDaysISO(quoteDate, configuredValidityDays(db.settings)),
       client: Object.fromEntries(Object.entries({ ...base.client, ...(isRecord(source.client) ? source.client : {}) }).map(([key, value]) => [key, String(value || "").trim().slice(0, 500)])),
       discount: {
         code: String(source.discount?.code || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24),
@@ -442,6 +516,7 @@
       }),
       conditions: String(source.conditions ?? base.conditions).trim().slice(0, 5000),
       note: String(source.note ?? base.note).trim().slice(0, 2000),
+      tracking: sanitizeTracking(source.tracking, source.createdAt || base.createdAt),
       createdAt: validTimestamp(source.createdAt, base.createdAt),
       updatedAt: validTimestamp(source.updatedAt, base.updatedAt)
     };
@@ -492,8 +567,8 @@
   const quoteNumberPattern = /^[A-Z0-9-]+-\d{8}[A-Z0-9]+\d{3,}$/;
   if (!db.quotes[quote.id] && !quoteNumberPattern.test(quote.number)) quote.number = nextQuoteNumber(quote.date);
 
-  function saveLocal() {
-    quote.updatedAt = new Date().toISOString();
+  function saveLocal(touchCurrent = true) {
+    if (touchCurrent) quote.updatedAt = new Date().toISOString();
     db.current = clone(quote);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
@@ -508,12 +583,13 @@
 
   function showReleaseNotesOnce() {
     try {
-      if (localStorage.getItem(RELEASE_NOTES_SEEN_KEY) === RELEASE_VERSION) return;
+      if (localStorage.getItem(RELEASE_NOTES_SEEN_KEY) === RELEASE_VERSION) return false;
       localStorage.setItem(RELEASE_NOTES_SEEN_KEY, RELEASE_VERSION);
     } catch (error) {
       console.warn("État des nouveautés indisponible", error);
     }
     openLayer("releaseNotesLayer");
+    return true;
   }
 
   function syncToastPlacement() {
@@ -1592,6 +1668,7 @@
     }
     [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = false; });
     if (previousFocus?.isConnected) window.setTimeout(() => previousFocus.focus(), 0);
+    if (id === "releaseNotesLayer") window.setTimeout(showTrackingReminders, 250);
   }
 
   function focusableElements(container) {
@@ -1625,6 +1702,105 @@
     const form = $("#clientForm");
     for (const [key, value] of Object.entries(quote.client)) if (form.elements[key]) form.elements[key].value = value || "";
     openLayer("clientLayer");
+  }
+
+  function trackingEnabled() {
+    return db.settings.quoteTrackingEnabled === true;
+  }
+
+  function formatDateTime(timestamp) {
+    if (!timestamp || Number.isNaN(Date.parse(timestamp))) return "—";
+    return new Intl.DateTimeFormat("fr-CH", {
+      day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+    }).format(new Date(timestamp));
+  }
+
+  function isFollowUpDue(item, referenceDate = todayISO()) {
+    const tracking = item?.tracking;
+    return tracking?.status === "sent" && Boolean(tracking.nextFollowUpAt) && tracking.nextFollowUpAt <= referenceDate;
+  }
+
+  function isFollowUpLate(item, referenceDate = todayISO()) {
+    return isFollowUpDue(item, referenceDate) && item.tracking.nextFollowUpAt < referenceDate;
+  }
+
+  function trackingVisualStatus(item) {
+    if (isFollowUpDue(item)) return { key: "follow-up", label: "À relancer" };
+    const status = TRACKING_STATUSES.includes(item?.tracking?.status) ? item.tracking.status : "draft";
+    return { key: status, label: TRACKING_STATUS_META[status].label };
+  }
+
+  function appendTrackingEvent(tracking, event) {
+    tracking.events = [...(tracking.events || []), trackingEvent(event)].slice(-MAX_TRACKING_EVENTS);
+  }
+
+  function updateQuoteTracking(item, { status, nextFollowUpAt, note = "", channel = "" } = {}) {
+    item.tracking = sanitizeTracking(item.tracking, item.createdAt);
+    const tracking = item.tracking;
+    const previousStatus = tracking.status;
+    const previousFollowUp = tracking.nextFollowUpAt;
+    const nextStatus = TRACKING_STATUSES.includes(status) ? status : previousStatus;
+    const at = new Date().toISOString();
+    const cleanNote = String(note || "").trim().slice(0, 1000);
+    const followUpProvided = nextFollowUpAt !== undefined;
+    let requestedFollowUp = followUpProvided ? String(nextFollowUpAt || "") : previousFollowUp;
+    requestedFollowUp = requestedFollowUp ? validISODate(requestedFollowUp, "") : "";
+    if (nextStatus !== "sent") requestedFollowUp = "";
+    if (nextStatus === "sent" && !requestedFollowUp && !followUpProvided) requestedFollowUp = addDaysISO(todayISO(), configuredFollowUpDays(db.settings));
+
+    tracking.status = nextStatus;
+    tracking.nextFollowUpAt = requestedFollowUp;
+    if (cleanNote) tracking.note = cleanNote;
+    if (nextStatus === "sent" && !tracking.sentAt) tracking.sentAt = at;
+    if (nextStatus === "accepted") tracking.acceptedAt = at;
+    if (nextStatus === "refused") tracking.refusedAt = at;
+
+    if (nextStatus !== previousStatus) {
+      appendTrackingEvent(tracking, { type: "status", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
+    } else if (requestedFollowUp !== previousFollowUp) {
+      appendTrackingEvent(tracking, { type: "follow-up", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
+    } else if (cleanNote) {
+      appendTrackingEvent(tracking, { type: "note", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
+    } else {
+      return false;
+    }
+    item.updatedAt = at;
+    return true;
+  }
+
+  function persistTrackedQuote(item) {
+    db.quotes[item.id] = clone(item);
+    if (item.id === quote.id) {
+      quote = clone(item);
+      db.current = clone(quote);
+    }
+    return saveLocal(false);
+  }
+
+  function expireTrackedQuotes() {
+    if (!trackingEnabled()) return false;
+    let changed = false;
+    Object.values(db.quotes || {}).forEach((item) => {
+      item.tracking = sanitizeTracking(item.tracking, item.createdAt);
+      if (!["ready", "sent"].includes(item.tracking.status) || !item.validUntil || item.validUntil >= todayISO()) return;
+      if (updateQuoteTracking(item, { status: "expired", note: "Date de validité dépassée" })) {
+        db.quotes[item.id] = clone(item);
+        if (item.id === quote.id) quote = clone(item);
+        changed = true;
+      }
+    });
+    if (changed) saveLocal(false);
+    return changed;
+  }
+
+  function promptMarkCurrentQuoteAsSent(channel) {
+    if (!trackingEnabled() || quote.tracking?.status === "sent") return;
+    if (!window.confirm(`Marquer ${quote.number} comme envoyé et programmer une relance ?`)) return;
+    if (!updateQuoteTracking(quote, { status: "sent", channel })) return;
+    db.quotes[quote.id] = clone(quote);
+    saveLocal(false);
+    renderHistory();
+    toast(`Devis marqué comme envoyé · relance le ${formatDate(quote.tracking.nextFollowUpAt)}`);
   }
 
   function saveQuote() {
@@ -1679,7 +1855,8 @@
     copy.status = "draft";
     copy.date = todayISO();
     copy.number = nextQuoteNumber(copy.date);
-    copy.validUntil = addDaysISO(copy.date, QUOTE_VALIDITY_DAYS);
+    copy.validUntil = addDaysISO(copy.date, configuredValidityDays(db.settings));
+    copy.tracking = freshTracking(now);
     copy.createdAt = now;
     copy.updatedAt = now;
     quote = copy;
@@ -1689,21 +1866,168 @@
     toast(`Copie créée : ${quote.number}`);
   }
 
-  function renderHistory() {
-    const list = $("#historyList");
-    const quotes = Object.values(db.quotes).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-    if (!quotes.length) {
-      list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>Aucun devis enregistré</strong><p>Le bouton Enregistrer ajoutera le devis en cours à cet historique local.</p></div>`;
-      return;
+  function trackingFilterMatches(item, filter) {
+    if (filter === "all") return true;
+    if (filter === "follow-up") return isFollowUpDue(item);
+    return item.tracking?.status === filter;
+  }
+
+  function trackingCounts(items) {
+    const counts = Object.fromEntries(TRACKING_FILTERS.map((filter) => [filter, 0]));
+    counts.all = items.length;
+    items.forEach((item) => {
+      const status = TRACKING_STATUSES.includes(item.tracking?.status) ? item.tracking.status : "draft";
+      counts[status] += 1;
+      if (isFollowUpDue(item)) counts["follow-up"] += 1;
+    });
+    return counts;
+  }
+
+  function trackingEventCopy(event) {
+    if (event.type === "note") return { title: "Note ajoutée", detail: event.note };
+    if (event.type === "follow-up") {
+      return {
+        title: event.followUpAt ? `Relance prévue le ${formatDate(event.followUpAt)}` : "Relance annulée",
+        detail: event.note
+      };
     }
-    list.innerHTML = quotes.map((item) => {
-      const totals = calculateQuote(item);
-      return `<button class="history-item ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${item.id}">
+    const status = TRACKING_STATUS_META[event.status] || TRACKING_STATUS_META.draft;
+    const details = [event.channel ? `Canal : ${event.channel}` : "", event.note].filter(Boolean).join(" · ");
+    return { title: status.eventLabel, detail: details };
+  }
+
+  function renderTrackingTimeline(item) {
+    const events = [...(item.tracking?.events || [])].sort((left, right) => String(left.at).localeCompare(String(right.at)));
+    return `<ol class="tracking-timeline">${events.map((event) => {
+      const copy = trackingEventCopy(event);
+      return `<li><span class="tracking-timeline-dot" aria-hidden="true"></span><div><time datetime="${escapeHTML(event.at)}">${escapeHTML(formatDateTime(event.at))}</time><strong>${escapeHTML(copy.title)}</strong>${copy.detail ? `<p>${escapeHTML(copy.detail)}</p>` : ""}</div></li>`;
+    }).join("")}</ol>`;
+  }
+
+  function renderTrackingEditor(item) {
+    const options = TRACKING_STATUSES.map((status) => `<option value="${status}" ${item.tracking.status === status ? "selected" : ""}>${escapeHTML(TRACKING_STATUS_META[status].label)}</option>`).join("");
+    const canUndo = (item.tracking.events || []).length > 1;
+    return `<form class="tracking-editor" data-tracking-form data-tracking-quote-id="${escapeHTML(item.id)}">
+      <label><span>Dernier statut</span><select name="trackingStatus">${options}</select></label>
+      <label><span>Prochaine relance</span><input name="trackingFollowUpAt" type="date" min="${todayISO()}" value="${escapeHTML(item.tracking.nextFollowUpAt || "")}"></label>
+      <label class="tracking-editor-note"><span>Note interne ou motif</span><textarea name="trackingNote" rows="2" maxlength="1000" placeholder="Ajouter une information à la chronologie…"></textarea></label>
+      <div class="tracking-editor-actions"><button class="button ghost" type="button" data-tracking-undo ${canUndo ? "" : "disabled"}>Annuler le dernier changement</button><button class="button primary" type="submit">Enregistrer le suivi</button></div>
+    </form>`;
+  }
+
+  function rebuildTrackingFromEvents(item, sourceEvents) {
+    const events = sourceEvents.map((event) => trackingEvent(event));
+    const tracking = {
+      status: "draft", nextFollowUpAt: "", note: "", sentAt: "", acceptedAt: "", refusedAt: "", events
+    };
+    events.forEach((event) => {
+      if (event.type === "status") {
+        tracking.status = TRACKING_STATUSES.includes(event.status) ? event.status : tracking.status;
+        tracking.nextFollowUpAt = tracking.status === "sent" ? event.followUpAt || tracking.nextFollowUpAt : "";
+        if (tracking.status === "sent" && !tracking.sentAt) tracking.sentAt = event.at;
+        if (tracking.status === "accepted") tracking.acceptedAt = event.at;
+        if (tracking.status === "refused") tracking.refusedAt = event.at;
+      }
+      if (event.type === "follow-up") tracking.nextFollowUpAt = event.followUpAt || "";
+      if (event.note) tracking.note = event.note;
+    });
+    item.tracking = tracking;
+    item.updatedAt = new Date().toISOString();
+  }
+
+  function undoLastTrackingChange(item) {
+    const events = item.tracking?.events || [];
+    if (events.length <= 1) return false;
+    rebuildTrackingFromEvents(item, events.slice(0, -1));
+    return persistTrackedQuote(item);
+  }
+
+  function renderHistoryItem(item, enabled) {
+    const totals = calculateQuote(item);
+    if (!enabled) {
+      return `<button class="history-item ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${escapeHTML(item.id)}">
         <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
         <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
         <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">Enregistré</span></span>
       </button>`;
-    }).join("");
+    }
+    const visual = trackingVisualStatus(item);
+    const expanded = expandedTrackingQuotes.has(item.id);
+    const followUpCopy = item.tracking.nextFollowUpAt
+      ? `${isFollowUpLate(item) ? "Relance en retard" : "Relance"} · ${formatDate(item.tracking.nextFollowUpAt)}`
+      : `Valable jusqu’au ${formatDate(item.validUntil)}`;
+    return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""}" data-history-item="${escapeHTML(item.id)}">
+      <div class="history-item-summary">
+        <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+        <button class="history-item-open" type="button" data-quote-id="${escapeHTML(item.id)}">
+          <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
+          <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
+          <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
+          <span class="history-follow-up">${escapeHTML(followUpCopy)}</span>
+        </button>
+      </div>
+      <div class="tracking-detail" id="tracking-detail-${escapeHTML(item.id)}" ${expanded ? "" : "hidden"}>${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div>
+    </article>`;
+  }
+
+  function renderTrackingNavigation(items) {
+    const enabled = trackingEnabled();
+    const tabs = $("#historyTabs");
+    const filters = $("#trackingFilters");
+    const summary = $("#trackingSummary");
+    $("#historyLayer").classList.toggle("tracking-enabled", enabled);
+    tabs.hidden = !enabled;
+    if (!enabled) activeHistoryView = "history";
+    $$('[data-history-view]', tabs).forEach((tab) => {
+      const selected = tab.dataset.historyView === activeHistoryView;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
+    const counts = trackingCounts(items);
+    const dueBadge = $("#trackingDueCount");
+    dueBadge.textContent = String(counts["follow-up"] || "");
+    dueBadge.hidden = counts["follow-up"] === 0;
+    filters.hidden = !enabled || activeHistoryView !== "tracking";
+    summary.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowCounters !== true;
+    if (!filters.hidden) {
+      $$('[data-tracking-filter]', filters).forEach((button) => {
+        const filter = button.dataset.trackingFilter;
+        const selected = filter === activeTrackingFilter;
+        button.classList.toggle("active", selected);
+        button.setAttribute("aria-pressed", String(selected));
+        const count = $("[data-filter-count]", button);
+        if (count) count.textContent = counts[filter] || 0;
+      });
+    }
+    if (!summary.hidden) {
+      const acceptedThisMonth = items.filter((item) => item.tracking?.status === "accepted" && String(item.tracking.acceptedAt || "").slice(0, 7) === todayISO().slice(0, 7)).length;
+      summary.innerHTML = `<div><strong>${counts.ready}</strong><span>À envoyer</span></div><div><strong>${counts["follow-up"]}</strong><span>À relancer</span></div><div><strong>${items.filter((item) => isFollowUpLate(item)).length}</strong><span>En retard</span></div><div><strong>${acceptedThisMonth}</strong><span>Acceptés ce mois</span></div>`;
+    }
+  }
+
+  function renderHistory() {
+    expireTrackedQuotes();
+    const list = $("#historyList");
+    const enabled = trackingEnabled();
+    let quotes = Object.values(db.quotes).map((item) => ({ ...item, tracking: sanitizeTracking(item.tracking, item.createdAt) }));
+    renderTrackingNavigation(quotes);
+    if (enabled && activeHistoryView === "tracking") {
+      quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter));
+      quotes.sort((left, right) => {
+        const leftDue = isFollowUpDue(left) ? left.tracking.nextFollowUpAt : "9999-12-31";
+        const rightDue = isFollowUpDue(right) ? right.tracking.nextFollowUpAt : "9999-12-31";
+        return leftDue.localeCompare(rightDue) || String(right.updatedAt).localeCompare(String(left.updatedAt));
+      });
+    } else {
+      quotes.sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+    }
+    if (!quotes.length) {
+      const filtered = enabled && activeHistoryView === "tracking" && activeTrackingFilter !== "all";
+      list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>${filtered ? "Aucun devis dans ce statut" : "Aucun devis enregistré"}</strong><p>${filtered ? "Choisissez un autre filtre de suivi." : "Le bouton Enregistrer ajoutera le devis en cours à cet historique local."}</p></div>`;
+      return;
+    }
+    list.innerHTML = quotes.map((item) => renderHistoryItem(item, enabled)).join("");
   }
 
   function loadHistoryQuote(id) {
@@ -1748,6 +2072,7 @@
     importedQuote.status = "draft";
     importedQuote.createdAt = new Date().toISOString();
     importedQuote.updatedAt = importedQuote.createdAt;
+    importedQuote.tracking = freshTracking(importedQuote.createdAt);
     return importedQuote;
   }
 
@@ -1996,6 +2321,9 @@
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
     if (form.elements.showSignatures) form.elements.showSignatures.checked = db.settings.showSignatures !== false;
     if (form.elements.showTaxInformation) form.elements.showTaxInformation.checked = db.settings.showTaxInformation === true;
+    if (form.elements.quoteTrackingEnabled) form.elements.quoteTrackingEnabled.checked = db.settings.quoteTrackingEnabled === true;
+    if (form.elements.trackingRemindersOnStartup) form.elements.trackingRemindersOnStartup.checked = db.settings.trackingRemindersOnStartup !== false;
+    if (form.elements.trackingShowCounters) form.elements.trackingShowCounters.checked = db.settings.trackingShowCounters !== false;
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
       form.elements.launchAtLogin.disabled = true;
@@ -2009,7 +2337,17 @@
     refreshSettingsPreview();
     syncThemePicker(currentTheme());
     syncFontPicker(currentFont());
+    syncTrackingSettingsState();
     void refreshLaunchAtLoginSetting();
+  }
+
+  function syncTrackingSettingsState() {
+    const form = $("#settingsForm");
+    const details = $("#trackingSettingsDetails");
+    if (!form || !details) return;
+    const enabled = form.elements.quoteTrackingEnabled?.checked === true;
+    details.hidden = !enabled;
+    $$('input, select', details).forEach((control) => { control.disabled = !enabled; });
   }
 
   function readLogoFile(file) {
@@ -2351,6 +2689,7 @@
       const result = await prepareTransmissionPdf();
       await openExternalUrl(url);
       toast(result?.saved ? "PDF créé dans Téléchargements — joignez-le dans WhatsApp." : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
+      promptMarkCurrentQuoteAsSent("WhatsApp");
     } catch (error) {
       console.error(error);
       toast("WhatsApp n’a pas pu être ouvert.", "error");
@@ -2385,6 +2724,7 @@
       toast(recipient
         ? `E-mail prêt pour ${recipient} — PDF joint.`
         : "E-mail prêt avec le PDF joint — saisissez le destinataire.");
+      promptMarkCurrentQuoteAsSent("E-mail");
     } catch (error) {
       console.error(error);
       toast("Impossible d’ouvrir un e-mail avec le PDF joint. Le PDF reste dans Téléchargements.", "error");
@@ -2407,6 +2747,7 @@
       toast(result?.saved
         ? `Outlook Web ouvert — joignez ${result.fileName || "le PDF"} depuis Téléchargements.`
         : "Outlook Web ouvert — créez puis joignez le PDF avant l’envoi.");
+      promptMarkCurrentQuoteAsSent("Outlook Web");
     } catch (error) {
       console.error(error);
       toast("Outlook Web n’a pas pu être ouvert. Le PDF reste dans Téléchargements.", "error");
@@ -2512,6 +2853,15 @@
   function openHistoryLayer() {
     renderHistory();
     openLayer("historyLayer");
+  }
+
+  function showTrackingReminders() {
+    if (!trackingEnabled() || db.settings.trackingRemindersOnStartup === false) return;
+    expireTrackedQuotes();
+    const due = Object.values(db.quotes || {}).filter((item) => isFollowUpDue(item));
+    if (!due.length) return;
+    const late = due.filter((item) => isFollowUpLate(item)).length;
+    toast(`${plural(due.length, "devis à relancer")} aujourd’hui${late ? ` · ${late} en retard` : ""}`);
   }
 
   function openCustomItemLayer() {
@@ -2828,7 +3178,7 @@
   $("#quoteDate").addEventListener("change", (event) => {
     const previousDate = quote.date;
     quote.date = boundedQuoteDate(event.target.value);
-    quote.validUntil = addDaysISO(quote.date, QUOTE_VALIDITY_DAYS);
+    quote.validUntil = addDaysISO(quote.date, configuredValidityDays(db.settings));
     if (quote.date !== previousDate) quote.number = nextQuoteNumber(quote.date);
     event.target.value = quote.date;
     saveLocal();
@@ -2891,7 +3241,69 @@
       button.setAttribute("aria-label", "Imprimer ou enregistrer au format PDF");
     }
   }
-  $("#historyList").addEventListener("click", (event) => { const button = event.target.closest("[data-quote-id]"); if (button) loadHistoryQuote(button.dataset.quoteId); });
+  $("#historyTabs").addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-history-view]");
+    if (!tab) return;
+    activeHistoryView = tab.dataset.historyView === "tracking" ? "tracking" : "history";
+    renderHistory();
+    $(`[data-history-view="${activeHistoryView}"]`, $("#historyTabs"))?.focus();
+  });
+  $("#historyTabs").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = $$('[data-history-view]', event.currentTarget);
+    const index = tabs.indexOf(document.activeElement);
+    if (index < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[nextIndex].click();
+  });
+  $("#trackingFilters").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-tracking-filter]");
+    if (!button || !TRACKING_FILTERS.includes(button.dataset.trackingFilter)) return;
+    activeTrackingFilter = button.dataset.trackingFilter;
+    expandedTrackingQuotes.clear();
+    renderHistory();
+    $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
+  });
+  $("#historyList").addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-tracking-toggle]");
+    if (toggle) {
+      const id = toggle.dataset.trackingToggle;
+      if (expandedTrackingQuotes.has(id)) expandedTrackingQuotes.delete(id);
+      else expandedTrackingQuotes.add(id);
+      renderHistory();
+      $(`[data-tracking-toggle="${id}"]`, $("#historyList"))?.focus();
+      return;
+    }
+    const undo = event.target.closest("[data-tracking-undo]");
+    if (undo) {
+      const form = undo.closest("[data-tracking-form]");
+      const item = db.quotes[form?.dataset.trackingQuoteId];
+      if (!item || !undoLastTrackingChange(item)) return;
+      renderHistory();
+      toast("Dernier changement de suivi annulé");
+      return;
+    }
+    const button = event.target.closest(".history-item-open[data-quote-id], .history-item[data-quote-id]");
+    if (button) loadHistoryQuote(button.dataset.quoteId);
+  });
+  $("#historyList").addEventListener("submit", (event) => {
+    const form = event.target.closest("[data-tracking-form]");
+    if (!form) return;
+    event.preventDefault();
+    const item = db.quotes[form.dataset.trackingQuoteId];
+    if (!item) return;
+    const data = new FormData(form);
+    const changed = updateQuoteTracking(item, {
+      status: data.get("trackingStatus"),
+      nextFollowUpAt: data.get("trackingFollowUpAt"),
+      note: data.get("trackingNote")
+    });
+    if (!changed) { toast("Aucun changement de suivi"); return; }
+    if (!persistTrackedQuote(item)) return;
+    renderHistory();
+    toast(`Suivi mis à jour · ${TRACKING_STATUS_META[item.tracking.status].label}`);
+  });
   $("#checkoutPrintButton").addEventListener("click", printQuote);
   $("#checkoutPdfButton").addEventListener("click", downloadPdf);
   $("#checkoutTransmitButton").addEventListener("click", (event) => {
@@ -3026,6 +3438,7 @@
     const name = event.target?.name;
     if (["quotePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
     if (name === "visibleFamilies") refreshSettingsPreview();
+    if (name === "quoteTrackingEnabled") syncTrackingSettingsState();
   });
   $$("[data-logo-input]").forEach((input) => input.addEventListener("change", async (event) => {
     const target = event.currentTarget;
@@ -3090,7 +3503,8 @@
       companyPhone: String(data.get("companyPhone") || "").trim(), companyEmail: String(data.get("companyEmail") || "").trim(), companyUid: String(data.get("companyUid") || "").trim(),
       headerLogoDataUrl: safeLogoDataUrl(pendingLogos.headerLogoDataUrl),
       pdfLogoDataUrl: safeLogoDataUrl(pendingLogos.pdfLogoDataUrl),
-      quotePrefix: String(data.get("quotePrefix") || "DEV").trim().toUpperCase(), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName, validityDays: QUOTE_VALIDITY_DAYS,
+      quotePrefix: String(data.get("quotePrefix") || "DEV").trim().toUpperCase(), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName,
+      validityDays: boundedInteger(data.get("validityDays") ?? db.settings.validityDays, 1, 365, QUOTE_VALIDITY_DAYS),
       taxRate: configuredTaxRate({ taxRate: data.get("taxRate") }),
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
       showTaxInformation: data.has("showTaxInformation"),
@@ -3099,6 +3513,10 @@
       catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",
       ipadLayoutMode: IPAD_LAYOUT_MODES.includes(data.get("ipadLayoutMode")) ? data.get("ipadLayoutMode") : "off",
       launchAtLogin: savedLaunchAtLogin,
+      quoteTrackingEnabled: data.has("quoteTrackingEnabled"),
+      trackingDefaultFollowUpDays: boundedInteger(data.get("trackingDefaultFollowUpDays") ?? db.settings.trackingDefaultFollowUpDays, 1, 90, 7),
+      trackingRemindersOnStartup: data.has("trackingRemindersOnStartup"),
+      trackingShowCounters: data.has("trackingShowCounters"),
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
@@ -3114,7 +3532,7 @@
     applyFont(db.settings.fontFamily);
     applyIpadLayout(db.settings.ipadLayoutMode);
     if (!saveLocal()) return;
-    renderAll(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
+    renderAll(); renderHistory(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
   });
 
   $("#appMenuButton").addEventListener("click", (event) => {
@@ -3339,5 +3757,6 @@
   syncToastPlacement();
   saveLocal(false);
   renderAll();
-  showReleaseNotesOnce();
+  const releaseNotesOpened = showReleaseNotesOnce();
+  if (!releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
 })();
