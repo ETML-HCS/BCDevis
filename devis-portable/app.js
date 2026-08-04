@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.6";
+  const RELEASE_VERSION = "5.3.7";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -1304,18 +1304,24 @@
   function renderClient() {
     const client = quote.client;
     const clientEmail = String(client.email || "").trim();
+    const clientName = String(client.name || "").trim();
     const outlookWebRecipient = $("#checkoutOutlookWebRecipient");
     if (outlookWebRecipient) outlookWebRecipient.textContent = clientEmail || "Destinataire à saisir";
-    if (client.name) {
-      const initials = client.name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join("").toUpperCase();
-      $("#clientInitials").textContent = initials || "C";
-      $("#clientName").textContent = client.name;
-      $("#clientDetails").textContent = [client.phone, client.email].filter(Boolean).join(" · ") || client.address || "Coordonnées à compléter";
-    } else {
-      $("#clientInitials").textContent = "+";
-      $("#clientName").textContent = "Client";
-      $("#clientDetails").textContent = "Nom, téléphone et e-mail";
-    }
+    const clientButton = $("#clientButton");
+    const clientNameLabel = $("#clientName");
+    const clientAddIcon = $("#clientInitials");
+    const clientDetails = $("#clientDetails");
+    const hasClient = Boolean(clientName);
+    clientButton.classList.toggle("has-client", hasClient);
+    clientButton.classList.toggle("is-empty", !hasClient);
+    clientButton.setAttribute("aria-label", hasClient ? `Modifier le client ${clientName}` : "Ajouter un client");
+    clientButton.title = hasClient ? `Modifier ${clientName}` : "Ajouter un client";
+    clientNameLabel.textContent = clientName;
+    clientNameLabel.hidden = !hasClient;
+    clientAddIcon.hidden = hasClient;
+    clientDetails.textContent = hasClient
+      ? [client.phone, client.email].filter(Boolean).join(" · ") || client.address || "Coordonnées à compléter"
+      : "Nom, téléphone et e-mail";
   }
 
   function quantityStepper({ kind, value, label, decreaseAction, increaseAction, minimum, maximum = MAX_LINE_QUANTITY }) {

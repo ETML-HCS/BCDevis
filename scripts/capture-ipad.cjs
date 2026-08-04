@@ -188,11 +188,11 @@ async function auditWindowHeader(window) {
       collapsedWidth: Math.round(collapsed.width),
       expandedWidth: Math.round(expanded.width),
       collapsedClear: !overlaps(collapsed),
-      expandedClear: !overlaps(expanded),
+      expandedOverlays: overlaps(expanded),
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || !result.collapsedClear || !result.expandedClear || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
+  if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || !result.collapsedClear || !result.expandedOverlays || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
   return result;
 }
 

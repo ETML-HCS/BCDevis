@@ -47,7 +47,9 @@ assert.match(
   /id="customItemButton"[^>]*aria-label="Créer un soin sur mesure"[^>]*title="Créer un soin sur mesure"[\s\S]*?<strong>Sur mesure<\/strong>/,
   "Le menu compact doit afficher Sur mesure tout en exposant son libellé complet"
 );
-assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[\s\S]*?id="clientName">Client</, "Le client doit garder une action complète avec un nom court");
+assert.match(html, /<symbol id="icon-user-plus"[\s\S]*?id="clientButton"[^>]*class="client-card is-empty"|class="client-card is-empty"[^>]*id="clientButton"/, "Le client vide doit utiliser le pictogramme client plus");
+assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[^>]*>[\s\S]*?<use href="#icon-user-plus">[\s\S]*?id="clientName" hidden><\/strong>/, "Le client vide doit rester une action SVG accessible et sans texte visible");
+assert.match(app, /clientButton\.classList\.toggle\("has-client", hasClient\)[\s\S]*?clientNameLabel\.hidden = !hasClient[\s\S]*?clientAddIcon\.hidden = hasClient/, "Le client renseigné doit remplacer l’icône par son seul nom");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
@@ -103,9 +105,9 @@ assert.match(html, /<dt>Total avant offres<\/dt>[\s\S]*?id="totalDiscountRow" hi
 assert.doesNotMatch(html, /studentDiscountTotalRow|discountTotalRow/, "Les rabais ne doivent plus être dispersés sur plusieurs lignes de totaux");
 assert.match(app, /money\(referenceLineTotal\(line\)\)/, "Chaque prestation doit afficher sa valeur complète avant offre");
 assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro de devis ne doit plus encombrer l’en-tête de caisse");
-assert.match(styles, /\.family-title-row h2\{font-size:16px;line-height:1\}/, "Le titre Soins doit rester compact");
-assert.match(html, /\.checkout-panel h2\{font-size:22px\}/, "Le titre Devis doit être réduit avec mesure");
-assert.match(html, /id="familyNavTitle">Soins<[\s\S]*?id="checkoutTitle">Devis</, "Les zones principales doivent afficher Soins et Devis");
+assert.match(styles, /\.visually-hidden\{[\s\S]*?clip-path:inset\(50%\)/, "Les repères masqués doivent rester accessibles");
+assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Soins et Devis doivent nommer les zones sans rester visibles");
+assert.match(html, /class="family-title-row"><h2[\s\S]*?id="catalogSearchToggle"[\s\S]*?<strong class="visually-hidden" id="activeOfferHint"/, "La ligne Soins ne doit conserver visuellement que la loupe");
 assert.doesNotMatch(html, />\s*(?:Prestations|Caisse|Ajouter à la caisse)\s*</, "Les noms visibles doivent rester ultra courts");
 assert.match(html, /id="installmentTableWrap" hidden><table class="installment-table"[^>]*><tbody id="installmentGrid"/, "L’échelonnement doit utiliser un tableau compact");
 assert.doesNotMatch(html, /<details class="installments"|Paiement échelonné \(CHF\)|class="installment-note"/, "La caisse ne doit plus afficher le panneau explicatif de l’échelonnement");

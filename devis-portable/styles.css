@@ -199,8 +199,8 @@ html.bcdevis-window-overlay .window-controls svg{width:16px;height:16px;stroke-w
     padding-top:13px;
   }
   html.bcdevis-window-overlay .checkout-panel.is-full-height .receipt-head{
-    /* La commande de fenêtre et l’en-tête du devis partagent la même ligne. */
-    padding-right:118px;
+    /* Le rail replié garde sa place ; son déploiement passe au-dessus par z-index. */
+    padding-right:38px;
   }
 }
 @media (hover:none),(pointer:coarse){
@@ -210,6 +210,7 @@ html.bcdevis-window-overlay .window-controls svg{width:16px;height:16px;stroke-w
   }
   html.bcdevis-window-overlay .window-controls::before{opacity:0}
   html.bcdevis-window-overlay .window-controls button{opacity:1;pointer-events:auto;transform:none}
+  html.bcdevis-window-overlay .checkout-panel.is-full-height .receipt-head{padding-right:118px}
 }
 @media (prefers-reduced-motion:reduce){
   html.bcdevis-window-overlay .window-controls,
@@ -2235,4 +2236,81 @@ html[data-theme] .release-notes-modal{border-color:var(--line);background:var(--
   .modal-card.tile-icon-picker-modal{padding:19px 15px}
   .tile-icon-picker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
   .tile-icon-picker-grid button{min-height:84px}
+}
+
+/* Interface principale : repères implicites et client compact. */
+.visually-hidden{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  clip-path:inset(50%)!important;
+  border:0!important;
+  white-space:nowrap!important;
+}
+.family-title-row{justify-content:flex-end}
+.receipt-head{justify-content:flex-end}
+.quote-title-row{width:0;min-width:0;flex:0 0 0}
+.checkout-context{align-items:end}
+.checkout-context .client-card{
+  width:auto;
+  max-width:100%;
+  height:42px;
+  min-height:42px;
+  margin:0;
+  padding:0 11px;
+  justify-self:start;
+  align-self:end;
+  border-color:color-mix(in srgb,var(--line) 78%,transparent);
+  border-radius:10px;
+  color:var(--ink);
+  background:color-mix(in srgb,var(--surface-soft) 58%,transparent);
+}
+.checkout-context .client-card:hover,
+.checkout-context .client-card:focus-visible{
+  border-color:var(--accent);
+  outline:0;
+  background:var(--surface-raised);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 18%,transparent);
+}
+.checkout-context .client-card.is-empty{
+  width:42px;
+  padding:0;
+  justify-content:center;
+}
+.checkout-context .client-card.has-client{min-width:0}
+.checkout-context .client-card .client-avatar{
+  display:grid;
+  width:22px;
+  height:22px;
+  flex:0 0 22px;
+  place-items:center;
+  border-radius:0;
+  color:var(--muted);
+  background:transparent;
+}
+.checkout-context .client-card .client-avatar svg{width:20px;height:20px}
+.checkout-context .client-card #clientName{
+  display:block;
+  min-width:0;
+  max-width:100%;
+  flex:1;
+  overflow:hidden;
+  font-size:11px;
+  font-weight:750;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.checkout-context .client-card #clientName[hidden],
+.checkout-context .client-card .client-avatar[hidden]{display:none!important}
+
+@media (hover:none),(pointer:coarse){
+  .checkout-context .client-card{height:44px;min-height:44px;border-radius:11px}
+  .checkout-context .client-card.is-empty{width:44px}
+  .checkout-context .client-card .client-avatar{width:24px;height:24px;flex-basis:24px}
+  .checkout-context .client-card .client-avatar svg{width:22px;height:22px}
+  .checkout-context .client-card #clientName{font-size:13px}
 }

@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Modèle de devis V5</h1>
   <p>Importer le modèle vierge fourni avec le livrable client.</p>
-  <p class="version">BCDevis 5.3.6</p>
+  <p class="version">BCDevis 5.3.7</p>
 </div>
 
 <style>
@@ -17,7 +17,7 @@
 
 ## Fichier fourni
 
-Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.3.6.
+Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.3.7.
 
 Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'import :
 

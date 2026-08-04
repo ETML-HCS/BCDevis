@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.3.6 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 5.3.7 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.3.6.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.3.6-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.3.6-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.3.7.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.3.7-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.3.7-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 

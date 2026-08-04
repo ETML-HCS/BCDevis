@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.6 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.6") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.7 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.7") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -147,12 +147,13 @@ async function run() {
         && rect.top < expandedWindowControlsRect.bottom
         && rect.bottom > expandedWindowControlsRect.top
       ));
-      if (expandedWindowControlsRect.width < 120 || overlapsExpandedWindowControls) throw new Error("Les contrôles de fenêtre déployés recouvrent encore l’en-tête du devis");
+      if (expandedWindowControlsRect.width < 120 || Number.parseInt(getComputedStyle(document.querySelector("#windowControls")).zIndex, 10) <= (Number.parseInt(getComputedStyle(document.querySelector(".receipt-head")).zIndex, 10) || 0)) throw new Error("Les contrôles de fenêtre déployés ne passent pas correctement au-dessus du devis");
+      if (!overlapsExpandedWindowControls) throw new Error("Le rail déployé ne récupère pas l’espace réservé inutilement dans l’en-tête du devis");
       document.querySelector("#newQuoteButton").focus();
       const familyPanelRect = document.querySelector("#familyPanel").getBoundingClientRect();
       const familyHeadRect = document.querySelector(".family-head").getBoundingClientRect();
       if (document.querySelector("#familyNavTitle").textContent !== "Soins" || document.querySelector("#checkoutTitle").textContent !== "Devis") throw new Error("Les zones principales n’utilisent pas leurs noms courts");
-      if (Number.parseFloat(getComputedStyle(document.querySelector("#familyNavTitle")).fontSize) !== 16 || Number.parseFloat(getComputedStyle(document.querySelector("#checkoutTitle")).fontSize) !== 22) throw new Error("Les titres Soins et Devis n’ont pas le calibrage attendu");
+      if (document.querySelector("#familyNavTitle").getBoundingClientRect().width > 1 || document.querySelector("#checkoutTitle").getBoundingClientRect().width > 1) throw new Error("Les titres Soins et Devis sont encore visibles");
       if (familyHeadRect.height > 36 || familyHeadRect.top - familyPanelRect.top > 8) throw new Error("L’en-tête Soins occupe encore trop de hauteur");
       const topbarUtilities = document.querySelector(".topbar-utilities");
       const utilityButtons = [...topbarUtilities.querySelectorAll(".topbar-utility-button")];
@@ -394,12 +395,15 @@ async function run() {
       document.querySelector('[data-settings-tab="interface"]').click();
       document.querySelector('#settingsLayer .modal-head [data-close="settingsLayer"]').click();
 
+      const emptyClientButton = document.querySelector("#clientButton");
+      if (!emptyClientButton.classList.contains("is-empty") || emptyClientButton.classList.contains("has-client") || emptyClientButton.getBoundingClientRect().width > 44 || !emptyClientButton.querySelector('#clientInitials use[href="#icon-user-plus"]') || !document.querySelector("#clientName").hidden) throw new Error("Le client vide n’est pas réduit au pictogramme client plus");
       document.querySelector("#clientButton").click();
       const client = document.querySelector("#clientForm");
       client.elements.name.value = "Sophie Martin";
       client.elements.phone.value = "+41 79 111 22 33";
       client.elements.email.value = "sophie@example.test";
       client.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      if (!document.querySelector("#clientButton").classList.contains("has-client") || !document.querySelector("#clientInitials").hidden || document.querySelector("#clientName").hidden || document.querySelector("#clientName").textContent !== "Sophie Martin" || !document.querySelector("#clientButton").getAttribute("aria-label").includes("Sophie Martin")) throw new Error("Le client renseigné n’affiche pas uniquement son nom");
       if (document.querySelector("#checkoutEmailButton use")?.getAttribute("href") !== "#icon-mail-attach" || document.querySelector("#checkoutEmailButton").closest("#checkoutTransmissionMenu")) throw new Error("L’e-mail avec PDF joint n’est pas directement accessible dans le devis");
       document.querySelector("#checkoutTransmitButton").click();
       if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp et Outlook Web");
@@ -660,9 +664,8 @@ async function run() {
         if ((getComputedStyle(brand).display === "none") !== ${viewport.hideBrand}) throw new Error("La marque n’est pas adaptée à ${viewport.width}px");
         document.querySelector('[data-panel="checkoutPanel"]').click();
         const receiptRect = document.querySelector(".receipt-head").getBoundingClientRect();
-        const receiptTitleRect = document.querySelector("#checkoutTitle").getBoundingClientRect();
         const receiptActionsRect = document.querySelector("#quoteHeadActions").getBoundingClientRect();
-        if (receiptActionsRect.left < receiptTitleRect.right + 4 || receiptActionsRect.right > receiptRect.right + 1) throw new Error("Les actions de l’en-tête de caisse se chevauchent à ${viewport.width}px");
+        if (document.querySelector("#checkoutTitle").getBoundingClientRect().width > 1 || receiptActionsRect.left < receiptRect.left - 1 || receiptActionsRect.right > receiptRect.right + 1) throw new Error("L’en-tête discret de caisse déborde à ${viewport.width}px");
         const quickActions = document.querySelector(".checkout-primary-actions");
         const quickRect = quickActions.getBoundingClientRect();
         const quickButtons = [...quickActions.querySelectorAll(":scope > button")].map((button) => button.getBoundingClientRect());
