@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.3.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 5.3.1 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.3.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.3.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.3.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.3.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.3.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.3.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -257,8 +257,8 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 
 L’écran est organisé en deux zones :
 
-- **Prestations** à gauche : familles de soins, recherche et ajout de prestations ;
-- **Caisse** à droite : client, date, lignes du devis, réductions, TVA, total et actions de sortie.
+- **Soins** à gauche : familles, recherche et ajout ;
+- **Devis** à droite : client, date, lignes, réductions, TVA, total et sorties.
 
 Dans la barre supérieure :
 
@@ -266,27 +266,27 @@ Dans la barre supérieure :
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
 - **Réglages** et **Raccourcis** : les deux boutons utilitaires placés après les tarifs ;
-- **Menu Catalogue** : prestation sur mesure et affichage des prix sur les prestations.
+- **Catalogue** : **Sur mesure** et affichage des prix.
 
-Dans l’en-tête de la caisse, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…` du devis.
+Dans l’en-tête du devis, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…`.
 
-Sur un écran étroit, les onglets **Prestations** et **Caisse** en bas permettent de passer d’une zone à l’autre. Sur ordinateur, la caisse occupe toute la hauteur de la fenêtre.
+Sur un écran étroit, les onglets **Soins** et **Devis** en bas permettent de passer d’une zone à l’autre. Sur ordinateur, le devis occupe toute la hauteur de la fenêtre.
 
 ## 2. Créer un devis
 
 ### Étape 1 : Choisir le tarif
 
-Sélectionnez **Séance**, **Pack** ou **Étudiant** avant d’ajouter les prestations.
+Sélectionnez **Séance**, **Pack** ou **Étudiant** avant d’ajouter les soins.
 
 - En mode **Séance**, chaque ajout correspond à une séance facturée.
 - En mode **Pack**, chaque nouvelle ligne utilise les quantités configurées dans les réglages. Par défaut, le pack contient six séances payées et une séance offerte.
-- En mode **Étudiant**, la réduction est appliquée aux prestations et apparaît séparément dans les totaux.
+- En mode **Étudiant**, la réduction est appliquée aux soins et apparaît séparément dans les totaux.
 
-Si le devis contient déjà des prestations, changer de tarif affiche une confirmation. Le nouveau tarif est appliqué à l’ensemble du devis ; les modes ne sont pas mélangés sur un même devis.
+Si le devis contient déjà des soins, changer de tarif affiche une confirmation. Le nouveau tarif est appliqué à l’ensemble du devis ; les modes ne sont pas mélangés sur un même devis.
 
 ### Étape 2 : Choisir Tuiles ou Mannequin
 
-BCDevis propose deux façons de parcourir les mêmes prestations. Le choix modifie uniquement la navigation : il ne change ni les tarifs, ni la caisse, ni le contenu du devis.
+BCDevis propose deux façons de parcourir les mêmes soins. Le choix modifie uniquement la navigation : il ne change ni les tarifs, ni le devis.
 
 Pour sélectionner le mode :
 
@@ -309,15 +309,15 @@ Dans **Réglages > Interface > iPad**, trois choix sont disponibles :
 - **Toujours** force ce confort tactile si Safari ou un navigateur intégré n’est pas reconnu ;
 - **Désactivée** — valeur par défaut — conserve uniquement le responsive standard.
 
-Le choix est mémorisé. En portrait, les prestations utilisent deux colonnes ; en paysage, elles exploitent davantage la largeur ; en Split View, elles repassent sur une colonne. La navigation **Prestations / Caisse** reste toujours accessible en bas. Cette optimisation ne modifie ni les prix, ni les données, ni le PDF A4.
+Le choix est mémorisé. En portrait, les soins utilisent deux colonnes ; en paysage, ils exploitent davantage la largeur ; en Split View, ils repassent sur une colonne. La navigation **Soins / Devis** reste toujours accessible en bas. Cette optimisation ne modifie ni les prix, ni les données, ni le PDF A4.
 
 #### Mode Tuiles
 
-Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées**. Les soins de la famille apparaissent sous la tuile ; cliquez sur le `+` du soin souhaité pour l’ajouter à la caisse.
+Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, **Jambes & pieds**, **Électrolyse**, **Médecine esthétique** ou **Zones combinées**. Les soins apparaissent sous la tuile ; cliquez sur le `+` du soin souhaité pour l’ajouter au devis.
 
 La famille **Zones combinées** propose quatorze associations tarifées. En mode **Séance**, le catalogue affiche le prix d’une séance. Avec le **Pack 6 + 1**, il affiche le prix moyen par session communiqué pour ce pack ; le devis conserve le détail exact de six séances payées et d’une séance offerte.
 
-Pour adapter une tuile, ouvrez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Recherchez la prestation, puis modifiez son pictogramme SVG, son nom, son temps ou son prix et cliquez sur **Enregistrer**. Ces personnalisations restent locales, sont incluses dans la sauvegarde complète et s’appliquent aux prochains ajouts ; elles ne réécrivent pas les lignes déjà présentes dans un devis. **Réinitialiser** restaure une tuile, tandis que **Tout réinitialiser** restaure le catalogue d’origine.
+Pour adapter une tuile, ouvrez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Recherchez le soin, puis modifiez son pictogramme SVG, son nom, son temps ou son prix et cliquez sur **Enregistrer**. Ces personnalisations restent locales, sont incluses dans la sauvegarde complète et s’appliquent aux prochains ajouts ; elles ne réécrivent pas les lignes déjà présentes dans un devis. **Réinitialiser** restaure une tuile, tandis que **Tout réinitialiser** restaure le catalogue d’origine.
 
 #### Mode Mannequin — Corps interactif
 
@@ -326,7 +326,7 @@ Le bouton **Corps interactif** active le mannequin anatomique :
 1. choisissez **Femme** ou **Homme** ;
 2. choisissez **Face** ou **Dos** ;
 3. cliquez sur une zone du mannequin ;
-4. sélectionnez le soin proposé à droite pour l’ajouter à la caisse.
+4. sélectionnez le soin proposé à droite pour l’ajouter au devis.
 
 La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse, aux bras, au maillot et aux jambes. Sur la vue arrière, il donne accès au cuir chevelu, au dos, aux bras, aux fesses et jambes ainsi qu’au **SIF**.
 
@@ -336,29 +336,29 @@ La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin do
 
 En sélectionnant le visage, BCDevis ouvre un schéma plus précis avec douze zones : visage complet, tempes, sourcils, entre-sourcils, nez et narines, joues, lèvre supérieure, barbe, ligne de barbe, menton, oreilles et cou. Utilisez **Corps complet** pour revenir au mannequin.
 
-Les filtres évitent les mélanges : les **fesses** et le **SIF** se sélectionnent uniquement à l’arrière, le maillot avant n’affiche pas le SIF et **Cuir chevelu** propose uniquement la mésothérapie capillaire. Les familles **Consultations**, **Électrolyse**, **Médecine esthétique** et **Zones combinées** restent disponibles sous le mannequin. Les 87 prestations actives restent donc accessibles dans les deux modes.
+Les filtres évitent les mélanges : les **fesses** et le **SIF** se sélectionnent uniquement à l’arrière, le maillot avant n’affiche pas le SIF et **Cuir chevelu** propose uniquement la mésothérapie capillaire. Les familles **Consultations**, **Électrolyse**, **Médecine esthétique** et **Zones combinées** restent disponibles sous le mannequin. Les 87 soins actifs restent donc accessibles dans les deux modes.
 
 Pour changer de morphologie, utilisez les boutons **Femme** et **Homme**. L’espace libre autour du mannequin reste neutre afin d’éviter tout changement involontaire.
 
 Au clavier, utilisez `Tab` pour atteindre les boutons ou une zone, puis `Entrée` ou `Espace` pour l’activer.
 
-Dans les deux modes, la loupe recherche un soin dans tout le catalogue. Les prix sont masqués sur les boutons par défaut ; utilisez **Menu principal > Prix sur les boutons** ou `Alt + P` pour les afficher.
+Dans les deux modes, la loupe recherche un soin dans tout le catalogue. Les prix sont masqués sur les boutons par défaut ; utilisez **Catalogue > Prix** ou `Alt + P` pour les afficher.
 
-### Étape 3 : Ajouter une prestation sur mesure
+### Étape 3 : Sur mesure
 
-Utilisez **Menu Catalogue** > **Sur mesure** pour créer une prestation sur mesure. Le libellé complet est disponible au survol. Renseignez :
+Utilisez **Catalogue > Sur mesure**, puis renseignez :
 
-- le nom de la prestation ;
+- le nom ;
 - le prix unitaire en CHF ;
 - la durée en minutes ;
 - la catégorie ;
-- l’option **Conserver dans le catalogue** si cette prestation doit être réutilisable dans les prochains devis.
+- l’option **Conserver** si ce soin doit être réutilisable dans les prochains devis.
 
-Cliquez sur **Ajouter à la caisse**.
+Cliquez sur **Ajouter**.
 
 ### Étape 4 : Renseigner le client
 
-Dans la caisse, cliquez sur **Ajouter un client**. Les champs disponibles sont : nom complet, téléphone, e-mail et adresse. Cliquez sur **Valider le client** pour reprendre ces informations dans le devis.
+Dans **Devis**, cliquez sur **Client**. Les champs disponibles sont : nom complet, téléphone, e-mail et adresse. Cliquez sur **Valider**.
 
 La fiche client peut être rouverte à tout moment pour corriger les coordonnées. **Effacer** supprime les coordonnées du devis en cours.
 
@@ -366,23 +366,23 @@ La fiche client peut être rouverte à tout moment pour corriger les coordonnée
 
 La date du devis est celle du jour par défaut. Elle peut être choisie jusqu’à 14 jours à l’avance. La date de validité est calculée automatiquement à 30 jours calendaires et apparaît dans le document final.
 
-## 3. Ajuster la caisse
+## 3. Ajuster le devis
 
 Chaque ligne affiche le nom, la catégorie, la quantité et le prix. La suppression reste volontairement masquée afin de laisser toute la largeur aux quantités.
 
 - Cliquez sur **−** pour diminuer la quantité et sur **+** pour l’augmenter.
 - Dans un pack, les séances payées et offertes disposent chacune de leurs propres boutons **−** et **+**.
 - Le bouton **−** devient indisponible lorsque la quantité minimale est atteinte.
-- Le nom d’une ligne peut être corrigé directement dans la caisse.
+- Le nom d’une ligne peut être corrigé directement dans le devis.
 - Avec une souris, allez jusqu’au bord droit de la ligne pour faire apparaître la corbeille.
 - Sur un écran tactile, balayez la ligne vers la gauche, puis touchez la corbeille pour confirmer la suppression.
 - Appuyez sur `Échap` ou touchez de nouveau la ligne pour refermer l’action sans supprimer.
 
-En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **Ajouter 1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes sont visibles dans le devis mais ne sont jamais facturées.
+En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **+1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes ne sont jamais facturées.
 
 ### Coupon
 
-Cliquez sur **Ajouter un coupon**, puis saisissez le code et la valeur de la réduction.
+Cliquez sur **Coupon**, puis saisissez le code et la valeur de la réduction.
 
 - `%` applique une réduction en pourcentage ;
 - `CHF` applique une réduction fixe.
@@ -399,7 +399,7 @@ La simulation indicative apparaît automatiquement sous le total. Les options so
 
 ## 4. Enregistrer, imprimer et envoyer
 
-Les trois commandes de sortie restent visibles au bas de la caisse. L’enregistrement se trouve directement dans l’en-tête de la caisse.
+Les trois commandes de sortie restent visibles au bas du devis. L’enregistrement se trouve dans son en-tête.
 
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
@@ -411,17 +411,17 @@ Les trois commandes de sortie restent visibles au bas de la caisse. L’enregist
 
 Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement le PDF dans **Téléchargements**. Aucun message `mailto:` sans pièce jointe n’est ouvert. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
 
-Le PDF reprend le détail des prestations, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
+Le PDF reprend le détail des soins, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 
-Le bouton `…` en haut de la caisse donne accès à **Dupliquer**, **Exporter ce devis**, **Importer un devis** et **Vider la caisse**.
+Le bouton `…` en haut du devis donne accès à **Dupliquer**, **Exporter**, **Importer** et **Vider**.
 
 ## 5. Consulter l’historique et sauvegarder les données
 
-Cliquez sur le bouton **Historique** dans l’en-tête de la caisse pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de prestations et le total. Cliquez sur une carte pour rouvrir le devis.
+Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de soins et le total. Cliquez sur une carte pour rouvrir le devis.
 
 En bas de l’historique :
 
-- **Sauvegarde complète** exporte les réglages, l’historique, le brouillon et les prestations personnalisées dans un fichier JSON ;
+- **Sauvegarde complète** exporte les réglages, l’historique, le brouillon et les soins personnalisés dans un fichier JSON ;
 - **Restaurer** importe une sauvegarde JSON complète.
 
 ![Historique local des devis](captures/03-historique-des-devis.png)
@@ -452,15 +452,15 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 | Raccourci | Action |
 | --- | --- |
 | `Alt` + `M` | Ouvrir le menu Catalogue |
-| `Ctrl` + `K` ou `/` | Rechercher une prestation |
+| `Ctrl` + `K` ou `/` | Rechercher |
 | `Alt` + `P` | Afficher ou masquer les prix |
-| `Ctrl` + `Maj` + `N` | Créer une prestation sur mesure |
+| `Ctrl` + `Maj` + `N` | Sur mesure |
 | `Ctrl` + `N` | Nouveau devis |
 | `Ctrl` + `S` | Enregistrer le devis |
 | `Ctrl` + `H` | Ouvrir l’historique |
-| `Ctrl` + `D` | Dupliquer le devis |
-| `Ctrl` + `O` | Importer un devis |
-| `Ctrl` + `E` | Exporter le devis |
+| `Ctrl` + `D` | Dupliquer |
+| `Ctrl` + `O` | Importer |
+| `Ctrl` + `E` | Exporter |
 | `Ctrl` + `P` | Imprimer le devis |
 | `Ctrl` + `Maj` + `S` | Créer le PDF |
 | `Ctrl` + `Alt` + `W` | Préparer le devis via WhatsApp |
@@ -474,13 +474,13 @@ Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les ta
 
 Le livrable contient `MODELE-DEVIS-V5.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
 
-1. Ouvrez le menu `...` dans l’en-tête de la caisse.
-2. Cliquez sur **Importer un devis**.
+1. Ouvrez le menu `...` dans l’en-tête du devis.
+2. Cliquez sur **Importer**.
 3. Sélectionnez `MODELE-DEVIS-V5.json`.
 4. BCDevis crée un devis vierge avec la date, la numérotation et les réglages actuels.
-5. Ajoutez le client et les prestations, puis enregistrez.
+5. Ajoutez le client et les soins, puis enregistrez.
 
-Pour créer un modèle personnalisé, préparez un devis type puis utilisez `...` > **Exporter ce devis**. Ne confondez pas cette fonction avec **Restaurer**, qui remplace toute la base locale par une sauvegarde complète.
+Pour créer un modèle personnalisé, préparez un devis type puis utilisez `...` > **Exporter**. Ne confondez pas cette fonction avec **Restaurer**, qui remplace toute la base locale par une sauvegarde complète.
 
 ## 9. Résoudre les situations courantes
 

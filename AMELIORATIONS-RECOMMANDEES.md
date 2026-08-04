@@ -3,14 +3,14 @@
 ## Statut du document
 
 - **Date de l’audit :** 3 août 2026
-- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5 et amélioration de caisse BCDevis 5.3.0
+- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5, suppression tactile BCDevis 5.3.0 et libellés courts BCDevis 5.3.1
 - **Portée :** application Electron, PWA, stockage local, génération PDF, documentation, tests et livrables
-- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, lisibilité et suppression de ligne renforcées dans BCDevis 5.3.0
+- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, suppression renforcée dans BCDevis 5.3.0 et libellés raccourcis dans BCDevis 5.3.1
 - **Document associé :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md)
 
 ## Synthèse
 
-BCDevis repose sur une base fonctionnelle stable et déjà très complète. La validation automatisée de la version 5.2.0 couvre notamment les calculs métier, les prestations, le corps interactif, les PDF, l’accessibilité clavier, la persistance Electron, la PWA, les plateformes de livraison, le démarrage système et la documentation.
+BCDevis repose sur une base fonctionnelle stable et déjà très complète. La validation automatisée de la version 5.2.0 couvre notamment les calculs métier, les soins, le corps interactif, les PDF, l’accessibilité clavier, la persistance Electron, la PWA, les plateformes de livraison, le démarrage système et la documentation.
 
 Les améliorations les plus importantes concernent désormais :
 
@@ -42,7 +42,7 @@ Dans la version 5.2.0 auditée, un clic gauche diminuait une quantité et un cli
 #### Critères de validation
 
 - Toute quantité peut être augmentée ou diminuée sur Windows, macOS, Linux, ChromeOS et iPadOS.
-- Les contrôles restent lisibles dans une caisse étroite.
+- Les contrôles restent lisibles dans un devis étroit.
 - Les bornes de quantité sont respectées.
 - Les totaux sont recalculés après chaque action.
 - Les tests couvrent les quantités payées et offertes sur une interface tactile simulée.
@@ -53,21 +53,21 @@ Dans la version 5.2.0 auditée, un clic gauche diminuait une quantité et un cli
 
 #### Incohérences constatées
 
-- Le README annonce 82 prestations tarifables alors que le catalogue actif et le manuel en comptent 87.
+- Le README annonce 82 soins tarifables alors que le catalogue actif et le manuel en comptent 87.
 - Le README décrivait encore un ancien comportement du logo principal alors que l’en-tête visuel a volontairement été simplifié.
-- La documentation présentait encore une modification directe du prix alors que le tarif libre passe désormais par **Prestation sur mesure**.
+- La documentation présentait encore une modification directe du prix alors que le tarif libre passe désormais par **Sur mesure**.
 
 #### Amélioration proposée
 
 - Corriger immédiatement les valeurs et descriptions devenues obsolètes.
-- Générer automatiquement les nombres de prestations et de familles depuis le catalogue.
+- Générer automatiquement les nombres de soins et de familles depuis le catalogue.
 - Centraliser le numéro de version utilisé par l’application, le cache PWA, les documents et les tests.
 - Ajouter des assertions reliant les fonctions documentées aux contrôles réellement rendus.
 
 #### Critères de validation
 
 - Le README, le mode d’emploi, l’utilisation rapide et les PDF décrivent le même comportement.
-- Le nombre de prestations ne peut plus diverger du catalogue actif.
+- Le nombre de soins ne peut plus diverger du catalogue actif.
 - Une validation échoue si une action documentée n’existe plus dans l’interface.
 
 ## P1 — Améliorations fonctionnelles de l’existant
@@ -76,7 +76,7 @@ Dans la version 5.2.0 auditée, un clic gauche diminuait une quantité et un cli
 
 #### Constat
 
-L’historique affiche le numéro, le client, la date, le nombre de prestations, le total et un statut unique `Enregistré`. Il permet uniquement de rouvrir le devis.
+L’historique affiche le numéro, le client, la date, le nombre de soins, le total et un statut unique `Enregistré`. Il permet uniquement de rouvrir le devis.
 
 #### Amélioration proposée
 
@@ -106,7 +106,7 @@ La sauvegarde complète JSON est manuelle. Une restauration remplace la base loc
 
 - Créer automatiquement un instantané avant toute restauration.
 - Vérifier entièrement une sauvegarde avant de remplacer les données locales.
-- Afficher un résumé avant restauration : version, date, nombre de devis, nombre de prestations personnalisées et réglages concernés.
+- Afficher un résumé avant restauration : version, date, nombre de devis, nombre de soins personnalisés et réglages concernés.
 - Proposer une restauration complète ou sélective.
 - Conserver plusieurs sauvegardes tournantes dans l’application de bureau.
 - Ajouter un rappel discret lorsqu’aucune sauvegarde externe récente n’existe.
@@ -123,7 +123,7 @@ La sauvegarde complète JSON est manuelle. Une restauration remplace la base loc
 
 #### Constat
 
-BCDevis conserve localement des coordonnées client, des prestations et l’historique commercial. Le fonctionnement hors ligne est un avantage, mais l’application ne fournit pas encore de verrouillage ou de chiffrement applicatif.
+BCDevis conserve localement des coordonnées client, des soins et l’historique commercial. Le fonctionnement hors ligne est un avantage, mais l’application ne fournit pas encore de verrouillage ou de chiffrement applicatif.
 
 #### Amélioration proposée
 
@@ -163,7 +163,7 @@ BCDevis conserve localement des coordonnées client, des prestations et l’hist
 
 #### Constat
 
-Le fichier principal regroupe le stockage, les migrations, le catalogue, le corps interactif, la caisse, les réglages, l’historique, le PDF, les partages et les raccourcis.
+Le fichier principal regroupe le stockage, les migrations, le catalogue, le corps interactif, le devis, les réglages, l’historique, le PDF, les partages et les raccourcis.
 
 #### Amélioration proposée
 
@@ -172,7 +172,7 @@ Conserver JavaScript natif et extraire progressivement des modules :
 - `storage` et migrations ;
 - modèle et calculs de devis ;
 - catalogue et personnalisation ;
-- caisse et interactions ;
+- devis et interactions ;
 - clients et historique ;
 - PDF et impression ;
 - partage et e-mail ;
@@ -199,7 +199,7 @@ Le projet charge un fichier CSS volumineux et contient également une quantité 
 - Déplacer les styles intégrés vers des fichiers dédiés.
 - Organiser les styles par fondations, composants, thèmes, impression et adaptations responsives.
 - Supprimer les règles obsolètes uniquement après comparaison du rendu.
-- Documenter les niveaux de `z-index` utilisés par le header, la caisse, les menus, les modales et les notifications.
+- Documenter les niveaux de `z-index` utilisés par le header, le devis, les menus, les modales et les notifications.
 - Ajouter un contrôle automatique des débordements aux largeurs de référence.
 
 #### Critères de validation
@@ -215,7 +215,7 @@ Le projet charge un fichier CSS volumineux et contient également une quantité 
 Compléter les tests de contrat existants par des scénarios utilisateur :
 
 - création et modification d’un devis ;
-- création d’une prestation sur mesure ;
+- création d’un soin sur mesure ;
 - quantités tactiles ;
 - ajout et conversion d’un pack ;
 - recherche et suppression dans l’historique ;

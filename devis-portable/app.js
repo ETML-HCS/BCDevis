@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.3.0";
+  const RELEASE_VERSION = "5.3.1";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -426,7 +426,7 @@
         return {
           id: uniqueLineId(line.id),
           serviceId: line.serviceId ?? null,
-          name: String(line.name || line.description || "Prestation").trim().slice(0, 240) || "Prestation",
+          name: String(line.name || line.description || "Soin").trim().slice(0, 240) || "Soin",
           categoryId: Number(line.categoryId) || 0,
           duration: boundedInteger(line.duration, 0, 1440, 0),
           offerType,
@@ -640,9 +640,9 @@
 
   function tariffChangeDetails(mode) {
     const rate = clamp(db.settings.studentDiscount, 0, 100);
-    if (mode === "student") return `Le rabais étudiant de ${rate}% sera appliqué à toutes les prestations. Les séances offertes des packs seront retirées.`;
-    if (mode === "pack") return "Le rabais étudiant sera retiré de toutes les prestations. Chaque ligne passera au Pack avec les quantités configurées dans les réglages.";
-    return "Le rabais étudiant sera retiré de toutes les prestations et les prix Séance seront rétablis.";
+    if (mode === "student") return `Le rabais étudiant de ${rate}% sera appliqué à tous les soins. Les séances offertes des packs seront retirées.`;
+    if (mode === "pack") return "Le rabais étudiant sera retiré de tous les soins. Chaque ligne passera au Pack avec les quantités configurées dans les réglages.";
+    return "Le rabais étudiant sera retiré de tous les soins et les prix Séance seront rétablis.";
   }
 
   function applyTariffToAllLines(mode) {
@@ -716,10 +716,10 @@
     const free = Math.max(0, Math.round(Number(db.settings.packFreeDefault) || 0));
     const studentDiscount = clamp(db.settings.studentDiscount, 0, 100);
     const content = {
-      single: { top: "Séance unique", hint: "Prix par séance" },
-      pack: { top: `Pack ${paid} + ${free}`, hint: `${paid} payées + ${free} offerte${free === 1 ? "" : "s"}` },
-      student: { top: `Étudiant −${studentDiscount}%`, hint: `Rabais de ${studentDiscount}% appliqué au total` }
-    }[selectedOfferMode] || { top: "Séance unique", hint: "Prix par séance" };
+      single: { top: "Séance unique", hint: "Séance", fullHint: "Prix par séance" },
+      pack: { top: `Pack ${paid} + ${free}`, hint: `${paid} + ${free}`, fullHint: `${paid} payées + ${free} offerte${free === 1 ? "" : "s"}` },
+      student: { top: `Étudiant −${studentDiscount}%`, hint: `−${studentDiscount} %`, fullHint: `Rabais de ${studentDiscount}% appliqué au total` }
+    }[selectedOfferMode] || { top: "Séance unique", hint: "Séance", fullHint: "Prix par séance" };
     $$("[data-offer-mode]").forEach((button) => {
       const active = button.dataset.offerMode === selectedOfferMode;
       button.classList.toggle("active", active);
@@ -729,7 +729,10 @@
     });
     $("[data-offer-mode=\"pack\"] small").textContent = `${paid} + ${free} offerte${free === 1 ? "" : "s"}`;
     $("[data-offer-mode=\"student\"] small").textContent = `−${studentDiscount} %`;
-    $("#activeOfferHint").textContent = content.hint;
+    const activeOfferHint = $("#activeOfferHint");
+    activeOfferHint.textContent = content.hint;
+    activeOfferHint.title = content.fullHint;
+    activeOfferHint.setAttribute("aria-label", content.fullHint);
     const currentOfferTop = $("#currentOfferTop");
     if (currentOfferTop) currentOfferTop.textContent = content.top;
   }
@@ -911,14 +914,14 @@
     card.innerHTML = `<button class="tile-detail-close" type="button" data-tile-detail-close aria-label="Fermer le détail" title="Fermer"><svg aria-hidden="true"><use href="#icon-x"></use></svg></button>
       <div class="tile-detail-heading">
         <span class="tile-detail-icon service-zone-icon" aria-hidden="true"><svg><use href="${prestationIconHref(visual.icon)}"></use></svg></span>
-        <div><small>Détail de la prestation</small><h3 id="tileDetailTitle">${escapeHTML(item.name)}</h3><p>${escapeHTML(visual.zone)}</p></div>
+        <div><small>Détail</small><h3 id="tileDetailTitle">${escapeHTML(item.name)}</h3><p>${escapeHTML(visual.zone)}</p></div>
       </div>
       <dl class="tile-detail-meta">
         ${item.duration ? `<div><dt>Durée</dt><dd>${escapeHTML(item.duration)} min</dd></div>` : ""}
         <div><dt>Tarif</dt><dd>${escapeHTML(display.label)}</dd></div>
         <div><dt>Prix</dt><dd title="${escapeHTML(priceDisplay.title)}">${money(priceDisplay.value)}</dd></div>
       </dl>
-      <button class="tile-detail-add" type="button" data-tile-detail-add="${escapeHTML(item.id)}"><svg aria-hidden="true"><use href="#icon-plus"></use></svg>${added ? "Ajouter encore" : "Ajouter à la caisse"}</button>`;
+      <button class="tile-detail-add" type="button" data-tile-detail-add="${escapeHTML(item.id)}" aria-label="${added ? "Ajouter encore au devis" : "Ajouter au devis"}"><svg aria-hidden="true"><use href="#icon-plus"></use></svg>${added ? "Encore" : "Ajouter"}</button>`;
     layer.dataset.serviceId = String(item.id);
     layer.hidden = false;
     layer.classList.toggle("is-pinned", pinned);
@@ -1085,7 +1088,7 @@
     if (side === "back") {
       return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapBackTitle bodyMapBackDescription">
         <title id="bodyMapBackTitle">Mannequin ${modelLabel} vu de dos</title>
-        <desc id="bodyMapBackDescription">Silhouette anatomique ${modelLabel} et anonyme vue de dos. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+        <desc id="bodyMapBackDescription">Silhouette anatomique ${modelLabel} et anonyme vue de dos. Choisissez une zone du corps pour afficher les soins correspondants.</desc>
         ${headMask}
         <g class="body-figure">${outline}
           ${region("back-scalp", anonymousBodyHeadMarkup("back", geometry.head))}
@@ -1098,7 +1101,7 @@
     }
     return `<svg class="interactive-body-map body-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="react-native-body-highlighter" viewBox="${geometry.viewBox}" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="bodyMapFrontTitle bodyMapFrontDescription">
       <title id="bodyMapFrontTitle">Mannequin ${modelLabel} vu de face</title>
-      <desc id="bodyMapFrontDescription">Silhouette anatomique ${modelLabel} et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les prestations correspondantes.</desc>
+      <desc id="bodyMapFrontDescription">Silhouette anatomique ${modelLabel} et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les soins correspondants.</desc>
       ${headMask}
       <g class="body-figure">${outline}
         ${region("front-visage", anonymousBodyHeadMarkup("front", geometry.head))}
@@ -1148,7 +1151,7 @@
     const facialLandmarks = "M512 352C507 387 506 418 510 447M488 478Q512 493 536 478M492 525Q512 517 532 525M466 548Q512 570 558 548M482 611Q512 623 542 611";
     return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="user-reference" viewBox="260 45 505 740" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="faceMapTitle faceMapDescription">
       <title id="faceMapTitle">Détail du visage neutre</title>
-      <desc id="faceMapDescription">Schéma médical neutre et anonyme, sans cheveux ni identité reconnaissable. Choisissez une zone anatomique pour filtrer la prestation correspondante.</desc>
+      <desc id="faceMapDescription">Schéma médical neutre et anonyme, sans cheveux ni identité reconnaissable. Choisissez une zone anatomique pour filtrer le soin correspondant.</desc>
       <g class="face-figure">
         <path class="face-anatomy-base face-anatomy-neck-base" d="${neck}"/>
         <path class="face-anatomy-base" d="${outline}"/>
@@ -1218,7 +1221,7 @@
       : selectedRegion
         ? servicesForBodyRegion(selectedRegion, selectedFamily)
         : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
-    const resultTitle = needle ? "Résultats de recherche" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Prestations";
+    const resultTitle = needle ? "Résultats" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Soins";
     const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
     const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>`;
     const mapHint = faceDetailActive
@@ -1240,7 +1243,7 @@
           <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
           ${mapHint}
         </section>
-        <section class="body-results" aria-live="polite" aria-label="Prestations : ${escapeHTML(resultTitle)}" data-body-results-title="${escapeHTML(resultTitle)}">${options}</section>
+        <section class="body-results" aria-live="polite" aria-label="Soins : ${escapeHTML(resultTitle)}" data-body-results-title="${escapeHTML(resultTitle)}">${options}</section>
       </div>
       ${auxiliary.length ? `<div class="body-auxiliary"><div>${auxiliary.map((family) => `<button type="button" data-body-family="${family.id}" class="${!activeBodyRegion && activeFamily === family.id ? "active" : ""}"><svg aria-hidden="true"><use href="${prestationIconHref(family.icon)}"></use></svg><strong>${escapeHTML(family.name)}</strong><small>${plural(allServices().filter((item) => serviceInFamily(item, family)).length, "soin")}</small></button>`).join("")}</div></div>` : ""}
       <p class="body-selector-credit">Silhouette interactive adaptée du principe de <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noreferrer">react-native-body-highlighter</a> (MIT).</p>
@@ -1278,7 +1281,7 @@
     const offer = ["single", "pack", "student"].includes(offerType) ? offerType : "single";
     const existing = quote.lines.find((line) => String(line.serviceId) === String(item.id) && line.offerType === offer);
     if (existing && offer === "pack") {
-      toast(`${item.name} · ce pack est déjà dans la caisse`);
+      toast(`${item.name} · pack déjà ajouté`);
       return;
     }
     if (existing) existing.quantity = boundedInteger(existing.quantity + 1, 1, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
@@ -1318,7 +1321,7 @@
       $("#clientDetails").textContent = [client.phone, client.email].filter(Boolean).join(" · ") || client.address || "Coordonnées à compléter";
     } else {
       $("#clientInitials").textContent = "+";
-      $("#clientName").textContent = "Ajouter un client";
+      $("#clientName").textContent = "Client";
       $("#clientDetails").textContent = "Nom, téléphone et e-mail";
     }
   }
@@ -1338,10 +1341,10 @@
 
   function renderCart() {
     const container = $("#cartLines");
-    $("#cartItemCount").textContent = quote.lines.length ? plural(quote.lines.length, "prestation") : "Aucune prestation";
+    $("#cartItemCount").textContent = quote.lines.length ? plural(quote.lines.length, "soin") : "Vide";
     $("#mobileCartCount").textContent = quote.lines.length;
     if (!quote.lines.length) {
-      container.innerHTML = `<div class="cart-empty"><svg><use href="#icon-empty"></use></svg><strong>Ajoutez une prestation</strong><p>Les options de paiement apparaîtront ensuite.</p></div>`;
+      container.innerHTML = `<div class="cart-empty"><svg><use href="#icon-empty"></use></svg><strong>Ajoutez un soin</strong><p>Les options de paiement apparaîtront ensuite.</p></div>`;
       return;
     }
     container.innerHTML = quote.lines.map((line) => {
@@ -1366,11 +1369,11 @@
         increaseAction: "increase-free",
         minimum: 0
       }) : "";
-      const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
+      const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">+${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
         <div class="cart-line-delete-zone"><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer ${escapeHTML(line.name)}" title="Supprimer ${escapeHTML(line.name)}"><svg><use href="#icon-trash"></use></svg></button></div>
         <div class="cart-line-main">
-          <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
+          <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom du soin : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
           <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong></div>
         </div>
       </article>`;
@@ -1502,7 +1505,7 @@
     const line = lineFromElement(input);
     if (!line) return;
     const field = input.dataset.lineField;
-    if (field === "name") line.name = input.value.trim() || "Prestation";
+    if (field === "name") line.name = input.value.trim() || "Soin";
     saveLocal();
     renderCart();
     renderTotals();
@@ -1650,7 +1653,7 @@
       return `<button class="history-item ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${item.id}">
         <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
         <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
-        <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "prestation")}</span><span class="history-status">Enregistré</span></span>
+        <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">Enregistré</span></span>
       </button>`;
     }).join("");
   }
@@ -2140,8 +2143,8 @@
         <div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div>
       </div>
       <section class="print-services">
-        <div class="print-section-heading"><div><strong>Détail des prestations</strong></div></div>
-        <table class="print-table"><thead><tr><th>Prestation</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="print-section-heading"><div><strong>Soins</strong></div></div>
+        <table class="print-table"><thead><tr><th>Soin</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
         <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>Total avant offres</td><td>${money(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>Rabais total</td><td>− ${money(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
@@ -2158,7 +2161,7 @@
   }
 
   function printQuote() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant l’impression.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant l’impression.", "error"); return; }
     saveQuote();
     renderPrint();
     window.setTimeout(() => window.print(), 80);
@@ -2186,7 +2189,7 @@
   }
 
   async function downloadPdf() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le téléchargement.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant le téléchargement.", "error"); return; }
     saveQuote();
     renderPrint();
     if (typeof window.bcdevisDesktop?.savePdf !== "function") {
@@ -2215,11 +2218,11 @@
   }
 
   function transmissionMessage() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant le transfert.", "error"); return; }
     const totals = calculateQuote(quote);
     const clientName = String(quote.client?.name || "").trim();
     const lines = quote.lines.map((line) => {
-      const name = String(line.name || "Prestation").trim().replace(/[\s—–-]+$/u, "").trim() || "Prestation";
+      const name = String(line.name || "Soin").trim().replace(/[\s—–-]+$/u, "").trim() || "Soin";
       const quantity = Math.max(0, Number(line.quantity) || 0);
       const unitPrice = line.offerType === "student"
         ? Math.max(0, Number(line.basePrice ?? line.price) || 0)
@@ -2289,7 +2292,7 @@
   }
 
   async function shareQuoteViaWhatsApp() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant le transfert.", "error"); return; }
     saveQuote();
     renderPrint();
     setTransmissionMenuOpen(false);
@@ -2309,7 +2312,7 @@
   }
 
   async function shareQuoteViaEmail() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant le transfert.", "error"); return; }
     saveQuote();
     renderPrint();
     setTransmissionMenuOpen(false);
@@ -2343,7 +2346,7 @@
   }
 
   async function shareQuoteViaOutlookWeb() {
-    if (!quote.lines.length) { toast("Ajoutez au moins une prestation avant le transfert.", "error"); return; }
+    if (!quote.lines.length) { toast("Ajoutez un soin avant le transfert.", "error"); return; }
     saveQuote();
     renderPrint();
     setTransmissionMenuOpen(false);
@@ -2487,8 +2490,8 @@
     const input = $("#catalogSearch");
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "Fermer la recherche" : "Rechercher une prestation");
-    toggle.title = open ? "Fermer la recherche" : "Rechercher une prestation";
+    toggle.setAttribute("aria-label", open ? "Fermer la recherche" : "Rechercher un soin");
+    toggle.title = open ? "Fermer la recherche" : "Rechercher un soin";
     toggle.querySelector("use").setAttribute("href", open ? "#icon-x" : "#icon-search");
     if (!open && clear && searchQuery) {
       searchQuery = "";
@@ -3131,7 +3134,7 @@
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
-    if (action === "clear" && (quote.lines.length === 0 || window.confirm("Vider toutes les prestations de ce devis ?"))) {
+    if (action === "clear" && (quote.lines.length === 0 || window.confirm("Vider tous les soins de ce devis ?"))) {
       quote.lines = [];
       saveLocal();
       renderAll();

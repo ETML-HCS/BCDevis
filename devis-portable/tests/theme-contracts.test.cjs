@@ -33,14 +33,17 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.3\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "5\.3\.1";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.3\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 5\.3\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /Lignes plus nettes[\s\S]*?Suppression discrète[\s\S]*?Balayage tactile/, "Les nouveautés doivent annoncer les améliorations de la version 5.3.0");
-assert.match(html, /<symbol id="icon-swipe-left"[\s\S]*?<use href="#icon-swipe-left">/, "Le balayage tactile doit utiliser un pictogramme cohérent");
+assert.match(html, /<strong>Soins<\/strong>[\s\S]*?<strong>Devis<\/strong>[\s\S]*?<strong>Ajouter<\/strong>/, "Les nouveautés doivent annoncer les libellés courts de la version 5.3.1");
+assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
+assert.match(html, /id="familyNavTitle">Soins<[\s\S]*?id="checkoutTitle">Devis</, "Les deux zones principales doivent utiliser des noms courts");
+assert.match(html, /id="customItemTitle">Sur mesure<[\s\S]*?<span>Nom<\/span>[\s\S]*?>Ajouter<\/button>/, "Le formulaire libre doit rester ultra court");
+assert.doesNotMatch(html, />\s*(?:Prestations|Caisse|Ajouter à la caisse)\s*</, "Les anciens libellés longs ne doivent plus être visibles");
 assert.match(app, /catalogOverrides: sanitizeCatalogOverrides/, "Les personnalisations du catalogue doivent être restaurées de façon sûre");
 
 function themeToken(block, token) {
@@ -210,6 +213,8 @@ assert.doesNotMatch(
   /data-settings-panel="document"[\s\S]*?<h3>Catalogue<\/h3>/,
   "Le panneau Devis ne doit contenir que les réglages du document"
 );
+assert.match(app, /single: \{ top: "Séance unique", hint: "Séance", fullHint: "Prix par séance" \}/, "Le tarif actif doit rester court avec son libellé complet au survol");
+assert.match(app, /activeOfferHint\.title = content\.fullHint/, "Le libellé complet du tarif doit rester accessible au survol");
 assert.equal((html.match(/data-settings-tab="/g) || []).length, 4, "Personnalisation doit proposer quatre groupes");
 assert.equal((html.match(/data-settings-panel="/g) || []).length, 4, "Chaque groupe doit avoir un panneau dédié");
 assert.match(

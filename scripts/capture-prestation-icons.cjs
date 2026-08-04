@@ -64,7 +64,7 @@ async function main() {
       main.innerHTML = \`
         <header>
           <p>Clinique Bellecour · contrôle anatomique</p>
-          <h1>Les 91 pictogrammes de prestations</h1>
+          <h1>Les pictogrammes des soins</h1>
           <span>Rendu réel 34 px · \${new Set(services.map((service) => service.icon)).size} dessins anatomiques</span>
         </header>
         <section>
@@ -121,7 +121,7 @@ async function main() {
       };
     })()`);
 
-    if (audit.cards !== 91 || audit.uniqueIcons !== 57 || audit.invalidGeometry.length) {
+    if (audit.cards !== 96 || audit.uniqueIcons !== 57 || audit.invalidGeometry.length) {
       throw new Error(`Audit SVG invalide : ${JSON.stringify(audit)}`);
     }
     await new Promise((resolve) => setTimeout(resolve, 150));

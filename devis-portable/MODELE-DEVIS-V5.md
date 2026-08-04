@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Modèle de devis V5</h1>
   <p>Importer le modèle vierge fourni avec le livrable client.</p>
-  <p class="version">BCDevis 5.3.0</p>
+  <p class="version">BCDevis 5.3.1</p>
 </div>
 
 <style>
@@ -17,7 +17,7 @@
 
 ## Fichier fourni
 
-Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.3.0.
+Le fichier `MODELE-DEVIS-V5.json` est un devis vierge compatible avec BCDevis 5.3.1.
 
 Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'import :
 
@@ -29,21 +29,21 @@ Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'i
 ## Importer le modèle
 
 1. Ouvrez BCDevis.
-2. Dans l'en-tête de la caisse, ouvrez le menu `...`.
-3. Cliquez sur **Importer un devis**.
+2. Dans l'en-tête du devis, ouvrez le menu `...`.
+3. Cliquez sur **Importer**.
 4. Sélectionnez `MODELE-DEVIS-V5.json`.
-5. Ajoutez le client et les prestations.
+5. Ajoutez le client et les soins.
 6. Cliquez sur **Enregistrer**.
 
 ## Créer votre propre modèle
 
-Préparez un devis avec les prestations et notes souhaitées, puis utilisez `...` > **Exporter ce devis**.
+Préparez un devis avec les soins et notes souhaités, puis utilisez `...` > **Exporter**.
 
 Pour réutiliser ce fichier :
 
 1. importez-le ;
 2. BCDevis lui attribue une nouvelle identité si le numéro existe déjà ;
-3. adaptez le client, la date, les quantités et les prestations ;
+3. adaptez le client, la date, les quantités et les soins ;
 4. enregistrez le nouveau devis.
 
-<div class="callout"><strong>Important :</strong> utilisez Importer un devis pour un modèle unique. Utilisez Historique > Restaurer uniquement pour une sauvegarde complète, car cette action remplace toutes les données locales.</div>
+<div class="callout"><strong>Important :</strong> utilisez <strong>Importer</strong> pour un modèle unique. Utilisez <strong>Historique &gt; Restaurer</strong> uniquement pour une sauvegarde complète, car cette action remplace toutes les données locales.</div>

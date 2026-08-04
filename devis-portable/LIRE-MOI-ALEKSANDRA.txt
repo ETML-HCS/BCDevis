@@ -1,24 +1,23 @@
-BCDevis 5.3.0 - Livrable pour Aleksandra
+BCDevis 5.3.1 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 5.3.0
+NOUVEAUTES 5.3.1
 
-- Les boutons - et + restent lisibles, y compris pour un Pack et dans une
-  caisse étroite.
-- Avec une souris, la poubelle apparaît uniquement au bord droit de la ligne.
-- Sur écran tactile, un balayage gauche révèle la poubelle avant confirmation.
-- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.0.
+- Les zones principales s'appellent Soins et Devis.
+- Le tarif libre s'appelle Sur mesure.
+- Les actions visibles restent courtes : Ajouter, Vider, Importer et Exporter.
+- Cet écran de nouveautés apparaît une seule fois pour la version 5.3.1.
 
 CONTENU
 
 1-Windows
-  BCDevis-5.3.0.exe
+  BCDevis-5.3.1.exe
 
 2-Linux
-  BCDevis-5.3.0-linux-x86_64.AppImage
+  BCDevis-5.3.1-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-5.3.0-chromeos.zip
+  BCDevis-5.3.1-chromeos.zip
 
 4-Documentation
   BCDevis-V5-Utilisation-rapide.pdf
@@ -31,7 +30,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-5.3.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-5.3.1.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -45,14 +44,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-5.3.0-linux-x86_64.AppImage
-  ./BCDevis-5.3.0-linux-x86_64.AppImage
+  chmod +x BCDevis-5.3.1-linux-x86_64.AppImage
+  ./BCDevis-5.3.1-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-5.3.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-5.3.1-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -74,8 +73,8 @@ PDF dans Téléchargements afin de pouvoir le joindre manuellement au message.
 
 MODELE DE DEVIS
 
-Dans BCDevis, ouvrir le menu ... en haut de la caisse, choisir Importer un
-devis, puis sélectionner MODELE-DEVIS-V5.json. La date et le prochain
+Dans BCDevis, ouvrir le menu ... en haut du devis, choisir Importer, puis
+sélectionner MODELE-DEVIS-V5.json. La date et le prochain
 numéro sont attribués automatiquement.
 
 SAUVEGARDE

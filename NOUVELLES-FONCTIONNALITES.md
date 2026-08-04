@@ -3,7 +3,7 @@
 ## Statut du document
 
 - **Date de la proposition :** 3 août 2026
-- **Version de référence :** BCDevis 5.3.0
+- **Version de référence :** BCDevis 5.3.1
 - **État :** idées à évaluer, aucune fonction décrite ici n’est considérée comme engagée ou implémentée
 - **Document associé :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md)
 
@@ -57,7 +57,7 @@ Donner une vision simple des devis en attente et éviter les oublis, sans ajoute
 ### Fonctionnement envisagé
 
 - Recherche par nom, téléphone ou e-mail.
-- Création d’un client depuis la caisse.
+- Création d’un client depuis le devis.
 - Sélection d’un client existant en quelques actions.
 - Affichage de ses devis précédents.
 - Détection prudente des doublons.
@@ -97,15 +97,15 @@ Accélérer les propositions récurrentes.
 ### Fonctions envisagées
 
 - Enregistrer un devis comme modèle sans coordonnées client.
-- Créer des ensembles fréquents de prestations.
-- Ajouter un ensemble complet à la caisse en une action.
-- Épingler des prestations favorites en tête du catalogue.
+- Créer des ensembles fréquents de soins.
+- Ajouter un ensemble complet au devis en une action.
+- Épingler des soins favoris en tête du catalogue.
 - Dupliquer puis adapter un modèle.
 - Importer et exporter les modèles.
 
 ### Exemples
 
-- Pack de prestations fréquemment associé.
+- Pack de soins fréquemment associé.
 - Proposition type pour une zone du corps.
 - Devis étudiant standard.
 - Modèle promotionnel temporaire.
@@ -120,7 +120,7 @@ Conserver la trace des propositions successives adressées au même client.
 
 - Créer une version V2 à partir d’un devis envoyé ou accepté.
 - Conserver les versions précédentes en lecture seule.
-- Comparer les prestations, quantités, rabais et totaux modifiés.
+- Comparer les soins, quantités, rabais et totaux modifiés.
 - Indiquer la version dans le PDF.
 - Éviter de remplacer silencieusement le document déjà envoyé.
 
@@ -178,13 +178,13 @@ Permettre une analyse externe sans surcharger l’interface principale.
 - CSV ou tableur des devis par période.
 - Répartition par statut.
 - Montants proposés, acceptés et refusés.
-- Prestations les plus souvent proposées.
+- Soins les plus souvent proposés.
 - Délais moyens entre création et acceptation.
 - Liste des devis expirés ou à relancer.
 
 ### Principes
 
-- Aucun tableau de bord permanent n’est nécessaire dans la caisse.
+- Aucun tableau de bord permanent n’est nécessaire dans le devis.
 - Les indicateurs doivent être utiles à une décision concrète.
 - Les exports contenant des clients doivent être clairement identifiés comme sensibles.
 
@@ -333,7 +333,7 @@ Ces quatre fonctions forment ensemble un suivi commercial léger et cohérent.
 Avant d’ajouter une nouvelle fonction :
 
 1. confirmer qu’elle répond à un usage réel et fréquent ;
-2. vérifier qu’elle ne surcharge pas la caisse principale ;
+2. vérifier qu’elle ne surcharge pas le devis principal ;
 3. définir son comportement hors connexion ;
 4. identifier les nouvelles données conservées ;
 5. prévoir export, sauvegarde, suppression et migration ;

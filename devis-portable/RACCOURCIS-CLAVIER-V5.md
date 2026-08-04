@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Raccourcis clavier V5</h1>
   <p>Les 16 commandes rapides disponibles dans BCDevis.</p>
-  <p class="version">Version 5.3.0 - Windows, Linux, macOS et ChromeOS</p>
+  <p class="version">Version 5.3.1 - Windows, Linux, macOS et ChromeOS</p>
 </div>
 
 ## Catalogue
@@ -10,9 +10,9 @@
 | Raccourci | Action |
 | --- | --- |
 | `Alt + M` | Ouvrir le menu Catalogue |
-| `Ctrl + K` ou `/` | Rechercher une prestation |
+| `Ctrl + K` ou `/` | Rechercher |
 | `Alt + P` | Afficher ou masquer les prix |
-| `Ctrl + Maj + N` | Créer une prestation sur mesure |
+| `Ctrl + Maj + N` | Sur mesure |
 
 ## Devis
 
@@ -21,9 +21,9 @@
 | `Ctrl + N` | Nouveau devis |
 | `Ctrl + S` | Enregistrer le devis |
 | `Ctrl + H` | Ouvrir l'historique |
-| `Ctrl + D` | Dupliquer le devis |
-| `Ctrl + O` | Importer un devis |
-| `Ctrl + E` | Exporter le devis |
+| `Ctrl + D` | Dupliquer |
+| `Ctrl + O` | Importer |
+| `Ctrl + E` | Exporter |
 
 ## Impression et partage
 

@@ -131,7 +131,7 @@ const PRESTATION_VISUALS = {
 
 const service = (id, name, price, duration, categoryId, packAveragePrice = null) => {
   const visual = PRESTATION_VISUALS[id];
-  if (!visual) throw new Error(`Pictogramme de prestation manquant pour ${id} · ${name}`);
+  if (!visual) throw new Error(`Pictogramme de soin manquant pour ${id} · ${name}`);
   return {
     id,
     name,
@@ -155,7 +155,7 @@ window.QUOTE_FAMILIES = [
   { id: "medecine", name: "Médecine esthétique", description: "Injections, lasers médicaux, peau et cheveux.", icon: "aesthetic", categoryIds: [16, 17, 32] },
   { id: "combinees", name: "Zones combinées", description: "Associations multi-zones avec tarifs Séance et Pack 6 + 1.", icon: "zones", categoryIds: [35] },
   { id: "consultations", name: "Consultations", description: "", icon: "consultation", categoryIds: [7, 13] },
-  { id: "all", name: "Tous les soins", description: "L’ensemble des prestations disponibles.", icon: "all", categoryIds: [] }
+  { id: "all", name: "Tous", description: "Tous les soins disponibles.", icon: "all", categoryIds: [] }
 ];
 
 window.QUOTE_BODY_REGIONS = [

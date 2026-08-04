@@ -155,7 +155,7 @@ assert.match(
   "Le choix du mode doit être sauvegardé avec les autres réglages"
 );
 
-assert.match(html, /aria-label="Navigation des prestations"/, "Le réglage doit annoncer son groupe");
+assert.match(html, /aria-label="Navigation des soins"/, "Le réglage doit annoncer son groupe");
 assert.match(html, /<script src="body-anatomy\.js"><\/script>\s*<script src="app\.js"><\/script>/, "Les tracés anatomiques doivent être chargés avant l’application");
 assert.match(html, /name="catalogMode" type="radio" value="tiles"/, "Le mode Tuiles doit rester disponible");
 assert.match(html, /name="catalogMode" type="radio" value="body"/, "Le mode Corps interactif doit être disponible");

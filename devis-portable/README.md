@@ -1,12 +1,13 @@
-# BCDevis - version 5.3.0
+# BCDevis - version 5.3.1
 
 Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
 
-## Nouveautés 5.3.0
+## Nouveautés 5.3.1
 
-- Les quantités payées et offertes conservent des boutons **−** et **+** lisibles, y compris dans une caisse étroite.
-- La poubelle ne prend plus de place dans la ligne et apparaît uniquement au bord droit avec une souris.
-- Sur écran tactile, un balayage vers la gauche révèle la poubelle ; un toucher volontaire confirme ensuite la suppression.
+- Les zones principales s’appellent désormais **Soins** et **Devis**.
+- Le tarif libre s’appelle simplement **Sur mesure**.
+- Les actions visibles restent courtes : **Ajouter**, **Vider**, **Importer** ou **Exporter**.
+- Les libellés complets restent disponibles dans les infobulles et pour les aides techniques.
 - Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
 
 Documents maintenus avec la version 5 :
@@ -18,7 +19,7 @@ Documents maintenus avec la version 5 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-5.3.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-5.3.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -26,35 +27,35 @@ Documents maintenus avec la version 5 :
 
 ## Interface tactile
 
-- Deux zones seulement : prestations à gauche et caisse à droite.
-- Sur ordinateur, la caisse occupe en permanence toute la hauteur de la fenêtre.
-- Trois modes de prestation en tête : Séance, Pack et Étudiant −50 %.
+- Deux zones seulement : **Soins** à gauche et **Devis** à droite.
+- Sur ordinateur, le devis occupe en permanence toute la hauteur de la fenêtre.
+- Trois tarifs en tête : Séance, Pack et Étudiant −50 %.
 - L’accordéon reste volontairement sobre : nom, mode actif et durée, sans répéter les montants.
-- Le prix apparaît uniquement après ajout dans la caisse.
-- Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute à la caisse.
-- Dans `Réglages` > `Interface` > `Navigation des prestations`, le mode **Corps interactif** remplace l’accordéon par une silhouette Femme/Homme et Face/Dos : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
+- Le prix apparaît uniquement après ajout au devis.
+- Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute au devis.
+- Dans `Réglages` > `Interface` > `Navigation`, le mode **Corps interactif** remplace l’accordéon par une silhouette Femme/Homme et Face/Dos : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
 - Le mode Étudiant réduit directement le prix de chaque soin selon le pourcentage configuré, fixé à 50 % par défaut.
-- L’en-tête de la caisse donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
-- Les commandes Imprimer, PDF et Envoyer restent visibles au bas de la caisse dès qu’une prestation est ajoutée.
-- Sur tablette ou téléphone, un grand onglet permet de passer de Prestations à Caisse.
-- Sur les écrans peu hauts, prestations et caisse défilent sans bandeau d’actions fixe en bas.
+- L’en-tête du devis donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
+- Les commandes Imprimer, PDF et Envoyer restent visibles au bas du devis dès qu’un soin est ajouté.
+- Sur tablette ou téléphone, un grand onglet permet de passer de **Soins** à **Devis**.
+- Sur les écrans peu hauts, les deux zones défilent sans bandeau d’actions fixe en bas.
 
 ## Parcours
 
-1. Choisir le mode de prestation : Séance, Pack ou Étudiant −50 %.
+1. Choisir le tarif : Séance, Pack ou Étudiant −50 %.
 2. En mode **Tuiles**, ouvrir une famille. En mode **Corps interactif**, choisir Femme/Homme et Face/Dos puis toucher directement la zone du corps ; les soins correspondants apparaissent à côté.
-3. Toucher le soin désiré : il est ajouté directement à la caisse avec le prix et les conditions du mode actif.
-4. Ajuster dans la caisse les quantités payées et, pour un pack, les séances offertes. En mode Séance, dès que la quantité atteint le seuil configuré du pack, la caisse propose d’ajouter la séance offerte. Les séances offertes apparaissent sur le devis mais ne sont jamais facturées.
+3. Toucher le soin désiré : il est ajouté directement au devis avec le prix et les conditions du tarif actif.
+4. Ajuster dans le devis les quantités payées et, pour un pack, les séances offertes. En mode Séance, dès que la quantité atteint le seuil configuré du pack, le bouton **+1 offerte** apparaît. Les séances offertes ne sont jamais facturées.
 
 ## Fonctions incluses
 
-- 87 prestations tarifables issues du catalogue fourni, regroupées en 10 familles pratiques.
-- Un sélecteur Séance/Pack/Étudiant : le passage vers ou depuis le tarif étudiant applique le nouveau tarif à toutes les prestations du devis, après confirmation. Cette confirmation peut être désactivée depuis sa case « Ne plus afficher ce message ». Le rabais étudiant, configurable et fixé à 50 % par défaut, est affiché séparément dans les totaux pour rendre l’économie visible.
+- 87 soins tarifables issus du catalogue fourni, regroupés en 10 familles pratiques.
+- Un sélecteur Séance/Pack/Étudiant : le passage vers ou depuis le tarif étudiant applique le nouveau tarif à tous les soins du devis, après confirmation. Cette confirmation peut être désactivée depuis sa case « Ne plus afficher ce message ». Le rabais étudiant, configurable et fixé à 50 % par défaut, est affiché séparément dans les totaux pour rendre l’économie visible.
 - Réglages globaux du pack et du pourcentage du tarif étudiant.
-- Recherche simultanée dans toutes les familles et prestations personnalisées réutilisables.
+- Recherche simultanée dans toutes les familles et soins personnalisés réutilisables.
 - Navigation corporelle facultative, accessible au clavier, avec morphologies femme/homme, vues face/dos et accès conservé aux consultations, à l’électrolyse, à la médecine esthétique et aux zones combinées.
 - Démarrage automatique facultatif avec la session Windows, Linux ou macOS, configurable dans `Réglages` > `Interface`.
-- Caisse avec quantités explicites et coupon manuel : pourcentage ou montant CHF. Pour un tarif libre, **Catalogue > Sur mesure** crée une prestation personnalisée. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
+- Devis avec quantités explicites et coupon manuel : pourcentage ou montant CHF. Pour un tarif libre, **Catalogue > Sur mesure** crée un soin personnalisé. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
 - TVA incluse par défaut, désactivable ou ajoutée en plus. Le paiement échelonné propose 3/4/6 mois sous 1’000 CHF, ajoute 10 mois dès 1’000 CHF, puis 12 mois dès 2’000 CHF.
 - Date du devis fixée au jour même par défaut, ajustable jusqu’à J+14 ; validité calculée automatiquement à 30 jours calendaires.
 - Numéro de devis traçable : `DEV-YYYYMMDDMACHINE001`, avec un compteur quotidien propre à chaque machine. Les anciens numéros locaux sont automatiquement convertis à ce format ; le prochain index est déterminé à partir du compteur enregistré et des devis déjà présents dans la sauvegarde locale.
@@ -70,7 +71,7 @@ Toutes les données restent locales :
 - sous macOS, dans le profil applicatif BCDevis de l’utilisateur ;
 - sous ChromeOS, dans le stockage du profil Chrome qui a installé la PWA.
 
-Pour déplacer les données vers un autre ordinateur ou une autre plateforme, ouvrir **Historique** depuis l’en-tête de la caisse, choisir `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive JSON peut être copiée sur une clé USB et ne dépend pas d’Internet.
+Pour déplacer les données vers un autre ordinateur ou une autre plateforme, ouvrir **Historique** depuis l’en-tête du devis, choisir `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive JSON peut être copiée sur une clé USB et ne dépend pas d’Internet.
 
 ## Créer un PDF
 
@@ -105,7 +106,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-5.3.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-5.3.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -133,7 +134,7 @@ La fiche [RACCOURCIS-CLAVIER-V5.md](RACCOURCIS-CLAVIER-V5.md) documente les 16 c
 
 ## Envoyer un devis
 
-La commande **Envoyer** au bas de la caisse propose trois choix :
+La commande **Envoyer** au bas du devis propose trois choix :
 
 - **WhatsApp** : prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message du devis prérempli ;
 - **Outlook Web** : crée le PDF dans **Téléchargements**, puis ouvre Outlook dans le navigateur avec le destinataire, l’objet et le texte préremplis. Il reste uniquement à joindre le PDF téléchargé ;
@@ -155,7 +156,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-5.3.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-5.3.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -165,7 +166,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -173,7 +174,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-5.3.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

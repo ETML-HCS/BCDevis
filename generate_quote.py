@@ -112,7 +112,7 @@ def build_pdf(output_path):
 
     c.setTitle(f"Devis {QUOTE['number']} - Clinique Bellecour")
     c.setAuthor("Clinique Bellecour")
-    c.setSubject("Devis de prestations de médecine esthétique")
+    c.setSubject("Devis de soins de médecine esthétique")
 
     c.setFillColor(INK)
     c.rect(0, height - 12, width * 0.72, 12, fill=1, stroke=0)
@@ -200,7 +200,7 @@ def build_pdf(output_path):
     section_y = overview_y - 25
     c.setFillColor(INK)
     c.setFont("BellecourSans-Bold", 7.4)
-    c.drawString(left, section_y, "PRESTATIONS SÉLECTIONNÉES")
+    c.drawString(left, section_y, "SOINS")
 
     table_top = section_y - 11
     header_h = 25
@@ -210,7 +210,7 @@ def build_pdf(output_path):
     c.roundRect(left, table_top - header_h, content_width, header_h, 7, fill=1, stroke=0)
     c.rect(left, table_top - header_h, content_width, 7, fill=1, stroke=0)
     headers = [
-        ("ZONE ET PRESTATION", columns[0] + 12, TA_LEFT),
+        ("ZONE ET SOIN", columns[0] + 12, TA_LEFT),
         ("QTÉ", (columns[1] + columns[2]) / 2, TA_CENTER),
         ("PRIX / SÉANCE", columns[3] - 10, TA_RIGHT),
         ("TOTAL", columns[4] - 10, TA_RIGHT),
@@ -276,7 +276,7 @@ def build_pdf(output_path):
     )
     draw_paragraph(
         c,
-        "Une remise commerciale de 50 % est appliquée à l'ensemble des prestations listées ci-dessus.",
+        "Une remise commerciale de 50 % est appliquée à l'ensemble des soins listés ci-dessus.",
         left + 14,
         summary_top - 26,
         note_w - 27,

@@ -44,9 +44,11 @@ for (const id of ["customItemButton", "familyPriceToggle"]) {
 }
 assert.match(
   html,
-  /id="customItemButton"[^>]*aria-label="Créer une prestation sur mesure"[^>]*title="Créer une prestation sur mesure"[\s\S]*?<strong>Sur mesure<\/strong>/,
-  "Le menu compact doit abréger Prestation sur mesure tout en exposant son libellé complet"
+  /id="customItemButton"[^>]*aria-label="Créer un soin sur mesure"[^>]*title="Créer un soin sur mesure"[\s\S]*?<strong>Sur mesure<\/strong>/,
+  "Le menu compact doit afficher Sur mesure tout en exposant son libellé complet"
 );
+assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[\s\S]*?id="clientName">Client</, "Le client doit garder une action complète avec un nom court");
+assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
 for (const [id, label, shortcut] of [
@@ -70,6 +72,8 @@ assert.match(
 assert.doesNotMatch(html, />Devis<\/p>[\s\S]*?id="newQuoteButton"/, "Les actions essentielles du devis ne doivent plus être dupliquées dans le menu principal");
 assert.match(html, /id="familyPriceToggle"[^>]*aria-keyshortcuts="Alt\+P"[^>]*>[\s\S]*?<kbd>Alt P<\/kbd>/, "Le basculement des prix doit annoncer Alt+P");
 assert.match(html, /<kbd>Alt<\/kbd><kbd>P<\/kbd><\/dt><dd>Afficher ou masquer les prix<\/dd>/, "Alt+P doit figurer dans l’aide des raccourcis");
+assert.match(html, /<kbd>Ctrl<\/kbd><kbd>K<\/kbd>[\s\S]*?<dd>Rechercher<\/dd>/, "La recherche doit utiliser un nom court");
+assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>N<\/kbd><\/dt><dd>Sur mesure<\/dd>/, "Le service libre doit utiliser un nom court");
 assert.match(app, /\$\("#familyPriceToggle"\)\.addEventListener\("click", toggleFamilyPrices\)/, "Le menu et le raccourci doivent partager le même basculement des prix");
 for (const [id, label, shortcut] of [
   ["newQuoteButton", "Nouveau devis", "Control\\+N Meta\\+N"],
@@ -99,8 +103,10 @@ assert.match(html, /<dt>Total avant offres<\/dt>[\s\S]*?id="totalDiscountRow" hi
 assert.doesNotMatch(html, /studentDiscountTotalRow|discountTotalRow/, "Les rabais ne doivent plus être dispersés sur plusieurs lignes de totaux");
 assert.match(app, /money\(referenceLineTotal\(line\)\)/, "Chaque prestation doit afficher sa valeur complète avant offre");
 assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro de devis ne doit plus encombrer l’en-tête de caisse");
-assert.match(styles, /\.family-title-row h2\{font-size:16px;line-height:1\}/, "Le titre Prestations doit rester compact");
-assert.match(html, /\.checkout-panel h2\{font-size:22px\}/, "Le titre Caisse doit être réduit avec mesure");
+assert.match(styles, /\.family-title-row h2\{font-size:16px;line-height:1\}/, "Le titre Soins doit rester compact");
+assert.match(html, /\.checkout-panel h2\{font-size:22px\}/, "Le titre Devis doit être réduit avec mesure");
+assert.match(html, /id="familyNavTitle">Soins<[\s\S]*?id="checkoutTitle">Devis</, "Les zones principales doivent afficher Soins et Devis");
+assert.doesNotMatch(html, />\s*(?:Prestations|Caisse|Ajouter à la caisse)\s*</, "Les noms visibles doivent rester ultra courts");
 assert.match(html, /id="installmentTableWrap" hidden><table class="installment-table"[^>]*><tbody id="installmentGrid"/, "L’échelonnement doit utiliser un tableau compact");
 assert.doesNotMatch(html, /<details class="installments"|Paiement échelonné \(CHF\)|class="installment-note"/, "La caisse ne doit plus afficher le panneau explicatif de l’échelonnement");
 assert.match(app, /class="installment-months"/, "La première ligne doit afficher les mois");
@@ -111,7 +117,7 @@ for (const [action, label] of [
   ["duplicate", "Dupliquer le devis"],
   ["export", "Exporter ce devis"],
   ["import", "Importer un devis"],
-  ["clear", "Vider la caisse"]
+  ["clear", "Vider le devis"]
 ]) {
   assert.match(html, new RegExp(`role="menuitem" data-action="${action}"[^>]*aria-label="${label}"`), `Action de devis absente : ${label}`);
 }

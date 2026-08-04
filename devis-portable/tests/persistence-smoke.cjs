@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.0 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.0") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.1 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.1") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -135,8 +135,9 @@ async function run() {
       if (overlapsWindowControls) throw new Error("Les actions de l’en-tête de caisse sont recouvertes par les contrôles de la fenêtre");
       const familyPanelRect = document.querySelector("#familyPanel").getBoundingClientRect();
       const familyHeadRect = document.querySelector(".family-head").getBoundingClientRect();
-      if (Number.parseFloat(getComputedStyle(document.querySelector("#familyNavTitle")).fontSize) !== 16 || Number.parseFloat(getComputedStyle(document.querySelector("#checkoutTitle")).fontSize) !== 22) throw new Error("Les titres Prestations et Caisse n’ont pas le calibrage attendu");
-      if (familyHeadRect.height > 36 || familyHeadRect.top - familyPanelRect.top > 8) throw new Error("L’en-tête Prestations occupe encore trop de hauteur");
+      if (document.querySelector("#familyNavTitle").textContent !== "Soins" || document.querySelector("#checkoutTitle").textContent !== "Devis") throw new Error("Les zones principales n’utilisent pas leurs noms courts");
+      if (Number.parseFloat(getComputedStyle(document.querySelector("#familyNavTitle")).fontSize) !== 16 || Number.parseFloat(getComputedStyle(document.querySelector("#checkoutTitle")).fontSize) !== 22) throw new Error("Les titres Soins et Devis n’ont pas le calibrage attendu");
+      if (familyHeadRect.height > 36 || familyHeadRect.top - familyPanelRect.top > 8) throw new Error("L’en-tête Soins occupe encore trop de hauteur");
       const topbarUtilities = document.querySelector(".topbar-utilities");
       const utilityButtons = [...topbarUtilities.querySelectorAll(".topbar-utility-button")];
       const utilityRect = topbarUtilities.getBoundingClientRect();
@@ -327,7 +328,7 @@ async function run() {
       const actionRects = checkoutActions.map((button) => button.getBoundingClientRect());
       if (actionRects.some((rect) => rect.bottom > checkoutRect.bottom + 1)) throw new Error("Les actions rapides débordent de la caisse");
       if (Math.max(...actionRects.map((rect) => rect.width)) - Math.min(...actionRects.map((rect) => rect.width)) > 1) throw new Error("Les trois actions rapides doivent avoir la même largeur");
-      if (document.querySelector("#couponToggle").textContent.trim() !== "Ajouter un coupon") throw new Error("L’action coupon reste réduite à un signe ambigu");
+      if (document.querySelector("#couponToggle").textContent.trim() !== "Coupon") throw new Error("L’action coupon n’utilise pas son libellé court explicite");
 
       const priceWithoutTax = document.querySelector("#grandTotalValue").textContent;
       window.dispatchEvent(new Event("beforeprint"));
