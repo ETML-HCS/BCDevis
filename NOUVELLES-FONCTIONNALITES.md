@@ -3,7 +3,7 @@
 ## Statut du document
 
 - **Date de la proposition :** 3 août 2026
-- **Version de référence :** BCDevis 5.2.5
+- **Version de référence :** BCDevis 5.3.0
 - **État :** idées à évaluer, aucune fonction décrite ici n’est considérée comme engagée ou implémentée
 - **Document associé :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md)
 

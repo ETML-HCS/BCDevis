@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "5.2.5";
+  const RELEASE_VERSION = "5.3.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
@@ -21,6 +21,8 @@
   const MAX_LINE_QUANTITY = 999;
   const MAX_LINE_PRICE = 1000000;
   const MAX_CUSTOM_SERVICES = 500;
+  const CART_DELETE_REVEAL_WIDTH = 56;
+  const CART_SWIPE_START_THRESHOLD = 8;
   const LEGACY_DEFAULT_PAYMENT_CONDITIONS = "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.";
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -281,6 +283,7 @@
   let tileDetailCloseTimer = 0;
   let tileDetailHideTimer = 0;
   let tileDensityResizeFrame = 0;
+  let cartSwipeState = null;
   const layerReturnFocus = new Map();
 
   function compactMachineCode(value) {
@@ -1365,8 +1368,11 @@
       }) : "";
       const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">Ajouter ${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
       return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
-        <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
-        <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer"><svg><use href="#icon-trash"></use></svg></button></div>
+        <div class="cart-line-delete-zone"><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer ${escapeHTML(line.name)}" title="Supprimer ${escapeHTML(line.name)}"><svg><use href="#icon-trash"></use></svg></button></div>
+        <div class="cart-line-main">
+          <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom de la prestation : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
+          <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong></div>
+        </div>
       </article>`;
     }).join("");
   }
@@ -2646,6 +2652,86 @@
     if (event.target.closest("[data-tile-detail-close]") || $("#tileDetailCard").contains(event.target) || activeShell?.contains(event.target)) return;
     closeTileDetail();
   }, true);
+
+  function closeCartDeleteActions(exceptLine = null) {
+    $$(".cart-line.is-delete-revealed", $("#cartLines")).forEach((line) => {
+      if (line === exceptLine) return;
+      line.classList.remove("is-delete-revealed", "is-swiping");
+      line.style.removeProperty("--cart-line-swipe-offset");
+    });
+  }
+
+  function finishCartSwipe(event, { cancelled = false } = {}) {
+    if (!cartSwipeState || event.pointerId !== cartSwipeState.pointerId) return;
+    const state = cartSwipeState;
+    cartSwipeState = null;
+    const deltaX = event.clientX - state.startX;
+    const baseOffset = state.startedRevealed ? -CART_DELETE_REVEAL_WIDTH : 0;
+    const finalOffset = Math.max(-CART_DELETE_REVEAL_WIDTH, Math.min(0, baseOffset + deltaX));
+    let shouldReveal = state.startedRevealed;
+    if (!cancelled && state.horizontal) shouldReveal = finalOffset <= -(CART_DELETE_REVEAL_WIDTH / 2);
+    if (!cancelled && !state.horizontal && !state.cancelledForScroll && state.startedRevealed) shouldReveal = false;
+    state.line.classList.remove("is-swiping");
+    state.line.classList.toggle("is-delete-revealed", shouldReveal);
+    state.line.style.removeProperty("--cart-line-swipe-offset");
+    try {
+      if (state.captureElement.hasPointerCapture?.(event.pointerId)) state.captureElement.releasePointerCapture(event.pointerId);
+    } catch {
+      // Synthetic pointer events used by tests do not always own a real capture.
+    }
+  }
+
+  $("#cartLines").addEventListener("pointerdown", (event) => {
+    if (!event.isPrimary || !["touch", "pen"].includes(event.pointerType) || event.button > 0) return;
+    if (event.target.closest("button, input, textarea, select, a, label")) return;
+    const main = event.target.closest(".cart-line-main");
+    const line = main?.closest(".cart-line");
+    if (!main || !line) return;
+    closeCartDeleteActions(line);
+    cartSwipeState = {
+      pointerId: event.pointerId,
+      line,
+      captureElement: main,
+      startX: event.clientX,
+      startY: event.clientY,
+      startedRevealed: line.classList.contains("is-delete-revealed"),
+      horizontal: false,
+      cancelledForScroll: false
+    };
+    try {
+      main.setPointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture is an enhancement; the delegated listeners still work.
+    }
+  });
+
+  $("#cartLines").addEventListener("pointermove", (event) => {
+    const state = cartSwipeState;
+    if (!state || event.pointerId !== state.pointerId || state.cancelledForScroll) return;
+    const deltaX = event.clientX - state.startX;
+    const deltaY = event.clientY - state.startY;
+    if (!state.horizontal) {
+      if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < CART_SWIPE_START_THRESHOLD) return;
+      if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+        state.cancelledForScroll = true;
+        return;
+      }
+      state.horizontal = true;
+      state.line.classList.add("is-swiping");
+    }
+    event.preventDefault();
+    const baseOffset = state.startedRevealed ? -CART_DELETE_REVEAL_WIDTH : 0;
+    const offset = Math.max(-CART_DELETE_REVEAL_WIDTH, Math.min(0, baseOffset + deltaX));
+    state.line.style.setProperty("--cart-line-swipe-offset", `${offset}px`);
+  });
+
+  $("#cartLines").addEventListener("pointerup", (event) => finishCartSwipe(event));
+  $("#cartLines").addEventListener("pointercancel", (event) => finishCartSwipe(event, { cancelled: true }));
+  document.addEventListener("pointerdown", (event) => {
+    const revealedLine = event.target.closest(".cart-line.is-delete-revealed");
+    closeCartDeleteActions(revealedLine);
+  }, true);
+
   $("#cartLines").addEventListener("click", (event) => {
     const actionButton = event.target.closest("[data-line-action]");
     if (!actionButton) return;
@@ -2679,6 +2765,11 @@
   });
   $("#cartLines").addEventListener("change", (event) => { if (event.target.matches("[data-line-field]")) updateLineInput(event.target); });
   $("#cartLines").addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && $(".cart-line.is-delete-revealed", $("#cartLines"))) {
+      event.preventDefault();
+      closeCartDeleteActions();
+      return;
+    }
     if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); }
   });
   $("#quoteDate").addEventListener("change", (event) => {

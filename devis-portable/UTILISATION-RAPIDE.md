@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 5.2.5 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
+  <p class="version">Version 5.3.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -25,7 +25,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-5.2.5.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-5.3.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -34,15 +34,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-5.2.5-linux-x86_64.AppImage
-./BCDevis-5.2.5-linux-x86_64.AppImage
+chmod +x BCDevis-5.3.0-linux-x86_64.AppImage
+./BCDevis-5.3.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-5.2.5-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-5.3.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -74,7 +74,8 @@ Pour corriger le nom, le temps, le prix ou le pictogramme d’une prestation, ut
 - Bouton **−** : diminuer la quantité.
 - Bouton **+** : augmenter la quantité.
 - Les mêmes boutons règlent séparément les séances payées et offertes d’un pack.
-- Corbeille : retirer la prestation.
+- Avec une souris : allez au bord droit de la ligne pour révéler la corbeille.
+- Sur écran tactile : balayez vers la gauche, puis touchez la corbeille pour supprimer.
 - **Ajouter 1 offerte** : transformer une quantité admissible en pack.
 
 Pour une prestation qui n'existe pas dans le catalogue ou qui nécessite un tarif libre, utilisez **Menu Catalogue > Sur mesure**. Le libellé complet **Créer une prestation sur mesure** apparaît au survol.

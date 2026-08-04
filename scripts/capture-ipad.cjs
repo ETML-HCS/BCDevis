@@ -62,20 +62,98 @@ async function audit(window, label, { minColumns = 2 } = {}) {
 
 async function auditCheckoutQuantities(window) {
   const result = await window.webContents.executeJavaScript(`(() => {
-    const stepper = document.querySelector(".quantity-stepper");
-    const buttons = [...(stepper?.querySelectorAll(".quantity-stepper-button") || [])];
+    const line = document.querySelector(".cart-line");
+    const steppers = [...document.querySelectorAll(".quantity-stepper")];
+    const buttons = steppers.flatMap((stepper) => [...stepper.querySelectorAll(".quantity-stepper-button")]);
+    const deleteButton = line?.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
     return {
-      visible: Boolean(stepper && getComputedStyle(stepper).display !== "none"),
+      visible: steppers.length === 2 && steppers.every((stepper) => getComputedStyle(stepper).display !== "none"),
+      stepperCount: steppers.length,
       buttonCount: buttons.length,
       touchTargets: buttons.map((button) => {
         const rect = button.getBoundingClientRect();
         return { width: Math.round(rect.width), height: Math.round(rect.height) };
       }),
+      deleteOutsideControls: Boolean(deleteButton && !line.querySelector(".cart-line-inline-controls")?.contains(deleteButton)),
+      deleteHiddenUntilRequested: deleteButton ? Number.parseFloat(getComputedStyle(deleteButton).opacity) === 0 : false,
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!result.visible || result.buttonCount !== 2 || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles de quantité invalides ${JSON.stringify(result)}`);
+  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles de quantité invalides ${JSON.stringify(result)}`);
   if (result.touchTargets.some(({ width, height }) => width < 34 || height < 34)) throw new Error(`Caisse iPad : cibles tactiles trop petites ${JSON.stringify(result)}`);
+  return result;
+}
+
+async function revealCheckoutDelete(window) {
+  const result = await window.webContents.executeJavaScript(`(async () => {
+    const line = document.querySelector(".cart-line");
+    const surface = line?.querySelector(".cart-line-main");
+    if (!line || !surface) return { revealed: false };
+    const pointerId = 91;
+    const pointer = (type, clientX) => surface.dispatchEvent(new PointerEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      pointerId,
+      pointerType: "touch",
+      isPrimary: true,
+      button: 0,
+      clientX,
+      clientY: 180
+    }));
+    pointer("pointerdown", 360);
+    pointer("pointermove", 290);
+    pointer("pointerup", 290);
+    await new Promise((resolve) => setTimeout(resolve, 240));
+    const deleteButton = line.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
+    return {
+      revealed: line.classList.contains("is-delete-revealed"),
+      deleteVisible: deleteButton ? Number.parseFloat(getComputedStyle(deleteButton).opacity) > 0.9 : false,
+      deleteTouchable: deleteButton ? getComputedStyle(deleteButton).pointerEvents !== "none" : false,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!result.revealed || !result.deleteVisible || !result.deleteTouchable || result.horizontalOverflow) throw new Error(`Caisse iPad : balayage de suppression invalide ${JSON.stringify(result)}`);
+  return result;
+}
+
+async function auditDesktopCheckout(window) {
+  const result = await window.webContents.executeJavaScript(`(() => {
+    const checkout = document.querySelector(".checkout-panel").getBoundingClientRect();
+    const line = document.querySelector(".cart-line");
+    const controls = line?.querySelector(".cart-line-inline-controls")?.getBoundingClientRect();
+    const deleteButton = line?.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
+    return {
+      width: innerWidth,
+      checkoutWidth: Math.round(checkout.width),
+      controlsContained: Boolean(controls && controls.left >= checkout.left - 1 && controls.right <= checkout.right + 1),
+      deleteHiddenUntilEdge: deleteButton ? Number.parseFloat(getComputedStyle(deleteButton).opacity) === 0 : false,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!result.controlsContained || !result.deleteHiddenUntilEdge || result.horizontalOverflow) throw new Error(`Caisse desktop : ligne Pack invalide ${JSON.stringify(result)}`);
+  return result;
+}
+
+async function hoverDesktopDelete(window) {
+  const point = await window.webContents.executeJavaScript(`(() => {
+    const rect = document.querySelector(".cart-line-delete-zone")?.getBoundingClientRect();
+    return rect ? { x: Math.round(rect.right - 3), y: Math.round(rect.top + rect.height / 2) } : null;
+  })()`);
+  if (!point) throw new Error("Caisse desktop : bord de suppression introuvable");
+  window.webContents.sendInputEvent({ type: "mouseMove", x: point.x, y: point.y, movementX: 0, movementY: 0 });
+  await settle(window);
+  const result = await window.webContents.executeJavaScript(`(() => {
+    const button = document.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
+    const price = document.querySelector(".cart-line-price");
+    const buttonRect = button?.getBoundingClientRect();
+    const priceRect = price?.getBoundingClientRect();
+    return {
+      visible: button ? Number.parseFloat(getComputedStyle(button).opacity) > 0.9 : false,
+      clickable: button ? getComputedStyle(button).pointerEvents !== "none" : false,
+      priceClear: Boolean(buttonRect && priceRect && priceRect.right <= buttonRect.left - 3)
+    };
+  })()`);
+  if (!result.visible || !result.clickable || !result.priceClear) throw new Error(`Caisse desktop : poubelle au bord inaccessible ${JSON.stringify(result)}`);
   return result;
 }
 
@@ -99,7 +177,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.2.5.png");
+    await capture(window, "00-nouveautes-5.3.0.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
@@ -114,11 +192,15 @@ async function main() {
     const landscape = await audit(window, "iPad paysage");
     await capture(window, "01-ipad-paysage-prestations.png");
     await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('[data-offer-mode="pack"]')?.click();
       document.querySelector(".family-option")?.click();
       document.querySelector('[data-panel="checkoutPanel"]').click();
     })()`);
     const checkout = await auditCheckoutQuantities(window);
     await capture(window, "02-ipad-paysage-caisse.png");
+    const deleteSwipe = await revealCheckoutDelete(window);
+    await capture(window, "02b-ipad-paysage-caisse-suppression.png");
+    await window.webContents.executeJavaScript(`document.querySelector('.cart-line-delete-zone [data-line-action="remove"]')?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }))`);
 
     await setViewport(window, 820, 1180);
     await window.webContents.executeJavaScript(`document.querySelector('[data-panel="familyPanel"]').click()`);
@@ -136,9 +218,25 @@ async function main() {
     await window.webContents.executeJavaScript(`document.querySelector('[data-panel="familyPanel"]').click()`);
     const splitView = await audit(window, "iPad Split View", { minColumns: 1 });
     await capture(window, "05-ipad-split-view.png");
+    await window.webContents.executeJavaScript(`document.querySelector('[data-panel="checkoutPanel"]').click()`);
+    const splitCheckout = await auditCheckoutQuantities(window);
+    await capture(window, "06-ipad-split-view-caisse.png");
+
+    await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      const form = document.querySelector("#settingsForm");
+      form.elements.ipadLayoutMode.value = "off";
+      form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+      document.querySelector(".toast-close")?.click();
+    })()`);
+    await setViewport(window, 1450, 900);
+    const desktopCheckout = await auditDesktopCheckout(window);
+    await capture(window, "07-desktop-caisse-pack.png");
+    const desktopDelete = await hoverDesktopDelete(window);
+    await capture(window, "08-desktop-caisse-poubelle.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, checkout, portrait, splitView, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, checkout, deleteSwipe, portrait, splitView, splitCheckout, desktopCheckout, desktopDelete, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

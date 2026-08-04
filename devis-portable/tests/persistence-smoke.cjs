@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.2.5 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.2.5") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.0 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.0") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -283,17 +283,34 @@ async function run() {
       const specialLineName = [...document.querySelectorAll(".cart-line-name")].find((input) => input.value === "Zone spéciale 100 cm²");
       if (!specialLineName) throw new Error("Zone spéciale 100 cm² n’apparaît pas dans la caisse");
       const specialLine = specialLineName.closest(".cart-line");
+      const specialLineMain = specialLine.querySelector(".cart-line-main");
       const specialControls = specialLine.querySelector(".cart-line-inline-controls");
       const specialCategory = specialLine.querySelector(".cart-line-category");
+      const specialDelete = specialLine.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
       const specialNameRect = specialLineName.getBoundingClientRect();
       const specialControlsRect = specialControls.getBoundingClientRect();
       const specialRowRect = specialLine.getBoundingClientRect();
       const specialNameStyle = getComputedStyle(specialLineName);
+      if (!specialLineMain || !specialDelete || specialControls.contains(specialDelete)) throw new Error("La suppression occupe encore la largeur des contrôles −/+");
+      if (specialDelete.getAttribute("aria-label") !== "Supprimer Zone spéciale 100 cm²") throw new Error("La suppression au bord droit n’identifie pas la prestation");
       if (specialNameRect.right > specialControlsRect.left + 1) throw new Error("Zone spéciale 100 cm² chevauche encore sa catégorie et ses contrôles");
       if (specialControlsRect.right > specialRowRect.right + 1) throw new Error("Les contrôles de Zone spéciale 100 cm² débordent de la caisse");
       if (specialNameStyle.textOverflow !== "ellipsis" || specialNameStyle.overflowX !== "hidden" || specialNameStyle.whiteSpace !== "nowrap") throw new Error("Les prestations longues ne sont pas tronquées avec une ellipse");
       if (specialLineName.scrollWidth <= specialLineName.clientWidth + 1) throw new Error("Zone spéciale 100 cm² n’active pas réellement la troncature prévue");
       if (specialLineName.title !== specialLineName.value || specialCategory.title !== "Poitrine et abdomen") throw new Error("Le libellé complet tronqué n’est pas disponible au survol");
+      const swipe = (fromX, toX, pointerId) => {
+        const init = (clientX) => ({ bubbles: true, cancelable: true, pointerId, pointerType: "touch", isPrimary: true, button: 0, clientX, clientY: 120 });
+        specialLineMain.dispatchEvent(new PointerEvent("pointerdown", init(fromX)));
+        specialLineMain.dispatchEvent(new PointerEvent("pointermove", init(toX)));
+        specialLineMain.dispatchEvent(new PointerEvent("pointerup", init(toX)));
+      };
+      swipe(260, 242, 71);
+      if (specialLine.classList.contains("is-delete-revealed")) throw new Error("Un balayage tactile trop court révèle la suppression");
+      swipe(260, 195, 72);
+      if (!specialLine.classList.contains("is-delete-revealed")) throw new Error("Le balayage tactile vers la gauche ne révèle pas la suppression");
+      if (getComputedStyle(specialDelete).pointerEvents === "none") throw new Error("La poubelle tactile révélée ne peut pas être activée");
+      specialDelete.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      if (specialLine.classList.contains("is-delete-revealed")) throw new Error("Échap ne referme pas la suppression révélée");
       const cartViewport = document.querySelector("#cartLines").getBoundingClientRect();
       const visibleRows = [...document.querySelectorAll(".cart-line")].filter((row) => {
         const rect = row.getBoundingClientRect();

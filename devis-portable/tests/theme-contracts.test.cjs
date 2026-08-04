@@ -33,13 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.2\.5";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "5\.3\.0";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.2\.5[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 5\.3\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /Quantités explicites[\s\S]*?Prestation sur mesure[\s\S]*?Documentation alignée/, "Les nouveautés doivent annoncer les corrections de la version 5.2.5");
+assert.match(html, /Lignes plus nettes[\s\S]*?Suppression discrète[\s\S]*?Balayage tactile/, "Les nouveautés doivent annoncer les améliorations de la version 5.3.0");
+assert.match(html, /<symbol id="icon-swipe-left"[\s\S]*?<use href="#icon-swipe-left">/, "Le balayage tactile doit utiliser un pictogramme cohérent");
 assert.match(app, /catalogOverrides: sanitizeCatalogOverrides/, "Les personnalisations du catalogue doivent être restaurées de façon sûre");
 
 function themeToken(block, token) {
@@ -271,6 +272,11 @@ assert.match(
   /html\[data-ipad-layout="optimized"\] \.cart-line-inline-controls \.quantity-stepper\{min-height:40px;grid-template-columns:34px minmax\(28px,auto\) 34px\}/,
   "Le mode iPad doit conserver des boutons de quantité tactiles"
 );
+assert.match(styles, /\.cart-line-main\{[^}]*touch-action:pan-y/, "La ligne de caisse doit conserver le défilement vertical pendant un geste tactile");
+assert.match(styles, /\.cart-line\.is-delete-revealed\{--cart-line-swipe-offset:-56px\}/, "Le balayage gauche doit dégager la zone de suppression");
+assert.match(styles, /@media \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.cart-line-delete-zone:hover \.remove-line/, "La poubelle doit apparaître au bord droit avec une souris");
+assert.match(app, /CART_DELETE_REVEAL_WIDTH = 56[\s\S]*?pointerType[\s\S]*?"touch", "pen"/, "La caisse doit gérer le balayage tactile et le stylet");
+assert.match(app, /cart-line-delete-zone[\s\S]*?data-line-action="remove"[\s\S]*?cart-line-main[\s\S]*?cart-line-inline-controls/, "La poubelle doit être rendue hors des contrôles de quantité");
 assert.match(app, /decreaseAction: "decrease"[\s\S]*?increaseAction: "increase"/, "La quantité payée doit proposer des contrôles −/+ explicites");
 assert.match(app, /decreaseAction: "decrease-free"[\s\S]*?increaseAction: "increase-free"/, "La quantité offerte doit proposer des contrôles −/+ explicites");
 assert.doesNotMatch(app, /data-quantity-gesture|contextmenu[\s\S]*?changeQuantityFromGesture/, "Les quantités ne doivent plus dépendre du clic droit");

@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 5.2.5 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 5.3.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
 
-- **Windows** : lancez `BCDevis-5.2.5.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-5.2.5-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-5.2.5-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-5.3.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-5.3.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-5.3.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -368,13 +368,15 @@ La date du devis est celle du jour par défaut. Elle peut être choisie jusqu’
 
 ## 3. Ajuster la caisse
 
-Chaque ligne affiche le nom, la catégorie, la quantité, le prix et un bouton de suppression.
+Chaque ligne affiche le nom, la catégorie, la quantité et le prix. La suppression reste volontairement masquée afin de laisser toute la largeur aux quantités.
 
 - Cliquez sur **−** pour diminuer la quantité et sur **+** pour l’augmenter.
 - Dans un pack, les séances payées et offertes disposent chacune de leurs propres boutons **−** et **+**.
 - Le bouton **−** devient indisponible lorsque la quantité minimale est atteinte.
 - Le nom d’une ligne peut être corrigé directement dans la caisse.
-- Le bouton corbeille retire la ligne.
+- Avec une souris, allez jusqu’au bord droit de la ligne pour faire apparaître la corbeille.
+- Sur un écran tactile, balayez la ligne vers la gauche, puis touchez la corbeille pour confirmer la suppression.
+- Appuyez sur `Échap` ou touchez de nouveau la ligne pour refermer l’action sans supprimer.
 
 En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **Ajouter 1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes sont visibles dans le devis mais ne sont jamais facturées.
 

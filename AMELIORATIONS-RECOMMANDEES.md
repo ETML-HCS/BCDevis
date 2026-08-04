@@ -3,9 +3,9 @@
 ## Statut du document
 
 - **Date de l’audit :** 3 août 2026
-- **Version examinée :** BCDevis 5.2.0, suivi de correction BCDevis 5.2.5
+- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5 et amélioration de caisse BCDevis 5.3.0
 - **Portée :** application Electron, PWA, stockage local, génération PDF, documentation, tests et livrables
-- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5
+- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, lisibilité et suppression de ligne renforcées dans BCDevis 5.3.0
 - **Document associé :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md)
 
 ## Synthèse
@@ -24,7 +24,7 @@ Les améliorations les plus importantes concernent désormais :
 
 ### A1. Remplacer le clic gauche/droit sur les quantités par des contrôles explicites
 
-**État : traité dans BCDevis 5.2.5.**
+**État : traité dans BCDevis 5.2.5, puis complété dans BCDevis 5.3.0 par une poubelle hors du flux et un balayage tactile gauche.**
 
 #### Constat
 
