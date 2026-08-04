@@ -49,7 +49,9 @@ assert.match(
 );
 assert.match(html, /<symbol id="icon-user-plus"[\s\S]*?id="clientButton"[^>]*class="client-card is-empty"|class="client-card is-empty"[^>]*id="clientButton"/, "Le client vide doit utiliser le pictogramme client plus");
 assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[^>]*>[\s\S]*?<use href="#icon-user-plus">[\s\S]*?id="clientName" hidden><\/strong>/, "Le client vide doit rester une action SVG accessible et sans texte visible");
+assert.match(html, /id="quoteHeadActions"[\s\S]*?id="clientButton"[\s\S]*?id="newQuoteButton"/, "Le client doit précéder les actions du devis sur la même ligne");
 assert.match(app, /clientButton\.classList\.toggle\("has-client", hasClient\)[\s\S]*?clientNameLabel\.hidden = !hasClient[\s\S]*?clientAddIcon\.hidden = hasClient/, "Le client renseigné doit remplacer l’icône par son seul nom");
+assert.match(app, /function saveQuote\(\) \{[\s\S]*?if \(!quote\.lines\.length\) \{[\s\S]*?Ajoutez une prestation avant d’enregistrer/, "Enregistrer doit répondre explicitement quand le devis est vide");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");

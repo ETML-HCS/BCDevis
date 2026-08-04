@@ -34,6 +34,23 @@ async function setViewport(window, width, height) {
   if (Math.abs(current.width - width) > 1 || Math.abs(current.height - height) > 1) throw new Error(`Viewport ${width} × ${height} impossible : ${JSON.stringify(current)}`);
 }
 
+async function clickElementCenter(window, selector) {
+  const point = await window.webContents.executeJavaScript(`(() => {
+    const element = document.querySelector(${JSON.stringify(selector)});
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + rect.height / 2);
+    return { x, y, owned: element.contains(document.elementFromPoint(x, y)), disabled: Boolean(element.disabled) };
+  })()`);
+  if (!point || !point.owned || point.disabled) throw new Error(`Action inaccessible ${selector} : ${JSON.stringify(point)}`);
+  window.webContents.sendInputEvent({ type: "mouseMove", x: point.x, y: point.y, movementX: 0, movementY: 0 });
+  window.webContents.sendInputEvent({ type: "mouseDown", x: point.x, y: point.y, button: "left", clickCount: 1 });
+  window.webContents.sendInputEvent({ type: "mouseUp", x: point.x, y: point.y, button: "left", clickCount: 1 });
+  await settle(window);
+  return point;
+}
+
 async function audit(window, label, { minColumns = 2 } = {}) {
   const result = await window.webContents.executeJavaScript(`(() => {
     const appShell = document.querySelector(".app-shell").getBoundingClientRect();
@@ -174,7 +191,7 @@ async function auditWindowHeader(window) {
     const receipt = document.querySelector(".receipt-head").getBoundingClientRect();
     const controls = document.querySelector("#windowControls");
     const collapsed = controls.getBoundingClientRect();
-    const actionRects = [...document.querySelectorAll("#quoteHeadActions > .quote-icon-button")].map((button) => button.getBoundingClientRect());
+    const actionRects = [...document.querySelectorAll("#quoteHeadActions > button")].map((button) => button.getBoundingClientRect());
     const overlaps = (target) => actionRects.some((rect) => rect.left < target.right && rect.right > target.left && rect.top < target.bottom && rect.bottom > target.top);
     controls.querySelector("#windowMinimizeButton").focus();
     await new Promise((resolve) => setTimeout(resolve, 220));
@@ -199,6 +216,70 @@ async function auditWindowHeader(window) {
   })()`);
   if (result.centerDelta > 2 || result.collapsedWidth !== 30 || result.expandedWidth < 120 || result.restingPadding < 30 || result.restingPadding > 36 || !result.collapsedClear || !result.expandedOverlays || !result.expandedOpaque || !result.expandedOwnsClicks || result.horizontalOverflow) throw new Error(`En-tête de fenêtre désaligné ${JSON.stringify(result)}`);
   return result;
+}
+
+async function auditQuoteHeaderActions(window) {
+  const geometry = await window.webContents.executeJavaScript(`(() => {
+    window.confirm = () => true;
+    const header = document.querySelector("#quoteHeadActions");
+    const selectors = ["#clientButton", "#newQuoteButton", "#saveButton", "#historyButton", "#moreQuoteButton"];
+    const actions = selectors.map((selector) => {
+      const element = document.querySelector(selector);
+      const rect = element.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        id: element.id,
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        center: Math.round(rect.top + rect.height / 2),
+        owned: element.contains(hit),
+        disabled: Boolean(element.disabled)
+      };
+    });
+    return {
+      clientInHeader: document.querySelector("#clientButton").parentElement === header,
+      order: [...header.children].filter((element) => element.matches("button")).map((element) => element.id),
+      actions,
+      aligned: Math.max(...actions.map((action) => action.center)) - Math.min(...actions.map((action) => action.center)) <= 1,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!geometry.clientInHeader || geometry.order.join(",") !== "clientButton,newQuoteButton,saveButton,historyButton,moreQuoteButton" || geometry.actions.some((action) => !action.owned || action.disabled) || !geometry.aligned || geometry.horizontalOverflow) throw new Error(`Actions d’en-tête invalides ${JSON.stringify(geometry)}`);
+
+  await clickElementCenter(window, "#clientButton");
+  const clientOpened = await window.webContents.executeJavaScript(`!document.querySelector("#clientLayer").hidden`);
+  if (!clientOpened) throw new Error("Le clic réel sur Client n’ouvre pas sa fiche");
+  await window.webContents.executeJavaScript(`document.querySelector('#clientLayer [data-close="clientLayer"]').click()`);
+
+  await clickElementCenter(window, "#newQuoteButton");
+  const newQuoteWorked = await window.webContents.executeJavaScript(`document.querySelectorAll(".cart-line").length === 0 && /Nouveau devis prêt/.test(document.querySelector("#toastRegion").textContent)`);
+  if (!newQuoteWorked) throw new Error("Le clic réel sur Nouveau devis ne répond pas");
+  await window.webContents.executeJavaScript(`document.querySelector(".toast-close")?.click()`);
+
+  await clickElementCenter(window, "#saveButton");
+  const emptySaveExplained = await window.webContents.executeJavaScript(`/Ajoutez une prestation avant d’enregistrer/.test(document.querySelector("#toastRegion").textContent)`);
+  if (!emptySaveExplained) throw new Error("Le clic réel sur Enregistrer reste silencieux quand le devis est vide");
+  await window.webContents.executeJavaScript(`(() => {
+    document.querySelector(".toast-close")?.click();
+    document.querySelector(".family-option")?.click();
+  })()`);
+
+  await clickElementCenter(window, "#saveButton");
+  const saveWorked = await window.webContents.executeJavaScript(`/enregistré dans Mes devis/.test(document.querySelector("#toastRegion").textContent)`);
+  if (!saveWorked) throw new Error("Le clic réel sur Enregistrer ne sauvegarde pas le devis rempli");
+  await window.webContents.executeJavaScript(`document.querySelector(".toast-close")?.click()`);
+
+  await clickElementCenter(window, "#historyButton");
+  const historyOpened = await window.webContents.executeJavaScript(`!document.querySelector("#historyLayer").hidden`);
+  if (!historyOpened) throw new Error("Le clic réel sur Historique n’ouvre pas le panneau");
+  await window.webContents.executeJavaScript(`document.querySelector('#historyLayer [data-close="historyLayer"]').click()`);
+
+  await clickElementCenter(window, "#moreQuoteButton");
+  const menuOpened = await window.webContents.executeJavaScript(`!document.querySelector("#quoteActionMenu").hidden`);
+  if (!menuOpened) throw new Error("Le clic réel sur Actions n’ouvre pas le menu");
+  await clickElementCenter(window, "#moreQuoteButton");
+
+  return { geometry, clientOpened, newQuoteWorked, emptySaveExplained, saveWorked, historyOpened, menuOpened };
 }
 
 async function hoverDesktopDelete(window) {
@@ -321,12 +402,13 @@ async function main() {
       document.querySelector("#checkoutEmailButton").disabled = false;
       document.querySelector(".toast-close")?.click();
     })()`);
+    const quoteHeaderActions = await auditQuoteHeaderActions(window);
     await capture(window, "09-desktop-entete-fenetre-replie.png");
     const windowHeader = await auditWindowHeader(window);
     await capture(window, "10-desktop-entete-fenetre-deplie.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, windowHeader, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

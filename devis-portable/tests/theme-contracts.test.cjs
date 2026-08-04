@@ -33,13 +33,13 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.3\.8";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "5\.3\.9";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.3\.8[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 5\.3\.9[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /<strong>34 px<\/strong>[\s\S]*?<strong>Opaque<\/strong>[\s\S]*?<strong>Tactile<\/strong>/, "Les nouveautés doivent résumer le rail compact de la version 5.3.8");
+assert.match(html, /<strong>Client<\/strong>[\s\S]*?<strong>Clics<\/strong>[\s\S]*?<strong>Enregistrer<\/strong>/, "Les nouveautés doivent résumer l’en-tête cliquable de la version 5.3.9");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
 assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Les deux zones principales doivent conserver des noms courts mais non visibles");
