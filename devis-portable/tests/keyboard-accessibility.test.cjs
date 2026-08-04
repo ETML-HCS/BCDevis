@@ -131,9 +131,12 @@ assert.doesNotMatch(html, /id="checkoutFocusToggle"|id="familyFooter"|class="che
 assert.match(html, /class="checkout-primary-actions" aria-label="Actions rapides du devis"/, "Les actions essentielles doivent rester dans la caisse");
 for (const id of ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton"]) {
   assert.match(html, new RegExp(`id="${id}"`), `${id} doit rester directement accessible dans la caisse`);
+  assert.match(html, new RegExp(`id="${id}"[^>]*data-tooltip="[^"]+"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} doit être un SVG seul avec info-bulle`);
 }
 assert.equal((html.match(/id="checkout(?:Print|Pdf|Transmit)Button"/g) || []).length, 3, "La caisse doit contenir exactement trois actions rapides");
-assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"[^>]*>[\s\S]*?<span>Envoyer<\/span>/, "Envoyer doit annoncer ses choix avec un libellé court");
+assert.match(html, /id="checkoutPdfButton"[^>]*aria-label="Télécharger le PDF"[^>]*>[\s\S]*?<use href="#icon-pdf">/, "PDF doit utiliser une icône explicite");
+assert.match(html, /id="checkoutTransmitButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="checkoutTransmissionMenu"[^>]*aria-expanded="false"/, "Envoyer doit annoncer son menu sans texte visible");
+assert.doesNotMatch(html, /id="checkout(?:Print|Pdf|Transmit)Button"[^>]*>[\s\S]*?<span>(?:Imprimer|PDF|Envoyer)<\/span>/, "Les sorties ne doivent plus afficher de texte");
 assert.match(html, /id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden/, "Le menu d’envoi doit être identifié");
 for (const id of ["checkoutWhatsAppButton", "checkoutOutlookWebButton", "checkoutEmailButton"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem"`), `${id} doit appartenir au menu Envoyer`);

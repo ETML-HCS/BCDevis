@@ -3,9 +3,9 @@
 ## Statut du document
 
 - **Date de l’audit :** 3 août 2026
-- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5, suppression tactile BCDevis 5.3.0 et libellés courts BCDevis 5.3.1
+- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5, suppression tactile BCDevis 5.3.0, libellés courts BCDevis 5.3.1 et sorties SVG BCDevis 5.3.2
 - **Portée :** application Electron, PWA, stockage local, génération PDF, documentation, tests et livrables
-- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, suppression renforcée dans BCDevis 5.3.0 et libellés raccourcis dans BCDevis 5.3.1
+- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, suppression renforcée dans BCDevis 5.3.0, libellés raccourcis dans BCDevis 5.3.1 et sorties compactées dans BCDevis 5.3.2
 - **Document associé :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md)
 
 ## Synthèse

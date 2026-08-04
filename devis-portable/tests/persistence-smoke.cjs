@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.1 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.1") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.2 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.2") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -114,6 +114,9 @@ async function run() {
       if (document.querySelector("#checkoutFocusToggle") || document.querySelector("#familyFooter") || document.querySelector(".checkout-actions")) throw new Error("Les anciens bandeaux d’actions doivent être supprimés");
       const checkoutActions = [...document.querySelectorAll(".checkout-primary-actions > button")];
       if (checkoutActions.length !== 3) throw new Error("La caisse doit conserver exactement trois actions rapides");
+      const checkoutActionRects = checkoutActions.map((button) => button.getBoundingClientRect());
+      if (checkoutActions.some((button) => button.textContent.trim() || button.querySelectorAll(":scope > svg").length !== 1 || !button.dataset.tooltip)) throw new Error("Les sorties du devis doivent rester des SVG seuls avec info-bulle");
+      if (checkoutActionRects.some((rect) => rect.width < 48 || rect.height < 48) || Math.max(...checkoutActionRects.map((rect) => rect.width)) - Math.min(...checkoutActionRects.map((rect) => rect.width)) > 1) throw new Error("Les sorties SVG ne conservent pas des cibles équilibrées");
       const checkoutRect = document.querySelector("#checkoutPanel").getBoundingClientRect();
       if (Math.abs(checkoutRect.top) > 1 || Math.abs(checkoutRect.bottom - innerHeight) > 1) throw new Error("La caisse n’occupe pas toute la hauteur de la fenêtre");
       const checkoutStyle = getComputedStyle(document.querySelector("#checkoutPanel"));

@@ -1200,25 +1200,56 @@ html[data-theme] .family-visibility-icon svg{
 /* Caisse : trois actions essentielles restent visibles, la liste prend le reste. */
 .checkout-primary-actions{
   position:relative;
-  display:grid;
+  display:flex;
   flex:0 0 auto;
   margin-top:8px;
   padding-top:8px;
+  justify-content:center;
   border-top:1px solid var(--line);
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:7px;
+  gap:10px;
 }
 .checkout-primary-actions .button{
-  width:100%;
-  min-width:0;
-  min-height:48px;
-  padding:0 8px;
-  border-radius:9px;
-  font-size:11px;
-  white-space:nowrap;
+  position:relative;
+  display:grid;
+  width:52px;
+  min-width:52px;
+  height:52px;
+  min-height:52px;
+  padding:0;
+  flex:0 0 52px;
+  place-items:center;
+  border-radius:12px;
 }
-.checkout-primary-actions .button svg{width:17px;height:17px;flex:0 0 auto}
+.checkout-primary-actions .button>svg{width:22px;height:22px;flex:0 0 auto}
 .checkout-primary-actions .button:disabled{cursor:not-allowed;opacity:.4}
+.checkout-primary-actions .checkout-icon-action::after{
+  content:attr(data-tooltip);
+  position:absolute;
+  z-index:20;
+  right:50%;
+  bottom:calc(100% + 7px);
+  padding:5px 8px;
+  visibility:hidden;
+  border-radius:5px;
+  color:var(--contrast-ink);
+  background:var(--contrast);
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
+  font-size:10px;
+  font-weight:650;
+  line-height:1;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transform:translate(50%,2px);
+  transition:opacity .12s ease,transform .12s ease,visibility .12s ease;
+}
+.checkout-primary-actions .checkout-icon-action:hover::after,
+.checkout-primary-actions .checkout-icon-action:focus-visible::after{
+  visibility:visible;
+  opacity:1;
+  transform:translate(50%,0);
+}
+.checkout-primary-actions .checkout-icon-action[aria-expanded="true"]::after{display:none}
 .checkout-primary-actions .checkout-transmit-trigger{
   border-color:var(--taupe-dark);
   color:var(--ink);
@@ -1226,8 +1257,6 @@ html[data-theme] .family-visibility-icon svg{
 }
 .checkout-primary-actions .checkout-transmit-trigger:hover,
 .checkout-primary-actions .checkout-transmit-trigger[aria-expanded="true"]{border-color:var(--ink);background:var(--taupe)}
-.checkout-primary-actions .checkout-transmit-trigger .button-chevron{width:14px;height:14px;margin-left:auto;transition:transform .15s ease}
-.checkout-primary-actions .checkout-transmit-trigger[aria-expanded="true"] .button-chevron{transform:rotate(180deg)}
 .checkout-transmission-menu{
   position:absolute;
   z-index:18;
@@ -1297,8 +1326,7 @@ html[data-theme] .family-visibility-icon svg{
   .checkout-panel.is-full-height .cart-section{min-height:240px;flex-basis:280px}
 }
 @media screen and (max-width:440px){
-  .checkout-primary-actions{gap:5px}
-  .checkout-primary-actions .button{padding-inline:5px;font-size:10px}
+  .checkout-primary-actions{gap:8px}
 }
 
 /* Prestations : cartes corporelles compactes, inspirées des body highlighters. */

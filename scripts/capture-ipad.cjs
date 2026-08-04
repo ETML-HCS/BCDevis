@@ -66,6 +66,7 @@ async function auditCheckoutQuantities(window) {
     const steppers = [...document.querySelectorAll(".quantity-stepper")];
     const buttons = steppers.flatMap((stepper) => [...stepper.querySelectorAll(".quantity-stepper-button")]);
     const deleteButton = line?.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
+    const iconActions = [...document.querySelectorAll(".checkout-primary-actions > button")];
     return {
       visible: steppers.length === 2 && steppers.every((stepper) => getComputedStyle(stepper).display !== "none"),
       stepperCount: steppers.length,
@@ -76,11 +77,19 @@ async function auditCheckoutQuantities(window) {
       }),
       deleteOutsideControls: Boolean(deleteButton && !line.querySelector(".cart-line-inline-controls")?.contains(deleteButton)),
       deleteHiddenUntilRequested: deleteButton ? Number.parseFloat(getComputedStyle(deleteButton).opacity) === 0 : false,
+      iconActionCount: iconActions.length,
+      iconActionsOnly: iconActions.every((button) => !button.textContent.trim() && button.querySelectorAll(":scope > svg").length === 1 && button.dataset.tooltip),
+      iconTouchTargets: iconActions.map((button) => {
+        const rect = button.getBoundingClientRect();
+        return { width: Math.round(rect.width), height: Math.round(rect.height) };
+      }),
+      pdfIcon: document.querySelector("#checkoutPdfButton use")?.getAttribute("href"),
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles de quantité invalides ${JSON.stringify(result)}`);
+  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.iconActionCount !== 3 || !result.iconActionsOnly || result.pdfIcon !== "#icon-pdf" || result.horizontalOverflow) throw new Error(`Caisse iPad : contrôles invalides ${JSON.stringify(result)}`);
   if (result.touchTargets.some(({ width, height }) => width < 34 || height < 34)) throw new Error(`Caisse iPad : cibles tactiles trop petites ${JSON.stringify(result)}`);
+  if (result.iconTouchTargets.some(({ width, height }) => width < 48 || height < 48)) throw new Error(`Caisse iPad : sorties SVG trop petites ${JSON.stringify(result)}`);
   return result;
 }
 
@@ -177,7 +186,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.3.1.png");
+    await capture(window, "00-nouveautes-5.3.2.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();

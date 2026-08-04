@@ -1376,6 +1376,7 @@
     <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
     <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-pdf" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h4"></path><path d="M8 17v-5h1.2a1.45 1.45 0 0 1 0 2.9H8M12 17v-5h1a2.5 2.5 0 0 1 0 5h-1M17 17v-5h3M17 14.4h2.3"></path></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2.4-7.6L3 11Z"></path><path d="m10.6 13.4 4.8-4.8"></path></symbol>
     <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></symbol>
@@ -1704,9 +1705,9 @@
             <div class="installments" id="installmentTableWrap" hidden><table class="installment-table" aria-label="Paiement échelonné indicatif en CHF"><tbody id="installmentGrid"></tbody></table></div>
           </div>
           <div class="checkout-primary-actions" aria-label="Actions rapides du devis">
-            <button class="button secondary" id="checkoutPrintButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P"><svg aria-hidden="true"><use href="#icon-print"></use></svg><span>Imprimer</span></button>
-            <button class="button primary" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S"><svg aria-hidden="true"><use href="#icon-download"></use></svg><span>PDF</span></button>
-            <button class="button checkout-transmit-trigger" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis"><svg aria-hidden="true"><use href="#icon-send"></use></svg><span>Envoyer</span><svg class="button-chevron" aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+            <button class="button secondary checkout-icon-action" id="checkoutPrintButton" type="button" aria-label="Imprimer le devis" title="Imprimer le devis (Ctrl/Cmd+P)" aria-keyshortcuts="Control+P Meta+P" data-tooltip="Imprimer"><svg aria-hidden="true"><use href="#icon-print"></use></svg></button>
+            <button class="button primary checkout-icon-action" id="checkoutPdfButton" type="button" aria-label="Télécharger le PDF" title="Télécharger le PDF (Ctrl/Cmd+Maj+S)" aria-keyshortcuts="Control+Shift+S Meta+Shift+S" data-tooltip="PDF"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></button>
+            <button class="button checkout-transmit-trigger checkout-icon-action" id="checkoutTransmitButton" type="button" aria-label="Choisir comment envoyer le devis" aria-haspopup="menu" aria-controls="checkoutTransmissionMenu" aria-expanded="false" title="Envoyer le devis" data-tooltip="Envoyer"><svg aria-hidden="true"><use href="#icon-send"></use></svg></button>
             <div class="checkout-transmission-menu" id="checkoutTransmissionMenu" role="menu" aria-label="Envoyer le devis" hidden>
               <button class="transmission-option transmission-option-whatsapp" id="checkoutWhatsAppButton" type="button" role="menuitem" aria-label="Préparer le devis pour WhatsApp" title="Préparer pour WhatsApp (Ctrl/Cmd+Alt+W)" aria-keyshortcuts="Control+Alt+W Meta+Alt+W"><svg aria-hidden="true"><use href="#icon-whatsapp"></use></svg><span><strong>WhatsApp</strong><small>Message prérempli</small></span></button>
               <button class="transmission-option transmission-option-outlook" id="checkoutOutlookWebButton" type="button" role="menuitem" aria-label="Préparer le devis dans Outlook Web" title="Préparer le devis dans Outlook Web"><svg aria-hidden="true"><use href="#icon-mail"></use></svg><span><strong>Outlook Web</strong><small id="checkoutOutlookWebRecipient">Destinataire à saisir</small></span></button>
@@ -1997,14 +1998,14 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 5.3.1</p>
+        <p class="release-notes-version">Mise à jour 5.3.2</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">Des noms courts, partout.</p>
+        <p id="releaseNotesIntro">Trois sorties, trois icônes.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-sparkles"></use></svg></span><div><strong>Soins</strong><p>Prestations devient Soins.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-save"></use></svg></span><div><strong>Devis</strong><p>Caisse devient Devis.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-plus"></use></svg></span><div><strong>Ajouter</strong><p>Les actions vont droit au but.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-print"></use></svg></span><div><strong>Imprimer</strong><p>Une imprimante, sans texte superflu.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>PDF</strong><p>Un document PDF immédiatement reconnaissable.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-send"></use></svg></span><div><strong>Envoyer</strong><p>L’envoi reste accessible en un geste.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
     </section>

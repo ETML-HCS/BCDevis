@@ -33,13 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "5\.3\.1";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "5\.3\.2";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 5\.3\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 5\.3\.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /<strong>Soins<\/strong>[\s\S]*?<strong>Devis<\/strong>[\s\S]*?<strong>Ajouter<\/strong>/, "Les nouveautés doivent annoncer les libellés courts de la version 5.3.1");
+assert.match(html, /<strong>Imprimer<\/strong>[\s\S]*?<strong>PDF<\/strong>[\s\S]*?<strong>Envoyer<\/strong>/, "Les nouveautés doivent annoncer les actions SVG de la version 5.3.2");
+assert.match(html, /<symbol id="icon-pdf"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un pictogramme PDF dédié");
 assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
 assert.match(html, /id="familyNavTitle">Soins<[\s\S]*?id="checkoutTitle">Devis</, "Les deux zones principales doivent utiliser des noms courts");
 assert.match(html, /id="customItemTitle">Sur mesure<[\s\S]*?<span>Nom<\/span>[\s\S]*?>Ajouter<\/button>/, "Le formulaire libre doit rester ultra court");
