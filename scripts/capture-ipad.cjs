@@ -110,12 +110,12 @@ async function auditTransmissionMenu(window) {
       labels: [...menu.querySelectorAll(".transmission-group-label")].map((label) => label.textContent.trim()),
       manualTogether: manualGroup?.querySelectorAll('[role="menuitem"]').length === 2 && manualGroup.contains(document.querySelector("#checkoutWhatsAppButton")) && manualGroup.contains(document.querySelector("#checkoutOutlookWebButton")),
       manualColumns: getComputedStyle(manualGrid).gridTemplateColumns.split(" ").filter(Boolean).length,
-      pdfIconPath: document.querySelector('#icon-pdf path:nth-of-type(2)')?.getAttribute("d"),
+      pdfIconExplicit: Boolean(document.querySelector("#icon-pdf .pdf-page") && document.querySelector('#icon-pdf .pdf-badge[fill="#d83b31"]') && document.querySelector('#icon-pdf .pdf-letters[stroke="#fff"]')),
       emailDirect: !menu.contains(document.querySelector("#checkoutEmailButton")) && document.querySelector("#checkoutEmailButton use")?.getAttribute("href") === "#icon-mail-attach",
       outlookIcon: document.querySelector("#checkoutOutlookWebButton use")?.getAttribute("href")
     };
   })()`);
-  if (!result.visible || !result.contained || result.labels.join("|") !== "PDF à joindre" || !result.emailDirect || !result.manualTogether || result.manualColumns !== 2 || !result.pdfIconPath?.includes("M12 10v7") || result.outlookIcon !== "#icon-web-mail") throw new Error(`Envoi groupé invalide ${JSON.stringify(result)}`);
+  if (!result.visible || !result.contained || result.labels.join("|") !== "PDF à joindre" || !result.emailDirect || !result.manualTogether || result.manualColumns !== 2 || !result.pdfIconExplicit || result.outlookIcon !== "#icon-web-mail") throw new Error(`Envoi groupé invalide ${JSON.stringify(result)}`);
   return result;
 }
 
@@ -241,7 +241,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await settle(window);
-    await capture(window, "00-nouveautes-5.3.5.png");
+    await capture(window, "00-nouveautes-5.3.6.png");
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();

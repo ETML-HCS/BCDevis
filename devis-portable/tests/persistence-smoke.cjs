@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.5 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.5") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 5.3.6 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "5.3.6") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
