@@ -19,9 +19,9 @@
     "docs:pdf": "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs",
     "chromeos": "npm run check && node scripts/build-chromeos.cjs",
     "exe": "npm run check && npm run build:portable",
-    "build:portable": "electron-builder --win portable --x64",
-    "mac": "npm run check && node scripts/require-build-platform.cjs darwin && electron-builder --mac dmg --universal",
-    "linux": "npm run check && node scripts/require-build-platform.cjs linux && electron-builder --linux AppImage --x64"
+    "build:portable": "electron-builder --win portable --x64 --publish never",
+    "mac": "npm run check && node scripts/require-build-platform.cjs darwin && electron-builder --mac dmg --universal --publish never",
+    "linux": "npm run check && node scripts/require-build-platform.cjs linux && electron-builder --linux AppImage --x64 --publish never"
   },
   "devDependencies": {
     "electron": "43.1.1",

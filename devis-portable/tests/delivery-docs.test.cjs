@@ -25,15 +25,20 @@ const centralCompose = read("central-server/compose.yml");
 assert.equal(packageJson.version, "7.0.1", "La livraison doit annoncer la version 7.0.1");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
+for (const scriptName of ["build:portable", "mac", "linux"]) {
+  assert.match(packageJson.scripts[scriptName], /--publish never$/, `${scriptName} ne doit pas publier implicitement depuis un tag`);
+}
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
 assert.ok(packageJson.dependencies.pg, "PostgreSQL doit être une dépendance de production du serveur central");
 assert.match(serviceWorker, /bcdevis-pwa-v7\.0\.1-touch-ipad-smartphone/, "Le cache PWA doit suivre la passe tactile iPad et Smartphone");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
+assert.match(workflow, /\n  linux:\n[\s\S]*?Configurer la sandbox Electron sous Linux[\s\S]*?xvfb-run -a npm run linux/);
 assert.match(workflow, /xvfb-run -a npm run linux/);
 assert.match(workflow, /name: BCDevis-Linux/);
 assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
+assert.match(workflow, /\n  chromeos:\n[\s\S]*?Configurer la sandbox Electron sous Linux[\s\S]*?xvfb-run -a npm run chromeos/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
   assert.match(document, /7\.0\.1/, "Chaque document client doit annoncer la version 7.0.1");
