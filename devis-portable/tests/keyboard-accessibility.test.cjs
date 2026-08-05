@@ -73,7 +73,10 @@ assert.match(app, /quoteDateEditable: false/, "La date du devis doit être verro
 assert.match(app, /function renderQuoteDate\(\)[\s\S]*?input\.disabled = !editable/, "Le rendu doit alterner explicitement entre date compacte et champ modifiable");
 assert.match(app, /if \(db\.settings\.quoteDateEditable !== true\)[\s\S]*?event\.target\.value = quote\.date/, "Une modification de date doit être refusée lorsque le réglage est désactivé");
 assert.doesNotMatch(styles, /\.checkout-card\{[^}]*container-type:/, "La carte de caisse ne doit jamais perdre sa largeur intrinsèque à cause d’un conteneur CSS");
-assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{[\s\S]*?\.checkout-context\{[\s\S]*?position:absolute[\s\S]*?\.receipt-head\{padding-left:86px/, "La date doit rejoindre visuellement receipt-head uniquement dans la caisse tablette suffisamment large");
+assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{[\s\S]*?\.checkout-context\{[\s\S]*?position:absolute[\s\S]*?\.receipt-head\{padding-left:174px/, "L’état et la date doivent rejoindre visuellement receipt-head uniquement dans la caisse tablette suffisamment large");
+assert.match(html, /id="quoteSaveState" data-state="draft" role="status" aria-live="polite" aria-atomic="true"[\s\S]*?id="quoteSaveStateLabel">Brouillon<\/span>/, "L’état du devis doit être visible et annoncé sans interrompre la saisie");
+assert.match(app, /function currentQuoteSaveState\(\)[\s\S]*?quoteSaveFingerprint\(archived\) !== quoteSaveFingerprint\(quote\)[\s\S]*?key: "modified"/, "L’état Modifié doit comparer le devis courant à sa version archivée");
+assert.match(app, /delete comparable\.status;[\s\S]*?delete comparable\.updatedAt;/, "La comparaison d’archivage doit ignorer les métadonnées techniques");
 assert.match(app, /function saveQuote\(\) \{[\s\S]*?if \(!quote\.lines\.length\) \{[\s\S]*?Ajoutez une prestation avant d’enregistrer/, "Enregistrer doit répondre explicitement quand le devis est vide");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");

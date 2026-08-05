@@ -22,7 +22,7 @@ const centralReadme = read("central-server/README.md");
 const centralSchema = read("central-server/schema.sql");
 const centralCompose = read("central-server/compose.yml");
 
-assert.equal(packageJson.version, "7.0.1", "La livraison doit annoncer la version 7.0.1");
+assert.equal(packageJson.version, "7.0.2", "La livraison doit annoncer la version 7.0.2");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 for (const scriptName of ["build:portable", "mac", "linux"]) {
@@ -30,7 +30,7 @@ for (const scriptName of ["build:portable", "mac", "linux"]) {
 }
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
 assert.ok(packageJson.dependencies.pg, "PostgreSQL doit être une dépendance de production du serveur central");
-assert.match(serviceWorker, /bcdevis-pwa-v7\.0\.1-touch-ipad-smartphone/, "Le cache PWA doit suivre la passe tactile iPad et Smartphone");
+assert.match(serviceWorker, /bcdevis-pwa-v7\.0\.2-touch-ipad-smartphone/, "Le cache PWA doit suivre la version tactile iPad et Smartphone");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -41,7 +41,7 @@ assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 assert.match(workflow, /\n  chromeos:\n[\s\S]*?Configurer la sandbox Electron sous Linux[\s\S]*?xvfb-run -a npm run chromeos/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /7\.0\.1/, "Chaque document client doit annoncer la version 7.0.1");
+  assert.match(document, /7\.0\.2/, "Chaque document client doit annoncer la version 7.0.2");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -55,13 +55,13 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-7\.0\.1\.exe/);
-assert.match(quick, /BCDevis-7\.0\.1-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-7\.0\.1-chromeos\.zip/);
+assert.match(quick, /BCDevis-7\.0\.2\.exe/);
+assert.match(quick, /BCDevis-7\.0\.2-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-7\.0\.2-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-7\.0\.1-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-7\.0\.2-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
 assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);
@@ -82,7 +82,11 @@ for (const tableName of ["organizations", "users", "devices", "sessions", "works
 for (const document of [readme, manual, quick, clientReadme]) {
   assert.match(document, /numéros uniques/i, "Les documents client doivent expliquer la numérotation unique centrale");
   assert.match(document, /Documents PDF/, "Les documents client doivent présenter la bibliothèque PDF");
+  assert.match(document, /Suivi (?:commercial|des devis)/i, "Les documents client doivent présenter clairement le suivi commercial");
+  assert.match(document, /Auto[\s\S]*Mobile[\s\S]*Bureau/i, "Les documents client doivent présenter les trois modes d’affichage");
 }
+assert.match(manual, /Brouillon[\s\S]*Prêt à envoyer[\s\S]*Envoyé[\s\S]*Accepté[\s\S]*Refusé[\s\S]*Expiré/, "Le manuel doit expliquer le parcours complet du suivi");
+assert.match(quick, /rappels au démarrage/, "La fiche rapide doit signaler les rappels de suivi");
 assert.match(centralReadme, /BYTEA/);
 assert.match(centralReadme, /8 Mo/);
 assert.match(readme, /87 soins tarifables/, "Le README doit reprendre le nombre réel de soins actifs");

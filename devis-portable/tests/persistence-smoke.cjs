@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.0.1 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.0.1") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.0.2 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.0.2") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -155,6 +155,8 @@ async function run() {
       if (checkoutStyle.animationName !== "none") throw new Error("La caisse permanente ne doit plus s’animer comme un panneau temporaire");
       if (Number(cartStyle.flexGrow) < 1 || cartStyle.maxHeight !== "none") throw new Error("La liste de la caisse n’utilise pas la hauteur disponible");
       if (document.querySelector("#quoteNumber, .quote-number")) throw new Error("Le numéro de devis encombre encore l’en-tête de caisse");
+      const quoteSaveState = document.querySelector("#quoteSaveState");
+      if (quoteSaveState?.dataset.state !== "draft" || quoteSaveState.textContent.trim() !== "Brouillon") throw new Error("Un nouveau devis n’affiche pas clairement son état Brouillon");
       const quoteDateControl = document.querySelector("#quoteDateControl");
       const quoteDateInput = document.querySelector("#quoteDate");
       const quoteDateDisplay = document.querySelector("#quoteDateDisplay");
@@ -624,6 +626,11 @@ async function run() {
       if (document.querySelector("#bodyResultsTitle").textContent !== "Maillot & zone intime") throw new Error("Le passage avant/arrière doit conserver une zone corporelle cohérente");
 
       document.querySelector("#saveButton").click();
+      if (document.querySelector("#quoteSaveState").dataset.state !== "saved" || document.querySelector("#quoteSaveStateLabel").textContent !== "Enregistré") throw new Error("L’état Enregistré n’apparaît pas après l’archivage");
+      document.querySelector('[data-line-action="increase"]').click();
+      if (document.querySelector("#quoteSaveState").dataset.state !== "modified" || document.querySelector("#quoteSaveStateLabel").textContent !== "Modifié") throw new Error("Une modification du devis archivé n’est pas signalée");
+      document.querySelector("#saveButton").click();
+      if (document.querySelector("#quoteSaveState").dataset.state !== "saved") throw new Error("Le nouvel enregistrement ne rétablit pas l’état Enregistré");
       return {
         client: document.querySelector("#clientName").textContent,
         lines: document.querySelectorAll(".cart-line").length,

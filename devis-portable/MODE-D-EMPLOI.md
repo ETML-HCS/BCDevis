@@ -234,20 +234,29 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
-  <p class="cover-version">Version 7.0.1 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 7.0.2 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-7.0.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-7.0.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-7.0.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-7.0.2.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-7.0.2-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-7.0.2-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
 Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V7** et un **modèle de devis** importable.
+
+### Fonctions récentes à connaître
+
+- **Suivi commercial des devis** : activez-le dans **Réglages > Devis > Suivi des devis** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
+- **Affichage Auto, Mobile ou Bureau** : ouvrez le menu **Catalogue**, puis choisissez la vue adaptée à votre écran. Le choix reste mémorisé uniquement sur ce poste.
+- **Confort iPad et Smartphone** : les actions tactiles sont agrandies ; un balayage vers la gauche révèle la suppression et **Annuler** restaure immédiatement la dernière ligne retirée.
+- **Catalogue personnalisable** : l’éditeur des tuiles permet de rechercher un soin, prévisualiser et enregistrer son nom, son pictogramme, sa durée ou son tarif.
+- **Travail multi-postes facultatif** : PostgreSQL synchronise les devis, leur suivi et les réglages métier, réserve des numéros uniques et permet de continuer hors ligne.
+- **Documents PDF partagés** : la bibliothèque centrale importe, recherche, affiche et télécharge les documents associés aux devis et aux clients.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -266,11 +275,21 @@ Dans la barre supérieure :
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
 - **Documents PDF**, **Réglages** et **Raccourcis** : les trois boutons utilitaires placés après les tarifs ;
-- **Catalogue** : **Sur mesure** et affichage des prix.
+- **Catalogue** : **Sur mesure**, affichage des prix et choix de la vue **Auto / Mobile / Bureau**.
 
 Dans l’en-tête du devis, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…`.
 
 Sur un écran étroit, les onglets **Soins** et **Devis** en bas permettent de passer d’une zone à l’autre. Sur ordinateur, le devis occupe toute la hauteur de la fenêtre.
+
+### Choisir la vue Auto, Mobile ou Bureau
+
+Ouvrez le menu **Catalogue** avec le bouton à trois lignes, puis utilisez la zone **Vue** :
+
+- **Auto** adapte automatiquement l’application à la largeur disponible : Bureau au-delà de 600 px et Mobile jusqu’à 600 px ;
+- **Mobile** force une surface étroite centrée, de grandes cibles tactiles et les onglets **Soins / Devis**, même sur un grand écran ;
+- **Bureau** force l’interface complète avec les deux zones visibles lorsque la fenêtre offre assez de place.
+
+Le choix est enregistré localement. Il ne modifie ni les devis, ni les PDF, ni l’affichage des autres postes reliés à PostgreSQL.
 
 ## 2. Créer un devis
 
@@ -400,9 +419,10 @@ La simulation indicative apparaît automatiquement sous le total. Les options so
 
 ## 4. Enregistrer, imprimer et envoyer
 
-Quatre sorties restent visibles au bas du devis sous forme d’icônes : imprimante, PDF, e-mail direct et envois avec PDF à joindre. Leur nom complet apparaît au survol ou au focus ; leur libellé reste disponible pour les aides techniques. L’enregistrement se trouve dans l’en-tête.
+Quatre sorties restent visibles au bas du devis sous forme d’icônes : imprimante, PDF, e-mail direct et envois avec PDF à joindre. Leur nom complet apparaît au survol ou au focus ; leur libellé reste disponible pour les aides techniques. L’enregistrement se trouve dans l’en-tête. Un indicateur près de la date précise l’état réel du devis : **Brouillon**, **Enregistré** ou **Modifié**.
 
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
+- **Brouillon** signifie que le devis courant est conservé localement mais n’existe pas encore dans **Mes devis** ; **Modifié** signale qu’une version enregistrée a changé et doit être enregistrée de nouveau ; **Enregistré** confirme que la version affichée est à jour dans l’historique.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
 - **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
 - **E-mail** ouvre directement dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe.
@@ -420,12 +440,16 @@ Le bouton `…` en haut du devis donne accès à **Dupliquer**, **Exporter**, **
 
 Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de soins et le total. Cliquez sur une carte pour rouvrir le devis.
 
-Le suivi commercial est facultatif. Pour l’activer, ouvrez **Réglages > Devis > Suivi des devis**, puis choisissez la validité par défaut, le délai de relance, les rappels et les compteurs. Lorsqu’il est actif :
+Le suivi commercial est facultatif. Pour l’activer, ouvrez **Réglages > Devis > Suivi des devis**, activez l’option, puis choisissez la validité par défaut, le délai de relance, les rappels au démarrage et l’affichage des compteurs. Enregistrez ensuite les réglages.
+
+Depuis **Mes devis**, ouvrez l’onglet **Suivi**, puis utilisez le triangle d’une carte pour faire progresser le devis dans son parcours : **Brouillon**, **Prêt à envoyer**, **Envoyé**, puis **Accepté**, **Refusé** ou **Expiré**. Vous pouvez ajouter une note interne et fixer la prochaine relance sans modifier le PDF remis au client. Lorsqu’il est actif :
 
 - l’onglet **Historique** conserve la liste habituelle et colore chaque carte selon son dernier statut ;
 - l’onglet **Suivi** filtre les devis brouillons, prêts à envoyer, envoyés, à relancer, acceptés, refusés ou expirés ;
 - le triangle d’une carte ouvre la chronologie complète, la prochaine relance et la zone de note interne ;
 - **À relancer** reste un indicateur orange calculé à partir de la date de relance, tandis que le dernier statut commercial demeure **Envoyé** ;
+- les compteurs résument les statuts et les relances dans la fenêtre **Mes devis** ;
+- les rappels au démarrage signalent les devis arrivés à leur date de relance ;
 - après la préparation d’un e-mail, d’un message WhatsApp ou d’Outlook Web, BCDevis demande si le devis doit être marqué comme envoyé.
 
 La désactivation du suivi masque les onglets, les couleurs et les rappels sans supprimer la chronologie enregistrée. Les couleurs sont toujours accompagnées du nom du statut.

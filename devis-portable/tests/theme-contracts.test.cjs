@@ -33,13 +33,16 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.0\.1";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "7\.0\.2";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "7\.0\.2";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.0\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.0\.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
-assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /<strong>Confort tactile<\/strong>[\s\S]*?<strong>Caisse plus sûre<\/strong>[\s\S]*?<strong>Tuiles plus simples<\/strong>/, "Les nouveautés doivent résumer les améliorations tactiles de la version 7.0.1");
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 6, "L’écran des nouveautés doit présenter les six familles de fonctions livrées");
+assert.match(html, /<strong>État du devis<\/strong>[\s\S]*?<strong>Suivi des devis<\/strong>[\s\S]*?<strong>Affichage au choix<\/strong>[\s\S]*?<strong>Travail multi-postes<\/strong>[\s\S]*?<strong>Documents PDF partagés<\/strong>[\s\S]*?<strong>Confort tactile<\/strong>/, "Les nouveautés doivent résumer l’état du devis, le suivi, l’affichage, la centralisation, les PDF et le tactile");
+assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
+assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
 assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Les deux zones principales doivent conserver des noms courts mais non visibles");

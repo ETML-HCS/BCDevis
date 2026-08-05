@@ -192,6 +192,9 @@ async function main() {
   const app = read("devis-portable/app.js");
   const serviceWorker = read("devis-portable/service-worker.js");
   const schema = read("central-server/schema.sql");
+  const postgresIntegration = read("devis-portable/tests/central-postgres.integration.test.cjs");
+  const ciWorkflow = read(".github/workflows/ci.yml");
+  const packageJson = JSON.parse(read("package.json"));
   assert.equal((html.match(/id="settingsTab[^\"]*" type="button" role="tab"/g) || []).length, 5);
   assert.match(html, /data-settings-panel="data"/);
   assert.match(html, /id="centralEnabled"/);
@@ -206,6 +209,15 @@ async function main() {
   for (const table of ["users", "devices", "sessions", "shared_settings", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {
     assert.match(schema, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`));
   }
+  assert.equal(packageJson.scripts["test:central:postgres"], "node devis-portable/tests/central-postgres.integration.test.cjs");
+  assert.equal(packageJson.scripts["check:ci"], "npm run check && npm run test:central:postgres");
+  assert.match(postgresIntegration, /BCDEVIS_TEST_DATABASE_URL/);
+  assert.match(postgresIntegration, /CREATE SCHEMA/);
+  assert.match(postgresIntegration, /DROP SCHEMA IF EXISTS/);
+  assert.match(postgresIntegration, /Promise\.all\(\[/, "Le test PostgreSQL doit exercer des réservations concurrentes");
+  assert.match(ciWorkflow, /pull_request:/);
+  assert.match(ciWorkflow, /image: postgres:17-alpine/);
+  assert.match(ciWorkflow, /run: xvfb-run -a npm run check:ci/);
   console.log("CENTRALIZATION_TESTS_OK");
 }
 

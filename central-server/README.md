@@ -1,4 +1,4 @@
-# BCDevis Central 7.0.1
+# BCDevis Central 7.0.2
 
 BCDevis Central est le service multi-postes de la V7. L’application Electron ou PWA communique avec cette API en HTTPS. Seule l’API possède les identifiants PostgreSQL ; ils ne sont jamais envoyés aux appareils.
 
@@ -34,6 +34,19 @@ Invoke-RestMethod http://127.0.0.1:8787/api/v1/health
 Le premier démarrage crée le compte défini par `BCDEVIS_ADMIN_EMAIL` et `BCDEVIS_ADMIN_PASSWORD`. Un redémarrage ultérieur ne remplace ni le compte ni son mot de passe.
 
 PostgreSQL reste uniquement sur le réseau Docker privé. Le port `8787` de l’API écoute seulement sur la boucle locale afin d’être publié derrière un proxy HTTPS tel que Caddy, Nginx ou Cloudflare Tunnel.
+
+## Test d’intégration PostgreSQL
+
+La validation habituelle utilise `pg-mem` pour rester rapide. Le test d’intégration dédié exerce en plus l’API sur un vrai PostgreSQL : création du schéma, réservations concurrentes de numéros, synchronisation, conflit, colonnes JSONB, document `BYTEA` et journal d’activité.
+
+Depuis la racine du dépôt, utilisez uniquement une base jetable dont le nom contient `test` :
+
+```powershell
+$env:BCDEVIS_TEST_DATABASE_URL='postgresql://bcdevis_test:secret@127.0.0.1:5432/bcdevis_test'
+npm run test:central:postgres
+```
+
+Le test crée un schéma isolé portant un nom aléatoire et le supprime à la fin. Il refuse volontairement une base dont le nom ne contient pas `test`. La CI exécute automatiquement le même scénario sur PostgreSQL 17 avec `npm run check:ci`.
 
 ## Connexion dans BCDevis
 

@@ -2144,13 +2144,13 @@ html[data-theme] .family-option-detail-toggle[aria-expanded="true"]{
 }
 
 /* V5.2 — nouveautés affichées une seule fois après la mise à jour. */
-.release-notes-modal{width:min(590px,100%);padding:0;overflow:hidden}
+.release-notes-modal{display:grid;width:min(590px,100%);max-height:min(820px,calc(var(--app-viewport-height,100vh) - 24px));padding:0;overflow:hidden;grid-template-rows:auto minmax(0,1fr) auto}
 .release-notes-hero{padding:25px 28px 22px;text-align:center;background:linear-gradient(145deg,#111 0%,#27231e 72%,#4f473c 100%)}
 .release-notes-hero img{display:block;width:68px;height:68px;margin:0 auto 12px;object-fit:contain;border-radius:16px;box-shadow:0 10px 26px rgba(0,0,0,.3)}
 .release-notes-version{margin:0;color:var(--taupe);font-size:11px;font-weight:850;letter-spacing:.11em;text-transform:uppercase}
 .release-notes-hero h2{margin:7px 0 0;color:#fff;font-family:var(--serif);font-size:30px;font-weight:500;letter-spacing:-.03em}
 .release-notes-hero>p:last-child{margin:7px 0 0;color:#c9c5bd;font-size:13px;line-height:1.45}
-.release-notes-list{display:grid;margin:0;padding:22px 28px 8px;list-style:none;gap:10px}
+.release-notes-list{display:grid;margin:0;padding:22px 28px 8px;overflow-x:hidden;overflow-y:auto;list-style:none;gap:10px}
 .release-notes-list li{display:grid;min-width:0;padding:12px;align-items:center;border:1px solid var(--line);border-radius:13px;background:var(--surface-soft,#fafafa);grid-template-columns:42px minmax(0,1fr);gap:12px}
 .release-notes-list li>span{display:grid;width:42px;height:42px;place-items:center;border-radius:12px;color:var(--accent-ink,#111);background:var(--accent-soft,var(--taupe-light))}
 .release-notes-list svg{width:21px;height:21px}
@@ -2603,7 +2603,28 @@ html[data-theme] .history-item--tracked{border-color:color-mix(in srgb,var(--tra
 }
 
 /* V6 — date du devis compacte et verrouillée par défaut. */
-.checkout-context{min-height:26px;margin-top:3px}
+.checkout-context{min-height:26px;margin-top:3px;align-items:center;justify-content:space-between;gap:8px}
+.quote-save-state{
+  display:inline-flex;
+  min-width:0;
+  min-height:22px;
+  padding:0 7px;
+  align-items:center;
+  gap:5px;
+  border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+  border-radius:999px;
+  color:var(--muted);
+  background:color-mix(in srgb,var(--surface-soft) 76%,transparent);
+  font-size:9px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+}
+.quote-save-state-dot{width:6px;height:6px;flex:0 0 6px;border-radius:50%;background:var(--taupe-dark)}
+.quote-save-state[data-state="saved"]{color:var(--success);border-color:color-mix(in srgb,var(--success) 30%,var(--line));background:color-mix(in srgb,var(--success) 9%,var(--surface-raised))}
+.quote-save-state[data-state="saved"] .quote-save-state-dot{background:var(--success)}
+.quote-save-state[data-state="modified"]{color:var(--taupe-dark);border-color:color-mix(in srgb,var(--taupe-dark) 34%,var(--line));background:color-mix(in srgb,var(--taupe) 16%,var(--surface-raised))}
+.quote-save-state[data-state="modified"] .quote-save-state-dot{background:var(--taupe-dark)}
 .quote-date-control{
   display:inline-flex;
   min-width:0;
@@ -2643,16 +2664,19 @@ html[data-theme] .history-item--tracked{border-color:color-mix(in srgb,var(--tra
     top:13px;
     left:14px;
     display:flex;
-    width:78px;
+    width:166px;
     min-height:42px;
     margin:0;
     align-items:center;
     justify-content:flex-start;
+    gap:8px;
   }
-  .receipt-head{padding-left:86px}
-  .checkout-card.quote-date-editable .checkout-context{width:142px}
-  .checkout-card.quote-date-editable .receipt-head{padding-left:150px}
-  .quote-date-control{width:100%;min-height:42px;justify-content:flex-start}
+  .receipt-head{padding-left:174px}
+  .checkout-card.quote-date-editable .checkout-context{width:226px}
+  .checkout-card.quote-date-editable .receipt-head{padding-left:234px}
+  .quote-save-state{min-height:18px;padding-inline:4px;font-size:8px;gap:4px}
+  .quote-date-control{width:78px;min-height:42px;justify-content:flex-start}
+  .quote-date-control[data-editable="true"]{width:134px}
 }
 
 /* Caisse — rythme plus dense sans réduire les contrôles tactiles. */

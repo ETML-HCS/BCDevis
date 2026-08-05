@@ -2,340 +2,223 @@
 
 ## Statut du document
 
-- **Date de la proposition :** 3 août 2026
-- **Version de référence :** BCDevis 5.3.6
-- **État :** idées à évaluer, aucune fonction décrite ici n’est considérée comme engagée ou implémentée
-- **Document associé :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md)
+- **Dernière mise à jour :** 5 août 2026
+- **Version de référence :** BCDevis 7.0.2
+- **État :** portefeuille fonctionnel réévalué après le suivi commercial V6 et la centralisation PostgreSQL V7
+- **Documents associés :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md) et [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md)
 
-## Orientation produit proposée
+## Orientation produit
 
-BCDevis remplit déjà correctement son rôle de création, sauvegarde, impression et partage de devis. Les nouvelles fonctions devraient prioritairement l’aider à devenir un outil léger de suivi commercial, sans le transformer immédiatement en CRM, logiciel médical ou système comptable complet.
+BCDevis est désormais un outil de devis local avec suivi commercial et mode multi-postes facultatif. Les prochaines fonctions doivent consolider ce positionnement sans transformer l’application en dossier médical, agenda ou logiciel comptable complet.
 
-Les principes à préserver sont :
+Principes à préserver :
 
-- fonctionnement local et hors connexion ;
+- fonctionnement local et hors connexion par défaut ;
+- centralisation activée uniquement lorsqu’elle est nécessaire ;
 - interface rapide et peu encombrée ;
-- génération PDF professionnelle ;
-- portabilité entre Windows, macOS, Linux, ChromeOS et iPadOS ;
-- absence de serveur obligatoire pour les usages actuels ;
-- ajout progressif des fonctions nécessitant une infrastructure distante.
+- données récupérables et conflits explicites ;
+- PDF professionnel ;
+- continuité Windows, Linux, macOS, ChromeOS et iPadOS ;
+- validation humaine avant tout envoi à un client.
 
-## F1 — Cycle de vie du devis
+## État des propositions précédentes
 
-### Objectif
+| Référence | Fonction | État en 7.0.2 | Manque principal |
+| --- | --- | --- | --- |
+| F1 | Cycle de vie du devis | **Largement livré en V6** | Archivage, verrouillage d’un devis accepté et création explicite d’une nouvelle version. |
+| F2 | Carnet clients | **Non commencé** | Modèle de données, doublons, fusion, anonymisation et synchronisation. |
+| F3 | Relances | **Livré en V6** | Recherche globale et, si utile, vue planifiée plus détaillée. |
+| F4 | Modèles et favoris | **Partiel** | Un modèle JSON et la duplication existent ; pas de bibliothèque de modèles ni de favoris. |
+| F5 | Versions d’un devis | **Non commencé** | Version immuable, comparaison et lien entre versions. |
+| F6 | Signature sur iPad | **Non commencé** | Validation juridique et protection de la signature. |
+| F7 | Plan de traitement | **Non commencé** | Décision produit à confirmer. |
+| F8 | Export de gestion | **Non commencé** | Schéma d’export, anonymisation et indicateurs retenus. |
+| F9 | Catalogue versionné | **Partiel** | L’éditeur de tuiles existe ; import de masse, date d’effet et historique tarifaire manquent. |
+| F10 | Sauvegarde et synchronisation | **Partiel en V7** | Synchronisation centrale livrée ; sauvegarde locale automatique chiffrée, administration et restauration serveur prouvée manquent. |
+| F11 | Partage natif | **Partiel** | E-mail avec pièce jointe sur Electron et canaux web existants ; partage natif de fichier à étudier sur PWA. |
+| F12 | Multilingue | **Non commencé** | Architecture de traduction et validation des textes commerciaux. |
 
-Suivre ce qu’il advient d’un devis après sa création.
+## Priorité haute — terminer les parcours déjà engagés
 
-### Statuts proposés
+### F13. Administration centrale
 
-- Brouillon
-- Enregistré
-- Envoyé
-- Accepté
-- Refusé
-- Expiré
-- Archivé
+#### Objectif
 
-### Comportement envisagé
+Permettre à une personne responsable d’exploiter le mode multi-postes sans intervention SQL directe.
 
-- Le statut `Envoyé` peut être proposé après un partage, sans être imposé automatiquement.
-- Le statut `Expiré` est calculé depuis la date de validité.
-- Une acceptation ou un refus conserve la date et une note facultative.
-- Les statuts apparaissent dans l’historique, les filtres et les exports.
-- Un devis accepté reste modifiable uniquement par création d’une nouvelle version.
+#### Fonctions proposées
 
-### Valeur attendue
+- créer, désactiver et réactiver un utilisateur ;
+- attribuer les rôles administrateur, éditeur ou lecture seule ;
+- changer ou réinitialiser un mot de passe ;
+- lister et révoquer les appareils et sessions ;
+- consulter le journal d’activité ;
+- afficher l’état des sauvegardes et la capacité utilisée ;
+- exporter un diagnostic sans données client en clair.
 
-Donner une vision simple des devis en attente et éviter les oublis, sans ajouter un tableau de bord envahissant.
+#### Limite
 
-## F2 — Carnet clients local
+Cette fonction ne doit pas exposer PostgreSQL au navigateur. Elle passe par l’API et nécessite une authentification administrateur renforcée.
 
-### Objectif
+### F14. Historique consultable et actions par devis
 
-Éviter de ressaisir les coordonnées d’un client et retrouver rapidement ses devis.
+#### Objectif
 
-### Fonctionnement envisagé
+Rendre l’historique efficace lorsqu’il contient plusieurs centaines de devis.
 
-- Recherche par nom, téléphone ou e-mail.
-- Création d’un client depuis le devis.
-- Sélection d’un client existant en quelques actions.
-- Affichage de ses devis précédents.
-- Détection prudente des doublons.
-- Fusion manuelle de deux fiches.
-- Conservation d’une copie des coordonnées dans chaque devis afin de préserver l’historique du document.
+#### Fonctions proposées
 
-### Points de vigilance
+- rechercher par numéro, client, téléphone ou e-mail ;
+- trier par date, modification, client ou montant ;
+- ouvrir, dupliquer et exporter depuis la carte ;
+- archiver sans supprimer ;
+- supprimer vers une corbeille avec annulation ;
+- paginer ou virtualiser uniquement lorsque les mesures le justifient.
 
-- Protection des données locales.
-- Suppression ou anonymisation d’une fiche.
-- Absence de modification rétroactive des anciens devis.
+### F5. Versions et verrouillage après acceptation
 
-## F3 — Relances de devis
+#### Objectif
 
-### Objectif
+Éviter qu’un devis déjà envoyé ou accepté soit remplacé silencieusement.
 
-Identifier les devis envoyés qui attendent encore une réponse.
+#### Fonctions proposées
 
-### Fonctionnement envisagé
+- figer une version envoyée ou acceptée ;
+- créer une V2 liée à la version précédente ;
+- comparer lignes, quantités, réductions, mentions et totaux ;
+- indiquer la version dans le PDF ;
+- conserver les anciennes versions en lecture seule ;
+- journaliser l’auteur et la date en mode central.
 
-- Définir une date de prochaine relance.
-- Afficher une liste sobre des relances du jour ou en retard.
-- Proposer un message WhatsApp ou e-mail prérempli.
-- Enregistrer la date de la dernière relance.
-- Désactiver les relances pour un devis accepté, refusé ou archivé.
+### F15. Sauvegardes guidées et vérifiables
 
-### Limite recommandée
+#### Objectif
 
-Ne pas envoyer automatiquement de message sans validation humaine.
+Transformer la sauvegarde en fonction contrôlable, pas seulement en bouton d’export.
 
-## F4 — Modèles de devis et favoris
+#### Fonctions proposées
 
-### Objectif
+- instantané automatique avant restauration ou résolution de conflit ;
+- résumé du contenu avant import ;
+- test de lisibilité sans restauration ;
+- rotation de sauvegardes locales pour Electron ;
+- état de la dernière sauvegarde PostgreSQL vérifiée ;
+- procédure guidée de restauration sur un environnement séparé.
 
-Accélérer les propositions récurrentes.
+## Priorité moyenne — gagner du temps au quotidien
 
-### Fonctions envisagées
+### F2. Carnet clients local ou central
+
+- Rechercher par nom, téléphone ou e-mail.
+- Créer ou sélectionner un client depuis le devis.
+- Conserver une copie des coordonnées dans chaque devis historique.
+- Détecter les doublons et proposer une fusion manuelle.
+- Permettre suppression ou anonymisation selon la politique de conservation.
+- Définir le comportement hors ligne et les conflits avant synchronisation.
+
+Le carnet ne doit pas devenir un dossier médical. Aucune donnée clinique ne doit y être ajoutée implicitement.
+
+### F4. Bibliothèque de modèles et favoris
 
 - Enregistrer un devis comme modèle sans coordonnées client.
 - Créer des ensembles fréquents de soins.
-- Ajouter un ensemble complet au devis en une action.
-- Épingler des soins favoris en tête du catalogue.
-- Dupliquer puis adapter un modèle.
-- Importer et exporter les modèles.
+- Épingler des prestations favorites.
+- Dupliquer et adapter un modèle.
+- Importer, exporter et, en mode central, partager les modèles choisis.
 
-### Exemples
+### F8. Exports de gestion
 
-- Pack de soins fréquemment associé.
-- Proposition type pour une zone du corps.
-- Devis étudiant standard.
-- Modèle promotionnel temporaire.
+- Exporter en CSV les devis d’une période.
+- Séparer montants proposés, acceptés, refusés et expirés.
+- Mesurer délais de réponse et relances en attente.
+- Exporter des statistiques sans données nominatives lorsque cela suffit.
+- Signaler explicitement les exports contenant des données sensibles.
 
-## F5 — Versions et historique des modifications
+### F9. Catalogue versionné et modifications en masse
 
-### Objectif
-
-Conserver la trace des propositions successives adressées au même client.
-
-### Fonctionnement envisagé
-
-- Créer une version V2 à partir d’un devis envoyé ou accepté.
-- Conserver les versions précédentes en lecture seule.
-- Comparer les soins, quantités, rabais et totaux modifiés.
-- Indiquer la version dans le PDF.
-- Éviter de remplacer silencieusement le document déjà envoyé.
-
-### Valeur attendue
-
-Rendre les échanges plus fiables et limiter les désaccords sur la version acceptée.
-
-## F6 — Signature sur iPad et acceptation locale
-
-### Objectif
-
-Permettre au client d’accepter un devis directement sur l’appareil de la clinique.
-
-### Fonctionnement envisagé
-
-- Mode de lecture dédié avant signature.
-- Case d’acceptation des conditions.
-- Signature tactile.
-- Nom du signataire, date, heure et éventuellement lieu.
-- Génération d’un PDF final contenant l’acceptation.
-- Verrouillage du devis accepté et création d’une nouvelle version pour toute modification ultérieure.
-
-### Points de vigilance
-
-- Consentement explicite avant signature.
-- Protection de la signature enregistrée.
-- Validation juridique séparée avant de présenter la fonction comme une signature électronique qualifiée.
-
-## F7 — Plan de traitement issu d’un devis accepté
-
-### Objectif
-
-Transformer un devis accepté en liste opérationnelle de séances à planifier.
-
-### Fonctionnement envisagé
-
-- Convertir les quantités payées et offertes en séances prévues.
-- Afficher les séances réalisées et restantes.
-- Ajouter une date prévue ou réalisée.
-- Conserver le lien avec le devis d’origine.
-- Exporter ou imprimer un résumé.
-
-### Limite recommandée
-
-Rester sur un suivi simple. La gestion médicale détaillée et l’agenda complet doivent être considérés comme des produits distincts sauf décision contraire.
-
-## F8 — Export de gestion
-
-### Objectif
-
-Permettre une analyse externe sans surcharger l’interface principale.
-
-### Exports envisagés
-
-- CSV ou tableur des devis par période.
-- Répartition par statut.
-- Montants proposés, acceptés et refusés.
-- Soins les plus souvent proposés.
-- Délais moyens entre création et acceptation.
-- Liste des devis expirés ou à relancer.
-
-### Principes
-
-- Aucun tableau de bord permanent n’est nécessaire dans le devis.
-- Les indicateurs doivent être utiles à une décision concrète.
-- Les exports contenant des clients doivent être clairement identifiés comme sensibles.
-
-## F9 — Catalogue versionné et modification en masse
-
-### Objectif
-
-Faciliter les changements de tarifs et la maintenance du catalogue.
-
-### Fonctionnement envisagé
-
-- Exporter le catalogue en CSV ou JSON.
-- Réimporter les prix, durées et libellés après validation.
-- Prévisualiser les changements avant application.
+- Prévisualiser un import CSV ou JSON avant application.
+- Refuser identifiants dupliqués et montants invalides.
 - Définir une date d’entrée en vigueur.
-- Conserver les anciens prix dans les devis existants.
+- Conserver les tarifs historiques dans les devis existants.
+- Comparer le catalogue actif au catalogue de référence.
 - Annuler la dernière modification globale.
-- Comparer le catalogue personnalisé au catalogue de référence.
 
-### Points de vigilance
+## Priorité ultérieure ou soumise à décision
 
-- Ne jamais recalculer rétroactivement un ancien devis avec les nouveaux tarifs.
-- Refuser les doublons d’identifiants et les montants invalides.
+### F6. Signature sur iPad
 
-## F10 — Sauvegarde chiffrée et synchronisation facultative
+À envisager uniquement après validation juridique du niveau de preuve attendu. Le parcours devrait inclure lecture du devis, consentement, identité du signataire, date, PDF final et impossibilité de modifier la version signée.
 
-### Objectif
+### F7. Plan de traitement
 
-Permettre de retrouver les données après perte d’un appareil et, si nécessaire, de travailler sur plusieurs postes.
+À retenir seulement si le besoin réel est de suivre des séances restantes. La gestion médicale détaillée et l’agenda doivent rester hors périmètre sans décision explicite.
 
-### Première étape hors ligne
+### F11. Partage natif de fichier
 
-- Sauvegardes automatiques chiffrées dans un emplacement choisi.
-- Rotation des dernières sauvegardes.
-- Vérification régulière de leur lisibilité.
-- Restauration guidée.
+Étudier l’API de partage disponible sur les plateformes PWA, avec repli clair vers les fonctions existantes. Aucun message ne doit être envoyé sans confirmation humaine.
 
-### Étape multi-postes facultative
+### F12. Interface multilingue et PDF bilingue
 
-- Synchronisation chiffrée entre appareils autorisés.
-- Gestion explicite des conflits.
-- Journal des dernières synchronisations.
-- Conservation d’un mode hors connexion complet.
-- Possibilité de désactiver totalement la synchronisation.
+Préparer une architecture de traduction stable, conserver les identifiants internes du catalogue et faire valider les mentions commerciales dans chaque langue avant livraison.
 
-### Décision structurante
+## Fonctions volontairement hors périmètre actuel
 
-Cette fonction nécessite de choisir entre stockage local partagé, stockage cloud privé ou véritable service avec comptes. Elle ne doit pas être ajoutée implicitement au programme actuel.
+- dossier médical et notes cliniques détaillées ;
+- agenda complet ;
+- facturation et comptabilité ;
+- paiement automatique ;
+- envoi automatique de relances sans validation ;
+- exposition directe de PostgreSQL aux postes ;
+- promesse de signature électronique qualifiée sans validation spécialisée.
 
-## F11 — Partage natif amélioré
+## Proposition de séquencement
 
-### Objectif
+### Étape 1 — V7 exploitable
 
-Réduire les manipulations nécessaires pour envoyer le PDF sur tablette et mobile.
+- administration des comptes, appareils et sessions ;
+- sauvegarde/restauration prouvée ;
+- synchronisation mesurée et protégée contre les gros volumes ;
+- recherche et actions essentielles dans l’historique.
 
-### Pistes envisagées
-
-- Utiliser le partage natif de fichiers lorsque la plateforme le permet.
-- Proposer `Partager le PDF` sur iPadOS et ChromeOS.
-- Conserver les solutions existantes WhatsApp, Outlook Web et application e-mail.
-- Afficher clairement quand une pièce jointe doit encore être ajoutée manuellement.
-- Mémoriser le canal préféré sans envoyer automatiquement.
-
-## F12 — Interface multilingue et PDF bilingue
-
-### Objectif
-
-Préparer les devis pour une clientèle francophone et internationale.
-
-### Fonctionnement envisagé
-
-- Interface française conservée par défaut.
-- PDF disponible au minimum en français et en anglais.
-- Conditions et mentions personnalisables par langue.
-- Choix de langue mémorisé par devis.
-- Catalogue traduit sans modifier les identifiants internes.
-
-### Point de vigilance
-
-Les traductions des conditions commerciales doivent être validées avant livraison.
-
-## Priorisation proposée
-
-### Priorité haute — prochaine évolution métier
-
-1. F1 — cycle de vie du devis ;
-2. F2 — carnet clients local ;
-3. F4 — modèles et favoris ;
-4. F3 — relances.
-
-Ces quatre fonctions forment ensemble un suivi commercial léger et cohérent.
-
-### Priorité moyenne
-
-5. F5 — versions du devis ;
-6. F9 — catalogue versionné ;
-7. F8 — exports de gestion ;
-8. F11 — partage natif amélioré.
-
-### Priorité ultérieure ou soumise à décision
-
-9. F6 — signature sur iPad ;
-10. F7 — plan de traitement ;
-11. F10 — synchronisation multi-postes ;
-12. F12 — multilingue.
-
-## Proposition de versions
-
-### BCDevis 5.3 — Suivi commercial local
-
-- statuts de devis ;
-- recherche et filtres dans l’historique ;
-- carnet clients ;
-- modèles et favoris ;
-- premières relances manuelles.
-
-### BCDevis 5.4 — Traçabilité et protection
+### Étape 2 — Traçabilité commerciale
 
 - versions de devis ;
-- sauvegardes automatiques et chiffrées ;
-- catalogue versionné ;
+- verrouillage après acceptation ;
+- carnet clients ;
 - export de gestion.
 
-### BCDevis 6 — Collaboration facultative
+### Étape 3 — Productivité
 
-- signature sur iPad ;
+- modèles et favoris ;
+- catalogue versionné ;
+- partage natif si les plateformes le permettent.
+
+### Étape 4 — Extensions validées par l’usage
+
+- signature ;
 - plan de traitement ;
-- partage natif avancé ;
-- synchronisation multi-postes ou accès distant, uniquement si le besoin est confirmé.
+- multilingue.
 
-## Questions à valider avant développement
+## Questions à trancher avant développement
 
-- Combien de personnes utilisent BCDevis aujourd’hui ?
-- Chaque personne travaille-t-elle sur un poste distinct ?
-- Le même client doit-il être retrouvé sur plusieurs appareils ?
-- Quels statuts correspondent au processus réel de la clinique ?
-- Une relance doit-elle rester manuelle ou être planifiée ?
-- La signature se ferait-elle uniquement sur place ou également à distance ?
-- Faut-il suivre les séances après acceptation ou seulement transmettre le devis ?
-- Une exportation vers un outil comptable ou un agenda existant est-elle attendue ?
-- Quelle durée de conservation doit être appliquée aux devis et coordonnées ?
-- Le fonctionnement entièrement hors ligne doit-il rester obligatoire ?
+- Qui administre le serveur et restaure les sauvegardes ?
+- Combien d’utilisateurs et d’appareils sont prévus à 12 et 24 mois ?
+- Quels rôles peuvent consulter les coordonnées, les PDF et le journal ?
+- Quelle durée de conservation appliquer aux devis, PDF, suivis et journaux ?
+- Un devis accepté doit-il être totalement figé ou seulement dupliqué avant modification ?
+- Le carnet clients contient-il uniquement des coordonnées commerciales ?
+- Quels exports sont réellement utilisés et par qui ?
+- La signature est-elle sur place, à distance, ou les deux ?
+- Quelles fonctions doivent continuer à fonctionner pendant une coupure prolongée ?
 
 ## Règle de décision
 
-Avant d’ajouter une nouvelle fonction :
+Avant d’engager une fonction :
 
-1. confirmer qu’elle répond à un usage réel et fréquent ;
-2. vérifier qu’elle ne surcharge pas le devis principal ;
-3. définir son comportement hors connexion ;
-4. identifier les nouvelles données conservées ;
-5. prévoir export, sauvegarde, suppression et migration ;
-6. couvrir les plateformes concernées par des tests ;
-7. mettre à jour les documents et livrables dans la même version.
+1. confirmer l’usage réel et sa fréquence ;
+2. définir le comportement local, central et hors ligne ;
+3. identifier les données créées, leur sensibilité et leur rétention ;
+4. prévoir export, sauvegarde, restauration, suppression et migration ;
+5. définir les conflits multi-postes ;
+6. ajouter les tests sur les plateformes concernées ;
+7. mettre à jour les guides et vérifier le livrable réel.

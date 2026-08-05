@@ -2,7 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.0.1";
+  const RELEASE_VERSION = "7.0.2";
+  const RELEASE_NOTES_REVISION = "7.0.2";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
@@ -624,19 +625,21 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
       if (!centralSyncApplying) centralController.schedule();
+      renderQuoteSaveState();
       return true;
     } catch (error) {
       const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
       toast(isQuotaError ? "Sauvegarde pleine : exportez une sauvegarde puis allégez les logos ou l’historique." : "Le stockage local de BCDevis est indisponible.", "error");
       console.error(error);
+      renderQuoteSaveState();
       return false;
     }
   }
 
   function showReleaseNotesOnce() {
     try {
-      if (localStorage.getItem(RELEASE_NOTES_SEEN_KEY) === RELEASE_VERSION) return false;
-      localStorage.setItem(RELEASE_NOTES_SEEN_KEY, RELEASE_VERSION);
+      if (localStorage.getItem(RELEASE_NOTES_SEEN_KEY) === RELEASE_NOTES_REVISION) return false;
+      localStorage.setItem(RELEASE_NOTES_SEEN_KEY, RELEASE_NOTES_REVISION);
     } catch (error) {
       console.warn("État des nouveautés indisponible", error);
     }
@@ -1803,6 +1806,63 @@
     $(".brand-block .eyebrow").textContent = db.settings.companyName;
     const clientName = String(quote.client?.name || "").trim();
     document.title = clientName ? `${clientName} — BCDevis` : "BCDevis";
+    renderQuoteSaveState();
+  }
+
+  function stableQuoteValue(value) {
+    if (Array.isArray(value)) return value.map(stableQuoteValue);
+    if (!isRecord(value)) return value;
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableQuoteValue(value[key])]));
+  }
+
+  function quoteSaveFingerprint(source) {
+    if (!isRecord(source)) return "";
+    const comparable = { ...source };
+    delete comparable.status;
+    delete comparable.updatedAt;
+    return JSON.stringify(stableQuoteValue(comparable));
+  }
+
+  function currentQuoteSaveState() {
+    const archived = db.quotes[quote.id];
+    if (!archived) {
+      return {
+        key: "draft",
+        label: "Brouillon",
+        detail: "Ce devis n’est pas encore enregistré dans Mes devis."
+      };
+    }
+    if (quoteSaveFingerprint(archived) !== quoteSaveFingerprint(quote)) {
+      return {
+        key: "modified",
+        label: "Modifié",
+        detail: "Ce devis a été modifié depuis son dernier enregistrement."
+      };
+    }
+    return {
+      key: "saved",
+      label: "Enregistré",
+      detail: "Ce devis est à jour dans Mes devis."
+    };
+  }
+
+  function renderQuoteSaveState() {
+    const stateElement = $("#quoteSaveState");
+    const stateLabel = $("#quoteSaveStateLabel");
+    const saveButton = $("#saveButton");
+    if (!stateElement || !stateLabel || !saveButton) return;
+    const state = currentQuoteSaveState();
+    stateElement.dataset.state = state.key;
+    stateElement.setAttribute("aria-label", `${state.label}. ${state.detail}`);
+    stateElement.title = state.detail;
+    stateLabel.textContent = state.label;
+    saveButton.dataset.saveState = state.key;
+    saveButton.dataset.tooltip = state.label;
+    saveButton.setAttribute("aria-label", state.key === "modified"
+      ? "Enregistrer les modifications"
+      : state.key === "saved"
+        ? "Devis enregistré, enregistrer à nouveau"
+        : "Enregistrer le brouillon");
   }
 
   function renderQuoteDate() {

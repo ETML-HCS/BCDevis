@@ -2,295 +2,217 @@
 
 ## Statut du document
 
-- **Date de l’audit :** 3 août 2026
-- **Version examinée :** BCDevis 5.2.0, correction BCDevis 5.2.5, suppression tactile BCDevis 5.3.0, libellés courts BCDevis 5.3.1, sorties SVG BCDevis 5.3.2, envois groupés BCDevis 5.3.3, en-tête aligné BCDevis 5.3.4, e-mail direct BCDevis 5.3.5 et pictogramme PDF renforcé BCDevis 5.3.6
-- **Portée :** application Electron, PWA, stockage local, génération PDF, documentation, tests et livrables
-- **État :** suivi des recommandations ; A1 et A2 traitées dans BCDevis 5.2.5, suppression renforcée dans BCDevis 5.3.0, libellés raccourcis dans BCDevis 5.3.1, sorties compactées dans BCDevis 5.3.2, pièce jointe clarifiée dans BCDevis 5.3.3, en-tête remis sur une ligne dans BCDevis 5.3.4, e-mail rendu direct dans BCDevis 5.3.5 et pictogramme PDF clarifié dans BCDevis 5.3.6
-- **Document associé :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md)
+- **Dernière analyse :** 5 août 2026
+- **Version examinée :** BCDevis 7.0.2, candidat local du 5 août 2026
+- **Portée :** application Electron, PWA, mode local, serveur central PostgreSQL, synchronisation, PDF, documentation, tests et livrables
+- **État :** feuille de route consolidée après l’ajout du suivi commercial en V6 et de la centralisation facultative en V7
+- **Documents associés :** [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md), [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md) et [plan de protection de la PWA](PLAN-PROTECTION-ACCES-GITHUB-PAGES.md)
 
-## Synthèse
+## Résultat de l’analyse
 
-BCDevis repose sur une base fonctionnelle stable et déjà très complète. La validation automatisée de la version 5.2.0 couvre notamment les calculs métier, les soins, le corps interactif, les PDF, l’accessibilité clavier, la persistance Electron, la PWA, les plateformes de livraison, le démarrage système et la documentation.
+BCDevis 7.0.2 est fonctionnel et dispose d’un socle de validation sérieux pour une application JavaScript native :
 
-Les améliorations les plus importantes concernent désormais :
+- `npm run check` passe les contrôles syntaxiques et les 13 suites de tests ;
+- les calculs, le catalogue, le corps interactif, les thèmes, le clavier, les PDF, le suivi commercial, la centralisation, la persistance, la PWA, les plateformes et les documents sont couverts ;
+- `npm audit` et `npm audit --omit=dev` ne signalent aucune vulnérabilité connue ;
+- `docker compose config` valide la configuration fournie pour PostgreSQL et l’API ;
+- Electron conserve l’isolation du contexte, désactive Node dans le renderer et limite les ouvertures externes ;
+- la V7 permet un usage local complet ou une synchronisation PostgreSQL facultative avec conflits explicites et numéros centralisés.
 
-1. la correction de l’interaction de quantité devenue difficile sur certains appareils ;
-2. la transformation de l’historique en outil de travail réellement exploitable ;
-3. la protection et la récupération des données locales ;
-4. la synchronisation entre le comportement livré, la documentation et les tests ;
-5. la réduction de la dette technique avant d’ajouter de nouveaux parcours importants.
+Le risque principal a changé depuis l’audit V5 : il ne s’agit plus d’ajouter rapidement des fonctions commerciales, mais de rendre la nouvelle architecture multi-postes exploitable, récupérable et mesurable avant sa mise en production. La priorité doit donc rester la stabilisation de la V7.
 
-## P0 — Corrections immédiates
+## Suivi des recommandations précédentes
 
-### A1. Remplacer le clic gauche/droit sur les quantités par des contrôles explicites
+| Référence | Sujet | État en 7.0.2 | Suite recommandée |
+| --- | --- | --- | --- |
+| A1 | Quantités tactiles explicites | **Traité** | Conserver les tests tactiles et clavier. |
+| A2 | Documentation alignée sur le produit | **Partiellement traité** | Les guides V7 et les tests documentaires sont à jour, mais la version reste dupliquée dans plusieurs sources. |
+| A3 | Historique opérationnel | **Partiellement traité** | Statuts, filtres, chronologie, relances et tri métier sont livrés ; recherche libre, archivage, suppression récupérable et actions par carte restent à faire. |
+| A4 | Sauvegarde et restauration fiables | **Partiellement traité** | L’import est borné, migré et restauré avec retour en mémoire si l’écriture locale échoue ; aucun instantané utilisateur n’est créé automatiquement avant une restauration. |
+| A5 | Protection des données | **Partiellement traité** | HTTPS distant obligatoire, sessions, rôles et séparation API/PostgreSQL sont présents ; données locales, sauvegardes et jeton client ne sont pas chiffrés. |
+| A6 | État clair du brouillon | **Traité en 7.0.2** | Un indicateur accessible affiche désormais `Brouillon`, `Enregistré` ou `Modifié` en comparant le devis courant à sa version réellement archivée. |
+| A7 | Découpage de `app.js` | **À faire** | Le fichier atteint 4 435 lignes et 235 Ko. |
+| A8 | Consolidation CSS | **À faire** | `styles.css` compte 3 012 lignes et `index.html` embarque encore environ 1 729 lignes, soit près de 98 Ko de CSS intégré. |
+| A9 | Tests comportementaux | **Partiellement traité** | Une CI indépendante et un test PostgreSQL 17 réel sont maintenant présents ; la première exécution sur le service réel, la matrice navigateur et les essais de volume restent à prouver. |
+| A10 | Durcissement Electron/PWA/API | **En cours** | Les protections de base sont présentes ; CSP, limitation globale, administration des accès et épinglage immuable des actions restent ouverts. |
+| A11 | Signature des livrables | **À faire** | Windows n’est pas signé et macOS n’est ni signé ni notarisé. |
 
-**État : traité dans BCDevis 5.2.5, puis complété dans BCDevis 5.3.0 par une poubelle hors du flux et un balayage tactile gauche.**
+## P0 — Stabiliser la centralisation avant un usage réel
 
-#### Constat
-
-Dans la version 5.2.0 auditée, un clic gauche diminuait une quantité et un clic droit l’augmentait. Ce fonctionnement était peu visible et mal adapté aux écrans tactiles. Dans le cas d’un pack déjà ajouté, augmenter à nouveau les quantités pouvait devenir particulièrement difficile.
-
-#### Amélioration proposée
-
-- Afficher un contrôle compact `−  quantité  +`.
-- Prévoir les mêmes contrôles pour les séances payées et offertes.
-- Rendre chaque bouton utilisable au clavier avec les interactions natives.
-- Garantir des cibles tactiles adaptées à l’iPad.
-- Désactiver proprement `−` lorsque la valeur minimale est atteinte.
-- Supprimer la dépendance fonctionnelle au menu contextuel du clic droit.
-
-#### Critères de validation
-
-- Toute quantité peut être augmentée ou diminuée sur Windows, macOS, Linux, ChromeOS et iPadOS.
-- Les contrôles restent lisibles dans un devis étroit.
-- Les bornes de quantité sont respectées.
-- Les totaux sont recalculés après chaque action.
-- Les tests couvrent les quantités payées et offertes sur une interface tactile simulée.
-
-### A2. Réaligner la documentation sur le programme livré
-
-**État : traité dans BCDevis 5.2.5.**
-
-#### Incohérences constatées
-
-- Le README annonce 82 soins tarifables alors que le catalogue actif et le manuel en comptent 87.
-- Le README décrivait encore un ancien comportement du logo principal alors que l’en-tête visuel a volontairement été simplifié.
-- La documentation présentait encore une modification directe du prix alors que le tarif libre passe désormais par **Sur mesure**.
-
-#### Amélioration proposée
-
-- Corriger immédiatement les valeurs et descriptions devenues obsolètes.
-- Générer automatiquement les nombres de soins et de familles depuis le catalogue.
-- Centraliser le numéro de version utilisé par l’application, le cache PWA, les documents et les tests.
-- Ajouter des assertions reliant les fonctions documentées aux contrôles réellement rendus.
-
-#### Critères de validation
-
-- Le README, le mode d’emploi, l’utilisation rapide et les PDF décrivent le même comportement.
-- Le nombre de soins ne peut plus diverger du catalogue actif.
-- Une validation échoue si une action documentée n’existe plus dans l’interface.
-
-## P1 — Améliorations fonctionnelles de l’existant
-
-### A3. Rendre l’historique réellement opérationnel
+### A12. Prouver le serveur sur un vrai PostgreSQL
 
 #### Constat
 
-L’historique affiche le numéro, le client, la date, le nombre de soins, le total et un statut unique `Enregistré`. Il permet uniquement de rouvrir le devis.
+La suite `centralization.test.cjs` exerce bien l’API, les sessions, les numéros uniques, les conflits et les PDF, mais elle s’appuie sur `pg-mem`. Le fichier `schema.sql` est appliqué directement avec des `CREATE ... IF NOT EXISTS` et ne constitue pas encore un historique de migrations versionnées.
 
-#### Amélioration proposée
+**Avancement du 5 août 2026 :** `central-postgres.integration.test.cjs` et la CI dédiée ont été ajoutés. Le scénario utilise une base PostgreSQL dont le nom contient `test`, crée un schéma isolé puis le supprime. Il couvre notamment deux réservations concurrentes, JSONB, conflits, PDF et audit. Le moteur Docker local étant indisponible pendant cette passe, la première exécution sur PostgreSQL 17 reste une preuve attendue de la CI.
 
-- Ajouter une recherche par numéro, nom, téléphone ou e-mail.
-- Ajouter des filtres par date, montant et statut.
-- Ajouter un tri par modification récente, date du devis, client ou total.
-- Proposer sur chaque carte : ouvrir, dupliquer, exporter, archiver et supprimer.
-- Exiger une confirmation avant suppression.
-- Prévoir une corbeille locale temporaire ou une possibilité d’annulation.
-- Afficher automatiquement les devis arrivés à expiration.
-- Conserver une présentation sobre sans transformer l’écran en tableau de bord chargé.
+#### Actions
+
+- Maintenir le test d’intégration contre PostgreSQL 17 réel et rendre sa réussite obligatoire dans la CI.
+- Tester un démarrage neuf, un redémarrage avec données, une migration de schéma, une concurrence de synchronisation et une reprise après interruption.
+- Créer des migrations numérotées, atomiques et traçables au lieu de dépendre d’un unique schéma cumulatif.
+- Écrire et tester un runbook complet de sauvegarde **et** restauration `pg_dump`/`pg_restore`.
+- Vérifier le déploiement derrière le proxy HTTPS réellement retenu, sans exposer PostgreSQL.
 
 #### Critères de validation
 
-- L’historique reste utilisable avec plusieurs centaines de devis.
-- Les actions ne provoquent pas l’ouverture involontaire d’un devis.
-- Une suppression accidentelle reste récupérable pendant une durée définie.
-- Recherche, filtres et tri sont accessibles au clavier et au toucher.
+- Le test échoue si une requête utilisée n’est pas compatible avec PostgreSQL 17.
+- Une base de la version précédente est migrée sans perte de devis, documents, comptes, appareils ou journal.
+- Une restauration dans une base distincte est prouvée par des contrôles de volume, d’empreinte et de contenu.
+- Le service redémarre après restauration et un poste peut se reconnecter puis synchroniser.
 
-### A4. Fiabiliser les sauvegardes et les restaurations
+### A13. Administrer les comptes, appareils et sessions
 
 #### Constat
 
-La sauvegarde complète JSON est manuelle. Une restauration remplace la base locale après confirmation, sans créer au préalable une copie de sécurité récupérable par l’utilisateur.
+Le schéma prévoit les rôles `admin`, `editor` et `reader`, mais seul l’administrateur initial peut être créé par la procédure actuelle. Aucune interface ou commande maintenue ne permet encore de créer un utilisateur, changer son rôle, désactiver un compte, révoquer un appareil ou invalider toutes ses sessions.
 
-#### Amélioration proposée
+#### Actions
 
-- Créer automatiquement un instantané avant toute restauration.
-- Vérifier entièrement une sauvegarde avant de remplacer les données locales.
-- Afficher un résumé avant restauration : version, date, nombre de devis, nombre de soins personnalisés et réglages concernés.
-- Proposer une restauration complète ou sélective.
-- Conserver plusieurs sauvegardes tournantes dans l’application de bureau.
-- Ajouter un rappel discret lorsqu’aucune sauvegarde externe récente n’existe.
-- Permettre de tester une sauvegarde sans l’importer.
+- Fournir une commande d’administration hors ligne ou une interface réservée aux administrateurs.
+- Gérer création, désactivation, changement de rôle et réinitialisation du mot de passe.
+- Lister les appareils et sessions avec dernière activité, expiration et action de révocation.
+- Documenter la perte d’un appareil, le départ d’un collaborateur et la rotation d’urgence des accès.
+- Nettoyer périodiquement les sessions expirées et borner la mémoire du limiteur de connexion.
 
 #### Critères de validation
 
-- Une sauvegarde partiellement valide ne remplace jamais silencieusement la base courante.
-- Une restauration peut être annulée grâce à l’instantané précédent.
-- Les migrations de versions anciennes restent couvertes par des tests.
-- Les sauvegardes ne sont jamais intégrées aux livrables distribués.
+- Un appareil révoqué ne peut plus lire ni écrire de données.
+- Un compte `reader` ne peut ni synchroniser une modification, ni réserver un numéro, ni importer un PDF.
+- Chaque action administrative sensible est journalisée.
+- La procédure ne nécessite pas de modifier directement une ligne SQL sans garde-fou.
 
-### A5. Améliorer la protection des données locales
+### A14. Rendre la synchronisation proportionnelle aux changements
 
 #### Constat
 
-BCDevis conserve localement des coordonnées client, des soins et l’historique commercial. Le fonctionnement hors ligne est un avantage, mais l’application ne fournit pas encore de verrouillage ou de chiffrement applicatif.
+Chaque synchronisation envoie un instantané complet. Lorsqu’il change, le serveur supprime puis réinsère tous les réglages, compteurs, prestations, adaptations et devis de l’organisation. Le dernier instantané complet est aussi recopié dans chaque appareil. Ce fonctionnement est simple et sûr à petite échelle, mais son coût augmente avec l’historique et finira par rencontrer la limite de requête de 12 Mo.
 
-#### Amélioration proposée
+#### Actions
 
-- Ajouter un verrouillage facultatif par code ou authentification du système.
-- Prévoir un verrouillage automatique après une période d’inactivité.
-- Chiffrer les sauvegardes exportées lorsque l’utilisateur le demande.
-- Étudier un stockage structuré comme IndexedDB pour la PWA et une couche de persistance dédiée pour Electron.
-- Définir une durée de conservation configurable.
-- Ajouter des fonctions d’archivage et de suppression définitive.
-- Éviter d’afficher des informations client dans les notifications ou journaux techniques.
-
-#### Critères de validation
-
-- Le verrouillage ne supprime jamais les données.
-- Une perte du code dispose d’une procédure documentée compatible avec la politique choisie.
-- Les données d’un utilisateur ne sont pas incluses dans un EXE, une archive ChromeOS ou un artefact CI.
-- Les migrations depuis le stockage actuel préservent tous les devis existants.
-
-### A6. Clarifier l’état de sauvegarde du devis courant
-
-#### Amélioration proposée
-
-- Distinguer visuellement un brouillon modifié d’un devis enregistré.
-- Afficher une indication discrète `Modifications enregistrées localement` ou `Devis à enregistrer`.
-- Éviter que l’impression ou le téléchargement PDF modifient silencieusement le sens métier du devis sans l’expliquer.
-- Conserver la sauvegarde automatique technique tout en distinguant le brouillon du document explicitement archivé.
+- Mesurer la taille et la durée des synchronisations avec 100, 500 et 1 000 devis.
+- Introduire un journal de changements ou des mutations par entité avec révision.
+- Ne réécrire que les lignes créées, modifiées ou supprimées.
+- Conserver des marqueurs de suppression afin qu’un poste hors ligne ne recrée pas une donnée effacée.
+- Paginer les listes volumineuses et éviter de charger tous les devis ou 500 documents sans besoin.
+- Tester une modification locale qui survient pendant une synchronisation déjà en vol.
 
 #### Critères de validation
 
-- L’utilisateur sait toujours si le devis figure dans l’historique.
-- Fermer l’application ne provoque aucune perte du brouillon.
-- Imprimer ou télécharger n’ajoute pas de doublon dans l’historique.
+- Modifier un devis ne réécrit aucun devis non concerné.
+- La taille d’une synchronisation courante dépend de la modification, pas de la taille totale de l’historique.
+- Deux postes modifiant des entités différentes se fusionnent sans conflit ni perte.
+- Une limite atteinte produit une alerte exploitable et n’efface aucune donnée locale.
 
-## P2 — Maintenabilité et qualité
+## P1 — Protéger les données et fluidifier l’exploitation
 
-### A7. Découper progressivement `app.js`
+### A3. Terminer l’historique opérationnel
 
-#### Constat
+- Ajouter une recherche par numéro, client, téléphone et e-mail.
+- Ajouter les tris par date, dernière modification, client et montant.
+- Proposer ouvrir, dupliquer, exporter, archiver et supprimer depuis chaque devis.
+- Introduire une corbeille ou une annulation avant suppression définitive.
+- Tester l’affichage et la recherche sur plusieurs centaines de devis.
 
-Le fichier principal regroupe le stockage, les migrations, le catalogue, le corps interactif, le devis, les réglages, l’historique, le PDF, les partages et les raccourcis.
+### A4. Sécuriser les restaurations locales et centrales
 
-#### Amélioration proposée
+- Télécharger automatiquement un instantané local avant chaque restauration.
+- Présenter avant confirmation la version, la date et le nombre d’éléments importés.
+- Valider l’ensemble de la sauvegarde avant toute mutation.
+- Ajouter une restauration sélective lorsque le besoin sera confirmé.
+- Pour PostgreSQL, définir rotation, chiffrement, stockage hors serveur, rétention et test périodique de restauration.
 
-Conserver JavaScript natif et extraire progressivement des modules :
+### A5. Renforcer la protection locale
 
-- `storage` et migrations ;
-- modèle et calculs de devis ;
-- catalogue et personnalisation ;
-- devis et interactions ;
-- clients et historique ;
-- PDF et impression ;
-- partage et e-mail ;
-- réglages ;
-- modales, menus et accessibilité.
+- Décrire honnêtement le jeton central : il est stocké côté client sous forme de jeton porteur et doit être traité comme un secret.
+- Étudier le stockage protégé par le système dans Electron.
+- Préparer la migration de la PWA de `localStorage` vers IndexedDB avec transaction et contrôle de quota.
+- Ajouter un verrouillage facultatif et un export chiffré si le risque métier le justifie.
+- Définir les durées de conservation des devis, suivis, PDF et journaux.
 
-Le découpage doit rester progressif et ne justifie pas, à lui seul, une réécriture dans un framework.
+### A6. Afficher l’état réel du devis courant
 
-#### Critères de validation
+**Traitement intégré à la version locale 7.0.2 le 5 août 2026 :**
 
-- Les modules métier peuvent être testés sans démarrer Electron.
-- Les dépendances entre modules sont explicites.
-- Les migrations et calculs n’accèdent pas directement au DOM.
-- Chaque extraction conserve les tests existants au vert.
+- un indicateur visible et annoncé aux technologies d’assistance affiche `Brouillon`, `Enregistré` ou `Modifié` dans le contexte du devis ;
+- l’état est recalculé après chaque sauvegarde locale en comparant le contenu métier courant à la version de **Mes devis** ;
+- les métadonnées techniques `status` et `updatedAt` sont exclues de la comparaison afin d’éviter les faux changements ;
+- le libellé accessible et l’infobulle du bouton d’enregistrement suivent le même état ;
+- un test Electron vérifie la transition complète `Brouillon` → `Enregistré` → `Modifié` → `Enregistré`.
 
-### A8. Consolider le CSS
+L’auto-sauvegarde du brouillon reste distincte de l’archivage : seul l’état `Enregistré` confirme que la version affichée est à jour dans **Mes devis**.
 
-#### Constat
+## P2 — Réduire la dette et le coût de maintenance
 
-Le projet charge un fichier CSS volumineux et contient également une quantité importante de styles intégrés dans `index.html`. Plusieurs corrections tardives redéfinissent les mêmes surfaces.
+### A7. Découper progressivement le renderer
 
-#### Amélioration proposée
+Extraire d’abord les zones qui disposent déjà de contrats clairs :
 
-- Déplacer les styles intégrés vers des fichiers dédiés.
-- Organiser les styles par fondations, composants, thèmes, impression et adaptations responsives.
-- Supprimer les règles obsolètes uniquement après comparaison du rendu.
-- Documenter les niveaux de `z-index` utilisés par le header, le devis, les menus, les modales et les notifications.
-- Ajouter un contrôle automatique des débordements aux largeurs de référence.
+1. suivi commercial ;
+2. historique et sauvegardes ;
+3. PDF et partage ;
+4. catalogue et éditeur de tuiles ;
+5. réglages et modales ;
+6. persistance et migrations locales.
 
-#### Critères de validation
+Le découpage doit conserver JavaScript natif et rester couvert à chaque étape ; une réécriture dans un framework n’est pas un objectif en soi.
 
-- Aucun style applicatif important ne reste intégré dans le HTML.
-- Les quatre thèmes et l’impression restent identiques ou volontairement améliorés.
-- Les modes 390 px, 760 px et 1180 px restent sans chevauchement.
+### A8. Consolider les styles et préparer une CSP
 
-### A9. Renforcer les tests comportementaux
+- Déplacer le bloc `<style>` de `index.html` vers des feuilles dédiées.
+- Organiser fondations, composants, thèmes, responsive, modales et impression.
+- Documenter l’échelle de `z-index`.
+- Ajouter des contrôles visuels aux largeurs 390, 600, 760, 1 024, 1 180 et 1 366 px.
+- Introduire ensuite une CSP sans `unsafe-inline` pour les scripts et, si possible, pour les styles.
 
-#### Amélioration proposée
+### A9. Séparer validation continue et publication
 
-Compléter les tests de contrat existants par des scénarios utilisateur :
+- Faire réussir la nouvelle CI de contrôle sur les pull requests et `main`, sans déployer Pages.
+- Conserver les workflows de livrables sur les tags et la publication Pages sur `main`.
+- Compléter le test PostgreSQL réel par des budgets de taille et de performance.
+- Produire des diagnostics par scénario plutôt qu’une longue chaîne de scripts uniquement séquentielle.
 
-- création et modification d’un devis ;
-- création d’un soin sur mesure ;
-- quantités tactiles ;
-- ajout et conversion d’un pack ;
-- recherche et suppression dans l’historique ;
-- sauvegarde puis restauration ;
-- devis expiré ;
-- partage avec et sans adresse e-mail ;
-- migration depuis plusieurs anciennes versions ;
-- navigation complète au clavier ;
-- rendu visuel des thèmes, de l’iPad et du PDF.
+### A10 et A11. Fiabiliser les versions, dépendances et livrables
 
-#### Critères de validation
-
-- Les fonctions essentielles sont prouvées par leur comportement, pas uniquement par la présence de chaînes dans le code.
-- Un échec produit un diagnostic compréhensible.
-- Les parcours tactiles et clavier sont validés séparément.
-
-### A10. Durcir Electron et la PWA
-
-#### Points déjà satisfaisants
-
-- isolation du contexte activée ;
-- intégration Node désactivée dans le renderer ;
-- sandbox Electron activée ;
-- liens externes limités à HTTPS ;
-- validation des chemins de pièces jointes PDF.
-
-#### Amélioration proposée
-
-- Ajouter une politique CSP stricte après consolidation des styles intégrés.
-- Vérifier l’origine de chaque appel IPC sensible.
-- Restreindre les navigations internes au document exact de l’application.
-- Épingler les actions GitHub à des révisions immuables si la politique de maintenance le permet.
-- Ajouter un contrôle des dépendances et des artefacts avant chaque livraison.
-- Documenter les limites de la publication PWA publique et du fonctionnement hors connexion.
-
-### A11. Signer les applications distribuées
-
-#### Amélioration proposée
-
-- Signer l’EXE Windows avec un certificat adapté.
-- Signer et notariser l’application macOS.
-- Vérifier les signatures dans le workflow de livraison.
-- Documenter le renouvellement des certificats et la procédure d’urgence.
-
-Cette amélioration devient prioritaire avant une diffusion large, mais peut rester différée pendant les tests internes.
+- Générer la version applicative, serveur, cache PWA, notes et documents depuis `package.json`.
+- Examiner les mises à jour mineures détectées (`electron` 43.1.1 vers 43.3.0, `marked` 18.0.7 vers 18.0.9) dans une tâche séparée.
+- Surveiller les dépendances transitives dépréciées apportées par l’outillage de packaging malgré un audit de sécurité actuellement vert.
+- Épingler les actions GitHub à des révisions immuables si la politique du dépôt le permet.
+- Vérifier l’artefact final de chaque plateforme, puis signer Windows et signer/notariser macOS avant diffusion large.
 
 ## Ordre de réalisation conseillé
 
-### Version 5.2.5 — Fiabilisation urgente
+### Stabilisation 7.0.x
 
-- A1 — contrôles de quantité explicites ;
-- A2 — terminologie et documentation synchronisées ;
-- tests de régression associés.
+1. A12 — PostgreSQL réel, migrations et restauration prouvée ;
+2. A13 — administration et révocation ;
+3. A14 — mesures de volume et protection contre la limite de synchronisation ;
+4. A4 — instantané automatique avant restauration locale.
 
-### Versions 5.3.x suivantes — Exploitation quotidienne
+### Durcissement 7.1
 
-- A3 — historique opérationnel ;
-- A4 — sauvegardes et restaurations renforcées ;
-- A6 — état clair du brouillon et de l’enregistrement ;
-- premières nouvelles fonctions décrites dans le document associé.
+1. A5 — stockage des secrets, rétention et protection locale ;
+2. A9 — CI indépendante du déploiement ;
+3. A10 — version unique, dépendances et chaîne de livraison ;
+4. A3 — recherche, archivage et actions dans l’historique.
 
-### Versions 5.3.x ultérieures — Protection et industrialisation
+### Optimisation 7.2
 
-- A5 — verrouillage et protection des données ;
-- A7 et A8 — modularisation et consolidation CSS ;
-- A9 et A10 — tests et sécurité renforcés ;
-- A11 — signature des livrables selon le périmètre de diffusion.
+1. synchronisation incrémentale ;
+2. modularisation de `app.js` ;
+3. consolidation CSS et CSP ;
+4. tests de volume et budgets de performance.
 
-## Règle de suivi
+Ces numéros de versions sont indicatifs : la priorité fonctionnelle doit être validée avant engagement.
 
-Lorsqu’une amélioration est retenue :
+## Règle de clôture
 
-1. créer une tâche dédiée avec son périmètre exact ;
-2. définir les plateformes concernées ;
-3. ajouter ou adapter les tests avant livraison ;
-4. mettre à jour les documents utilisateur dans la même version ;
-5. reconstruire et vérifier les artefacts réellement distribués ;
-6. ne marquer l’amélioration comme terminée qu’après validation sur le livrable final.
+Une amélioration n’est considérée comme terminée que lorsque :
+
+1. son risque et son périmètre sont explicités ;
+2. les modes local et central sont distingués ;
+3. les tests pertinents passent sur l’environnement réel concerné ;
+4. une procédure de retour arrière existe pour les données ou le déploiement ;
+5. les documents utilisateur et d’exploitation sont mis à jour ;
+6. l’artefact ou le service réellement distribué est vérifié.
