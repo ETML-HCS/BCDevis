@@ -20,8 +20,8 @@ assert.match(app, /function closeContextMenus/, "Les menus contextuels doivent p
 assert.match(app, /document\.addEventListener\("pointerdown",[\s\S]*?true\);/, "Le clic extérieur doit fermer les menus avant les actions de la page");
 assert.match(styles, /\.bcdevis-context-menu-open \.topbar\{[\s\S]*?-webkit-app-region:no-drag/, "La zone de déplacement ne doit pas absorber le clic extérieur lorsqu’un menu est ouvert");
 assert.match(app, /classList\.toggle\("bcdevis-catalog-menu-open", catalogMenuOpen\)/, "Le menu Catalogue doit piloter son propre niveau d’empilement");
-assert.match(styles, /html\.bcdevis-catalog-menu-open \.topbar\{z-index:400\}/, "Le menu Catalogue doit élever le header au-dessus de toutes les surfaces");
-assert.match(styles, /html\.bcdevis-catalog-menu-open \.app-actions-menu\{z-index:420\}/, "Le menu Catalogue doit rester au sommet du header");
+assert.match(styles, /html\.bcdevis-catalog-menu-open \.topbar\{z-index:auto\}/, "L’ouverture du menu Catalogue ne doit pas faire passer tout le header devant la caisse");
+assert.match(styles, /html\.bcdevis-catalog-menu-open \.app-actions\{z-index:410\}[\s\S]*?html\.bcdevis-catalog-menu-open \.app-actions-menu\{z-index:420\}/, "Seuls le bouton et le menu Catalogue doivent rester au-dessus de la caisse");
 assert.match(app, /event\.key === "ArrowDown"/, "Le menu Actions doit accepter les flèches");
 assert.match(app, /data-logo-picker/, "Le choix de logo doit être atteignable au clavier");
 assert.match(html, /id="shortcutHelpLayer"/, "L’aide des raccourcis doit être accessible dans l’interface");
@@ -37,14 +37,27 @@ assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>S<\/kbd><\/dt><dd>Télé
 assert.match(html, /id="appMenuButton"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-keyshortcuts="Alt\+M"/, "Le bouton du menu principal doit annoncer son menu et son raccourci");
 assert.match(html, /id="appMenuButton"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "Le bouton du menu principal doit rester un SVG seul");
 assert.doesNotMatch(html, /id="appMenuButton"[^>]*>[\s\S]*?<span>Actions<\/span>[\s\S]*?<\/button>/, "Le titre Actions ne doit plus prendre de place dans le header");
-assert.match(html, /id="appActionsMenu" role="menu" aria-label="Menu principal"/, "Le menu principal doit être identifié");
+assert.match(html, /id="appActionsMenu" role="menu" aria-label="Catalogue"/, "Le menu Catalogue doit être identifié par son usage");
 assert.doesNotMatch(html, /app-menu-status|100% local|id="saveState"/, "Le menu Actions ne doit pas contenir une ligne d’état inutile");
 for (const id of ["customItemButton", "familyPriceToggle"]) {
   assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitem`), `${id} doit appartenir au menu Actions`);
 }
+for (const [id, value] of [["displayModeAuto", "auto"], ["displayModeSmartphone", "smartphone"], ["displayModeFull", "full"]]) {
+  assert.match(html, new RegExp(`id="${id}"[^>]*role="menuitemradio"[^>]*data-app-action="display-mode"[^>]*data-display-mode-option="${value}"`), `${id} doit être un choix d’affichage du menu Catalogue`);
+}
+assert.match(html, /id="displayModeMenuTitle"[^>]*>Vue<\/p>/, "Le sélecteur de rendu doit utiliser le titre court Vue");
+assert.match(html, /id="customItemButton"[\s\S]*?<use href="#icon-all">[\s\S]*?<strong>Sur mesure<\/strong>[\s\S]*?id="familyPriceToggle"[\s\S]*?<use href="#icon-eye">[\s\S]*?<strong>Prix<\/strong>/, "Les deux actions Catalogue doivent associer un SVG explicite à un texte court");
+assert.match(html, /id="displayModeAuto"[\s\S]*?<strong>Auto<\/strong>[\s\S]*?id="displayModeSmartphone"[\s\S]*?<strong>Mobile<\/strong>[\s\S]*?id="displayModeFull"[\s\S]*?<strong>Bureau<\/strong>/, "Les trois vues doivent conserver des noms courts");
+assert.match(styles, /\.app-actions-menu\{[\s\S]*?width:min\(320px,[\s\S]*?\.app-menu-catalog-group\{display:grid;grid-template-columns:repeat\(2,[\s\S]*?\.app-display-mode-picker>button\{[\s\S]*?min-height:56px/, "Le menu Catalogue doit rester compact et structuré en deux actions puis trois vues");
+assert.match(app, /displayMode: "auto"/, "L’affichage adaptatif doit être sélectionné par défaut");
+assert.match(app, /window\.innerWidth <= SMARTPHONE_LAYOUT_MAX_WIDTH/, "Le mode automatique doit se baser sur la largeur réellement disponible");
+assert.match(app, /data-display-mode-option[\s\S]*?aria-checked/, "Le choix actif doit être exposé aux technologies d’assistance");
+assert.match(app, /\[role="menuitemradio"\]/, "La navigation clavier du menu doit inclure les modes d’affichage");
+assert.match(styles, /html\[data-display-mode="smartphone"\] \.mobile-tabs\{[\s\S]*?display:grid/, "Le mode Smartphone forcé doit afficher la navigation Soins et Devis");
+assert.match(styles, /html\[data-display-mode="smartphone"\] \.checkout-panel\.active-panel\{[\s\S]*?position:static/, "Le mode Smartphone ne doit pas conserver la caisse fixe du bureau");
 assert.match(
   html,
-  /id="customItemButton"[^>]*aria-label="Créer un soin sur mesure"[^>]*title="Créer un soin sur mesure"[\s\S]*?<strong>Sur mesure<\/strong>/,
+  /id="customItemButton"[^>]*aria-label="Créer un soin sur mesure"[^>]*title="Créer un soin sur mesure \(Ctrl\/Cmd\+Maj\+N\)"[\s\S]*?<strong>Sur mesure<\/strong>/,
   "Le menu compact doit afficher Sur mesure tout en exposant son libellé complet"
 );
 assert.match(html, /<symbol id="icon-user-plus"[\s\S]*?id="clientButton"[^>]*class="client-card is-empty"|class="client-card is-empty"[^>]*id="clientButton"/, "Le client vide doit utiliser le pictogramme client plus");
@@ -74,7 +87,7 @@ assert.match(
   "Le header large doit conserver le menu principal dans sa colonne de droite"
 );
 assert.doesNotMatch(html, />Devis<\/p>[\s\S]*?id="newQuoteButton"/, "Les actions essentielles du devis ne doivent plus être dupliquées dans le menu principal");
-assert.match(html, /id="familyPriceToggle"[^>]*aria-keyshortcuts="Alt\+P"[^>]*>[\s\S]*?<kbd>Alt P<\/kbd>/, "Le basculement des prix doit annoncer Alt+P");
+assert.match(html, /id="familyPriceToggle"[^>]*title="Afficher ou masquer les prix \(Alt\+P\)"[^>]*aria-keyshortcuts="Alt\+P"/, "Le basculement compact des prix doit annoncer Alt+P sans afficher une touche supplémentaire");
 assert.match(html, /<kbd>Alt<\/kbd><kbd>P<\/kbd><\/dt><dd>Afficher ou masquer les prix<\/dd>/, "Alt+P doit figurer dans l’aide des raccourcis");
 assert.match(html, /<kbd>Ctrl<\/kbd><kbd>K<\/kbd>[\s\S]*?<dd>Rechercher<\/dd>/, "La recherche doit utiliser un nom court");
 assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>N<\/kbd><\/dt><dd>Sur mesure<\/dd>/, "Le service libre doit utiliser un nom court");

@@ -199,16 +199,38 @@ async function run() {
       if (document.querySelector("#appActionsMenu").hidden) throw new Error("Alt+M n’ouvre pas le menu principal");
       if (!document.documentElement.classList.contains("bcdevis-context-menu-open")) throw new Error("Le menu Catalogue n’active pas la protection contre les clics absorbés");
       if (!document.documentElement.classList.contains("bcdevis-catalog-menu-open")) throw new Error("Le menu Catalogue n’active pas son niveau d’empilement prioritaire");
-      if (Number.parseInt(getComputedStyle(document.querySelector(".topbar")).zIndex, 10) !== 400 || Number.parseInt(getComputedStyle(document.querySelector("#appActionsMenu")).zIndex, 10) !== 420) throw new Error("Le menu Catalogue ne passe pas devant toutes les surfaces");
+      if (getComputedStyle(document.querySelector(".topbar")).zIndex !== "auto") throw new Error("L’en-tête principal recouvre encore le haut de la caisse quand le menu Catalogue est ouvert");
+      if (Number.parseInt(getComputedStyle(document.querySelector("#appActions")).zIndex, 10) !== 410 || Number.parseInt(getComputedStyle(document.querySelector("#appActionsMenu")).zIndex, 10) !== 420) throw new Error("Le menu Catalogue ne passe pas devant toutes les surfaces");
       if (document.querySelector("#appActionsMenu .app-menu-status") || document.querySelector("#saveState")) throw new Error("Le menu Actions conserve une ligne d’état inutile");
       const menuRect = document.querySelector("#appActionsMenu").getBoundingClientRect();
       if (menuRect.right >= checkoutRect.left) throw new Error("Le menu Actions est recouvert par la caisse");
+      if (menuRect.width > 330 || menuRect.height > 230) throw new Error("Le menu Catalogue occupe encore trop d’espace");
+      if ([...document.querySelectorAll("#appActionsMenu strong")].map((label) => label.textContent).join("|") !== "Sur mesure|Prix|Auto|Mobile|Bureau") throw new Error("Le menu Catalogue n’utilise pas les cinq libellés courts attendus");
       document.querySelector(".brand-block").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
       if (!document.querySelector("#appActionsMenu").hidden || document.documentElement.classList.contains("bcdevis-context-menu-open") || document.documentElement.classList.contains("bcdevis-catalog-menu-open")) throw new Error("Un clic extérieur ne referme pas immédiatement le menu Catalogue");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));
       if (!document.querySelector("#appActionsMenu").hidden || document.activeElement !== menuButton) throw new Error("Alt+M ne referme pas proprement le menu principal");
       if (document.querySelector("#appActionsMenu").textContent.includes("Gestion du devis")) throw new Error("La gestion du devis est encore dupliquée dans le menu principal");
+      const displayModeOptions = [...document.querySelectorAll("[data-display-mode-option]")];
+      if (displayModeOptions.length !== 3 || document.documentElement.dataset.displayPreference !== "auto" || document.documentElement.dataset.displayMode !== "full") throw new Error("Le mode d’affichage automatique n’est pas initialisé sur ordinateur");
+      menuButton.click();
+      document.querySelector("#displayModeSmartphone").click();
+      const smartphoneShellRect = document.querySelector("#appShell").getBoundingClientRect();
+      const smartphoneTabsRect = document.querySelector("#mobileTabs").getBoundingClientRect();
+      const smartphoneTabButtons = [...document.querySelectorAll("#mobileTabs > button")].map((button) => button.getBoundingClientRect());
+      const smartphoneTabIcons = [...document.querySelectorAll("#mobileTabs svg")].map((icon) => icon.getBoundingClientRect());
+      if (document.documentElement.dataset.displayPreference !== "smartphone" || document.documentElement.dataset.displayMode !== "smartphone") throw new Error("Le mode Smartphone ne s’applique pas depuis Catalogue");
+      if (document.querySelector("#checkoutPanel").classList.contains("is-full-height") || document.documentElement.classList.contains("checkout-focus")) throw new Error("Le mode Smartphone conserve la caisse fixe du bureau");
+      if (getComputedStyle(document.querySelector("#mobileTabs")).display === "none" || smartphoneShellRect.width > 641 || Math.abs((smartphoneShellRect.left + smartphoneShellRect.right) / 2 - document.documentElement.clientWidth / 2) > 1) throw new Error("Le mode Smartphone forcé n’utilise pas une surface mobile centrée");
+      if (smartphoneTabsRect.left < smartphoneShellRect.left - 1 || smartphoneTabsRect.right > smartphoneShellRect.right + 1 || smartphoneTabButtons.some((rect) => rect.height < 48) || smartphoneTabIcons.some((rect) => rect.width > 24 || rect.height > 24)) throw new Error("La navigation forcée ne conserve pas ses dimensions smartphone");
+      if (JSON.parse(localStorage.getItem("bcdevis-v1")).settings.displayMode !== "smartphone") throw new Error("Le mode Smartphone n’est pas sauvegardé localement");
+      menuButton.click();
+      document.querySelector("#displayModeFull").click();
+      if (document.documentElement.dataset.displayMode !== "full" || !document.querySelector("#checkoutPanel").classList.contains("is-full-height")) throw new Error("Le mode Complet ne restaure pas la disposition du bureau");
+      menuButton.click();
+      document.querySelector("#displayModeAuto").click();
+      if (JSON.parse(localStorage.getItem("bcdevis-v1")).settings.displayMode !== "auto" || document.querySelector("#displayModeAuto").getAttribute("aria-checked") !== "true") throw new Error("Le retour au mode Automatique n’est pas sauvegardé ou annoncé");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", code: "KeyP", altKey: true, bubbles: true, cancelable: true }));
       if (!document.querySelector("#familyPanel").classList.contains("show-family-prices") || document.querySelector("#familyPriceToggle").getAttribute("aria-checked") !== "true") throw new Error("Alt+P n’affiche pas les prix");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", code: "KeyP", altKey: true, bubbles: true, cancelable: true }));
@@ -672,7 +694,7 @@ async function run() {
     for (const viewport of [
       { width: 1180, height: 820, hideBrand: false, label: "iPad paysage" },
       { width: 820, height: 1180, hideBrand: false, label: "iPad portrait" },
-      { width: 600, height: 820, hideBrand: false, label: "iPad Split View" },
+      { width: 600, height: 820, hideBrand: true, label: "iPad Split View" },
       { width: 390, height: 844, hideBrand: true, label: "mobile" }
     ]) {
       window.setContentSize(viewport.width, viewport.height);
@@ -687,6 +709,7 @@ async function run() {
         const searchToggle = document.querySelector("#catalogSearchToggle");
         if (checkout.classList.contains("is-full-height") || document.documentElement.classList.contains("checkout-focus")) throw new Error("La caisse permanente bloque la navigation responsive");
         if (document.documentElement.dataset.ipadLayout !== "optimized") throw new Error("Le confort tactile est absent en mode ${viewport.label}");
+        if (document.documentElement.dataset.displayPreference !== "auto" || document.documentElement.dataset.displayMode !== (${viewport.width} <= 600 ? "smartphone" : "full")) throw new Error("Le mode Automatique ne suit pas la largeur en mode ${viewport.label}");
         if (Math.abs(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--app-viewport-height")) - innerHeight) > 2) throw new Error("La hauteur visuelle n’est pas synchronisée en mode ${viewport.label}");
         if (appShell.getBoundingClientRect().height > innerHeight + 1) throw new Error("La surface iPad dépasse la hauteur visible en mode ${viewport.label}");
         if (searchToggle.getBoundingClientRect().width < 44 || searchToggle.getBoundingClientRect().height < 44) throw new Error("La recherche reste trop petite au toucher en mode ${viewport.label}");

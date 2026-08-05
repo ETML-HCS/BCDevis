@@ -85,6 +85,28 @@ async function audit(window, label, { minColumns = 2 } = {}) {
   return result;
 }
 
+async function auditCatalogSearch(window) {
+  await clickElementCenter(window, "#catalogSearchToggle");
+  const opened = await window.webContents.executeJavaScript(`(() => {
+    const head = document.querySelector(".family-head").getBoundingClientRect();
+    const panel = document.querySelector("#catalogSearchPanel");
+    const panelRect = panel.getBoundingClientRect();
+    const toggleRect = document.querySelector("#catalogSearchToggle").getBoundingClientRect();
+    return {
+      visible: !panel.hidden,
+      focused: document.activeElement === document.querySelector("#catalogSearch"),
+      height: Math.round(head.height),
+      clearOfToggle: panelRect.right <= toggleRect.left - 4,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!opened.visible || !opened.focused || opened.height < 44 || !opened.clearOfToggle || opened.horizontalOverflow) throw new Error(`Recherche prestations invalide ${JSON.stringify(opened)}`);
+  await clickElementCenter(window, "#catalogSearchToggle");
+  const collapsed = await window.webContents.executeJavaScript(`document.querySelector(".family-head").getBoundingClientRect().height <= 1 && document.querySelector("#catalogSearchPanel").hidden`);
+  if (!collapsed) throw new Error("La recherche refermée conserve une ligne vide");
+  return { opened, collapsed };
+}
+
 async function auditCheckoutQuantities(window) {
   const result = await window.webContents.executeJavaScript(`(() => {
     const emailButton = document.querySelector("#checkoutEmailButton");
@@ -226,28 +248,6 @@ async function auditWindowHeader(window) {
   return result;
 }
 
-async function auditCatalogSearch(window) {
-  await clickElementCenter(window, "#catalogSearchToggle");
-  const opened = await window.webContents.executeJavaScript(`(() => {
-    const head = document.querySelector(".family-head").getBoundingClientRect();
-    const panel = document.querySelector("#catalogSearchPanel");
-    const panelRect = panel.getBoundingClientRect();
-    const toggleRect = document.querySelector("#catalogSearchToggle").getBoundingClientRect();
-    return {
-      visible: !panel.hidden,
-      focused: document.activeElement === document.querySelector("#catalogSearch"),
-      height: Math.round(head.height),
-      clearOfToggle: panelRect.right <= toggleRect.left - 4,
-      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
-    };
-  })()`);
-  if (!opened.visible || !opened.focused || opened.height < 44 || !opened.clearOfToggle || opened.horizontalOverflow) throw new Error(`Recherche prestations invalide ${JSON.stringify(opened)}`);
-  await clickElementCenter(window, "#catalogSearchToggle");
-  const collapsed = await window.webContents.executeJavaScript(`document.querySelector(".family-head").getBoundingClientRect().height <= 1 && document.querySelector("#catalogSearchPanel").hidden`);
-  if (!collapsed) throw new Error("La recherche refermée conserve une ligne vide");
-  return { opened, collapsed };
-}
-
 async function auditQuoteHeaderActions(window) {
   const geometry = await window.webContents.executeJavaScript(`(() => {
     window.confirm = () => true;
@@ -333,6 +333,51 @@ async function hoverDesktopDelete(window) {
   })()`);
   if (!result.visible || !result.clickable || !result.priceClear) throw new Error(`Caisse desktop : poubelle au bord inaccessible ${JSON.stringify(result)}`);
   return result;
+}
+
+async function auditDisplayModeSwitch(window) {
+  const menu = await window.webContents.executeJavaScript(`(() => {
+    document.querySelector("#appMenuButton").click();
+    const element = document.querySelector("#appActionsMenu");
+    const rect = element.getBoundingClientRect();
+    return {
+      visible: !element.hidden,
+      optionCount: element.querySelectorAll("[data-display-mode-option]").length,
+      automaticSelected: document.querySelector("#displayModeAuto").getAttribute("aria-checked") === "true",
+      contained: rect.left >= 0 && rect.right <= innerWidth + 1 && rect.top >= 0 && rect.bottom <= innerHeight + 1
+    };
+  })()`);
+  if (!menu.visible || menu.optionCount !== 3 || !menu.automaticSelected || !menu.contained) throw new Error(`Menu Affichage invalide ${JSON.stringify(menu)}`);
+  await capture(window, "08a-desktop-menu-affichage.png");
+  const smartphone = await window.webContents.executeJavaScript(`(async () => {
+    document.querySelector("#displayModeSmartphone").click();
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    const shell = document.querySelector("#appShell").getBoundingClientRect();
+    const tabs = document.querySelector("#mobileTabs").getBoundingClientRect();
+    const tabButtons = [...document.querySelectorAll("#mobileTabs > button")].map((button) => button.getBoundingClientRect());
+    const tabIcons = [...document.querySelectorAll("#mobileTabs svg")].map((icon) => icon.getBoundingClientRect());
+    return {
+      preference: document.documentElement.dataset.displayPreference,
+      layout: document.documentElement.dataset.displayMode,
+      shellWidth: Math.round(shell.width),
+      shellCentered: Math.abs((shell.left + shell.right) / 2 - document.documentElement.clientWidth / 2) <= 1,
+      tabsVisible: getComputedStyle(document.querySelector("#mobileTabs")).display !== "none",
+      tabsContained: tabs.left >= shell.left - 1 && tabs.right <= shell.right + 1,
+      tabButtonsTouchable: tabButtons.every((rect) => rect.height >= 48),
+      tabIconsCompact: tabIcons.every((rect) => rect.width <= 24 && rect.height <= 24),
+      familyVisible: getComputedStyle(document.querySelector("#familyPanel")).display !== "none",
+      checkoutFixed: document.querySelector("#checkoutPanel").classList.contains("is-full-height"),
+      stored: JSON.parse(localStorage.getItem("bcdevis-v1")).settings.displayMode
+    };
+  })()`);
+  if (smartphone.preference !== "smartphone" || smartphone.layout !== "smartphone" || smartphone.shellWidth > 640 || !smartphone.shellCentered || !smartphone.tabsVisible || !smartphone.tabsContained || !smartphone.tabButtonsTouchable || !smartphone.tabIconsCompact || !smartphone.familyVisible || smartphone.checkoutFixed || smartphone.stored !== "smartphone") throw new Error(`Mode Smartphone forcé invalide ${JSON.stringify(smartphone)}`);
+  await capture(window, "08b-desktop-mode-smartphone.png");
+  await window.webContents.executeJavaScript(`(() => {
+    document.querySelector("#appMenuButton").click();
+    document.querySelector("#displayModeAuto").click();
+    document.querySelector(".toast-close")?.click();
+  })()`);
+  return { menu, smartphone };
 }
 
 async function main() {
@@ -422,6 +467,7 @@ async function main() {
     await capture(window, "07-desktop-caisse-pack.png");
     const desktopDelete = await hoverDesktopDelete(window);
     await capture(window, "08-desktop-caisse-poubelle.png");
+    const displayMode = await auditDisplayModeSwitch(window);
 
     await window.loadFile(APP_PATH, { query: { windowShell: "custom" } });
     await settle(window);
@@ -439,7 +485,7 @@ async function main() {
     await capture(window, "10-desktop-entete-fenetre-deplie.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, catalogSearch, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, catalogSearch, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, displayMode, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

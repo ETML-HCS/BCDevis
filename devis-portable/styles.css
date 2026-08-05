@@ -1113,9 +1113,9 @@ html[data-theme] .family-visibility-icon svg{
   right:0;
   left:auto;
   display:grid;
-  width:min(380px,calc(100vw - 24px));
+  width:min(320px,calc(100vw - 24px));
   max-height:calc(100vh - 104px);
-  padding:9px;
+  padding:7px;
   overflow-x:hidden;
   overflow-y:auto;
   border:1px solid var(--line);
@@ -1127,11 +1127,11 @@ html[data-theme] .family-visibility-icon svg{
   scrollbar-color:var(--line-dark) transparent;
   overscroll-behavior:contain;
 }
-.app-menu-group{padding:8px 0;border-bottom:1px solid var(--line)}
+.app-menu-group{padding:6px 0;border-bottom:1px solid var(--line)}
 .app-menu-group:last-child{padding-bottom:0;border-bottom:0}
 .app-menu-group>p{
   margin:0;
-  padding:2px 9px 6px;
+  padding:1px 7px 5px;
   color:var(--muted);
   font-size:9px;
   font-weight:800;
@@ -1182,6 +1182,20 @@ html[data-theme] .family-visibility-icon svg{
 .app-menu-group>button.active{background:var(--taupe-light)}
 .app-menu-group>button.active>svg,.app-menu-group>button.app-menu-whatsapp>svg{color:var(--success)}
 .app-menu-group>button.danger-text>svg{color:var(--danger)}
+.app-menu-catalog-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.app-menu-catalog-group>p{grid-column:1/-1}
+.app-menu-catalog-group>button{
+  min-height:60px;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--surface-soft);
+  grid-template-columns:22px minmax(0,1fr);
+  gap:7px;
+}
+.app-menu-catalog-group>button>svg{width:18px;height:18px}
+.app-menu-catalog-group>button strong{font-size:12px}
+.app-menu-catalog-group>button small{font-size:9px}
 @media screen and (min-width:1451px){
   .topbar{padding-right:480px;grid-template-columns:180px auto minmax(360px,1fr)}
 }
@@ -1260,6 +1274,7 @@ html[data-theme] .family-visibility-icon svg{
   transform:translate(50%,0);
 }
 .checkout-primary-actions .checkout-icon-action[aria-expanded="true"]::after{display:none}
+.checkout-primary-actions .checkout-email-direct{color:var(--taupe-dark)}
 .checkout-primary-actions .checkout-transmit-trigger{
   border-color:var(--taupe-dark);
   color:var(--ink);
@@ -1267,7 +1282,6 @@ html[data-theme] .family-visibility-icon svg{
 }
 .checkout-primary-actions .checkout-transmit-trigger:hover,
 .checkout-primary-actions .checkout-transmit-trigger[aria-expanded="true"]{border-color:var(--ink);background:var(--taupe)}
-.checkout-primary-actions .checkout-email-direct{color:var(--taupe-dark)}
 .checkout-transmission-menu{
   position:absolute;
   z-index:18;
@@ -1930,8 +1944,8 @@ html[data-theme] .body-auxiliary button.active small{color:color-mix(in srgb,var
   html[data-theme][data-ipad-layout="optimized"] .family-panel .family-head:not(:has(.family-search:not([hidden])))+.family-list .family-group:first-child>.family-button{padding-right:60px}
 }
 
-/* Le menu Catalogue reste au-dessus de toute l’interface pendant son ouverture. */
-html.bcdevis-catalog-menu-open .topbar{z-index:400}
+/* Le menu Catalogue passe devant la caisse sans remonter tout l’en-tête au-dessus d’elle. */
+html.bcdevis-catalog-menu-open .topbar{z-index:auto}
 html.bcdevis-catalog-menu-open .app-actions{z-index:410}
 html.bcdevis-catalog-menu-open .app-actions-menu{z-index:420}
 
@@ -2227,6 +2241,137 @@ html[data-theme] .release-notes-modal{border-color:var(--line);background:var(--
 .tile-icon-picker-grid button svg{width:38px;height:38px;stroke-width:1.45}
 .tile-icon-picker-grid button span{display:-webkit-box;min-height:22px;overflow:hidden;color:var(--muted);font-size:8px;line-height:1.3;text-align:center;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .tile-icon-picker-grid button:hover,.tile-icon-picker-grid button:focus-visible,.tile-icon-picker-grid button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);outline:0;background:color-mix(in srgb,var(--accent) 11%,var(--surface-raised));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent)}
+
+/* Vue : trois rendus courts et explicites, sans texte secondaire visible. */
+.app-menu-display-group{padding-bottom:2px}
+.app-display-mode-picker{display:grid;padding:0;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.app-display-mode-picker>button{
+  position:relative;
+  display:grid;
+  min-width:0;
+  min-height:56px;
+  padding:6px 4px;
+  place-items:center;
+  align-content:center;
+  border:1px solid var(--line);
+  border-radius:8px;
+  color:var(--ink);
+  background:var(--surface-soft);
+  gap:3px;
+}
+.app-display-mode-picker>button:hover,.app-display-mode-picker>button:focus-visible{border-color:var(--accent);outline:0;background:var(--surface-raised);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent)}
+.app-display-mode-picker>button.active{border-color:var(--accent);background:var(--taupe-light);box-shadow:inset 0 0 0 1px var(--accent)}
+.app-display-mode-picker>button>svg:first-child{width:19px;height:19px;color:var(--taupe-dark)}
+.app-display-mode-picker>button>span{display:block;min-width:0;width:100%;text-align:center}
+.app-display-mode-picker strong,.app-display-mode-picker small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-display-mode-picker strong{font-size:10px;line-height:1.1}
+.app-display-mode-picker small{margin-top:3px;color:var(--muted);font-size:8px;line-height:1.15}
+.app-display-mode-check{position:absolute;top:4px;right:4px;width:11px!important;height:11px!important;color:var(--success);opacity:0}
+.app-display-mode-picker>button.active .app-display-mode-check{opacity:1}
+
+html[data-display-mode="smartphone"] body{overflow:auto;background:var(--soft)}
+html[data-display-mode="smartphone"] .app-shell{
+  display:block;
+  width:min(100%,640px);
+  height:auto;
+  min-height:100dvh;
+  margin:0 auto;
+  padding-bottom:calc(80px + var(--safe-area-bottom,0px));
+  background:var(--paper);
+  box-shadow:0 0 44px rgba(0,0,0,.12);
+}
+html[data-display-mode="smartphone"] .topbar{
+  position:sticky;
+  top:0;
+  z-index:30;
+  display:flex;
+  width:100%;
+  height:68px;
+  padding:var(--safe-area-top,0px) max(12px,var(--safe-area-right,0px)) 0 max(12px,var(--safe-area-left,0px));
+  justify-content:space-between;
+  gap:6px;
+}
+html[data-display-mode="smartphone"] .brand-block,
+html[data-display-mode="smartphone"] #shortcutHelpButton{display:none}
+html[data-display-mode="smartphone"] .topbar-context{display:flex;min-width:0;padding-left:0;border-left:0;flex:1}
+html[data-display-mode="smartphone"] .topbar-context>span{display:none}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector{width:100%;padding:2px;gap:3px;border-radius:10px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button{min-height:40px;padding:5px 17px 5px 5px;gap:4px;border-radius:7px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-symbol{width:17px;height:17px;flex-basis:17px;border-radius:5px;font-size:8px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{width:11px;height:11px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:10px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
+html[data-display-mode="smartphone"] .topbar-utilities{flex:0 0 auto}
+html[data-display-mode="smartphone"] .topbar-utility-button,
+html[data-display-mode="smartphone"] .app-menu-trigger{width:44px;min-width:44px;height:44px;border-radius:9px}
+html[data-display-mode="smartphone"] .workspace{display:block;min-height:calc(100dvh - 148px)}
+html[data-display-mode="smartphone"] .family-panel,
+html[data-display-mode="smartphone"] .checkout-panel{display:none;width:100%;height:auto;min-height:calc(100dvh - 148px)}
+html[data-display-mode="smartphone"] .family-panel.active-panel{display:flex;padding:14px;overflow:visible}
+html[data-display-mode="smartphone"] .checkout-panel.active-panel{position:static;display:flex;width:100%;height:auto;padding:9px;overflow:visible;border-left:0;box-shadow:none;flex-direction:column}
+html[data-display-mode="smartphone"] .family-list{margin-top:6px;overflow:visible;flex:0 0 auto}
+html[data-display-mode="smartphone"] .family-group{width:100%}
+html[data-display-mode="smartphone"] .family-button{width:100%;min-width:0}
+html[data-display-mode="smartphone"] .family-options{margin-left:12px;padding-left:9px;grid-template-columns:1fr}
+html[data-display-mode="smartphone"] .family-footer{display:block}
+html[data-display-mode="smartphone"] .student-promise{display:none}
+html[data-display-mode="smartphone"] .checkout-card{width:100%;height:auto;min-height:calc(100dvh - 98px);margin:0;padding:16px;overflow:visible}
+html[data-display-mode="smartphone"] .cart-section{min-height:190px;max-height:none;overflow:visible;flex:0 0 auto}
+html[data-display-mode="smartphone"] .cart-lines{max-height:none;overflow:visible}
+html[data-display-mode="smartphone"] .mobile-tabs{
+  position:fixed;
+  z-index:70;
+  right:auto;
+  bottom:calc(10px + var(--safe-area-bottom,0px));
+  left:50%;
+  display:grid;
+  width:min(calc(100% - 24px),616px);
+  height:64px;
+  padding:5px;
+  grid-template-columns:1fr 1.35fr;
+  border:1px solid #333;
+  border-radius:18px;
+  background:rgba(13,13,13,.97);
+  box-shadow:0 16px 40px rgba(0,0,0,.3);
+  backdrop-filter:blur(14px);
+  transform:translateX(-50%);
+}
+html[data-display-mode="smartphone"] .mobile-tabs button{
+  display:flex;
+  min-width:0;
+  padding:0 9px;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border:0;
+  border-radius:14px;
+  color:#999;
+  background:transparent;
+  font-size:14px;
+  font-weight:800;
+}
+html[data-display-mode="smartphone"] .mobile-tabs button.active{color:#111;background:#fff}
+html[data-display-mode="smartphone"] .mobile-tabs svg{width:23px;height:23px}
+html[data-display-mode="smartphone"] .mobile-tabs strong{margin-left:auto;color:var(--taupe);font-size:13px}
+html[data-display-mode="smartphone"] .mobile-tabs button.active strong{color:#111}
+html[data-display-mode="smartphone"] .mobile-cart-icon{position:relative;display:inline-grid;place-items:center}
+html[data-display-mode="smartphone"] .mobile-cart-icon b{
+  position:absolute;
+  top:-9px;
+  right:-10px;
+  display:grid;
+  min-width:21px;
+  height:21px;
+  padding:0 4px;
+  place-items:center;
+  border:2px solid #111;
+  border-radius:999px;
+  color:#111;
+  background:var(--taupe);
+  font-size:10px;
+}
+html[data-display-mode="smartphone"] .toast-region{right:auto;bottom:calc(88px + var(--safe-area-bottom,0px));left:50%;width:min(600px,calc(100vw - 24px));transform:translateX(-50%)}
+html[data-display-mode="smartphone"] .modal-card{width:min(600px,100%)}
 
 @media screen and (max-width:900px){
   .tile-catalog-editor-list{grid-template-columns:1fr}

@@ -91,6 +91,8 @@
   const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
   const KNOWN_FONTS = ["red-hat", "roboto", "roboto-slab", "system"];
   const IPAD_LAYOUT_MODES = ["auto", "always", "off"];
+  const DISPLAY_MODE_PREFERENCES = ["auto", "smartphone", "full"];
+  const SMARTPHONE_LAYOUT_MAX_WIDTH = 600;
   const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document"];
 
   const defaultSettings = {
@@ -117,6 +119,7 @@
     skipTariffChangeConfirmation: false,
     catalogMode: "tiles",
     ipadLayoutMode: "off",
+    displayMode: "auto",
     launchAtLogin: false,
     visibleFamilies: [],
     conditions: DEFAULT_PAYMENT_CONDITIONS,
@@ -1434,6 +1437,49 @@
     document.documentElement.dataset.ipadPreference = preference;
     document.documentElement.dataset.ipadLayout = optimized ? "optimized" : "standard";
   }
+  function currentDisplayModePreference() {
+    return DISPLAY_MODE_PREFERENCES.includes(db.settings.displayMode) ? db.settings.displayMode : "auto";
+  }
+  function resolvedDisplayMode(preference = currentDisplayModePreference()) {
+    return preference === "smartphone" || (preference === "auto" && window.innerWidth <= SMARTPHONE_LAYOUT_MAX_WIDTH)
+      ? "smartphone"
+      : "full";
+  }
+  function renderDisplayModeMenu() {
+    const preference = currentDisplayModePreference();
+    const effectiveMode = resolvedDisplayMode(preference);
+    $$('[data-display-mode-option]').forEach((button) => {
+      const selected = button.dataset.displayModeOption === preference;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-checked", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
+    const autoState = $("#displayModeAutoState");
+    if (autoState) autoState.textContent = effectiveMode === "smartphone" ? "Mobile actif" : "Bureau actif";
+  }
+  function applyDisplayMode(preference = currentDisplayModePreference()) {
+    const normalizedPreference = DISPLAY_MODE_PREFERENCES.includes(preference) ? preference : "auto";
+    document.documentElement.dataset.displayPreference = normalizedPreference;
+    document.documentElement.dataset.displayMode = resolvedDisplayMode(normalizedPreference);
+    renderDisplayModeMenu();
+  }
+  function setDisplayModePreference(preference) {
+    const nextPreference = DISPLAY_MODE_PREFERENCES.includes(preference) ? preference : "auto";
+    const previousPreference = currentDisplayModePreference();
+    db.settings.displayMode = nextPreference;
+    applyDisplayMode(nextPreference);
+    syncPermanentCheckoutLayout();
+    if (!saveLocal(false)) {
+      db.settings.displayMode = previousPreference;
+      applyDisplayMode(previousPreference);
+      syncPermanentCheckoutLayout();
+      return;
+    }
+    if (resolvedDisplayMode(nextPreference) === "smartphone") switchMobilePanel("familyPanel");
+    scheduleTileDensityAnalysis();
+    const labels = { auto: "Affichage automatique", smartphone: "Affichage smartphone", full: "Affichage complet" };
+    toast(`${labels[nextPreference]} activé`);
+  }
   function syncViewportMetrics() {
     const height = Math.max(320, Math.round(window.visualViewport?.height || window.innerHeight || 0));
     document.documentElement.style.setProperty("--app-viewport-height", `${height}px`);
@@ -2381,14 +2427,15 @@
 
   function syncPermanentCheckoutLayout() {
     const panel = $("#checkoutPanel");
-    const permanent = window.matchMedia("(min-width: 1181px)").matches;
+    const permanent = document.documentElement.dataset.displayMode !== "smartphone"
+      && window.matchMedia("(min-width: 1181px)").matches;
     panel.classList.toggle("is-full-height", permanent);
     document.documentElement.classList.toggle("checkout-focus", permanent);
     document.body.classList.toggle("checkout-focus", permanent);
   }
 
   function appMenuItems() {
-    return $$('[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled])', $("#appActionsMenu"));
+    return $$('[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled]), [role="menuitemradio"]:not([disabled])', $("#appActionsMenu"));
   }
 
   function quoteMenuItems() {
@@ -2442,6 +2489,7 @@
   function setAppMenuOpen(open, { focusFirst = false, restoreFocus = false } = {}) {
     const menu = $("#appActionsMenu");
     const trigger = $("#appMenuButton");
+    if (open) renderDisplayModeMenu();
     menu.hidden = !open;
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer le menu principal" : "Ouvrir le menu principal");
@@ -3096,6 +3144,7 @@
     const action = button.dataset.appAction;
     setAppMenuOpen(false, { restoreFocus: true });
     if (action === "custom") openCustomItemLayer();
+    if (action === "display-mode") setDisplayModePreference(button.dataset.displayModeOption);
   });
   $("#settingsButton").addEventListener("click", openSettingsLayer);
   $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
@@ -3249,7 +3298,10 @@
   });
   window.addEventListener("beforeprint", renderPrint);
   window.addEventListener("beforeunload", () => saveLocal(false));
-  window.addEventListener("resize", syncPermanentCheckoutLayout);
+  window.addEventListener("resize", () => {
+    applyDisplayMode();
+    syncPermanentCheckoutLayout();
+  });
   window.addEventListener("resize", syncToastPlacement);
   window.addEventListener("resize", syncViewportMetrics);
   window.visualViewport?.addEventListener("resize", syncViewportMetrics);
@@ -3281,6 +3333,7 @@
   applyTheme(currentTheme());
   applyFont(currentFont());
   applyIpadLayout();
+  applyDisplayMode();
   syncViewportMetrics();
   syncPermanentCheckoutLayout();
   syncToastPlacement();
