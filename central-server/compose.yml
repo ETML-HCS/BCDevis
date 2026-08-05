@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - bcdevis-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - private
+
+  api:
+    build:
+      context: ..
+      dockerfile: central-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      BCDEVIS_CENTRAL_HOST: 0.0.0.0
+      BCDEVIS_CENTRAL_PORT: 8787
+      BCDEVIS_PGHOST: postgres
+      BCDEVIS_PGPORT: 5432
+      BCDEVIS_PGDATABASE: ${POSTGRES_DB}
+      BCDEVIS_PGUSER: ${POSTGRES_USER}
+      BCDEVIS_PGPASSWORD: ${POSTGRES_PASSWORD}
+      BCDEVIS_DATABASE_SSL: "false"
+      BCDEVIS_ORGANIZATION: ${BCDEVIS_ORGANIZATION}
+      BCDEVIS_ADMIN_EMAIL: ${BCDEVIS_ADMIN_EMAIL}
+      BCDEVIS_ADMIN_PASSWORD: ${BCDEVIS_ADMIN_PASSWORD}
+      BCDEVIS_ALLOWED_ORIGINS: ${BCDEVIS_ALLOWED_ORIGINS}
+      BCDEVIS_SESSION_DAYS: ${BCDEVIS_SESSION_DAYS:-30}
+    ports:
+      - "127.0.0.1:8787:8787"
+    networks:
+      - private
+      - proxy
+
+volumes:
+  bcdevis-postgres:
+
+networks:
+  private:
+    internal: true
+  proxy:

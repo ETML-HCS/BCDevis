@@ -1,36 +1,50 @@
-BCDevis 6.0.0 - Livrable pour Aleksandra
+BCDevis 7.0.1 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 6.0.0
+NOUVEAUTES 7.0.1
 
-- Le suivi des devis peut être activé dans Réglages > Devis.
-- L'Historique colore les devis selon leur dernier statut.
-- L'onglet Suivi filtre les devis et le triangle ouvre leur chronologie.
-- Cet écran de nouveautés apparaît une seule fois pour la version 6.0.0.
+- Sur iPad et smartphone, les actions essentielles sont plus faciles à toucher
+  sans modifier l'interface sur ordinateur.
+- Dans la caisse tactile, un indice explique le balayage vers la gauche et le
+  bouton Annuler restaure immédiatement le dernier soin retiré.
+- L'éditeur des tuiles dispose d'un aperçu direct, d'une recherche, de filtres
+  et de commandes tactiles plus confortables.
+- L'icône d'enregistrement a été redessinée en SVG net à toutes les tailles.
+- Le nouvel onglet Réglages > Données peut relier plusieurs postes à la
+  base PostgreSQL centrale par une API HTTPS sécurisée.
+- Les devis, compteurs et réglages métier sont synchronisés ; les préférences
+  d'affichage et le brouillon ouvert restent propres à chaque poste.
+- Une coupure réseau n'interrompt pas le travail et les conflits sont résolus
+  explicitement après création d'une sauvegarde JSON.
+- L'option Numéros uniques centralisés attribue les numéros dans PostgreSQL
+  et réserve quelques numéros utilisables en cas de coupure.
+- La nouvelle fenêtre Documents PDF importe, recherche et affiche les PDF
+  partagés sans quitter BCDevis.
+- Cet écran de nouveautés apparaît une seule fois pour la version 7.0.1.
 
 CONTENU
 
 1-Windows
-  BCDevis-6.0.0.exe
+  BCDevis-7.0.1.exe
 
 2-Linux
-  BCDevis-6.0.0-linux-x86_64.AppImage
+  BCDevis-7.0.1-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-6.0.0-chromeos.zip
+  BCDevis-7.0.1-chromeos.zip
 
 4-Documentation
-  BCDevis-V6-Utilisation-rapide.pdf
-  BCDevis-V6-Raccourcis-clavier.pdf
-  BCDevis-V6-Mode-d-emploi.pdf
+  BCDevis-V7-Utilisation-rapide.pdf
+  BCDevis-V7-Raccourcis-clavier.pdf
+  BCDevis-V7-Mode-d-emploi.pdf
 
 5-Modele-devis
-  MODELE-DEVIS-V6.json
-  BCDevis-V6-Modele-devis.pdf
+  MODELE-DEVIS-V7.json
+  BCDevis-V7-Modele-devis.pdf
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-6.0.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-7.0.1.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -44,14 +58,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-6.0.0-linux-x86_64.AppImage
-  ./BCDevis-6.0.0-linux-x86_64.AppImage
+  chmod +x BCDevis-7.0.1-linux-x86_64.AppImage
+  ./BCDevis-7.0.1-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-6.0.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-7.0.1-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -66,6 +80,27 @@ changer de Chromebook ou de profil, créer une sauvegarde complète JSON.
 Sous ChromeOS, le bouton PDF ouvre l'impression : choisir Enregistrer au
 format PDF.
 
+CONNEXION A LA BASE CENTRALE (FACULTATIVE)
+
+L'administrateur doit d'abord déployer BCDevis Central et PostgreSQL. Dans
+Réglages > Données, activer Connecter ce poste, saisir l'adresse HTTPS de
+l'API, le compte et le nom de l'appareil, puis tester le serveur. La ligne
+Base de données doit afficher PostgreSQL prêt avant la connexion.
+
+Après la connexion, l'option Numéros uniques centralisés peut être activée et
+enregistrée. Les séries sont réservées sans doublon pour tous les postes. Une
+petite réserve reste utilisable hors connexion ; des numéros non utilisés
+peuvent donc laisser des trous.
+
+Le bouton Documents PDF ouvre la bibliothèque centrale. Il permet d'importer
+un PDF de 8 Mo maximum, de le retrouver par devis ou client, de l'afficher et
+de le télécharger. Le devis et le client ouverts sont associés à l'import.
+
+Les identifiants PostgreSQL ne sont jamais saisis dans BCDevis : ils restent
+sur le serveur. Le mot de passe du compte applicatif n'est pas conservé sur
+le poste. La documentation technique du serveur se trouve dans le dossier
+central-server du projet source.
+
 ENVOYER
 
 E-mail ouvre directement l'application e-mail avec le PDF déjà joint. À joindre
@@ -75,7 +110,7 @@ afin de pouvoir l'ajouter manuellement au message.
 MODELE DE DEVIS
 
 Dans BCDevis, ouvrir le menu ... en haut du devis, choisir Importer, puis
-sélectionner MODELE-DEVIS-V6.json. La date et le prochain
+sélectionner MODELE-DEVIS-V7.json. La date et le prochain
 numéro sont attribués automatiquement.
 
 SAUVEGARDE

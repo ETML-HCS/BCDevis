@@ -1,8 +1,8 @@
 <div class="document-cover">
   <p class="kicker">CLINIQUE BELLECOUR</p>
-  <h1>Raccourcis clavier V6</h1>
+  <h1>Raccourcis clavier V7</h1>
   <p>Les 16 commandes rapides disponibles dans BCDevis.</p>
-  <p class="version">Version 6.0.0 - Windows, Linux, macOS et ChromeOS</p>
+  <p class="version">Version 7.0.1 - Windows, Linux, macOS et ChromeOS</p>
 </div>
 
 ## Catalogue

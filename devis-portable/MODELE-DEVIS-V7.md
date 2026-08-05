@@ -1,8 +1,8 @@
 <div class="document-cover">
   <p class="kicker">CLINIQUE BELLECOUR</p>
-  <h1>Modèle de devis V6</h1>
+  <h1>Modèle de devis V7</h1>
   <p>Importer le modèle vierge fourni avec le livrable client.</p>
-  <p class="version">BCDevis 6.0.0</p>
+  <p class="version">BCDevis 7.0.1</p>
 </div>
 
 <style>
@@ -17,7 +17,7 @@
 
 ## Fichier fourni
 
-Le fichier `MODELE-DEVIS-V6.json` est un devis vierge compatible avec BCDevis 6.0.0.
+Le fichier `MODELE-DEVIS-V7.json` est un devis vierge compatible avec BCDevis 7.0.1.
 
 Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'import :
 
@@ -31,7 +31,7 @@ Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'i
 1. Ouvrez BCDevis.
 2. Dans l'en-tête du devis, ouvrez le menu `...`.
 3. Cliquez sur **Importer**.
-4. Sélectionnez `MODELE-DEVIS-V6.json`.
+4. Sélectionnez `MODELE-DEVIS-V7.json`.
 5. Ajoutez le client et les soins.
 6. Cliquez sur **Enregistrer**.
 

@@ -1,0 +1,13 @@
+.git
+.github
+node_modules
+devis-portable/data
+devis-portable/dist
+devis-portable/captures
+devis-portable/tmp
+output
+tmp
+*.log
+*.pdf
+.env
+.env.*

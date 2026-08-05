@@ -1,25 +1,31 @@
-# BCDevis - version 6.0.0
+# BCDevis - version 7.0.1
 
-Application locale de création de devis pour Clinique Bellecour. Elle fonctionne sans serveur ni compte sur Windows, Linux, macOS, ChromeOS et iPadOS.
+Application de création de devis pour Clinique Bellecour. Elle reste entièrement utilisable en mode local sur Windows, Linux, macOS, ChromeOS et iPadOS, et peut facultativement synchroniser plusieurs postes avec le serveur PostgreSQL sécurisé de la V7.
 
-## Nouveautés 6.0.0
+## Nouveautés 7.0.1
 
-- Le suivi commercial des devis peut être activé depuis `Réglages > Devis`.
-- L’Historique standard colore chaque devis selon son dernier statut et conserve son libellé accessible.
-- L’onglet Suivi filtre les brouillons, devis prêts, envoyés, à relancer, acceptés, refusés et expirés.
-- Le triangle de chaque devis ouvre la chronologie, les notes et la prochaine relance.
-- Un écran résume ces nouveautés au premier lancement de chaque version, puis ne réapparaît plus pour cette version.
+- Sur iPad et smartphone, les actions essentielles atteignent désormais au moins 44 px, sans modifier l’interface ordinateur.
+- Dans la caisse tactile, un indice explique le balayage vers la gauche et le bouton **Annuler** restaure immédiatement le dernier soin retiré.
+- L’éditeur des tuiles propose un aperçu direct, une recherche, des filtres et de meilleurs contrôles tactiles.
+- L’icône d’enregistrement a été redessinée en SVG net à toutes les tailles.
+- Le nouvel onglet `Réglages > Données` active facultativement la centralisation multi-postes.
+- L’application se connecte à une API sécurisée ; elle ne reçoit jamais les identifiants PostgreSQL.
+- Les devis enregistrés, le suivi, les tarifs et les réglages métier sont fusionnés entre les appareils autorisés.
+- Le brouillon et les préférences d’affichage restent locaux ; le travail continue hors connexion.
+- Une modification concurrente n’est jamais écrasée silencieusement : BCDevis demande la version à conserver et crée auparavant une sauvegarde JSON.
+- Une option réserve dans PostgreSQL des numéros uniques communs à tous les postes, avec une petite réserve utilisable hors connexion.
+- La nouvelle fenêtre **Documents PDF** importe, recherche, affiche et télécharge les PDF partagés.
 
-Documents maintenus avec la version 6 :
+Documents maintenus avec la version 7 :
 
 - [Mode d’emploi](MODE-D-EMPLOI.md)
 - [Utilisation rapide](UTILISATION-RAPIDE.md)
-- [Raccourcis clavier V6](RACCOURCIS-CLAVIER-V6.md)
-- [Modèle de devis](MODELE-DEVIS-V6.md) et fichier importable [MODELE-DEVIS-V6.json](MODELE-DEVIS-V6.json)
+- [Raccourcis clavier V7](RACCOURCIS-CLAVIER-V7.md)
+- [Modèle de devis](MODELE-DEVIS-V7.md) et fichier importable [MODELE-DEVIS-V7.json](MODELE-DEVIS-V7.json)
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-6.0.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-7.0.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -35,7 +41,7 @@ Documents maintenus avec la version 6 :
 - Les familles déplient leurs soins directement dessous ; toucher un soin l’ajoute au devis.
 - Dans `Réglages` > `Interface` > `Navigation`, le mode **Corps interactif** remplace l’accordéon par une silhouette Femme/Homme et Face/Dos : toucher une zone affiche uniquement les soins anatomiquement correspondants, notamment le SIF et les fesses au dos. Le mode **Tuiles** reste disponible à tout moment.
 - Le mode Étudiant réduit directement le prix de chaque soin selon le pourcentage configuré, fixé à 50 % par défaut.
-- L’en-tête du devis donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les réglages, les raccourcis et un menu compact pour le catalogue.
+- L’en-tête du devis donne un accès direct au nouveau devis, à l’enregistrement et à l’historique. La barre supérieure conserve les documents PDF, les réglages, les raccourcis et un menu compact pour le catalogue.
 - Les icônes Imprimer, PDF et Envoyer restent visibles au bas du devis dès qu’un soin est ajouté. Leur nom complet apparaît au survol ou au focus. Envoyer sépare immédiatement l’e-mail avec joint automatique des canaux où le PDF reste à joindre.
 - Sur tablette ou téléphone, un grand onglet permet de passer de **Soins** à **Devis**.
 - Sur les écrans peu hauts, les deux zones défilent sans bandeau d’actions fixe en bas.
@@ -57,15 +63,17 @@ Documents maintenus avec la version 6 :
 - Démarrage automatique facultatif avec la session Windows, Linux ou macOS, configurable dans `Réglages` > `Interface`.
 - Devis avec quantités explicites et coupon manuel : pourcentage ou montant CHF. Pour un tarif libre, **Catalogue > Sur mesure** crée un soin personnalisé. Avec un tarif étudiant, seul le coupon CHF reste cumulable.
 - TVA incluse par défaut, désactivable ou ajoutée en plus. Le paiement échelonné propose 3/4/6 mois sous 1’000 CHF, ajoute 10 mois dès 1’000 CHF, puis 12 mois dès 2’000 CHF.
-- Date du devis fixée au jour même par défaut, ajustable jusqu’à J+14 ; validité calculée automatiquement à 30 jours calendaires.
+- Date du devis fixée au jour même et verrouillée par défaut. `Réglages > Devis > Date du devis` peut autoriser sa modification jusqu’à J+14 ; la validité est calculée automatiquement à 30 jours calendaires.
 - Numéro de devis traçable : `DEV-YYYYMMDDMACHINE001`, avec un compteur quotidien propre à chaque machine. Les anciens numéros locaux sont automatiquement convertis à ce format ; le prochain index est déterminé à partir du compteur enregistré et des devis déjà présents dans la sauvegarde locale.
 - Sauvegarde automatique, historique, duplication, import et export JSON.
 - Suivi commercial facultatif avec statuts, couleurs accessibles, filtres, chronologie, notes, dates de relance et rappels au démarrage. La désactivation masque le suivi sans effacer les données.
+- Centralisation PostgreSQL facultative avec compte, appareil identifié, numéros uniques en option, synchronisation différée hors ligne, révisions et résolution explicite des conflits.
+- Bibliothèque **Documents PDF** centrale avec import, recherche, aperçu et téléchargement des documents de 8 Mo maximum.
 - Impression ou création d’un PDF A4 avec le détail séance/pack/étudiant et le code coupon appliqué.
 
 ## Données et portabilité
 
-Toutes les données restent locales :
+Par défaut, toutes les données restent locales :
 
 - sous Windows portable, dans le dossier `data` placé à côté de l’EXE ;
 - sous Linux, dans le profil applicatif BCDevis de l’utilisateur ;
@@ -73,6 +81,20 @@ Toutes les données restent locales :
 - sous ChromeOS, dans le stockage du profil Chrome qui a installé la PWA.
 
 Pour déplacer les données vers un autre ordinateur ou une autre plateforme, ouvrir **Historique** depuis l’en-tête du devis, choisir `Sauvegarde complète`, puis `Restaurer` sur l’autre poste. L’archive JSON peut être copiée sur une clé USB et ne dépend pas d’Internet.
+
+### Centralisation PostgreSQL facultative
+
+Dans **Réglages > Données**, activez **Connecter ce poste**, indiquez l’adresse HTTPS du serveur BCDevis, puis le compte et le nom de l’appareil. **Tester le serveur** vérifie à la fois l’API V7 et la disponibilité de PostgreSQL avant la connexion.
+
+Les données partagées sont les devis enregistrés, l’historique et le suivi, les tarifs personnalisés, les compteurs, l’identité de l’entreprise et les mentions. Le brouillon en cours, le thème, la police, la disposition d’écran et le lancement automatique restent propres à l’appareil.
+
+Chaque poste connecté reçoit un code permanent comme `P01`. Sans autre réglage, il entre dans les prochains numéros de devis et évite les collisions hors connexion. Après connexion, activez **Numéros uniques centralisés** pour utiliser une séquence commune gérée atomiquement par PostgreSQL. BCDevis réserve alors une petite série de numéros utilisables sans réseau ; des numéros peuvent rester inutilisés, mais deux postes ne reçoivent jamais le même.
+
+Le bouton **Documents PDF** apparaît dans la barre supérieure. Il ouvre une fenêtre permettant d’importer un PDF, de le rechercher par titre, numéro de devis ou client, de l’afficher directement et de le télécharger. L’import associe automatiquement le document au devis et au client ouverts. Les PDF, limités à 8 Mo chacun, sont stockés dans PostgreSQL et nécessitent une connexion au serveur pour être consultés.
+
+L’état, la révision centrale et la date de la dernière synchronisation restent visibles dans le panneau. En cas de conflit, choisissez **Conserver la version centrale** ou **Conserver ce poste** ; une sauvegarde locale est téléchargée avant la résolution.
+
+Le serveur et PostgreSQL se déploient séparément. Consultez [BCDevis Central](../central-server/README.md) pour Docker Compose, HTTPS, les variables de connexion SQL, les sauvegardes et la restauration. Les hôte, port, utilisateur et mot de passe PostgreSQL restent exclusivement sur ce serveur.
 
 ## Créer un PDF
 
@@ -99,7 +121,7 @@ Pour la contrôler localement depuis la racine du projet :
 npm run pwa
 ```
 
-Ouvrir ensuite `http://127.0.0.1:4173/` dans Chrome. Sur Chromebook, une mise à disposition réelle doit utiliser HTTPS ; Chrome propose alors l’installation depuis sa barre d’adresse ou son menu. Sur iPad, ouvrez la même adresse HTTPS dans Safari puis utilisez **Partager > Sur l’écran d’accueil**. Les devis et réglages restent dans le stockage local du profil qui a installé la PWA. Le bouton PDF ouvre l’impression du système, où l’enregistrement produit le même gabarit A4.
+Ouvrir ensuite `http://127.0.0.1:4173/` dans Chrome. Sur Chromebook, une mise à disposition réelle doit utiliser HTTPS ; Chrome propose alors l’installation depuis sa barre d’adresse ou son menu. Sur iPad, ouvrez la même adresse HTTPS dans Safari puis utilisez **Partager > Sur l’écran d’accueil**. Les données restent dans le profil local lorsque la centralisation est désactivée ; lorsqu’elle est activée, les données métier sont également synchronisées avec le serveur autorisé. Le bouton PDF ouvre l’impression du système, où l’enregistrement produit le même gabarit A4.
 
 Pour assembler l’archive ChromeOS à remettre :
 
@@ -107,7 +129,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-6.0.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-7.0.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -123,7 +145,7 @@ npm run test:ipad:visual
 
 Les deux PDF de référence avec signatures activées et désactivées sont écrits dans `output/pdf`.
 
-## Raccourcis clavier V6
+## Raccourcis clavier V7
 
 - Catalogue : `Alt + M`, `Ctrl + K` ou `/`, `Alt + P`, `Ctrl + Maj + N`.
 - Devis : `Ctrl + N`, `Ctrl + S`, `Ctrl + H`, `Ctrl + D`, `Ctrl + O`, `Ctrl + E`.
@@ -131,7 +153,7 @@ Les deux PDF de référence avec signatures activées et désactivées sont écr
 - Application : `Ctrl + ,`, `?`, `Échap`.
 - Dans les choix de tarif et de thème, les flèches gauche/droite ou haut/bas sélectionnent directement l’option suivante.
 
-La fiche [RACCOURCIS-CLAVIER-V6.md](RACCOURCIS-CLAVIER-V6.md) documente les 16 commandes.
+La fiche [RACCOURCIS-CLAVIER-V7.md](RACCOURCIS-CLAVIER-V7.md) documente les 16 commandes.
 
 ## Envoyer un devis
 
@@ -157,7 +179,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-6.0.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-7.0.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -167,7 +189,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-6.0.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-7.0.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -175,7 +197,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-6.0.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-7.0.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

@@ -986,6 +986,8 @@
     border-radius:9px;
   }
   .quote-icon-button svg{width:17px;height:17px}
+  #newQuoteButton svg{width:20px;height:20px;stroke-width:1.9}
+  #saveButton svg{width:19px;height:19px;stroke-width:2.15;shape-rendering:geometricPrecision}
   .quote-icon-button:hover,.quote-icon-button:focus-visible{
     color:var(--ink);
     border-color:var(--accent);
@@ -1263,6 +1265,379 @@
     .settings-actions{padding:10px 14px}
   }
 
+  /* Personnalisation V7.2 — finition esthétique, rythme et surfaces harmonisés. */
+  @media screen{
+    .settings-modal{
+      --settings-space-xs:6px;
+      --settings-space-sm:9px;
+      --settings-space-md:12px;
+      --settings-space-lg:14px;
+      --settings-radius-card:11px;
+      --settings-radius-control:8px;
+      --settings-line-soft:color-mix(in srgb,var(--line) 78%,transparent);
+      --settings-panel-bg:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised));
+      --settings-card-shadow:0 1px 2px rgba(18,15,12,.045),0 8px 24px rgba(18,15,12,.025);
+      width:min(1080px,calc(100vw - 40px))!important;
+      height:min(720px,calc(100dvh - 40px));
+      max-height:calc(100dvh - 40px)!important;
+      border-color:var(--line);
+      background:var(--surface-raised);
+      box-shadow:0 26px 72px rgba(12,10,8,.3),0 3px 12px rgba(12,10,8,.14);
+    }
+    .settings-modal .modal-head{
+      min-height:62px;
+      padding:12px 18px 11px;
+      align-items:center;
+      background:linear-gradient(180deg,var(--surface-raised),color-mix(in srgb,var(--surface-soft) 24%,var(--surface-raised)));
+    }
+    .settings-modal-title{display:flex;min-width:0;flex-direction:column;gap:1px}
+    .settings-modal-title>span{color:var(--taupe-dark);font-size:8.5px;font-weight:820;letter-spacing:.14em;line-height:1;text-transform:uppercase}
+    .settings-modal-title h2{font-size:21px;font-weight:650;line-height:1.1;letter-spacing:-.025em}
+    .settings-modal .modal-head .round-button{width:38px;height:38px;flex:0 0 38px}
+    .settings-layout{display:flex;min-height:0;flex:1 1 auto;overflow:hidden;flex-direction:column}
+    .settings-workspace{
+      display:grid;
+      min-height:0;
+      overflow:hidden;
+      flex:1 1 auto;
+      grid-template-columns:210px minmax(0,1fr);
+      background:var(--settings-panel-bg);
+    }
+    .settings-tabs{
+      display:flex;
+      min-width:0;
+      min-height:0;
+      padding:var(--settings-space-md);
+      overflow-x:hidden;
+      overflow-y:auto;
+      flex-direction:column;
+      gap:5px;
+      border-right:1px solid var(--line);
+      border-bottom:0;
+      background:color-mix(in srgb,var(--surface-soft) 82%,var(--surface-raised));
+      scrollbar-width:thin;
+      scrollbar-color:color-mix(in srgb,var(--muted) 35%,transparent) transparent;
+    }
+    .settings-tabs button{
+      position:relative;
+      display:grid;
+      width:100%;
+      min-width:0;
+      min-height:55px;
+      padding:var(--settings-space-sm);
+      align-items:center;
+      border:1px solid transparent;
+      border-radius:var(--settings-radius-control);
+      color:var(--muted);
+      background:transparent;
+      text-align:left;
+      grid-template-columns:32px minmax(0,1fr);
+      gap:9px;
+      transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease,color .16s ease;
+    }
+    .settings-tabs button:hover{color:var(--ink);border-color:transparent;background:color-mix(in srgb,var(--surface-raised) 54%,transparent)}
+    .settings-tabs button[aria-selected="true"]{
+      color:var(--ink);
+      border-color:color-mix(in srgb,var(--accent) 58%,var(--line));
+      background:var(--surface-raised);
+      box-shadow:inset 3px 0 0 var(--accent),0 5px 16px rgba(18,15,12,.055);
+    }
+    .settings-tabs button:focus-visible{z-index:1;outline:2px solid var(--accent);outline-offset:1px}
+    .settings-tab-icon{
+      display:grid;
+      width:32px;
+      height:32px;
+      place-items:center;
+      border:1px solid var(--line);
+      border-radius:var(--settings-radius-control);
+      color:var(--muted);
+      background:var(--surface-raised);
+    }
+    .settings-tab-icon svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .settings-tabs button[aria-selected="true"] .settings-tab-icon{color:var(--accent-ink);border-color:var(--accent);background:var(--accent)}
+    .settings-tab-copy{display:flex;min-width:0;flex-direction:column;gap:2px}
+    .settings-tab-copy strong{overflow:hidden;color:inherit;font-size:11px;font-weight:780;line-height:1.2;letter-spacing:-.005em;text-overflow:ellipsis;white-space:nowrap}
+    .settings-tab-copy small{display:-webkit-box;overflow:hidden;color:var(--muted);font-size:8.5px;font-weight:550;line-height:1.3;white-space:normal;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+    .settings-panels{min-width:0;min-height:0;overflow:hidden;background:var(--settings-panel-bg)}
+    .settings-panel{
+      width:100%;
+      height:100%;
+      padding:16px 18px 20px;
+      overflow-x:hidden;
+      overflow-y:auto;
+      scrollbar-width:thin;
+      scrollbar-color:color-mix(in srgb,var(--muted) 38%,transparent) transparent;
+    }
+    .settings-panel[hidden]{display:none!important}
+    .settings-panel-grid{
+      display:grid;
+      min-width:0;
+      align-items:start;
+      gap:var(--settings-space-lg);
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .settings-panel-grid--interface{grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr)}
+    .settings-panel-grid--company{grid-template-columns:minmax(0,.95fr) minmax(360px,1.05fr)}
+    .settings-panel-grid--pricing{grid-template-columns:minmax(320px,.82fr) minmax(0,1.18fr)}
+    .settings-panel-grid--document{grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr)}
+    .settings-panel-grid--data{grid-template-columns:minmax(250px,.7fr) minmax(0,1.3fr)}
+    .settings-panel-grid--data:has(#centralConnectionDetails[hidden]){min-height:100%;grid-template-columns:minmax(0,520px);align-content:center;justify-content:center}
+    .settings-panel-stack,.central-connection-details{display:grid;min-width:0;align-content:start;gap:var(--settings-space-lg)}
+    .settings-panel-grid--interface>.settings-section--catalog,
+    .settings-panel-grid--document>.settings-section--mentions{grid-column:1/-1}
+    .settings-layout section+section{padding-left:0;border-left:0}
+    .settings-panel .settings-section{
+      min-width:0;
+      margin:0;
+      padding:var(--settings-space-lg);
+      overflow:visible;
+      border:1px solid var(--settings-line-soft);
+      border-radius:var(--settings-radius-card);
+      background:var(--surface-raised);
+      box-shadow:var(--settings-card-shadow);
+    }
+    .settings-panel .settings-section-head,
+    html[data-theme] .settings-panel .settings-section-head{
+      min-height:0;
+      margin:0 0 var(--settings-space-md);
+      padding:0 0 var(--settings-space-sm);
+      border-bottom:1px solid var(--settings-line-soft);
+      border-left:0;
+    }
+    .settings-panel .settings-section-head h3,
+    html[data-theme] .settings-panel .settings-section-head h3{font-size:15px;font-weight:720;letter-spacing:-.018em}
+    .settings-panel .settings-subheading{margin:var(--settings-space-lg) 0 7px;color:var(--taupe-dark);font-size:8.5px;letter-spacing:.1em}
+    .settings-panel .settings-subheading:first-of-type{margin-top:0}
+    .settings-panel .form-grid{gap:10px 11px}
+    .settings-panel .form-grid input,
+    .settings-panel .form-grid select,
+    .settings-panel .input-with-suffix{height:40px;border-radius:var(--settings-radius-control)}
+    .settings-panel .input-with-suffix input{height:38px}
+    .settings-panel .form-grid textarea{min-height:78px;padding:9px;border-radius:var(--settings-radius-control)}
+    .settings-panel .form-grid input,
+    .settings-panel .form-grid select,
+    .settings-panel .form-grid textarea,
+    .settings-panel .input-with-suffix{border-color:var(--settings-line-soft);background:var(--surface-raised);transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease}
+    .settings-panel .form-grid input:focus,
+    .settings-panel .form-grid select:focus,
+    .settings-panel .form-grid textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+    .settings-panel .theme-picker{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+    html[data-theme] .settings-panel .theme-card{
+      position:relative;
+      min-width:0;
+      padding:7px;
+      gap:6px;
+      border-radius:var(--settings-radius-control);
+      background:color-mix(in srgb,var(--surface-soft) 68%,var(--surface-raised));
+      box-shadow:0 1px 1px rgba(18,15,12,.025);
+      transform:none;
+    }
+    html[data-theme] .settings-panel .theme-card:hover{border-color:var(--accent);background:var(--surface-raised);box-shadow:0 5px 16px rgba(18,15,12,.055);transform:none}
+    html[data-theme] .settings-panel .theme-card[aria-checked="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--surface-raised));box-shadow:inset 2px 0 0 var(--accent)}
+    .settings-panel .theme-card-swatch{height:40px;border-radius:6px;grid-template-columns:24px 1fr;grid-template-rows:12px 1fr}
+    .settings-panel .theme-card-swatch .ts-accent{width:10px;height:10px;margin:5px 0 0 5px}
+    .settings-panel .theme-card-copy strong{font-size:10px}
+    .settings-panel .theme-card-check,
+    .settings-panel .theme-card[aria-checked="true"] .theme-card-check{
+      position:absolute;
+      right:7px;
+      bottom:6px;
+      display:none;
+      width:14px;
+      height:14px;
+      margin:0;
+      place-items:center;
+      color:var(--taupe-dark);
+    }
+    .settings-panel .theme-card[aria-checked="true"] .theme-card-check{display:grid}
+    .settings-panel .theme-card-check svg{width:12px;height:12px}
+    .settings-panel .font-picker{gap:7px}
+    .settings-panel .font-card{min-height:48px;padding:6px;grid-template-columns:32px minmax(0,1fr) 14px;gap:7px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised))}
+    .settings-panel .font-card-sample{width:32px;height:32px;font-size:16px}
+    .settings-panel .font-card-copy strong{font-size:10px}
+    .settings-panel .font-card-check{width:14px;height:14px}
+    .settings-panel .catalog-mode-picker{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+    .settings-panel .catalog-mode-card{min-height:56px;padding:7px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised));grid-template-columns:36px minmax(0,1fr);gap:7px}
+    .settings-panel .catalog-mode-visual{width:36px;height:36px;padding:5px;border-radius:8px}
+    .settings-panel .catalog-mode-visual svg{width:25px;height:25px}
+    .settings-panel .catalog-mode-card strong{font-size:10px}
+    .settings-panel .catalog-mode-card small{font-size:8px}
+    .settings-panel .ipad-layout-intro{margin-bottom:8px;font-size:9px}
+    .settings-panel .ipad-layout-option{min-height:56px;padding:8px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised))}
+    .settings-panel .ipad-layout-option strong{font-size:10px}
+    .settings-panel .ipad-layout-option small{font-size:8px}
+    .settings-panel .startup-setting{min-height:58px;padding:8px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised));grid-template-columns:36px minmax(0,1fr) auto;gap:8px}
+    .settings-panel .startup-app-icon{width:36px;height:36px}
+    .settings-panel .startup-app-icon img{width:27px;height:27px}
+    .settings-panel .startup-setting-copy strong{font-size:11px}
+    .settings-panel .startup-setting-copy small,.settings-panel .startup-setting-note{font-size:8.5px}
+    .settings-panel .family-visibility-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+    html[data-theme] .settings-panel .family-visibility-item{min-height:44px;padding:7px 8px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised))}
+    .settings-panel .family-visibility-icon{width:26px;height:26px;flex-basis:26px}
+    .settings-panel .family-visibility-copy strong{font-size:10px}
+    .settings-panel .family-visibility-copy small{font-size:8.5px}
+    .settings-panel .tile-catalog-editor-entry{min-height:46px;margin-top:7px;padding:6px 8px}
+    .settings-panel .brand-assets-editor{gap:7px}
+    .settings-panel .brand-asset-card,
+    .settings-panel .brand-asset-card:first-child{
+      padding:8px;
+      border:1px solid var(--settings-line-soft);
+      border-radius:var(--settings-radius-control);
+      background:color-mix(in srgb,var(--surface-soft) 48%,var(--surface-raised));
+      grid-template-columns:56px minmax(0,1fr) auto;
+      gap:8px;
+    }
+    .settings-panel .brand-asset-preview{width:56px;height:42px;padding:6px;border-radius:7px}
+    .settings-panel .brand-asset-copy strong{font-size:11px}
+    .settings-panel .brand-asset-copy small{font-size:8.5px}
+    .settings-panel .logo-upload-button,.settings-panel .logo-remove-button{min-height:34px;padding-inline:8px}
+    .settings-panel .brand-asset-hint{font-size:8px}
+    .settings-panel .settings-grid-offer{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .settings-panel .settings-offer-block,
+    .settings-panel .settings-section--commercial .settings-offer-block{height:100%;padding:12px;border-color:var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 58%,var(--surface-raised))!important}
+    .settings-panel .settings-offer-tag,
+    .settings-panel .settings-offer-block.student .settings-offer-tag{margin-bottom:9px;font-size:8.5px}
+    .settings-panel .settings-offer-summary{margin-top:7px;font-size:9px}
+    .settings-toggle-card{
+      position:relative;
+      display:grid!important;
+      min-height:64px;
+      padding:9px 10px!important;
+      align-items:center;
+      grid-template-columns:36px minmax(0,1fr) auto;
+      gap:9px;
+      border:1px solid var(--settings-line-soft);
+      border-radius:var(--settings-radius-control);
+      color:var(--ink);
+      background:color-mix(in srgb,var(--surface-soft) 46%,var(--surface-raised));
+      cursor:pointer;
+      transition:border-color .16s ease,background-color .16s ease,box-shadow .16s ease;
+    }
+    .settings-toggle-card:hover{border-color:color-mix(in srgb,var(--accent) 72%,var(--line));transform:none}
+    .settings-toggle-card:has(.settings-toggle-input:checked){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface-raised));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 28%,transparent)}
+    .settings-toggle-card:has(.settings-toggle-input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+    .settings-toggle-input{position:absolute;width:1px!important;height:1px!important;margin:0!important;padding:0!important;overflow:hidden;border:0!important;opacity:0;pointer-events:none}
+    .settings-toggle-card>.settings-toggle-icon,
+    .settings-toggle-card>.settings-toggle-copy,
+    .settings-toggle-card>.settings-toggle-action{min-width:0;margin:0;color:inherit;letter-spacing:normal;text-transform:none}
+    .settings-toggle-icon{display:grid!important;width:36px;height:36px;place-items:center;border:1px solid var(--line);border-radius:8px;color:var(--muted)!important;background:var(--surface-soft)}
+    .settings-toggle-icon svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .settings-toggle-card:has(.settings-toggle-input:checked) .settings-toggle-icon{border-color:var(--accent);color:var(--accent-ink)!important;background:var(--accent)}
+    .settings-toggle-copy{display:flex!important;flex-direction:column;gap:2px}
+    .settings-toggle-copy strong{color:var(--ink);font-size:11px;font-weight:750;line-height:1.25}
+    .settings-toggle-copy small{max-width:54ch;color:var(--muted);font-size:9px;font-weight:500;line-height:1.35}
+    .settings-toggle-action{display:flex!important;align-items:center;gap:7px}
+    .settings-toggle-status{min-width:45px;color:var(--muted);font-size:8.5px;font-weight:750;text-align:right}
+    .settings-toggle-status::before{content:"Désactivé"}
+    .settings-toggle-control{position:relative;display:block;width:38px;height:22px;border:1px solid color-mix(in srgb,var(--muted) 50%,var(--line));border-radius:99px;background:color-mix(in srgb,var(--muted) 24%,var(--surface-soft))}
+    .settings-toggle-control::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--surface-raised);box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .16s ease}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status{color:var(--taupe-dark)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-status::before{content:"Activé"}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control{border-color:var(--action);background:var(--action)}
+    .settings-toggle-input:checked~.settings-toggle-action .settings-toggle-control::after{transform:translateX(16px)}
+    .settings-panel .hint-box{padding:8px 9px;border:1px solid var(--settings-line-soft);border-radius:var(--settings-radius-control);background:color-mix(in srgb,var(--surface-soft) 55%,var(--surface-raised))!important;font-size:9px}
+    .settings-panel .hint-box code{font-size:9px}
+    .settings-panel .tracking-settings-details{gap:8px}
+    .settings-panel .tracking-settings-details>.settings-toggle-card{min-height:64px}
+    .settings-section--mentions .form-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+    .settings-section--mentions .form-grid>.full-field{grid-column:auto}
+    .settings-section--mentions .form-grid>.settings-toggle-card{grid-column:1/-1}
+    .settings-panel .settings-section--mentions textarea{min-height:74px}
+    .settings-section--central-switch{position:sticky;top:0}
+    .settings-panel .central-enable-card{min-height:92px}
+    .settings-panel .central-security-note{margin-top:9px;font-size:9px;line-height:1.4}
+    .settings-panel .central-actions{margin-top:11px}
+    .settings-panel .central-actions .button{min-height:36px}
+    .settings-panel .central-meta>div{padding:8px}
+    .settings-panel .central-scope-list{gap:8px}
+    .settings-actions{
+      flex:0 0 auto;
+      min-height:58px;
+      margin:0;
+      padding:9px 18px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-direction:row;
+      gap:8px;
+      border-top:1px solid var(--settings-line-soft);
+      background:linear-gradient(0deg,var(--surface-raised),color-mix(in srgb,var(--surface-soft) 18%,var(--surface-raised)));
+      box-shadow:0 -9px 24px rgba(18,15,12,.035);
+    }
+    .settings-actions .button{width:auto;min-height:40px;padding-inline:18px;border-radius:var(--settings-radius-control)}
+    .settings-actions .button.primary{min-width:148px;box-shadow:0 5px 14px rgba(18,15,12,.13)}
+  }
+  @media screen and (max-width:900px){
+    .settings-modal{width:min(760px,calc(100vw - 24px))!important;height:min(760px,calc(100dvh - 24px));max-height:calc(100dvh - 24px)!important}
+    .settings-workspace{display:flex;flex-direction:column}
+    .settings-tabs{min-height:52px;padding:0 10px;overflow-x:auto;overflow-y:hidden;flex-direction:row;gap:2px;border-right:0;border-bottom:1px solid var(--line);scrollbar-width:none}
+    .settings-tabs::-webkit-scrollbar{display:none}
+    .settings-tabs button{width:auto;min-width:112px;min-height:51px;padding:6px 9px;grid-template-columns:28px auto;gap:7px;border-radius:0}
+    .settings-tabs button[aria-selected="true"]{box-shadow:inset 0 -2px 0 var(--accent)}
+    .settings-tab-icon{width:28px;height:28px;border-radius:7px}
+    .settings-tab-icon svg{width:14px;height:14px}
+    .settings-tab-copy small{display:none}
+    .settings-panel{padding:14px 15px 18px}
+    .settings-panel-grid,
+    .settings-panel-grid--interface,
+    .settings-panel-grid--company,
+    .settings-panel-grid--pricing,
+    .settings-panel-grid--document,
+    .settings-panel-grid--data{grid-template-columns:1fr}
+    .settings-panel-grid--data:has(#centralConnectionDetails[hidden]){min-height:0;align-content:start}
+    .settings-panel-grid--interface>.settings-section--catalog,
+    .settings-panel-grid--document>.settings-section--mentions{grid-column:1}
+    .settings-section--central-switch{position:static}
+    .settings-panel .theme-picker{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .settings-panel .family-visibility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media screen and (max-width:620px){
+    .settings-modal{width:calc(100vw - 20px)!important;height:calc(100dvh - 20px);max-height:calc(100dvh - 20px)!important}
+    .settings-modal .modal-head{min-height:56px;padding:9px 12px}
+    .settings-modal-title h2{font-size:19px}
+    .settings-tabs{padding-inline:6px}
+    .settings-tabs button{min-width:94px;padding-inline:7px;grid-template-columns:24px auto;gap:6px}
+    .settings-tab-icon{width:24px;height:24px}
+    .settings-tab-icon svg{width:13px;height:13px}
+    .settings-tab-copy strong{font-size:10px}
+    .settings-panel{padding:10px 10px 14px}
+    .settings-panel-grid,.settings-panel-stack,.central-connection-details{gap:10px}
+    .settings-panel .settings-section{padding:11px}
+    .settings-panel .theme-picker{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .settings-panel .catalog-mode-picker,
+    .settings-panel .settings-grid-offer,
+    .settings-panel .family-visibility-grid,
+    .settings-section--mentions .form-grid{grid-template-columns:1fr}
+    .settings-section--mentions .form-grid>.full-field,
+    .settings-section--mentions .form-grid>.settings-toggle-card{grid-column:1}
+    .settings-toggle-card{grid-template-columns:34px minmax(0,1fr) auto;padding:8px!important;gap:8px}
+    .settings-toggle-icon{width:34px;height:34px}
+    .settings-toggle-status{display:none}
+    .settings-panel .brand-asset-card,
+    .settings-panel .brand-asset-card:first-child{grid-template-columns:48px minmax(0,1fr)}
+    .settings-panel .brand-asset-preview{width:48px;height:40px}
+    .settings-panel .brand-asset-actions{grid-column:1/-1}
+    .settings-actions{min-height:54px;padding:7px 10px}
+    .settings-actions .button{min-width:0;min-height:40px;padding-inline:12px;flex:1}
+    .settings-actions .button.primary{min-width:0;flex:1.35}
+  }
+  @media screen and (max-width:440px){
+    .settings-tabs{justify-content:center;gap:2px}
+    .settings-tabs button{min-width:68px;padding:4px 3px;justify-items:center;grid-template-columns:1fr;gap:2px}
+    .settings-tab-copy strong{font-size:8.5px;text-align:center}
+  }
+  @media screen and (pointer:coarse){
+    .settings-tabs button{min-height:56px}
+    .settings-panel .form-grid input,
+    .settings-panel .form-grid select,
+    .settings-panel .input-with-suffix{min-height:44px}
+    .settings-panel .theme-card,
+    .settings-panel .font-card,
+    .settings-panel .catalog-mode-card,
+    .settings-panel .ipad-layout-option,
+    .settings-panel .family-visibility-item{min-height:48px}
+    .settings-actions .button{min-height:46px}
+  }
+
   /* iPad : confort tactile activable, avec adaptation automatique d’iPadOS. */
   :root{
     --app-viewport-height:100vh;
@@ -1371,11 +1746,12 @@
   <svg class="svg-sprite" aria-hidden="true">
     <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+    <symbol id="icon-new-quote" viewBox="0 0 24 24"><path d="M4.5 4.5v15h4c4.8 0 7.5-2.8 7.5-7.5S13.3 4.5 8.5 4.5h-4Z"></path><path class="icon-new-quote-plus" d="M19.5 3.5v5M17 6h5" stroke-width="1.75"></path></symbol>
     <symbol id="icon-minus" viewBox="0 0 24 24"><path d="M5 12h14"></path></symbol>
     <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"></path></symbol>
     <symbol id="icon-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></symbol>
     <symbol id="icon-user-plus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0M18 8v6M15 11h6"></path></symbol>
-    <symbol id="icon-save" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"></path></symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24" data-design="save-v2"><path d="M5 3h10.2a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path><path d="M7 3v5a1 1 0 0 0 1 1h7"></path><path d="M17 21v-8H7v8"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
     <symbol id="icon-pdf" viewBox="0 0 24 24"><path class="pdf-page" d="M6 2.5h7.7L18 6.8v14.7H6zM13.7 2.5V7H18" stroke-width="2"></path><rect class="pdf-badge" x="2" y="9.2" width="20" height="9.8" rx="2.1" fill="#d83b31" stroke="none"></rect><path class="pdf-letters" d="M5.5 17v-6h2c1.2 0 2 .7 2 1.7s-.8 1.7-2 1.7h-2M11.2 11v6h1.5c1.7 0 2.7-1.1 2.7-3s-1-3-2.7-3h-1.5ZM17 17v-6h3.3M17 13.8h2.7" fill="none" stroke="#fff" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
@@ -1389,6 +1765,7 @@
     <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
+    <symbol id="icon-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"></path></symbol>
     <symbol id="icon-percent" viewBox="0 0 24 24"><path d="M6 18 18 6"></path><circle cx="7.5" cy="7.5" r="2.2"></circle><circle cx="16.5" cy="16.5" r="2.2"></circle></symbol>
     <symbol id="icon-signature" viewBox="0 0 24 24"><path d="M4 18.5c2.7-4.2 4.7-6.3 6-6.3 1.8 0-1.1 4.7.4 4.7 1.1 0 2.2-2.7 3.3-2.7.8 0-.2 2.4.8 2.4.8 0 1.7-1.3 2.6-1.3.6 0 1 .4 1.4 1.2"></path><path d="M4 20h16"></path><path d="m15.5 9.2 3.8-3.8 1.3 1.3-3.8 3.8-2 .7.7-2Z"></path></symbol>
      <symbol id="icon-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"></circle><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"></circle></symbol>
@@ -1636,6 +2013,7 @@
         <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
       </div></div>
       <div class="topbar-utilities" aria-label="Application">
+        <button class="topbar-utility-button" id="pdfLibraryButton" type="button" aria-label="Ouvrir les documents PDF" aria-haspopup="dialog" data-tooltip="Documents PDF"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></button>
         <button class="topbar-utility-button" id="settingsButton" type="button" aria-label="Ouvrir les réglages" aria-keyshortcuts="Control+Comma Meta+Comma" data-tooltip="Réglages"><svg aria-hidden="true"><use href="#icon-settings"></use></svg></button>
         <button class="topbar-utility-button" id="shortcutHelpButton" type="button" aria-label="Afficher les raccourcis clavier" aria-keyshortcuts="?" aria-haspopup="dialog" data-tooltip="Raccourcis clavier"><svg aria-hidden="true"><use href="#icon-keyboard"></use></svg></button>
       </div>
@@ -1689,7 +2067,7 @@
             <div class="quote-head-actions" id="quoteHeadActions">
               <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked aria-label="TVA"><span class="switch"></span><span>TVA</span></label>
               <button class="client-card is-empty" id="clientButton" type="button" aria-label="Ajouter un client" title="Ajouter un client"><span class="client-avatar" id="clientInitials" aria-hidden="true"><svg><use href="#icon-user-plus"></use></svg></span><strong id="clientName" hidden></strong><small class="visually-hidden" id="clientDetails">Nom, téléphone et e-mail</small></button>
-              <button class="round-button quote-icon-button" id="newQuoteButton" type="button" aria-label="Nouveau devis" aria-keyshortcuts="Control+N Meta+N" data-tooltip="Nouveau devis"><svg aria-hidden="true"><use href="#icon-plus"></use></svg></button>
+              <button class="round-button quote-icon-button" id="newQuoteButton" type="button" aria-label="Nouveau devis" aria-keyshortcuts="Control+N Meta+N" data-tooltip="Nouveau devis"><svg aria-hidden="true"><use href="#icon-new-quote"></use></svg></button>
               <button class="round-button quote-icon-button" id="saveButton" type="button" aria-label="Enregistrer le devis" aria-keyshortcuts="Control+S Meta+S" data-tooltip="Enregistrer"><svg aria-hidden="true"><use href="#icon-save"></use></svg></button>
               <button class="round-button quote-icon-button" id="historyButton" type="button" aria-label="Ouvrir l’historique" aria-keyshortcuts="Control+H Meta+H" data-tooltip="Historique"><svg aria-hidden="true"><use href="#icon-history"></use></svg></button>
               <button class="round-button quote-icon-button" id="moreQuoteButton" type="button" aria-label="Ouvrir les actions du devis" aria-haspopup="menu" aria-controls="quoteActionMenu" aria-expanded="false" data-tooltip="Actions du devis"><svg aria-hidden="true"><use href="#icon-more"></use></svg></button>
@@ -1702,8 +2080,9 @@
             </div>
           </div>
           <div class="checkout-context">
-            <div class="receipt-meta">
-              <label><span>Date</span><input id="quoteDate" type="date" aria-label="Date du devis"></label>
+            <div class="quote-date-control" id="quoteDateControl" data-editable="false">
+              <time id="quoteDateDisplay" datetime="" aria-label="Date du devis"></time>
+              <input id="quoteDate" type="date" aria-label="Modifier la date du devis" hidden disabled>
             </div>
           </div>
           <div class="cart-section"><div class="cart-section-title"><span id="cartItemCount">Vide</span></div><div class="cart-lines" id="cartLines"></div></div>
@@ -1811,34 +2190,48 @@
   <div class="modal-layer" id="settingsLayer" hidden>
     <button class="layer-backdrop" type="button" data-close="settingsLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modal-head"><h2 id="settingsTitle">Personnalisation</h2><button class="round-button" type="button" data-close="settingsLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <div class="modal-head"><div class="settings-modal-title"><span>Réglages</span><h2 id="settingsTitle">Personnalisation</h2></div><button class="round-button" type="button" data-close="settingsLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       <form id="settingsForm" class="settings-layout">
-        <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation">
-          <button id="settingsTabInterface" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelInterface" data-settings-tab="interface">Interface</button>
-          <button id="settingsTabCompany" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelCompany" data-settings-tab="company" tabindex="-1">Entreprise</button>
-          <button id="settingsTabPricing" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelPricing" data-settings-tab="pricing" tabindex="-1">Tarifs</button>
-          <button id="settingsTabDocument" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelDocument" data-settings-tab="document" tabindex="-1">Devis</button>
-        </div>
-        <div class="settings-panels">
+        <div class="settings-workspace">
+          <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation">
+            <button id="settingsTabInterface" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelInterface" data-settings-tab="interface"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-settings"></use></svg></span><span class="settings-tab-copy"><strong>Interface</strong><small>Thème, navigation, catalogue</small></span></button>
+            <button id="settingsTabCompany" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelCompany" data-settings-tab="company" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-user"></use></svg></span><span class="settings-tab-copy"><strong>Entreprise</strong><small>Coordonnées, logos, numéros</small></span></button>
+            <button id="settingsTabPricing" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelPricing" data-settings-tab="pricing" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-tab-copy"><strong>Tarifs</strong><small>TVA, packs, tarif étudiant</small></span></button>
+            <button id="settingsTabDocument" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelDocument" data-settings-tab="document" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-pdf"></use></svg></span><span class="settings-tab-copy"><strong>Devis &amp; suivi</strong><small>Date, relances, mentions</small></span></button>
+            <button id="settingsTabData" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelData" data-settings-tab="data" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-database"></use></svg></span><span class="settings-tab-copy"><strong>Données</strong><small>Centralisation, synchronisation</small></span></button>
+          </div>
+          <div class="settings-panels">
           <section class="settings-panel settings-panel--interface" id="settingsPanelInterface" role="tabpanel" aria-labelledby="settingsTabInterface" data-settings-panel="interface" tabindex="0">
             <div class="settings-panel-grid settings-panel-grid--interface">
-              <section class="settings-section">
-                <div class="settings-section-head"><h3>Apparence</h3></div>
-                <p class="settings-subheading">Thème</p>
-                <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
-                  <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="theme-card" type="button" data-theme="bordeaux" role="radio" aria-checked="false"><span class="theme-card-swatch bordeaux"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Bordeaux</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                </div>
-                <p class="settings-subheading">Police</p>
-                <div class="font-picker" id="fontPicker" role="radiogroup" aria-label="Choix de la police">
-                  <button class="font-card" type="button" data-font="red-hat" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Red Hat Display</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="font-card" type="button" data-font="roboto" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="font-card" type="button" data-font="roboto-slab" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto Slab</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                  <button class="font-card" type="button" data-font="system" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Système</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
-                </div>
-              </section>
+              <div class="settings-panel-stack settings-panel-stack--primary">
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Apparence</h3></div>
+                  <p class="settings-subheading">Thème</p>
+                  <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
+                    <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="theme-card" type="button" data-theme="bordeaux" role="radio" aria-checked="false"><span class="theme-card-swatch bordeaux"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Bordeaux</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  </div>
+                  <p class="settings-subheading">Police</p>
+                  <div class="font-picker" id="fontPicker" role="radiogroup" aria-label="Choix de la police">
+                    <button class="font-card" type="button" data-font="red-hat" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Red Hat Display</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="font-card" type="button" data-font="roboto" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="font-card" type="button" data-font="roboto-slab" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto Slab</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="font-card" type="button" data-font="system" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Système</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                  </div>
+                </section>
+                <section class="settings-section settings-section--catalog">
+                  <div class="settings-section-head"><h3>Catalogue</h3></div>
+                  <div class="family-visibility-grid" id="familyVisibilityGrid" role="group" aria-label="Familles de soins affichées"></div>
+                  <p class="settings-offer-summary" data-summary="families"></p>
+                  <button class="tile-catalog-editor-entry" id="tileCatalogEditorButton" type="button" aria-haspopup="dialog" aria-controls="tileCatalogEditorLayer">
+                    <span aria-hidden="true"><svg><use href="#icon-navigation-tiles"></use></svg></span>
+                    <span><strong>Éditeur des tuiles</strong><small>Accès avancé · SVG, nom, temps et prix</small></span>
+                    <svg aria-hidden="true"><use href="#icon-chevron"></use></svg>
+                  </button>
+                </section>
+              </div>
               <div class="settings-panel-stack">
                 <section class="settings-section">
                   <div class="settings-section-head"><h3>Navigation</h3></div>
@@ -1851,9 +2244,9 @@
                   <div class="settings-section-head"><h3>iPad</h3></div>
                   <p class="ipad-layout-intro">Adapte les zones tactiles, les champs, les marges sûres et le clavier virtuel sans modifier le PDF.</p>
                   <div class="ipad-layout-picker" role="radiogroup" aria-label="Optimisation de l’affichage iPad">
-                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="auto"><span><strong>Automatique</strong><small>Reconnaît iPadOS</small></span></label>
+                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="auto"><span><strong>Automatique</strong><small>Par défaut · reconnaît iPadOS</small></span></label>
                     <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="always"><span><strong>Toujours</strong><small>Force le confort tactile</small></span></label>
-                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="off"><span><strong>Désactivée</strong><small>Par défaut · responsive standard</small></span></label>
+                    <label class="ipad-layout-option"><input name="ipadLayoutMode" type="radio" value="off"><span><strong>Désactivée</strong><small>Responsive standard</small></span></label>
                   </div>
                 </section>
                 <section class="settings-section settings-section--system">
@@ -1866,16 +2259,6 @@
                   <p class="startup-setting-note" id="launchAtLoginNote">Windows · macOS · Linux</p>
                 </section>
               </div>
-              <section class="settings-section settings-section--catalog">
-                <div class="settings-section-head"><h3>Catalogue</h3></div>
-                <div class="family-visibility-grid" id="familyVisibilityGrid" role="group" aria-label="Familles de soins affichées"></div>
-                <p class="settings-offer-summary" data-summary="families"></p>
-                <button class="tile-catalog-editor-entry" id="tileCatalogEditorButton" type="button" aria-haspopup="dialog" aria-controls="tileCatalogEditorLayer">
-                  <span aria-hidden="true"><svg><use href="#icon-navigation-tiles"></use></svg></span>
-                  <span><strong>Éditeur des tuiles</strong><small>Accès avancé · SVG, nom, temps et prix</small></span>
-                  <svg aria-hidden="true"><use href="#icon-chevron"></use></svg>
-                </button>
-              </section>
             </div>
           </section>
 
@@ -1938,6 +2321,12 @@
 
           <section class="settings-panel settings-panel--document" id="settingsPanelDocument" role="tabpanel" aria-labelledby="settingsTabDocument" data-settings-panel="document" tabindex="0" hidden>
             <div class="settings-panel-grid settings-panel-grid--document">
+              <section class="settings-section settings-section--quote-date">
+                <div class="settings-section-head"><h3>Date du devis</h3></div>
+                <div class="form-grid">
+                  <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="quoteDateEditable" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-clock"></use></svg></span><span class="settings-toggle-copy"><strong>Autoriser la modification</strong><small>Désactivée par défaut. La date reste visible mais verrouillée dans la caisse.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                </div>
+              </section>
               <section class="settings-section settings-section--tracking">
                 <div class="settings-section-head"><h3>Suivi des devis</h3></div>
                 <div class="form-grid">
@@ -1959,9 +2348,104 @@
               </section>
             </div>
           </section>
+
+          <section class="settings-panel settings-panel--data" id="settingsPanelData" role="tabpanel" aria-labelledby="settingsTabData" data-settings-panel="data" tabindex="0" hidden>
+            <div class="settings-panel-grid settings-panel-grid--data">
+              <section class="settings-section settings-section--central-switch">
+                <div class="settings-section-head"><h3>Centralisation</h3></div>
+                <label class="settings-toggle-card central-enable-card" for="centralEnabled">
+                  <input class="settings-toggle-input" id="centralEnabled" type="checkbox">
+                  <span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-database"></use></svg></span>
+                  <span class="settings-toggle-copy"><strong>Connecter ce poste</strong><small>Les devis enregistrés, tarifs partagés et suivis restent disponibles hors connexion puis sont synchronisés avec PostgreSQL.</small></span>
+                  <span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span>
+                </label>
+                <p class="central-security-note">BCDevis se connecte à l’API sécurisée, jamais directement à PostgreSQL. Aucun mot de passe de base de données n’est enregistré dans l’application.</p>
+              </section>
+
+              <div class="central-connection-details" id="centralConnectionDetails" hidden>
+                <section class="settings-section settings-section--central-connection">
+                  <div class="settings-section-head"><h3>Serveur et compte</h3></div>
+                  <div class="form-grid central-connection-grid">
+                    <label class="full-field"><span>Adresse du serveur BCDevis</span><input id="centralEndpoint" type="url" inputmode="url" placeholder="https://devis.votre-domaine.ch/"><small>HTTPS obligatoire, sauf pour un essai local.</small></label>
+                    <label><span>Adresse e-mail</span><input id="centralEmail" type="email" autocomplete="username" placeholder="compte@clinique.ch"></label>
+                    <label><span>Mot de passe</span><input id="centralPassword" type="password" autocomplete="current-password" placeholder="Non enregistré"></label>
+                    <label class="full-field"><span>Nom de cet appareil</span><input id="centralDeviceName" type="text" maxlength="80" placeholder="Accueil, cabinet 1, iPad…"></label>
+                  </div>
+                  <div class="central-actions">
+                    <button class="button ghost" id="centralTestButton" type="button">Tester le serveur</button>
+                    <button class="button primary" id="centralConnectButton" type="button">Se connecter</button>
+                    <button class="button ghost" id="centralSyncButton" type="button" disabled>Synchroniser maintenant</button>
+                    <button class="button text-button" id="centralDisconnectButton" type="button">Revenir au mode local</button>
+                  </div>
+                </section>
+
+                <section class="settings-section settings-section--central-numbering">
+                  <div class="settings-section-head"><h3>Numérotation des devis</h3></div>
+                  <label class="settings-toggle-card" for="centralUniqueQuoteNumbers">
+                    <input class="settings-toggle-input" id="centralUniqueQuoteNumbers" name="centralUniqueQuoteNumbers" type="checkbox" disabled>
+                    <span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span>
+                    <span class="settings-toggle-copy"><strong>Numéros uniques centralisés</strong><small>PostgreSQL réserve des séries sans doublon pour tous les postes, y compris quelques numéros utilisables hors connexion.</small></span>
+                    <span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span>
+                  </label>
+                  <p class="central-number-pool" id="centralNumberPoolStatus">Disponible après la connexion du poste</p>
+                </section>
+
+                <section class="settings-section settings-section--central-status">
+                  <div class="central-status" id="centralStatus" data-status="disconnected" role="status" aria-live="polite">
+                    <span class="central-status-dot" aria-hidden="true"></span>
+                    <div><strong>État de la connexion</strong><p data-central-status-copy>Identification requise</p></div>
+                  </div>
+                  <dl class="central-meta">
+                    <div><dt>Code appareil</dt><dd id="centralDeviceCode">Attribué lors de la connexion</dd></div>
+                    <div><dt>Base centrale</dt><dd id="centralDatabaseStatus">PostgreSQL · à tester</dd></div>
+                    <div><dt>Révision centrale</dt><dd id="centralRevision">0</dd></div>
+                    <div><dt>Dernière synchronisation</dt><dd id="centralLastSync">Jamais</dd></div>
+                  </dl>
+                  <div class="central-conflict" id="centralConflict" role="alert" hidden>
+                    <div><strong>Conflit de synchronisation</strong><p data-central-conflict-copy>Les données centrales et locales demandent une décision.</p></div>
+                    <p>Une sauvegarde JSON locale sera téléchargée avant toute résolution.</p>
+                    <div class="central-conflict-actions"><button class="button ghost" id="centralUseServerButton" type="button">Conserver la version centrale</button><button class="button primary" id="centralUseDeviceButton" type="button">Conserver ce poste</button></div>
+                  </div>
+                </section>
+
+                <section class="settings-section settings-section--central-scope">
+                  <div class="settings-section-head"><h3>Données partagées</h3></div>
+                  <ul class="central-scope-list">
+                    <li><svg aria-hidden="true"><use href="#icon-check"></use></svg><span><strong>Centralisées</strong><small>Devis enregistrés, historique, suivi, tarifs personnalisés, identité de l’entreprise et mentions.</small></span></li>
+                    <li><svg aria-hidden="true"><use href="#icon-check"></use></svg><span><strong>Locales</strong><small>Brouillon en cours, thème, police, disposition d’écran et lancement automatique.</small></span></li>
+                    <li><svg aria-hidden="true"><use href="#icon-check"></use></svg><span><strong>Hors connexion</strong><small>Les modifications restent sur cet appareil jusqu’au retour du réseau.</small></span></li>
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </section>
+          </div>
         </div>
         <div class="form-actions settings-actions"><button class="button ghost" type="button" data-close="settingsLayer">Annuler</button><button class="button primary" type="submit">Enregistrer</button></div>
       </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="pdfLibraryLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="pdfLibraryLayer" aria-label="Fermer les documents PDF" tabindex="-1"></button>
+    <section class="modal-card pdf-library-modal" role="dialog" aria-modal="true" aria-labelledby="pdfLibraryTitle" aria-describedby="pdfLibraryIntro">
+      <div class="modal-head pdf-library-head">
+        <div><p class="section-kicker">Base centrale</p><h2 id="pdfLibraryTitle">Documents PDF</h2><p id="pdfLibraryIntro">Importez, retrouvez et consultez les PDF partagés avec les postes autorisés.</p></div>
+        <div class="pdf-library-head-actions"><button class="button primary" id="pdfLibraryImportButton" type="button"><svg><use href="#icon-upload"></use></svg>Importer un PDF</button><button class="round-button" type="button" data-close="pdfLibraryLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      </div>
+      <div class="pdf-library-toolbar">
+        <label for="pdfLibrarySearch"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="pdfLibrarySearch" type="search" autocomplete="off" placeholder="Rechercher un PDF, un devis ou un client…"></label>
+        <p id="pdfLibraryStatus" role="status" aria-live="polite">Connexion à la bibliothèque…</p>
+      </div>
+      <div class="pdf-library-workspace">
+        <aside class="pdf-library-list" id="pdfLibraryList" aria-label="Documents PDF disponibles"></aside>
+        <section class="pdf-library-preview" aria-labelledby="pdfPreviewTitle">
+          <div class="pdf-preview-head"><div><p class="section-kicker">Aperçu</p><h3 id="pdfPreviewTitle">Sélectionnez un document</h3><p id="pdfPreviewMeta"></p></div><button class="button ghost" id="pdfLibraryDownloadButton" type="button" disabled><svg><use href="#icon-download"></use></svg>Télécharger</button></div>
+          <div class="pdf-preview-empty" id="pdfPreviewEmpty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>Aucun PDF sélectionné</strong><span>Choisissez un document dans la liste.</span></div>
+          <iframe id="pdfPreviewFrame" title="Aperçu du document PDF" hidden></iframe>
+        </section>
+      </div>
+      <input id="pdfLibraryInput" type="file" accept="application/pdf,.pdf" hidden>
     </section>
   </div>
 
@@ -1974,8 +2458,12 @@
           <div class="tile-catalog-head-actions"><button class="button ghost" id="tileCatalogResetAllButton" type="button">Tout réinitialiser</button><button class="round-button" type="button" data-close="tileCatalogEditorLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
         </div>
         <div class="tile-catalog-toolbar">
-          <label for="tileCatalogEditorSearch"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="tileCatalogEditorSearch" type="search" autocomplete="off" placeholder="Rechercher une tuile…" autofocus></label>
-          <div><strong id="tileCatalogEditorCount">0 tuile</strong><span id="tileCatalogEditorChanges" aria-live="polite">Aucune modification en attente</span></div>
+          <div class="tile-catalog-filters">
+            <label class="tile-catalog-search" for="tileCatalogEditorSearch"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="tileCatalogEditorSearch" type="search" autocomplete="off" placeholder="Rechercher une tuile…" autofocus></label>
+            <label class="tile-catalog-category" for="tileCatalogEditorCategory"><span class="visually-hidden">Filtrer par catégorie</span><select id="tileCatalogEditorCategory" aria-label="Filtrer les tuiles par catégorie"><option value="">Toutes les catégories</option></select></label>
+            <button class="tile-catalog-customized-filter" id="tileCatalogCustomizedFilter" type="button" aria-pressed="false">Modifiées <span id="tileCatalogCustomizedCount">0</span></button>
+          </div>
+          <div class="tile-catalog-toolbar-status"><strong id="tileCatalogEditorCount">0 tuile</strong><span id="tileCatalogEditorChanges" role="status" aria-live="polite">Tout est enregistré</span></div>
         </div>
         <div class="tile-catalog-editor-list" id="tileCatalogEditorList"></div>
         <div class="form-actions tile-catalog-actions"><button class="button ghost" type="button" data-close="tileCatalogEditorLayer">Retour aux réglages</button><button class="button primary" id="tileCatalogEditorSave" type="submit">Enregistrer</button></div>
@@ -2043,14 +2531,14 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 6.0.0</p>
+        <p class="release-notes-version">Mise à jour 7.0.1</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">Vos devis continuent après leur création.</p>
+        <p id="releaseNotesIntro">Sur iPad et smartphone, BCDevis devient plus simple à toucher et à corriger.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-history"></use></svg></span><div><strong>Suivi</strong><p>Activez les statuts commerciaux depuis les réglages.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-percent"></use></svg></span><div><strong>Couleurs</strong><p>Le dernier statut reste visible dans l’historique standard.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-send"></use></svg></span><div><strong>Relances</strong><p>Planifiez la prochaine action et retrouvez toute la chronologie.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-display-auto"></use></svg></span><div><strong>Confort tactile</strong><p>Les actions essentielles offrent une cible plus large uniquement sur iPad et smartphone.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-swipe-left"></use></svg></span><div><strong>Caisse plus sûre</strong><p>Un indice explique le balayage et Annuler restaure immédiatement un soin retiré.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-navigation-tiles"></use></svg></span><div><strong>Tuiles plus simples</strong><p>L’éditeur gagne un aperçu direct, des filtres et des commandes adaptées au doigt.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
     </section>
@@ -2067,6 +2555,7 @@
   <script src="quote-core.js"></script>
   <script src="catalog.js"></script>
   <script src="body-anatomy.js"></script>
+  <script src="central-sync.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -1,14 +1,15 @@
 {
   "name": "bcdevis-portable",
-  "version": "6.0.0",
+  "version": "7.0.1",
   "private": true,
   "desktopName": "bcdevis",
   "author": "Clinique Bellecour",
-  "description": "BCDevis, application de devis locale pour Windows, Linux, macOS, ChromeOS et iPadOS.",
+  "description": "BCDevis, application de devis locale ou centralisée sur PostgreSQL pour Windows, Linux, macOS, ChromeOS et iPadOS.",
   "main": "devis-portable/main.cjs",
   "scripts": {
-    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/prestation-icons.test.cjs && node devis-portable/tests/body-selector.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/keyboard-accessibility.test.cjs && node devis-portable/tests/theme-contracts.test.cjs && node devis-portable/tests/quote-tracking.test.cjs && node devis-portable/tests/persistence-smoke.cjs && node devis-portable/tests/brand-pwa.test.cjs && node devis-portable/tests/platform-delivery.test.cjs && node devis-portable/tests/system-startup.test.cjs && node devis-portable/tests/delivery-docs.test.cjs",
-    "check": "node --check devis-portable/app.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && node --check devis-portable/system-startup.cjs && node --check devis-portable/service-worker.js && node --check scripts/build-chromeos.cjs && node --check scripts/require-build-platform.cjs && node --check scripts/pwa-server.cjs && node --check scripts/run-electron-script.cjs && node --check scripts/pdf-test-preload.cjs && node --check scripts/generate-signature-pdfs.cjs && node --check scripts/generate-doc-pdfs.cjs && node --check scripts/capture-body-selector.cjs && node --check scripts/capture-prestation-icons.cjs && node --check scripts/capture-ipad.cjs && npm test",
+    "test": "node devis-portable/tests/core.test.cjs && node devis-portable/tests/prestation-icons.test.cjs && node devis-portable/tests/body-selector.test.cjs && node devis-portable/tests/pdf-main.test.cjs && node devis-portable/tests/keyboard-accessibility.test.cjs && node devis-portable/tests/theme-contracts.test.cjs && node devis-portable/tests/quote-tracking.test.cjs && node devis-portable/tests/centralization.test.cjs && node devis-portable/tests/persistence-smoke.cjs && node devis-portable/tests/brand-pwa.test.cjs && node devis-portable/tests/platform-delivery.test.cjs && node devis-portable/tests/system-startup.test.cjs && node devis-portable/tests/delivery-docs.test.cjs",
+    "check": "node --check devis-portable/app.js && node --check devis-portable/central-sync.js && node --check devis-portable/main.cjs && node --check devis-portable/preload.cjs && node --check devis-portable/system-startup.cjs && node --check devis-portable/service-worker.js && node --check central-server/sync-merge.cjs && node --check central-server/database.cjs && node --check central-server/server.cjs && node --check scripts/build-chromeos.cjs && node --check scripts/require-build-platform.cjs && node --check scripts/pwa-server.cjs && node --check scripts/run-electron-script.cjs && node --check scripts/pdf-test-preload.cjs && node --check scripts/generate-signature-pdfs.cjs && node --check scripts/generate-doc-pdfs.cjs && node --check scripts/capture-body-selector.cjs && node --check scripts/capture-prestation-icons.cjs && node --check scripts/capture-ipad.cjs && npm test",
+    "central:start": "node central-server/server.cjs",
     "start": "electron .",
     "pwa": "node scripts/pwa-server.cjs",
     "test:chromeos": "node scripts/run-electron-script.cjs scripts/generate-signature-pdfs.cjs",
@@ -25,7 +26,8 @@
   "devDependencies": {
     "electron": "43.1.1",
     "electron-builder": "26.15.3",
-    "marked": "^18.0.7"
+    "marked": "^18.0.7",
+    "pg-mem": "^3.0.14"
   },
   "build": {
     "appId": "ch.cliniquebellecour.bcdevis",
@@ -88,5 +90,8 @@
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
       "category": "Office"
     }
+  },
+  "dependencies": {
+    "pg": "^8.22.0"
   }
 }

@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 6.0.0 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "6.0.0") throw new Error("La version présentée n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.0.1 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.0.1") throw new Error("La version présentée n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -87,6 +87,10 @@ async function run() {
       const catalogEditorLayer = document.querySelector("#tileCatalogEditorLayer");
       const beardEditorCard = catalogEditorLayer.querySelector('[data-tile-editor-card][data-service-id="27"]');
       if (catalogEditorLayer.hidden || !beardEditorCard || catalogEditorLayer.querySelectorAll("[data-tile-editor-card]").length < 80) throw new Error("L’éditeur du catalogue ne charge pas toutes les tuiles");
+      const catalogEditorSave = document.querySelector("#tileCatalogEditorSave");
+      const customizedFilter = document.querySelector("#tileCatalogCustomizedFilter");
+      const categoryFilter = document.querySelector("#tileCatalogEditorCategory");
+      if (!beardEditorCard.querySelector(".tile-catalog-live-preview") || !catalogEditorSave.disabled || categoryFilter.options.length < 5 || customizedFilter.getAttribute("aria-pressed") !== "false") throw new Error("L’éditeur amélioré n’initialise pas son aperçu, ses filtres ou son état enregistré");
       const beardIconButton = beardEditorCard.querySelector("[data-tile-icon-picker]");
       beardIconButton.click();
       await new Promise((resolve) => setTimeout(resolve, 70));
@@ -101,6 +105,17 @@ async function run() {
       beardEditorCard.querySelector('[data-tile-field="duration"]').value = "40";
       beardEditorCard.querySelector('[data-tile-field="price"]').value = "230";
       beardEditorCard.querySelector('[data-tile-field="name"]').dispatchEvent(new Event("input", { bubbles: true }));
+      if (beardEditorCard.querySelector("[data-tile-preview-name]").textContent !== "Barbe personnalisée" || !beardEditorCard.querySelector("[data-tile-preview-price]").textContent.includes("230.00") || !beardEditorCard.classList.contains("is-pending") || catalogEditorSave.disabled || document.querySelector("#tileCatalogCustomizedCount").textContent !== "1") throw new Error("L’aperçu vivant ou le suivi des modifications de la tuile ne se met pas à jour");
+      customizedFilter.click();
+      const visibleModifiedCards = [...catalogEditorLayer.querySelectorAll("[data-tile-editor-card]")].filter((card) => !card.hidden);
+      if (customizedFilter.getAttribute("aria-pressed") !== "true" || visibleModifiedCards.length !== 1 || visibleModifiedCards[0] !== beardEditorCard) throw new Error("Le filtre des tuiles modifiées ne cible pas la personnalisation en cours");
+      customizedFilter.click();
+      const originalConfirm = window.confirm;
+      let abandonPromptCount = 0;
+      window.confirm = () => { abandonPromptCount += 1; return false; };
+      catalogEditorLayer.querySelector('.tile-catalog-modal-head [data-close="tileCatalogEditorLayer"]').click();
+      window.confirm = originalConfirm;
+      if (catalogEditorLayer.hidden || abandonPromptCount !== 1) throw new Error("Une fermeture accidentelle ne protège pas les changements non enregistrés");
       document.querySelector("#tileCatalogEditorForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       await new Promise((resolve) => setTimeout(resolve, 20));
       const savedCatalogOverride = JSON.parse(localStorage.getItem("bcdevis-v1")).catalogOverrides?.["27"];
@@ -119,11 +134,32 @@ async function run() {
       if (checkoutActionRects.some((rect) => rect.width < 48 || rect.height < 48) || Math.max(...checkoutActionRects.map((rect) => rect.width)) - Math.min(...checkoutActionRects.map((rect) => rect.width)) > 1) throw new Error("Les sorties SVG ne conservent pas des cibles équilibrées");
       const checkoutRect = document.querySelector("#checkoutPanel").getBoundingClientRect();
       if (Math.abs(checkoutRect.top) > 1 || Math.abs(checkoutRect.bottom - innerHeight) > 1) throw new Error("La caisse n’occupe pas toute la hauteur de la fenêtre");
+      const checkoutCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
+      if (checkoutCardRect.width < checkoutRect.width - 24 || checkoutCardRect.height < checkoutRect.height - 24) throw new Error("La carte de caisse s’est repliée ou ne remplit plus son panneau");
+      const desktopServiceButton = document.querySelector('[data-family-service-id]');
+      desktopServiceButton.click();
+      if (!document.querySelector(".cart-line")) throw new Error("La caisse ne reçoit pas la prestation de contrôle");
+      const filledDesktopCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
+      window.confirm = () => true;
+      document.querySelector("#newQuoteButton").click();
+      const emptyDesktopCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
+      const emptyDesktopCartRect = document.querySelector(".cart-section").getBoundingClientRect();
+      if (!document.querySelector("#checkoutPanel").classList.contains("is-empty") || document.querySelector(".cart-line")) throw new Error("Nouveau devis ne remet pas la caisse à vide sur ordinateur");
+      if (Math.abs(emptyDesktopCardRect.width - filledDesktopCardRect.width) > 1
+        || Math.abs(emptyDesktopCardRect.height - filledDesktopCardRect.height) > 1
+        || emptyDesktopCartRect.height < Math.min(320, emptyDesktopCardRect.height * .38)) {
+        throw new Error("La caisse se replie après Nouveau devis sur ordinateur");
+      }
       const checkoutStyle = getComputedStyle(document.querySelector("#checkoutPanel"));
       const cartStyle = getComputedStyle(document.querySelector(".cart-section"));
       if (checkoutStyle.animationName !== "none") throw new Error("La caisse permanente ne doit plus s’animer comme un panneau temporaire");
       if (Number(cartStyle.flexGrow) < 1 || cartStyle.maxHeight !== "none") throw new Error("La liste de la caisse n’utilise pas la hauteur disponible");
       if (document.querySelector("#quoteNumber, .quote-number")) throw new Error("Le numéro de devis encombre encore l’en-tête de caisse");
+      const quoteDateControl = document.querySelector("#quoteDateControl");
+      const quoteDateInput = document.querySelector("#quoteDate");
+      const quoteDateDisplay = document.querySelector("#quoteDateDisplay");
+      if (quoteDateControl.dataset.editable !== "false" || !quoteDateInput.hidden || !quoteDateInput.disabled || quoteDateDisplay.hidden || !quoteDateDisplay.textContent.trim()) throw new Error("La date du devis n’est pas compacte et verrouillée par défaut");
+      if (/\bDate\b/.test(quoteDateControl.textContent) || Number.parseFloat(getComputedStyle(quoteDateDisplay).paddingLeft) !== 0) throw new Error("La date verrouillée conserve encore un libellé ou un retrait inutile");
       const quoteHeaderButtons = [...document.querySelectorAll("#quoteHeadActions > .quote-icon-button")];
       const quoteHeaderRects = quoteHeaderButtons.map((button) => button.getBoundingClientRect());
       if (quoteHeaderButtons.length !== 4 || quoteHeaderButtons.some((button) => button.textContent.trim() || !button.querySelector("svg") || !button.dataset.tooltip)) throw new Error("Les quatre actions de l’en-tête doivent rester des SVG seuls avec info-bulle");
@@ -144,6 +180,8 @@ async function run() {
       document.querySelector(".toast-close")?.click();
       const windowControlsRect = document.querySelector("#windowControls").getBoundingClientRect();
       const receiptHeadRect = document.querySelector(".receipt-head").getBoundingClientRect();
+      const quoteDateControlRect = quoteDateControl.getBoundingClientRect();
+      if (quoteDateControlRect.top < receiptHeadRect.bottom - 1) throw new Error("La caisse fixe étroite force encore la date dans l’en-tête déjà chargé");
       const restingReceiptPadding = Number.parseFloat(getComputedStyle(document.querySelector(".receipt-head")).paddingRight);
       const centerDelta = Math.abs((receiptHeadRect.top + receiptHeadRect.height / 2) - (windowControlsRect.top + windowControlsRect.height / 2));
       if (centerDelta > 2) throw new Error("Les contrôles de fenêtre et l’en-tête du devis ne partagent pas la même ligne");
@@ -174,24 +212,46 @@ async function run() {
       const familySearchToggle = document.querySelector("#catalogSearchToggle");
       const familySearchToggleRect = familySearchToggle.getBoundingClientRect();
       const firstFamilyButtonRect = document.querySelector(".family-button").getBoundingClientRect();
+      const secondFamilyButtonRect = document.querySelectorAll(".family-button")[1].getBoundingClientRect();
+      const firstFamilyCopyRect = document.querySelector(".family-button-copy").getBoundingClientRect();
+      const firstFamilyNameRect = document.querySelector(".family-button-copy strong").getBoundingClientRect();
+      const firstFamilyCountRect = document.querySelector(".family-button-copy small").getBoundingClientRect();
       const searchHitTarget = document.elementFromPoint(familySearchToggleRect.left + familySearchToggleRect.width / 2, familySearchToggleRect.top + familySearchToggleRect.height / 2);
       if (document.querySelector("#familyNavTitle").textContent !== "Soins" || document.querySelector("#checkoutTitle").textContent !== "Devis") throw new Error("Les zones principales n’utilisent pas leurs noms courts");
       if (document.querySelector("#familyNavTitle").getBoundingClientRect().width > 1 || document.querySelector("#checkoutTitle").getBoundingClientRect().width > 1) throw new Error("Les titres Soins et Devis sont encore visibles");
       if (familyHeadRect.height > 1 || familyHeadRect.top - familyPanelRect.top > 8) throw new Error("La loupe réserve encore une ligne dans les prestations");
       if (getComputedStyle(document.querySelector(".family-title-row")).position !== "absolute" || !familySearchToggle.contains(searchHitTarget)) throw new Error("La loupe absolue n’est plus directement cliquable");
-      if (Math.abs(firstFamilyButtonRect.top - familySearchToggleRect.top) > 2) throw new Error("La loupe ne se superpose pas discrètement à la première prestation");
+      if (Math.abs(firstFamilyButtonRect.top - familySearchToggleRect.top) > 2 || familySearchToggleRect.left < firstFamilyButtonRect.right + 6 || familyPanelRect.right - familySearchToggleRect.right > 12 || familySearchToggleRect.right > familyPanelRect.right + 1) throw new Error("La loupe n’est pas alignée dans son rail à l’extrême droite des prestations");
+      if (Math.abs(firstFamilyButtonRect.width - secondFamilyButtonRect.width) > 1 || getComputedStyle(document.querySelector(".family-button")).paddingRight !== getComputedStyle(document.querySelectorAll(".family-button")[1]).paddingRight) throw new Error("La première famille conserve un retrait différent des autres");
+      if (firstFamilyButtonRect.height > 58 || Math.abs((firstFamilyNameRect.top + firstFamilyNameRect.height / 2) - (firstFamilyCountRect.top + firstFamilyCountRect.height / 2)) > 2 || firstFamilyCopyRect.right - firstFamilyCountRect.right > 2) throw new Error("Le titre et le nombre de soins ne tiennent pas sur une ligne compacte avec le compteur à droite");
+      const firstFamilyOptions = document.querySelector("#familyList .family-options");
+      const firstFamilyOptionsStyle = getComputedStyle(firstFamilyOptions);
+      const firstFamilyOptionsRect = firstFamilyOptions.getBoundingClientRect();
+      const optionShellRects = [...firstFamilyOptions.querySelectorAll(":scope > .family-option-shell")].map((shell) => shell.getBoundingClientRect());
+      const lastOptionTop = Math.max(...optionShellRects.map((rect) => rect.top));
+      const lastOptionRow = optionShellRects.filter((rect) => Math.abs(rect.top - lastOptionTop) < 2);
+      const optionsContentLeft = firstFamilyOptionsRect.left + Number.parseFloat(firstFamilyOptionsStyle.borderLeftWidth) + Number.parseFloat(firstFamilyOptionsStyle.paddingLeft);
+      const optionsContentRight = firstFamilyOptionsRect.right - Number.parseFloat(firstFamilyOptionsStyle.borderRightWidth) - Number.parseFloat(firstFamilyOptionsStyle.paddingRight);
+      if (firstFamilyOptionsStyle.display !== "flex" || firstFamilyOptionsStyle.flexWrap !== "wrap") throw new Error("Les tuiles de soins ne suivent pas la largeur réelle de familyList");
+      if (Math.abs(Math.min(...lastOptionRow.map((rect) => rect.left)) - optionsContentLeft) > 2 || Math.abs(Math.max(...lastOptionRow.map((rect) => rect.right)) - optionsContentRight) > 2) throw new Error("La dernière rangée de soins laisse encore un espace vide");
       familySearchToggle.click();
       await new Promise((resolve) => setTimeout(resolve, 30));
       const openedFamilyHeadRect = document.querySelector(".family-head").getBoundingClientRect();
       const openedSearchRect = document.querySelector("#catalogSearchPanel").getBoundingClientRect();
       const openedToggleRect = familySearchToggle.getBoundingClientRect();
+      const openedSearchStyle = getComputedStyle(document.querySelector("#catalogSearchPanel"));
+      const openedSearchIcon = document.querySelector("#catalogSearchPanel svg");
+      const openedSearchIconRect = openedSearchIcon.getBoundingClientRect();
+      const openedSearchInputRect = document.querySelector("#catalogSearch").getBoundingClientRect();
       if (document.querySelector("#catalogSearchPanel").hidden || openedFamilyHeadRect.height < 38 || openedSearchRect.right > openedToggleRect.left - 4 || document.activeElement !== document.querySelector("#catalogSearch")) throw new Error("La recherche ne s’ouvre pas proprement à côté de la loupe");
+      if (openedSearchIconRect.width < 18 || getComputedStyle(openedSearchIcon).flexShrink !== "0" || openedSearchInputRect.width >= openedSearchRect.width - 30) throw new Error("La zone de texte comprime encore la loupe gauche");
+      if (Number.parseFloat(openedSearchStyle.marginBottom) < 8) throw new Error("La recherche ouverte manque encore d’espace avec la liste");
       familySearchToggle.click();
       if (!document.querySelector("#catalogSearchPanel").hidden || document.querySelector(".family-head").getBoundingClientRect().height > 1) throw new Error("La recherche refermée conserve encore de la hauteur");
       const topbarUtilities = document.querySelector(".topbar-utilities");
       const utilityButtons = [...topbarUtilities.querySelectorAll(".topbar-utility-button")];
       const utilityRect = topbarUtilities.getBoundingClientRect();
-      if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 2) throw new Error("Les deux utilitaires ne suivent pas directement le groupe des tarifs");
+      if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 3) throw new Error("Les trois utilitaires ne suivent pas directement le groupe des tarifs");
       if (utilityButtons.some((button) => button.textContent.trim() || !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne sont pas des SVG compacts ou empiètent sur la caisse");
       const menuButton = document.querySelector("#appMenuButton");
       if (menuButton.childElementCount !== 1 || !menuButton.firstElementChild.matches("svg")) throw new Error("Le menu principal n’est pas réduit à son icône");
@@ -233,6 +293,8 @@ async function run() {
       if (JSON.parse(localStorage.getItem("bcdevis-v1")).settings.displayMode !== "auto" || document.querySelector("#displayModeAuto").getAttribute("aria-checked") !== "true") throw new Error("Le retour au mode Automatique n’est pas sauvegardé ou annoncé");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", code: "KeyP", altKey: true, bubbles: true, cancelable: true }));
       if (!document.querySelector("#familyPanel").classList.contains("show-family-prices") || document.querySelector("#familyPriceToggle").getAttribute("aria-checked") !== "true") throw new Error("Alt+P n’affiche pas les prix");
+      const familyPanelWithPricesRect = document.querySelector("#familyPanel").getBoundingClientRect();
+      if (Math.abs(familyPanelWithPricesRect.left - familyPanelRect.left) > 1 || Math.abs(familyPanelWithPricesRect.top - familyPanelRect.top) > 1 || Math.abs(familyPanelWithPricesRect.width - familyPanelRect.width) > 1 || Math.abs(familyPanelWithPricesRect.height - familyPanelRect.height) > 1) throw new Error("L’affichage des prix modifie encore la taille du panneau de soins");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "p", code: "KeyP", altKey: true, bubbles: true, cancelable: true }));
       if (document.querySelector("#familyPanel").classList.contains("show-family-prices") || document.querySelector("#familyPriceToggle").getAttribute("aria-checked") !== "false") throw new Error("Alt+P ne masque pas les prix");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "N", code: "KeyN", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }));
@@ -299,6 +361,7 @@ async function run() {
       const combinedPayable = new Intl.NumberFormat("fr-CH", { style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(1074).replaceAll(" ", " ");
       if (document.querySelector("#grandTotalValue").textContent !== combinedPayable) throw new Error("Le Pack de la zone combinée ne facture pas exactement six séances");
       document.querySelector('[data-line-id="' + combinedLine.id + '"] [data-line-action="remove"]').click();
+      if (document.querySelector("#toastRegion .toast-action")) throw new Error("Le profil Bureau ne doit pas afficher l’annulation tactile");
       document.querySelector('[data-offer-mode="single"]').click();
       catalogSearch.value = "Zone spéciale 100 cm²";
       catalogSearch.dispatchEvent(new Event("input", { bubbles: true }));
@@ -313,6 +376,18 @@ async function run() {
         .slice(0, 4);
       if (serviceIds.length < 4) throw new Error("Moins de quatre prestations complémentaires disponibles pour tester la caisse");
       for (const serviceId of serviceIds) document.querySelector('[data-family-service-id="' + serviceId + '"]').click();
+      const adjacentSingleLine = document.querySelector(".cart-section .cart-line.offer-single + .cart-line.offer-single");
+      if (!adjacentSingleLine || Number.parseFloat(getComputedStyle(adjacentSingleLine).borderTopWidth) !== 0) {
+        throw new Error("Un séparateur reste visible entre deux prestations à la séance");
+      }
+      const adjacentSingleMain = adjacentSingleLine.querySelector(".cart-line-main");
+      const cartSection = adjacentSingleLine.closest(".cart-section");
+      if (Number.parseFloat(getComputedStyle(adjacentSingleLine).paddingTop) !== 2
+        || Number.parseFloat(getComputedStyle(adjacentSingleMain).paddingTop) !== 7
+        || Number.parseFloat(getComputedStyle(cartSection).marginTop) !== 4
+        || Number.parseFloat(getComputedStyle(cartSection.querySelector(".cart-section-title")).minHeight) !== 26) {
+        throw new Error("Les espacements des prestations ne sont pas assez compacts");
+      }
       for (let index = 1; index < 6; index += 1) {
         document.querySelector('[data-family-service-id="' + serviceIds[0] + '"]').click();
       }
@@ -322,6 +397,10 @@ async function run() {
       const convertedPackLine = document.querySelector(".cart-line.offer-pack");
       if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-value="free"]')?.textContent.trim() !== "1") {
         throw new Error("La conversion en pack ne conserve pas correctement la séance offerte");
+      }
+      if (Number.parseFloat(getComputedStyle(convertedPackLine).paddingTop) !== 2
+        || Number.parseFloat(getComputedStyle(convertedPackLine.querySelector(".cart-line-main")).paddingTop) !== 7) {
+        throw new Error("La ligne Pack ne reprend pas le compactage de la caisse");
       }
       const increasePaid = convertedPackLine.querySelector('[data-line-action="increase"]');
       const decreasePaid = convertedPackLine.querySelector('[data-line-action="decrease"]');
@@ -427,11 +506,22 @@ async function run() {
       activeTaxVisibilitySetting.checked = false;
       document.querySelector('[data-settings-tab="interface"]').click();
       const ipadModes = [...document.querySelectorAll('#settingsForm [name="ipadLayoutMode"]')];
-      if (ipadModes.length !== 3 || !ipadModes.find((input) => input.value === "off")?.checked) throw new Error("Le réglage iPad doit être désactivé par défaut");
-      if (document.documentElement.dataset.ipadPreference !== "off" || document.documentElement.dataset.ipadLayout !== "standard") throw new Error("Le rendu iPad ne doit pas s’activer avant le choix de l’utilisateur");
+      if (ipadModes.length !== 3 || !ipadModes.find((input) => input.value === "auto")?.checked) throw new Error("Le réglage iPad doit utiliser la détection automatique par défaut");
+      if (document.documentElement.dataset.ipadPreference !== "auto" || document.documentElement.dataset.ipadLayout !== "standard") throw new Error("La détection iPad automatique ne doit pas modifier un profil Bureau");
       ipadModes.find((input) => input.value === "always").checked = true;
       document.querySelector("#settingsForm").dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       if (document.documentElement.dataset.ipadLayout !== "optimized" || document.documentElement.dataset.ipadPreference !== "always") throw new Error("Le mode iPad forcé ne s’applique pas immédiatement");
+      const swipeHint = document.querySelector("#cartSwipeHint");
+      if (!swipeHint || getComputedStyle(swipeHint).display !== "grid" || !/Balayez une ligne vers la gauche/.test(swipeHint.textContent)) throw new Error("Le premier usage iPad n’explique pas le balayage de suppression");
+      swipeHint.querySelector("[data-cart-swipe-hint-dismiss]").click();
+      if (document.querySelector("#cartSwipeHint") || localStorage.getItem("bcdevis-cart-swipe-hint-seen-v1") !== "1") throw new Error("L’indication de balayage n’est pas mémorisée localement après validation");
+      const undoCandidate = document.querySelector(".cart-line");
+      const lineCountBeforeUndo = document.querySelectorAll(".cart-line").length;
+      undoCandidate.querySelector('[data-line-action="remove"]').click();
+      const undoButton = document.querySelector("#toastRegion .toast-action");
+      if (!undoButton || undoButton.textContent.trim() !== "Annuler" || document.querySelectorAll(".cart-line").length !== lineCountBeforeUndo - 1) throw new Error("La suppression tactile ne propose pas son annulation temporaire");
+      undoButton.click();
+      if (document.querySelectorAll(".cart-line").length !== lineCountBeforeUndo) throw new Error("Annuler ne restaure pas la prestation supprimée");
       if (!taxHeaderToggle.hidden || !document.querySelector("#taxTotalRow").hidden || document.querySelector("#grandTotalValue").textContent !== priceWithoutTax) throw new Error("La désactivation TVA ne conserve pas la caisse et les prix attendus");
       window.dispatchEvent(new Event("beforeprint"));
       if (/TVA|Net HT|Total TTC/.test(document.querySelector("#printQuote").textContent)) throw new Error("Le devis conserve une information TVA après désactivation");
@@ -545,10 +635,25 @@ async function run() {
     })()`);
     assert.deepEqual(initial, { client: "Sophie Martin", lines: 5, theme: "bordeaux", font: "roboto-slab", company: "Clinique Bellecour Test", catalogMode: "body" });
 
-    const trackingConfigured = await window.webContents.executeJavaScript(`(() => {
+    const trackingConfigured = await window.webContents.executeJavaScript(`(async () => {
       document.querySelector("#settingsButton").click();
+      document.querySelector("#settingsTabData").click();
+      const centralEnabled = document.querySelector("#centralEnabled");
+      centralEnabled.checked = true;
+      centralEnabled.dispatchEvent(new Event("change", { bubbles: true }));
+      if (document.querySelector("#settingsPanelData").hidden || document.querySelector("#centralConnectionDetails").hidden) throw new Error("Le panneau Données ne révèle pas la configuration de la base centrale");
+      if (!document.querySelector("#centralUniqueQuoteNumbers").disabled) throw new Error("La numérotation unique doit attendre l’authentification du poste");
+      if (!document.querySelector("#pdfLibraryLayer") || !document.querySelector("#pdfPreviewFrame")) throw new Error("La bibliothèque et la visionneuse PDF centrales sont absentes");
+      if (document.querySelector("#centralEndpoint").type !== "url" || document.querySelector("#centralPassword").autocomplete !== "current-password") throw new Error("La connexion centrale n’utilise pas les champs sécurisés attendus");
+      if (!document.querySelector("#centralDatabaseStatus").textContent.includes("PostgreSQL")) throw new Error("Le panneau Données n’identifie pas la vraie base PostgreSQL");
+      document.querySelector("#centralEndpoint").value = "http://127.0.0.1:8787";
+      document.querySelector("#centralEmail").value = "accueil@bellecour.test";
+      document.querySelector("#centralPassword").value = "mot-de-passe-temporaire";
+      document.querySelector("#centralDeviceName").value = "Accueil test";
       document.querySelector("#settingsTabDocument").click();
       const settings = document.querySelector("#settingsForm");
+      if (settings.elements.quoteDateEditable.checked) throw new Error("La modification de la date devrait être désactivée par défaut");
+      settings.elements.quoteDateEditable.checked = true;
       settings.elements.quoteTrackingEnabled.checked = true;
       settings.elements.quoteTrackingEnabled.dispatchEvent(new Event("input", { bubbles: true }));
       if (document.querySelector("#trackingSettingsDetails").hidden) throw new Error("Les réglages du suivi ne s’affichent pas après activation");
@@ -558,14 +663,50 @@ async function run() {
       settings.elements.trackingShowCounters.checked = true;
       settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      const central = JSON.parse(localStorage.getItem("bcdevis-central-v1"));
       return {
+        dateEditable: stored.settings.quoteDateEditable,
+        dateInputVisible: !document.querySelector("#quoteDate").hidden && !document.querySelector("#quoteDate").disabled,
+        dateTextHidden: document.querySelector("#quoteDateDisplay").hidden,
         enabled: stored.settings.quoteTrackingEnabled,
         validityDays: stored.settings.validityDays,
         followUpDays: stored.settings.trackingDefaultFollowUpDays,
-        settingsClosed: document.querySelector("#settingsLayer").hidden
+        settingsClosed: document.querySelector("#settingsLayer").hidden,
+        central: { enabled: central.enabled, endpoint: central.endpoint, email: central.email, deviceName: central.deviceName, hasPassword: Object.hasOwn(central, "password") },
+        centralPasswordCleared: document.querySelector("#centralPassword").value === ""
       };
     })()`);
-    assert.deepEqual(trackingConfigured, { enabled: true, validityDays: 45, followUpDays: 7, settingsClosed: true });
+    assert.deepEqual(trackingConfigured, {
+      dateEditable: true,
+      dateInputVisible: true,
+      dateTextHidden: true,
+      enabled: true,
+      validityDays: 45,
+      followUpDays: 7,
+      settingsClosed: true,
+      central: { enabled: true, endpoint: "http://127.0.0.1:8787/", email: "accueil@bellecour.test", deviceName: "Accueil test", hasPassword: false },
+      centralPasswordCleared: true
+    });
+
+    await window.webContents.executeJavaScript(`(async () => {
+      document.querySelector("#settingsButton").click();
+      document.querySelector("#settingsTabData").click();
+      const centralEnabled = document.querySelector("#centralEnabled");
+      centralEnabled.checked = false;
+      centralEnabled.dispatchEvent(new Event("change", { bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      document.querySelector('[data-close="settingsLayer"]').click();
+    })()`);
+
+    const editedQuoteDate = await window.webContents.executeJavaScript(`(() => {
+      const input = document.querySelector("#quoteDate");
+      const previous = input.value;
+      input.value = previous === input.max ? input.min : input.max;
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      return { previous, current: input.value, stored: JSON.parse(localStorage.getItem("bcdevis-v1")).current.date };
+    })()`);
+    assert.notEqual(editedQuoteDate.current, editedQuoteDate.previous, "La date activée doit pouvoir être modifiée");
+    assert.equal(editedQuoteDate.stored, editedQuoteDate.current, "La date modifiée doit être sauvegardée localement");
 
     const emailDraft = await window.webContents.executeJavaScript(`(async () => {
       window.confirm = () => true;
@@ -757,25 +898,40 @@ async function run() {
     for (const viewport of [
       { width: 1180, height: 820, hideBrand: false, label: "iPad paysage" },
       { width: 820, height: 1180, hideBrand: false, label: "iPad portrait" },
+      { width: 700, height: 900, hideBrand: false, label: "fenêtre étroite" },
       { width: 600, height: 820, hideBrand: true, label: "iPad Split View" },
       { width: 390, height: 844, hideBrand: true, label: "mobile" }
     ]) {
       window.setContentSize(viewport.width, viewport.height);
       await new Promise((resolve) => setTimeout(resolve, 120));
       await window.webContents.executeJavaScript(`(() => {
+        document.querySelector('[data-panel="familyPanel"]').click();
         const checkout = document.querySelector("#checkoutPanel");
         const brand = document.querySelector(".brand-block");
         const topbar = document.querySelector(".topbar");
         const tariffRect = document.querySelector(".topbar-context").getBoundingClientRect();
         const utilitiesRect = document.querySelector(".topbar-utilities").getBoundingClientRect();
         const appShell = document.querySelector(".app-shell");
+        const workspaceRect = document.querySelector(".workspace").getBoundingClientRect();
         const searchToggle = document.querySelector("#catalogSearchToggle");
+        const familyPanelRect = document.querySelector("#familyPanel").getBoundingClientRect();
+        const familyButtons = [...document.querySelectorAll(".family-button")];
+        const firstFamilyRect = familyButtons[0].getBoundingClientRect();
+        const secondFamilyRect = familyButtons[1].getBoundingClientRect();
+        const searchToggleRect = searchToggle.getBoundingClientRect();
+        const responsiveOptions = document.querySelector("#familyList .family-options");
+        const responsiveOptionRects = [...responsiveOptions.querySelectorAll(":scope > .family-option-shell")].map((shell) => shell.getBoundingClientRect());
+        const responsiveFirstTop = Math.min(...responsiveOptionRects.map((rect) => rect.top));
+        const responsiveFirstRowCount = responsiveOptionRects.filter((rect) => Math.abs(rect.top - responsiveFirstTop) < 2).length;
         if (checkout.classList.contains("is-full-height") || document.documentElement.classList.contains("checkout-focus")) throw new Error("La caisse permanente bloque la navigation responsive");
+        if (getComputedStyle(checkout).display !== "none" || Math.abs(familyPanelRect.width - workspaceRect.width) > 1) throw new Error("Le panneau Soins ne remplit pas volontairement la vue responsive en mode ${viewport.label}");
         if (document.documentElement.dataset.ipadLayout !== "optimized") throw new Error("Le confort tactile est absent en mode ${viewport.label}");
         if (document.documentElement.dataset.displayPreference !== "auto" || document.documentElement.dataset.displayMode !== (${viewport.width} <= 600 ? "smartphone" : "full")) throw new Error("Le mode Automatique ne suit pas la largeur en mode ${viewport.label}");
         if (Math.abs(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--app-viewport-height")) - innerHeight) > 2) throw new Error("La hauteur visuelle n’est pas synchronisée en mode ${viewport.label}");
         if (appShell.getBoundingClientRect().height > innerHeight + 1) throw new Error("La surface iPad dépasse la hauteur visible en mode ${viewport.label}");
         if (searchToggle.getBoundingClientRect().width < 44 || searchToggle.getBoundingClientRect().height < 44) throw new Error("La recherche reste trop petite au toucher en mode ${viewport.label}");
+        if (Math.abs(firstFamilyRect.width - secondFamilyRect.width) > 1 || searchToggleRect.left < firstFamilyRect.right + 6 || familyPanelRect.right - searchToggleRect.right > 12) throw new Error("Le rail de recherche déforme encore la première famille en mode ${viewport.label}");
+        if ((${viewport.width} <= 640 && responsiveFirstRowCount !== 1) || (${viewport.width} > 640 && responsiveFirstRowCount < 2)) throw new Error("Le nombre de tuiles ne s’adapte pas à la largeur en mode ${viewport.label}");
         if (Number.parseFloat(getComputedStyle(document.querySelector("#catalogSearch")).fontSize) < 16) throw new Error("Un champ déclenche encore le zoom Safari en mode ${viewport.label}");
         if (getComputedStyle(document.querySelector("#mobileTabs")).display === "none") throw new Error("La navigation mobile est absente à ${viewport.width}px");
         if (document.documentElement.scrollWidth > innerWidth + 1 || topbar.scrollWidth > topbar.clientWidth + 1) throw new Error("Le header déborde à ${viewport.width}px");
@@ -785,6 +941,9 @@ async function run() {
         const receiptRect = document.querySelector(".receipt-head").getBoundingClientRect();
         const receiptActionsRect = document.querySelector("#quoteHeadActions").getBoundingClientRect();
         if (document.querySelector("#checkoutTitle").getBoundingClientRect().width > 1 || receiptActionsRect.left < receiptRect.left - 1 || receiptActionsRect.right > receiptRect.right + 1) throw new Error("L’en-tête discret de caisse déborde à ${viewport.width}px");
+        const quoteDateControlRect = document.querySelector("#quoteDateControl").getBoundingClientRect();
+        const dateSharesReceiptLine = Math.abs((quoteDateControlRect.top + quoteDateControlRect.height / 2) - (receiptActionsRect.top + receiptActionsRect.height / 2)) <= 4;
+        if (dateSharesReceiptLine !== (${viewport.width} > 760)) throw new Error("La date ne suit pas la largeur réelle de la caisse en mode ${viewport.label}");
         const quickActions = document.querySelector(".checkout-primary-actions");
         const quickRect = quickActions.getBoundingClientRect();
         const quickButtons = [...quickActions.querySelectorAll(":scope > button")].map((button) => button.getBoundingClientRect());
@@ -814,6 +973,27 @@ async function run() {
         const rect = menu.getBoundingClientRect();
         if (menu.hidden || rect.left < 0 || rect.right > innerWidth + 1 || rect.bottom > innerHeight + 1) throw new Error("Le menu Actions déborde à ${viewport.width}px");
         document.querySelector("#appMenuButton").click();
+
+        document.querySelector('[data-panel="checkoutPanel"]').click();
+        const filledPanelRect = checkout.getBoundingClientRect();
+        const filledCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
+        if (filledCardRect.width < filledPanelRect.width - 24) throw new Error("La caisse laisse une zone grise inutilisée en mode ${viewport.label}");
+        window.confirm = () => true;
+        document.querySelector("#newQuoteButton").click();
+        document.querySelector('[data-panel="checkoutPanel"]').click();
+        const emptyPanelRect = checkout.getBoundingClientRect();
+        const emptyCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
+        const emptyCartRect = document.querySelector(".cart-section").getBoundingClientRect();
+        if (!checkout.classList.contains("is-empty") || document.querySelectorAll(".cart-line").length) throw new Error("Nouveau devis ne vide pas correctement la caisse en mode ${viewport.label}");
+        if (Math.abs(emptyPanelRect.width - filledPanelRect.width) > 1
+          || Math.abs(emptyPanelRect.height - filledPanelRect.height) > 1
+          || Math.abs(emptyCardRect.width - filledCardRect.width) > 1
+          || Math.abs(emptyCardRect.height - filledCardRect.height) > 1) {
+          throw new Error("La caisse change de taille après Nouveau devis en mode ${viewport.label}");
+        }
+        if (emptyCartRect.height < Math.min(320, emptyCardRect.height * .38)) throw new Error("La surface vide de la caisse devient trop petite après Nouveau devis en mode ${viewport.label}");
+        document.querySelector('[data-panel="familyPanel"]').click();
+        document.querySelector('[data-family-service-id]').click();
       })()`);
     }
     console.log("DESKTOP_PERSISTENCE_SMOKE_OK");

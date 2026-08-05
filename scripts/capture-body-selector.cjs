@@ -689,7 +689,9 @@ async function main() {
     window.setContentSize(1440, 980);
     await new Promise((resolve) => setTimeout(resolve, 180));
     const settings = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="interface"]').click();
       const picker = document.querySelector(".catalog-mode-picker");
       picker.scrollIntoView({ block: "center" });
       const cards = [...picker.querySelectorAll(".catalog-mode-card")];
@@ -706,6 +708,15 @@ async function main() {
       throw new Error(`Réglage du sélecteur invalide : ${JSON.stringify(settings)}`);
     }
     await capture(window, "07-reglage-navigation.png");
+    for (const [tab, file] of [
+      ["company", "08-reglage-entreprise.png"],
+      ["pricing", "09-reglage-tarifs.png"],
+      ["document", "10-reglage-devis-suivi.png"],
+      ["data", "11-reglage-donnees.png"]
+    ]) {
+      await window.webContents.executeJavaScript(`document.querySelector('[data-settings-tab="${tab}"]').click()`);
+      await capture(window, file);
+    }
     console.log("BODY_SELECTOR_VISUAL_OK");
     console.log(JSON.stringify({ front, initialModel, stageClickAudit, modelToggle, femaleFrontRegionsAudit, maleFrontRegionsAudit, faceDetail, faceNose, faceRegionsAudit, back, maleBack, maleBackRegionsAudit, femaleBack, femaleBackRegionsAudit, restoredMaleBack, exactRegions, geometryAudit, keyboardAudit, narrow, mobile, mobileFace, settings, output: OUTPUT_PATH }, null, 2));
   } finally {

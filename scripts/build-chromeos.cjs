@@ -21,6 +21,7 @@ const APP_FILES = [
   "app.js",
   "body-anatomy.js",
   "catalog.js",
+  "central-sync.js",
   "index.html",
   "manifest.webmanifest",
   "quote-core.js",
@@ -137,7 +138,7 @@ async function main() {
     "La sauvegarde complète JSON est recommandée avant un changement de Chromebook ou de profil.",
     "Le PDF est créé via Imprimer > Enregistrer au format PDF.",
     "",
-    "Le dossier site est statique : aucun serveur PHP, aucune base de données et aucune connexion permanente ne sont nécessaires.",
+    "Le dossier site est statique et fonctionne seul en mode local. Pour partager les devis, configurez facultativement l'API HTTPS BCDevis Central dans Réglages > Données ; la PWA ne se connecte jamais directement à PostgreSQL.",
     ""
   ].join("\n");
   await fsp.writeFile(path.join(RELEASE_ROOT, "INSTALLATION-CHROMEOS.txt"), installation, "utf8");

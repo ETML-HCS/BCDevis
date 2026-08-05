@@ -2,11 +2,12 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "6.0.0";
+  const RELEASE_VERSION = "7.0.1";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
+  const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 21;
+  const APP_VERSION = 23;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
@@ -18,6 +19,7 @@
   // the portable Chromium profile.
   const LOGO_UPLOAD_MAX_LENGTH = 800000;
   const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+  const MAX_PDF_ARCHIVE_BYTES = 8 * 1024 * 1024;
   const MAX_LINE_QUANTITY = 999;
   const MAX_LINE_PRICE = 1000000;
   const MAX_CUSTOM_SERVICES = 500;
@@ -93,7 +95,7 @@
   const IPAD_LAYOUT_MODES = ["auto", "always", "off"];
   const DISPLAY_MODE_PREFERENCES = ["auto", "smartphone", "full"];
   const SMARTPHONE_LAYOUT_MAX_WIDTH = 600;
-  const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document"];
+  const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document", "data"];
   const TRACKING_STATUSES = ["draft", "ready", "sent", "accepted", "refused", "expired"];
   const TRACKING_STATUS_META = {
     draft: { label: "Brouillon", eventLabel: "Brouillon créé" },
@@ -129,10 +131,11 @@
     showFamilyPrices: false,
     skipTariffChangeConfirmation: false,
     catalogMode: "tiles",
-    ipadLayoutMode: "off",
+    ipadLayoutMode: "auto",
     displayMode: "auto",
     launchAtLogin: false,
     visibleFamilies: [],
+    quoteDateEditable: false,
     quoteTrackingEnabled: false,
     trackingDefaultFollowUpDays: 7,
     trackingRemindersOnStartup: true,
@@ -140,7 +143,8 @@
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
     footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.",
-    showSignatures: true
+    showSignatures: true,
+    centralUniqueQuoteNumbers: false
   };
 
   function packDefaults() {
@@ -328,6 +332,40 @@
   }
 
   let db = loadDatabase();
+  let centralSyncApplying = false;
+  let centralState = null;
+  const centralController = window.BCDevisCentral.createController({
+    storage: localStorage,
+    getDatabase: () => db,
+    applySnapshot: (snapshot) => {
+      centralSyncApplying = true;
+      try {
+        window.BCDevisCentral.applySharedSnapshot(db, snapshot);
+        normalizeSavedQuotes();
+        saveLocal(false);
+        renderAll();
+        renderHistory();
+        if (!$("#settingsLayer")?.hidden) fillSettingsForm();
+        if (db.settings.centralUniqueQuoteNumbers === true) window.setTimeout(() => void ensureCentralQuoteNumberPool().catch(() => {}), 0);
+      } finally {
+        centralSyncApplying = false;
+      }
+    },
+    onDeviceCode: (code) => {
+      if (!code || db.settings.machineName === code) return;
+      centralSyncApplying = true;
+      try {
+        db.settings.machineName = code;
+        saveLocal(false);
+      } finally {
+        centralSyncApplying = false;
+      }
+    },
+    onState: (state, config) => {
+      centralState = state;
+      renderCentralizationState(state, config);
+    }
+  });
   let activeFamily = "visage";
   let expandedFamily = "visage";
   let activeBodySide = "front";
@@ -340,9 +378,14 @@
   let couponOpen = false;
   let toastTimer = null;
   let activeToast = null;
+  let cartSwipeHintSeenThisSession = false;
   let pendingTheme = "light";
   let pendingFont = "red-hat";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
+  let centralDocuments = [];
+  let centralDocumentSearch = "";
+  let centralDocumentObjectUrl = "";
+  let selectedCentralDocumentId = "";
   let activeSettingsTab = "interface";
   let activeHistoryView = "history";
   let activeTrackingFilter = "all";
@@ -387,6 +430,14 @@
   function nextQuoteNumber(date = todayISO(), machineOverride = machineCode()) {
     const prefix = (db.settings.quotePrefix || "DEV").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "") || "DEV";
     const day = String(date || todayISO()).replace(/[^0-9]/g, "").slice(0, 8) || todayISO().replaceAll("-", "");
+    if (db.settings.centralUniqueQuoteNumbers === true && centralController.getConfig().enabled) {
+      const reserved = centralController.takeReservedQuoteNumber({ prefix, date });
+      if (reserved) {
+        void ensureCentralQuoteNumberPool({ date, prefix }).catch(() => {});
+        return reserved;
+      }
+      void ensureCentralQuoteNumberPool({ date, prefix, required: 1 }).catch(() => {});
+    }
     const machine = compactMachineCode(machineOverride);
     const key = `${day}:${machine}`;
     db.quoteCounters = db.quoteCounters && typeof db.quoteCounters === "object" ? db.quoteCounters : {};
@@ -572,6 +623,7 @@
     db.current = clone(quote);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+      if (!centralSyncApplying) centralController.schedule();
       return true;
     } catch (error) {
       const isQuotaError = error?.name === "QuotaExceededError" || /quota|storage/i.test(String(error?.message || ""));
@@ -598,13 +650,17 @@
     if (region.parentElement !== document.body) document.body.append(region);
   }
 
-  function toast(message, type = "success") {
+  function toast(message, type = "success", options = {}) {
     syncToastPlacement();
     const region = $("#toastRegion");
+    const actionLabel = String(options?.actionLabel || "").trim();
+    const onAction = typeof options?.onAction === "function" ? options.onAction : null;
+    const duration = Math.max(1200, Number(options?.duration) || (type === "error" ? 5600 : 2600));
     window.clearTimeout(toastTimer);
     if (activeToast) activeToast.remove();
     const item = document.createElement("div");
     item.className = `toast ${type === "error" ? "error" : ""}`;
+    item.classList.toggle("has-action", Boolean(actionLabel && onAction));
     item.setAttribute("role", type === "error" ? "alert" : "status");
     const symbol = document.createElement("span");
     symbol.className = "toast-symbol";
@@ -626,10 +682,272 @@
       window.setTimeout(() => item.remove(), 160);
     };
     close.addEventListener("click", dismiss);
-    item.append(symbol, copy, close);
+    item.append(symbol, copy);
+    if (actionLabel && onAction) {
+      const action = document.createElement("button");
+      action.className = "toast-action";
+      action.type = "button";
+      action.textContent = actionLabel;
+      action.addEventListener("click", () => {
+        dismiss();
+        onAction();
+      });
+      item.append(action);
+    }
+    item.append(close);
     region.replaceChildren(item);
     activeToast = item;
-    toastTimer = window.setTimeout(dismiss, type === "error" ? 5600 : 2600);
+    toastTimer = window.setTimeout(dismiss, duration);
+  }
+
+  function centralDateTime(value) {
+    if (!value || Number.isNaN(Date.parse(value))) return "Jamais";
+    return new Intl.DateTimeFormat("fr-CH", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+  }
+
+  function renderCentralizationState(state = centralState || centralController.getState(), config = centralController.getConfig()) {
+    const enabled = $("#centralEnabled");
+    if (!enabled) return;
+    enabled.checked = config.enabled === true;
+    const endpoint = $("#centralEndpoint");
+    const email = $("#centralEmail");
+    const deviceName = $("#centralDeviceName");
+    if (endpoint && document.activeElement !== endpoint) endpoint.value = config.endpoint || "";
+    if (email && document.activeElement !== email) email.value = config.email || "";
+    if (deviceName && document.activeElement !== deviceName) deviceName.value = config.deviceName || "Poste BCDevis";
+    const details = $("#centralConnectionDetails");
+    if (details) details.hidden = !config.enabled;
+    const status = $("#centralStatus");
+    if (status) {
+      status.dataset.status = state.status;
+      $("[data-central-status-copy]", status).textContent = state.message;
+    }
+    const revision = $("#centralRevision");
+    const lastSync = $("#centralLastSync");
+    const deviceCode = $("#centralDeviceCode");
+    const databaseStatus = $("#centralDatabaseStatus");
+    if (revision) revision.textContent = String(config.revision || 0);
+    if (lastSync) lastSync.textContent = centralDateTime(config.lastSyncAt);
+    if (deviceCode) deviceCode.textContent = config.deviceCode || "Attribué lors de la connexion";
+    if (databaseStatus) databaseStatus.textContent = ["online", "pending", "syncing"].includes(state.status) ? "PostgreSQL · prête" : "PostgreSQL · à tester";
+    const connect = $("#centralConnectButton");
+    const synchronize = $("#centralSyncButton");
+    const disconnect = $("#centralDisconnectButton");
+    if (connect) connect.textContent = config.connected ? "Reconnecter" : "Se connecter";
+    if (synchronize) synchronize.disabled = !config.connected || ["connecting", "syncing"].includes(state.status);
+    if (disconnect) disconnect.hidden = !config.enabled;
+    const uniqueNumbers = $("#centralUniqueQuoteNumbers");
+    const numberPoolStatus = $("#centralNumberPoolStatus");
+    if (uniqueNumbers) {
+      uniqueNumbers.checked = db.settings.centralUniqueQuoteNumbers === true;
+      uniqueNumbers.disabled = !config.connected;
+    }
+    if (numberPoolStatus) {
+      const prefix = (db.settings.quotePrefix || "DEV").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "") || "DEV";
+      let available = 0;
+      try { available = centralController.reservedQuoteNumberCount({ prefix, date: todayISO() }); } catch { available = 0; }
+      numberPoolStatus.textContent = config.connected
+        ? `${plural(available, "numéro réservé")} pour aujourd’hui`
+        : "Disponible après la connexion du poste";
+    }
+    const conflict = $("#centralConflict");
+    if (conflict) {
+      conflict.hidden = state.status !== "conflict";
+      const count = state.conflicts?.length || 0;
+      $("[data-central-conflict-copy]", conflict).textContent = count
+        ? `${plural(count, "élément")} modifié des deux côtés. Choisissez la version à conserver pour ces conflits.`
+        : "Les données centrales et locales demandent une décision.";
+    }
+  }
+
+  function centralFormValues() {
+    return {
+      endpoint: $("#centralEndpoint").value,
+      email: $("#centralEmail").value,
+      deviceName: $("#centralDeviceName").value
+    };
+  }
+
+  async function ensureCentralQuoteNumberPool({ date = todayISO(), prefix = db.settings.quotePrefix, required = 6 } = {}) {
+    const config = centralController.getConfig();
+    if (!config.enabled || !config.connected) throw new Error("La connexion centrale est nécessaire pour réserver des numéros.");
+    const values = { prefix, date };
+    const available = centralController.reservedQuoteNumberCount(values);
+    if (available >= required) {
+      if (available < 12) void centralController.reserveQuoteNumbers(values, 20).catch(() => {});
+      return available;
+    }
+    const result = await centralController.reserveQuoteNumbers(values, 20);
+    renderCentralizationState();
+    return result.available;
+  }
+
+  function backupBeforeCentralResolution() {
+    downloadJSON(`sauvegarde-avant-conflit-${todayISO()}.json`, {
+      type: "atelier-devis-backup",
+      version: APP_VERSION,
+      exportedAt: new Date().toISOString(),
+      database: db
+    });
+  }
+
+  function formatDocumentSize(value) {
+    const bytes = Math.max(0, Number(value) || 0);
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1).replace(".0", "")} Mo`;
+  }
+
+  function releaseCentralDocumentPreview() {
+    if (centralDocumentObjectUrl) URL.revokeObjectURL(centralDocumentObjectUrl);
+    centralDocumentObjectUrl = "";
+    const frame = $("#pdfPreviewFrame");
+    if (frame) {
+      frame.src = "about:blank";
+      frame.hidden = true;
+    }
+    $("#pdfPreviewEmpty")?.removeAttribute("hidden");
+    const download = $("#pdfLibraryDownloadButton");
+    if (download) download.disabled = true;
+  }
+
+  function renderCentralDocuments() {
+    const list = $("#pdfLibraryList");
+    if (!list) return;
+    const query = normalize(centralDocumentSearch);
+    const items = centralDocuments.filter((item) => !query || normalize([item.title, item.filename, item.quoteNumber, item.clientName].join(" ")).includes(query));
+    $("#pdfLibraryStatus").textContent = query
+      ? `${plural(items.length, "document")} sur ${centralDocuments.length}`
+      : plural(centralDocuments.length, "document partagé");
+    if (!items.length) {
+      list.innerHTML = `<div class="pdf-library-empty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>${query ? "Aucun résultat" : "Aucun document"}</strong><span>${query ? "Essayez une autre recherche." : "Importez le premier PDF dans la base centrale."}</span></div>`;
+      return;
+    }
+    list.innerHTML = items.map((item) => {
+      const date = centralDateTime(item.createdAt);
+      const reference = [item.quoteNumber, item.clientName].filter(Boolean).join(" · ") || "Document général";
+      return `<button class="pdf-library-item" type="button" data-pdf-document-id="${escapeHTML(item.id)}" aria-current="${item.id === selectedCentralDocumentId}"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><span class="pdf-library-item-copy"><strong>${escapeHTML(item.title || item.filename)}</strong><small>${escapeHTML(reference)}</small><small>${escapeHTML(date)} · ${escapeHTML(formatDocumentSize(item.byteSize))}</small></span></button>`;
+    }).join("");
+  }
+
+  async function refreshCentralDocuments({ selectId = "" } = {}) {
+    $("#pdfLibraryStatus").textContent = "Chargement des documents…";
+    const result = await centralController.listDocuments();
+    centralDocuments = Array.isArray(result.documents) ? result.documents : [];
+    renderCentralDocuments();
+    const targetId = selectId || (centralDocuments.some((item) => item.id === selectedCentralDocumentId) ? selectedCentralDocumentId : "");
+    if (targetId) await selectCentralDocument(targetId);
+  }
+
+  async function openPdfLibrary() {
+    if (!centralController.getConfig().connected) {
+      activeSettingsTab = "data";
+      openSettingsLayer();
+      toast("Connectez ce poste pour accéder aux documents PDF.", "error");
+      return;
+    }
+    centralDocumentSearch = "";
+    $("#pdfLibrarySearch").value = "";
+    openLayer("pdfLibraryLayer");
+    try {
+      await refreshCentralDocuments();
+    } catch (error) {
+      console.error("Bibliothèque PDF indisponible", error);
+      $("#pdfLibraryStatus").textContent = error.message || "Bibliothèque indisponible";
+      $("#pdfLibraryList").innerHTML = `<div class="pdf-library-empty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>Connexion impossible</strong><span>${escapeHTML(error.message || "Réessayez dans quelques instants.")}</span></div>`;
+    }
+  }
+
+  async function selectCentralDocument(documentId) {
+    const document = centralDocuments.find((item) => item.id === documentId);
+    if (!document) return;
+    selectedCentralDocumentId = documentId;
+    renderCentralDocuments();
+    $("#pdfPreviewTitle").textContent = document.title || document.filename;
+    $("#pdfPreviewMeta").textContent = [[document.quoteNumber, document.clientName].filter(Boolean).join(" · "), formatDocumentSize(document.byteSize), centralDateTime(document.createdAt)].filter(Boolean).join(" · ");
+    $("#pdfPreviewEmpty").innerHTML = '<svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>Chargement du PDF…</strong><span>Le document reste dans la base centrale.</span>';
+    $("#pdfPreviewEmpty").hidden = false;
+    $("#pdfPreviewFrame").hidden = true;
+    $("#pdfLibraryDownloadButton").disabled = true;
+    try {
+      const blob = await centralController.loadDocument(documentId);
+      if (selectedCentralDocumentId !== documentId || $("#pdfLibraryLayer").hidden) return;
+      releaseCentralDocumentPreview();
+      centralDocumentObjectUrl = URL.createObjectURL(blob);
+      $("#pdfPreviewFrame").src = centralDocumentObjectUrl;
+      $("#pdfPreviewFrame").hidden = false;
+      $("#pdfPreviewEmpty").hidden = true;
+      $("#pdfLibraryDownloadButton").disabled = false;
+    } catch (error) {
+      console.error("Lecture PDF impossible", error);
+      $("#pdfPreviewEmpty").innerHTML = `<svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>PDF indisponible</strong><span>${escapeHTML(error.message || "Le document n’a pas pu être chargé.")}</span>`;
+    }
+  }
+
+  function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 32768) binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    return btoa(binary);
+  }
+
+  async function readPdfArchiveFile(file) {
+    if (!file) return null;
+    if (file.size <= 0 || file.size > MAX_PDF_ARCHIVE_BYTES) throw new Error("Le PDF doit peser au maximum 8 Mo.");
+    if (file.type && file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) throw new Error("Sélectionnez un fichier PDF.");
+    const buffer = await file.arrayBuffer();
+    const signature = new TextDecoder("ascii").decode(buffer.slice(0, 5));
+    if (signature !== "%PDF-") throw new Error("Le fichier sélectionné n’est pas un PDF valide.");
+    return { filename: file.name, title: file.name.replace(/\.pdf$/i, ""), contentBase64: arrayBufferToBase64(buffer) };
+  }
+
+  async function importCentralPdf(file) {
+    const input = await readPdfArchiveFile(file);
+    if (!input) return;
+    const button = $("#pdfLibraryImportButton");
+    button.disabled = true;
+    $("#pdfLibraryStatus").textContent = "Import du PDF dans PostgreSQL…";
+    try {
+      const result = await centralController.uploadDocument({
+        ...input,
+        quoteId: quote.id,
+        quoteNumber: quote.number,
+        clientName: quote.client?.name || ""
+      });
+      await refreshCentralDocuments({ selectId: result.document?.id || "" });
+      toast(`PDF archivé : ${result.document?.filename || input.filename}`);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function downloadSelectedCentralDocument() {
+    if (!centralDocumentObjectUrl || !selectedCentralDocumentId) return;
+    const item = centralDocuments.find((document) => document.id === selectedCentralDocumentId);
+    if (!item) return;
+    const link = document.createElement("a");
+    link.href = centralDocumentObjectUrl;
+    link.download = item.filename || "document.pdf";
+    document.body.append(link);
+    link.click();
+    link.remove();
+  }
+
+  async function runCentralAction(button, pendingLabel, action) {
+    const previous = button.textContent;
+    button.disabled = true;
+    button.textContent = pendingLabel;
+    try {
+      return await action();
+    } catch (error) {
+      console.error("Action centrale impossible.", error);
+      toast(error?.message || "Le serveur central n’a pas pu traiter la demande.", "error");
+      return null;
+    } finally {
+      button.disabled = false;
+      button.textContent = previous;
+      renderCentralizationState();
+    }
   }
 
   function baseCatalogServices() {
@@ -1046,7 +1364,7 @@
       return `<div class="family-group ${isOpen ? "open" : ""}">
         <button class="family-button ${isActive ? "active" : ""}" type="button" data-family="${family.id}" aria-expanded="${isOpen}">
           <span class="family-button-icon"><svg><use href="${prestationIconHref(family.icon)}"></use></svg></span>
-          <span><strong>${escapeHTML(family.name)}</strong><small>${countLabel}</small></span>
+          <span class="family-button-copy"><strong>${escapeHTML(family.name)}</strong><small>${countLabel}</small></span>
           <svg class="family-arrow"><use href="#icon-chevron"></use></svg>
         </button>
         ${options}
@@ -1424,7 +1742,12 @@
       container.innerHTML = `<div class="cart-empty"><svg><use href="#icon-empty"></use></svg><strong>Ajoutez un soin</strong><p>Les options de paiement apparaîtront ensuite.</p></div>`;
       return;
     }
-    container.innerHTML = quote.lines.map((line) => {
+    const swipeHint = cartSwipeHintSeen() ? "" : `<aside class="cart-swipe-hint" id="cartSwipeHint" role="note">
+      <svg aria-hidden="true"><use href="#icon-swipe-left"></use></svg>
+      <span><strong>Suppression tactile</strong><small>Balayez une ligne vers la gauche, puis touchez la corbeille.</small></span>
+      <button type="button" data-cart-swipe-hint-dismiss>Compris</button>
+    </aside>`;
+    container.innerHTML = swipeHint + quote.lines.map((line) => {
       const category = categoryFor(line.categoryId);
       const isPack = line.offerType === "pack";
       const pack = packDefaults();
@@ -1482,6 +1805,26 @@
     document.title = clientName ? `${clientName} — BCDevis` : "BCDevis";
   }
 
+  function renderQuoteDate() {
+    const control = $("#quoteDateControl");
+    const display = $("#quoteDateDisplay");
+    const input = $("#quoteDate");
+    const editable = db.settings.quoteDateEditable === true;
+    const formattedDate = formatDate(quote.date);
+    control.dataset.editable = String(editable);
+    control.closest(".checkout-card")?.classList.toggle("quote-date-editable", editable);
+    display.hidden = editable;
+    display.dateTime = quote.date;
+    display.textContent = formattedDate;
+    display.setAttribute("aria-label", `Date du devis : ${formattedDate}`);
+    input.hidden = !editable;
+    input.disabled = !editable;
+    input.value = quote.date;
+    const { min, max } = quoteDateBounds();
+    input.min = min;
+    input.max = max;
+  }
+
   const KNOWN_THEMES = ["light", "night", "forest", "bordeaux"];
   const THEME_BROWSER_COLORS = {
     light: "#171512",
@@ -1501,14 +1844,14 @@
     document.documentElement.setAttribute("data-font", value);
     if ($("#familyList")?.children.length) scheduleTileDensityAnalysis();
   }
-  function currentIpadLayoutMode() { return IPAD_LAYOUT_MODES.includes(db.settings.ipadLayoutMode) ? db.settings.ipadLayoutMode : "off"; }
+  function currentIpadLayoutMode() { return IPAD_LAYOUT_MODES.includes(db.settings.ipadLayoutMode) ? db.settings.ipadLayoutMode : "auto"; }
   function isLikelyIpad() {
     const userAgent = String(navigator.userAgent || "");
     const platform = String(navigator.userAgentData?.platform || navigator.platform || "");
     return /iPad/i.test(userAgent) || ((/Mac/i.test(platform) || /Macintosh/i.test(userAgent)) && Number(navigator.maxTouchPoints || 0) > 1);
   }
   function applyIpadLayout(mode = currentIpadLayoutMode()) {
-    const preference = IPAD_LAYOUT_MODES.includes(mode) ? mode : "off";
+    const preference = IPAD_LAYOUT_MODES.includes(mode) ? mode : "auto";
     const optimized = preference === "always" || (preference === "auto" && isLikelyIpad());
     document.documentElement.dataset.ipadPreference = preference;
     document.documentElement.dataset.ipadLayout = optimized ? "optimized" : "standard";
@@ -1585,10 +1928,7 @@
     renderClient();
     renderCart();
     renderTotals();
-    $("#quoteDate").value = quote.date;
-    const { min: quoteDateMin, max: quoteDateMax } = quoteDateBounds();
-    $("#quoteDate").min = quoteDateMin;
-    $("#quoteDate").max = quoteDateMax;
+    renderQuoteDate();
     if (quote.discount.code || Number(quote.discount.value) > 0) couponOpen = true;
     $("#couponToggle").hidden = couponOpen;
     $("#couponToggle").setAttribute("aria-expanded", String(couponOpen));
@@ -1650,11 +1990,17 @@
   function closeLayer(id) {
     const layer = $(`#${id}`);
     if (!layer || layer.hidden) return;
+    if (id === "tileCatalogEditorLayer" && tileEditorPendingCount()
+      && !window.confirm("Abandonner les modifications non enregistrées de l’éditeur des tuiles ?")) return false;
     if (id === "settingsLayer") {
       applyTheme(currentTheme());
       syncThemePicker(currentTheme());
       applyFont(currentFont());
       syncFontPicker(currentFont());
+    }
+    if (id === "pdfLibraryLayer") {
+      selectedCentralDocumentId = "";
+      releaseCentralDocumentPreview();
     }
     layer.hidden = true;
     if (activeLayerId === id) activeLayerId = "";
@@ -1669,6 +2015,11 @@
     [$("#appShell"), $("#mobileTabs"), $("#toastRegion")].filter(Boolean).forEach((element) => { element.inert = false; });
     if (previousFocus?.isConnected) window.setTimeout(() => previousFocus.focus(), 0);
     if (id === "releaseNotesLayer") window.setTimeout(showTrackingReminders, 250);
+    return true;
+  }
+  function isTouchLayoutMode() {
+    return document.documentElement.dataset.ipadLayout === "optimized"
+      || document.documentElement.dataset.displayMode === "smartphone";
   }
 
   function focusableElements(container) {
@@ -2131,22 +2482,30 @@
     const item = { ...base, ...(db.catalogOverrides?.[String(base.id)] || {}) };
     const category = categoryFor(item.categoryId);
     const icon = catalogEditorIconValue(item);
+    const duration = Number(item.duration || 0);
     const packPriceField = Number.isFinite(Number(base.packAveragePrice)) || Number.isFinite(Number(item.packAveragePrice))
-      ? `<label><span>Prix Pack moyen (CHF)</span><input data-tile-field="packAveragePrice" type="number" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.packAveragePrice ?? base.packAveragePrice ?? 0)}"></label>`
+      ? `<label><span>Prix Pack moyen (CHF)</span><input data-tile-field="packAveragePrice" type="number" inputmode="decimal" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.packAveragePrice ?? base.packAveragePrice ?? 0)}"></label>`
       : "";
-    return `<article class="tile-catalog-card" data-tile-editor-card data-service-id="${escapeHTML(base.id)}" data-tile-search="${escapeHTML(normalize(`${item.name} ${category.name} ${item.id}`))}">
+    return `<article class="tile-catalog-card" data-tile-editor-card data-service-id="${escapeHTML(base.id)}" data-tile-category-id="${escapeHTML(item.categoryId)}" data-tile-search="${escapeHTML(normalize(`${item.name} ${category.name} ${item.id} ${item.duration} ${item.price}`))}">
       <header class="tile-catalog-card-head">
-        <button class="tile-catalog-icon-button" type="button" data-tile-icon-picker aria-label="Changer le pictogramme SVG de ${escapeHTML(item.name)}" title="Choisir un pictogramme SVG">
-          <span aria-hidden="true"><svg><use href="${prestationIconHref(icon)}"></use></svg></span><small>Changer le SVG</small>
-        </button>
-        <div><span>${escapeHTML(category.short || category.name)}</span><code>#${escapeHTML(item.id)}</code></div>
-        <button class="tile-catalog-reset" type="button" data-tile-reset title="Rétablir cette tuile">Réinitialiser</button>
+        <div class="tile-catalog-live-preview" aria-label="Aperçu de la tuile ${escapeHTML(item.name)}">
+          <button class="tile-catalog-icon-button" type="button" data-tile-icon-picker aria-label="Changer le pictogramme SVG de ${escapeHTML(item.name)}" title="Choisir un pictogramme SVG">
+            <span aria-hidden="true"><svg><use href="${prestationIconHref(icon)}"></use></svg></span><small>Changer</small>
+          </button>
+          <span class="tile-catalog-preview-copy"><strong data-tile-preview-name>${escapeHTML(item.name)}</strong><small data-tile-preview-duration>${duration ? `${escapeHTML(duration)} min` : "Sans durée"}</small></span>
+          <span class="tile-catalog-preview-price"><small>Séance</small><b data-tile-preview-price>${money(item.price)}</b></span>
+        </div>
+        <div class="tile-catalog-card-meta">
+          <span class="tile-catalog-card-reference"><span>${escapeHTML(category.short || category.name)}</span><code>#${escapeHTML(item.id)}</code></span>
+          <span class="tile-catalog-card-status" data-tile-editor-status>D’origine</span>
+          <button class="tile-catalog-reset" type="button" data-tile-reset title="Rétablir cette tuile">Réinitialiser</button>
+        </div>
         <input data-tile-field="icon" type="hidden" value="${escapeHTML(icon)}">
       </header>
       <div class="tile-catalog-fields">
-        <label class="tile-catalog-name"><span>Nom</span><input data-tile-field="name" type="text" maxlength="240" value="${escapeHTML(item.name)}" required></label>
-        <label><span>Temps (min)</span><input data-tile-field="duration" type="number" min="0" max="1440" step="5" value="${escapeHTML(item.duration ?? 0)}" required></label>
-        <label><span>Prix (CHF)</span><input data-tile-field="price" type="number" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.price ?? 0)}" required></label>
+        <label class="tile-catalog-name"><span>Nom</span><input data-tile-field="name" type="text" autocapitalize="sentences" maxlength="240" value="${escapeHTML(item.name)}" required></label>
+        <label><span>Temps (min)</span><input data-tile-field="duration" type="number" inputmode="numeric" min="0" max="1440" step="5" value="${escapeHTML(item.duration ?? 0)}" required></label>
+        <label><span>Prix (CHF)</span><input data-tile-field="price" type="number" inputmode="decimal" min="0" max="${MAX_LINE_PRICE}" step="0.01" value="${escapeHTML(item.price ?? 0)}" required></label>
         ${packPriceField}
       </div>
     </article>`;
@@ -2172,35 +2531,107 @@
     return { id: String(base.id), override };
   }
 
+  function tileEditorRawSignature(card) {
+    return JSON.stringify($$("[data-tile-field]", card).map((input) => [input.dataset.tileField, input.value]));
+  }
+
+  function tileEditorCardState(card) {
+    const result = tileEditorCardOverride(card);
+    const customized = Boolean(result && Object.keys(result.override).length);
+    const pending = tileEditorRawSignature(card) !== card.dataset.tileInitialSignature;
+    return { ...result, customized, pending, modified: customized || pending };
+  }
+
+  function updateTileEditorCard(card) {
+    const base = baseCatalogService(card.dataset.serviceId);
+    if (!base) return { customized: false, pending: false, modified: false };
+    const state = tileEditorCardState(card);
+    const name = String($('[data-tile-field="name"]', card)?.value || "").trim() || "Sans nom";
+    const duration = boundedInteger($('[data-tile-field="duration"]', card)?.value, 0, 1440, 0);
+    const price = boundedNumber($('[data-tile-field="price"]', card)?.value, 0, MAX_LINE_PRICE, 0);
+    const icon = catalogEditorIconValue({ ...base, icon: $('[data-tile-field="icon"]', card)?.value });
+    $("[data-tile-preview-name]", card).textContent = name;
+    $("[data-tile-preview-duration]", card).textContent = duration ? `${duration} min` : "Sans durée";
+    $("[data-tile-preview-price]", card).textContent = money(price);
+    $(".tile-catalog-icon-button use", card)?.setAttribute("href", prestationIconHref(icon));
+    const category = categoryFor(base.categoryId);
+    card.dataset.tileSearch = normalize(`${name} ${category.name} ${base.id} ${duration} ${price}`);
+    card.dataset.tileModified = String(state.modified);
+    card.classList.toggle("is-customized", state.customized);
+    card.classList.toggle("is-pending", state.pending);
+    const status = $("[data-tile-editor-status]", card);
+    if (status) status.textContent = state.pending ? "À enregistrer" : state.customized ? "Personnalisée" : "D’origine";
+    const reset = $("[data-tile-reset]", card);
+    if (reset) reset.disabled = !state.modified;
+    return state;
+  }
+
+  function tileEditorPendingCount() {
+    return $$('[data-tile-editor-card]', $("#tileCatalogEditorList"))
+      .filter((card) => tileEditorRawSignature(card) !== card.dataset.tileInitialSignature).length;
+  }
+
   function updateTileEditorSummary() {
     const cards = $$('[data-tile-editor-card]', $("#tileCatalogEditorList"));
-    const changed = cards.filter((card) => Object.keys(tileEditorCardOverride(card)?.override || {}).length).length;
+    const states = cards.map(updateTileEditorCard);
+    const pending = states.filter((state) => state.pending).length;
+    const modified = states.filter((state) => state.modified).length;
     const summary = $("#tileCatalogEditorChanges");
     const saveButton = $("#tileCatalogEditorSave");
-    if (summary) summary.textContent = changed ? plural(changed, "tuile modifiée", "tuiles modifiées") : "Aucune modification en attente";
-    if (saveButton) saveButton.textContent = changed ? `Enregistrer ${changed}` : "Enregistrer";
+    const modifiedCount = $("#tileCatalogCustomizedCount");
+    const resetAll = $("#tileCatalogResetAllButton");
+    if (summary) summary.textContent = pending ? plural(pending, "changement en attente", "changements en attente") : "Tout est enregistré";
+    if (saveButton) {
+      saveButton.disabled = !pending;
+      saveButton.textContent = pending ? `Enregistrer ${pending}` : "Enregistré";
+    }
+    if (modifiedCount) modifiedCount.textContent = modified;
+    if (resetAll) resetAll.disabled = !modified;
+    filterTileCatalogEditor();
   }
 
   function filterTileCatalogEditor() {
     const needle = normalize($("#tileCatalogEditorSearch")?.value || "");
+    const categoryId = $("#tileCatalogEditorCategory")?.value || "";
+    const modifiedOnly = $("#tileCatalogCustomizedFilter")?.getAttribute("aria-pressed") === "true";
     const cards = $$('[data-tile-editor-card]', $("#tileCatalogEditorList"));
     let visible = 0;
     cards.forEach((card) => {
-      const matches = !needle || card.dataset.tileSearch.includes(needle) || normalize($('[data-tile-field="name"]', card)?.value || "").includes(needle);
+      const matchesSearch = !needle || card.dataset.tileSearch.includes(needle);
+      const matchesCategory = !categoryId || card.dataset.tileCategoryId === categoryId;
+      const matchesModified = !modifiedOnly || card.dataset.tileModified === "true";
+      const matches = matchesSearch && matchesCategory && matchesModified;
       card.hidden = !matches;
       if (matches) visible += 1;
     });
     const count = $("#tileCatalogEditorCount");
-    if (count) count.textContent = `${visible} / ${cards.length} tuiles`;
+    if (count) count.textContent = visible === cards.length ? plural(cards.length, "tuile") : `${visible} sur ${cards.length} tuiles`;
+    const empty = $("#tileCatalogEditorEmpty");
+    if (empty) {
+      empty.hidden = visible > 0;
+      $("strong", empty).textContent = modifiedOnly ? "Aucune tuile modifiée" : "Aucune tuile trouvée";
+      $("span", empty).textContent = modifiedOnly ? "Modifiez une tuile ou affichez de nouveau tout le catalogue." : "Essayez un autre nom ou une autre catégorie.";
+    }
   }
 
   function buildTileCatalogEditor() {
     const list = $("#tileCatalogEditorList");
     if (!list) return;
-    list.innerHTML = baseCatalogServices().map(catalogEditorCard).join("");
+    const services = baseCatalogServices();
+    list.innerHTML = `${services.map(catalogEditorCard).join("")}<div class="tile-catalog-empty" id="tileCatalogEditorEmpty" hidden><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucune tuile trouvée</strong><span>Essayez un autre nom ou une autre catégorie.</span></div>`;
+    $$('[data-tile-editor-card]', list).forEach((card) => { card.dataset.tileInitialSignature = tileEditorRawSignature(card); });
     const search = $("#tileCatalogEditorSearch");
     if (search) search.value = "";
-    filterTileCatalogEditor();
+    const categorySelect = $("#tileCatalogEditorCategory");
+    if (categorySelect) {
+      const categories = [...new Map(services.map((item) => {
+        const category = categoryFor(item.categoryId);
+        return [String(item.categoryId), category];
+      })).entries()].sort((left, right) => left[1].name.localeCompare(right[1].name, "fr", { sensitivity: "base" }));
+      categorySelect.innerHTML = `<option value="">Toutes les catégories</option>${categories.map(([id, category]) => `<option value="${escapeHTML(id)}">${escapeHTML(category.name)}</option>`).join("")}`;
+      categorySelect.value = "";
+    }
+    $("#tileCatalogCustomizedFilter")?.setAttribute("aria-pressed", "false");
     updateTileEditorSummary();
   }
 
@@ -2226,7 +2657,7 @@
     openLayer("tileIconPickerLayer");
   }
 
-  function resetTileEditorCard(card) {
+  function resetTileEditorCard(card, { refresh = true } = {}) {
     const base = baseCatalogService(card.dataset.serviceId);
     if (!base) return;
     $('[data-tile-field="name"]', card).value = base.name;
@@ -2237,7 +2668,7 @@
     const icon = catalogEditorIconValue(base);
     $('[data-tile-field="icon"]', card).value = icon;
     $(".tile-catalog-icon-button use", card)?.setAttribute("href", prestationIconHref(icon));
-    updateTileEditorSummary();
+    if (refresh) updateTileEditorSummary();
   }
 
   function saveTileCatalogEditor() {
@@ -2255,6 +2686,7 @@
       db.catalogOverrides = previousOverrides;
       return;
     }
+    $$('[data-tile-editor-card]', $("#tileCatalogEditorList")).forEach((card) => { card.dataset.tileInitialSignature = tileEditorRawSignature(card); });
     renderAll();
     closeLayer("tileCatalogEditorLayer");
     toast(changed ? `${plural(changed, "tuile personnalisée", "tuiles personnalisées")} enregistrée${changed === 1 ? "" : "s"}` : "Catalogue d’origine restauré");
@@ -2321,9 +2753,11 @@
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
     if (form.elements.showSignatures) form.elements.showSignatures.checked = db.settings.showSignatures !== false;
     if (form.elements.showTaxInformation) form.elements.showTaxInformation.checked = db.settings.showTaxInformation === true;
+    if (form.elements.quoteDateEditable) form.elements.quoteDateEditable.checked = db.settings.quoteDateEditable === true;
     if (form.elements.quoteTrackingEnabled) form.elements.quoteTrackingEnabled.checked = db.settings.quoteTrackingEnabled === true;
     if (form.elements.trackingRemindersOnStartup) form.elements.trackingRemindersOnStartup.checked = db.settings.trackingRemindersOnStartup !== false;
     if (form.elements.trackingShowCounters) form.elements.trackingShowCounters.checked = db.settings.trackingShowCounters !== false;
+    if (form.elements.centralUniqueQuoteNumbers) form.elements.centralUniqueQuoteNumbers.checked = db.settings.centralUniqueQuoteNumbers === true;
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
       form.elements.launchAtLogin.disabled = true;
@@ -2338,6 +2772,8 @@
     syncThemePicker(currentTheme());
     syncFontPicker(currentFont());
     syncTrackingSettingsState();
+    renderCentralizationState();
+    if ($("#centralPassword")) $("#centralPassword").value = "";
     void refreshLaunchAtLoginSetting();
   }
 
@@ -3064,6 +3500,43 @@
     });
   }
 
+  function cartSwipeHintSeen() {
+    if (cartSwipeHintSeenThisSession) return true;
+    try {
+      return localStorage.getItem(CART_SWIPE_HINT_SEEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function markCartSwipeHintSeen() {
+    if (!isTouchLayoutMode() || cartSwipeHintSeen()) return;
+    cartSwipeHintSeenThisSession = true;
+    try {
+      localStorage.setItem(CART_SWIPE_HINT_SEEN_KEY, "1");
+    } catch (error) {
+      console.warn("État de l’aide au balayage indisponible", error);
+    }
+    $("#cartSwipeHint")?.remove();
+  }
+
+  function undoRemovedLine(removedLine, index, quoteId) {
+    if (quote.id !== quoteId || quote.lines.some((item) => item.id === removedLine.id)) {
+      toast("Cette suppression ne peut plus être annulée.", "error");
+      return;
+    }
+    const restoredIndex = Math.max(0, Math.min(index, quote.lines.length));
+    quote.lines.splice(restoredIndex, 0, removedLine);
+    if (!saveLocal()) {
+      quote.lines = quote.lines.filter((item) => item.id !== removedLine.id);
+      return;
+    }
+    renderCatalog();
+    renderCheckout();
+    toast(`${removedLine.name} restauré`);
+    window.setTimeout(() => $(`[data-line-id="${CSS.escape(removedLine.id)}"] .cart-line-name`)?.focus(), 0);
+  }
+
   function finishCartSwipe(event, { cancelled = false } = {}) {
     if (!cartSwipeState || event.pointerId !== cartSwipeState.pointerId) return;
     const state = cartSwipeState;
@@ -3077,6 +3550,7 @@
     state.line.classList.remove("is-swiping");
     state.line.classList.toggle("is-delete-revealed", shouldReveal);
     state.line.style.removeProperty("--cart-line-swipe-offset");
+    if (shouldReveal) markCartSwipeHintSeen();
     try {
       if (state.captureElement.hasPointerCapture?.(event.pointerId)) state.captureElement.releasePointerCapture(event.pointerId);
     } catch {
@@ -3136,6 +3610,11 @@
   }, true);
 
   $("#cartLines").addEventListener("click", (event) => {
+    const hintDismiss = event.target.closest("[data-cart-swipe-hint-dismiss]");
+    if (hintDismiss) {
+      markCartSwipeHintSeen();
+      return;
+    }
     const actionButton = event.target.closest("[data-line-action]");
     if (!actionButton) return;
     const line = lineFromElement(actionButton);
@@ -3155,7 +3634,26 @@
     if (action === "decrease") line.quantity = Math.max(1, line.quantity - 1);
     if (action === "increase-free") line.freeQuantity = boundedInteger(line.freeQuantity + 1, 0, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
     if (action === "decrease-free") line.freeQuantity = Math.max(0, line.freeQuantity - 1);
-    if (action === "remove") quote.lines = quote.lines.filter((item) => item.id !== line.id);
+    if (action === "remove") {
+      const removedIndex = quote.lines.findIndex((item) => item.id === line.id);
+      const removedLine = clone(line);
+      const quoteId = quote.id;
+      quote.lines.splice(removedIndex, 1);
+      if (!saveLocal()) {
+        quote.lines.splice(removedIndex, 0, line);
+        return;
+      }
+      renderCatalog();
+      renderCheckout();
+      if (isTouchLayoutMode()) {
+        toast(`${removedLine.name} supprimé`, "success", {
+          actionLabel: "Annuler",
+          duration: 6000,
+          onAction: () => undoRemovedLine(removedLine, removedIndex, quoteId)
+        });
+      }
+      return;
+    }
     saveLocal(); renderCatalog(); renderCheckout();
     if (["increase", "decrease", "increase-free", "decrease-free"].includes(action)) {
       let restoredControl = $(`[data-line-id="${line.id}"] [data-line-action="${action}"]`);
@@ -3176,6 +3674,10 @@
     if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); }
   });
   $("#quoteDate").addEventListener("change", (event) => {
+    if (db.settings.quoteDateEditable !== true) {
+      event.target.value = quote.date;
+      return;
+    }
     const previousDate = quote.date;
     quote.date = boundedQuoteDate(event.target.value);
     quote.validUntil = addDaysISO(quote.date, configuredValidityDays(db.settings));
@@ -3377,7 +3879,7 @@
     if (tab) setSettingsTab(tab.dataset.settingsTab, { focus: true, resetScroll: true });
   });
   $("#settingsTabs").addEventListener("keydown", (event) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) return;
     const tabs = $$("#settingsTabs [role='tab']");
     const current = event.target.closest("[data-settings-tab]");
     const index = tabs.indexOf(current);
@@ -3387,15 +3889,76 @@
       ? 0
       : event.key === "End"
         ? tabs.length - 1
-        : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+        : (index + (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1) + tabs.length) % tabs.length;
     setSettingsTab(tabs[nextIndex].dataset.settingsTab, { focus: true, resetScroll: true });
+  });
+  $("#centralEnabled").addEventListener("change", async (event) => {
+    if (event.target.checked) {
+      centralController.configure({ enabled: true });
+      renderCentralizationState();
+      window.setTimeout(() => $("#centralEndpoint")?.focus(), 0);
+      return;
+    }
+    await centralController.disconnect();
+    renderCentralizationState();
+    toast("Mode local réactivé · aucune donnée locale supprimée");
+  });
+  $("#centralTestButton").addEventListener("click", async (event) => {
+    await runCentralAction(event.currentTarget, "Test en cours…", async () => {
+      const values = centralFormValues();
+      centralController.configure({ enabled: true, ...values });
+      const result = await centralController.testConnection(values.endpoint);
+      toast(`Serveur BCDevis ${result.version} disponible · PostgreSQL prêt`);
+    });
+  });
+  $("#centralConnectButton").addEventListener("click", async (event) => {
+    await runCentralAction(event.currentTarget, "Connexion…", async () => {
+      const values = centralFormValues();
+      if (!values.email || !$("#centralEmail").checkValidity()) throw new Error("Indiquez l’adresse e-mail du compte central.");
+      const password = $("#centralPassword").value;
+      const result = await centralController.connect({ ...values, password });
+      $("#centralPassword").value = "";
+      if (db.settings.centralUniqueQuoteNumbers === true) await ensureCentralQuoteNumberPool({ required: 1 });
+      if (!result?.conflict) toast("Poste connecté et données synchronisées");
+    });
+  });
+  $("#centralSyncButton").addEventListener("click", async (event) => {
+    await runCentralAction(event.currentTarget, "Synchronisation…", async () => {
+      const result = await centralController.sync();
+      if (!result?.conflict && !result?.authenticationRequired) toast("Synchronisation terminée");
+    });
+  });
+  $("#centralDisconnectButton").addEventListener("click", async (event) => {
+    await runCentralAction(event.currentTarget, "Déconnexion…", async () => {
+      await centralController.disconnect();
+      toast("Mode local réactivé · aucune donnée locale supprimée");
+    });
+  });
+  $("#centralUseServerButton").addEventListener("click", async (event) => {
+    backupBeforeCentralResolution();
+    await runCentralAction(event.currentTarget, "Résolution…", async () => {
+      const result = await centralController.resolveWithServer();
+      if (!result?.conflict) toast("Version centrale conservée");
+    });
+  });
+  $("#centralUseDeviceButton").addEventListener("click", async (event) => {
+    backupBeforeCentralResolution();
+    await runCentralAction(event.currentTarget, "Résolution…", async () => {
+      const result = await centralController.resolveWithDevice();
+      if (!result?.conflict) toast("Modifications de ce poste conservées");
+    });
   });
   $("#tileCatalogEditorButton").addEventListener("click", openTileCatalogEditor);
   $("#tileCatalogEditorSearch").addEventListener("input", filterTileCatalogEditor);
+  $("#tileCatalogEditorCategory").addEventListener("change", filterTileCatalogEditor);
+  $("#tileCatalogCustomizedFilter").addEventListener("click", (event) => {
+    const pressed = event.currentTarget.getAttribute("aria-pressed") === "true";
+    event.currentTarget.setAttribute("aria-pressed", String(!pressed));
+    filterTileCatalogEditor();
+  });
   $("#tileCatalogEditorList").addEventListener("input", (event) => {
     if (!event.target.closest("[data-tile-field]")) return;
     updateTileEditorSummary();
-    if (event.target.matches('[data-tile-field="name"]')) filterTileCatalogEditor();
   });
   $("#tileCatalogEditorList").addEventListener("click", (event) => {
     const card = event.target.closest("[data-tile-editor-card]");
@@ -3409,27 +3972,21 @@
     saveTileCatalogEditor();
   });
   $("#tileCatalogResetAllButton").addEventListener("click", () => {
-    if (!Object.keys(db.catalogOverrides || {}).length) {
+    const cards = $$('[data-tile-editor-card]', $("#tileCatalogEditorList"));
+    if (!cards.some((card) => tileEditorCardState(card).modified)) {
       toast("Le catalogue utilise déjà ses valeurs d’origine");
       return;
     }
-    if (!window.confirm("Rétablir le nom, le temps, le prix et le pictogramme d’origine de toutes les tuiles ?")) return;
-    const previousOverrides = clone(db.catalogOverrides);
-    db.catalogOverrides = {};
-    if (!saveLocal()) {
-      db.catalogOverrides = previousOverrides;
-      return;
-    }
-    buildTileCatalogEditor();
-    renderAll();
-    toast("Toutes les tuiles ont été réinitialisées");
+    if (!window.confirm("Préparer la réinitialisation du nom, du temps, du prix et du pictogramme de toutes les tuiles ?")) return;
+    cards.forEach((card) => resetTileEditorCard(card, { refresh: false }));
+    updateTileEditorSummary();
+    toast("Réinitialisation préparée · enregistrez pour la confirmer");
   });
   $("#tileIconPickerGrid").addEventListener("click", (event) => {
     const button = event.target.closest("[data-tile-icon-choice]");
     if (!button || !tileIconTargetCard?.isConnected) return;
     const icon = button.dataset.tileIconChoice;
     $('[data-tile-field="icon"]', tileIconTargetCard).value = icon;
-    $(".tile-catalog-icon-button use", tileIconTargetCard)?.setAttribute("href", prestationIconHref(icon));
     updateTileEditorSummary();
     closeLayer("tileIconPickerLayer");
     tileIconTargetCard = null;
@@ -3465,7 +4022,24 @@
   }));
   $("#settingsForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if ($("#centralEnabled").checked) {
+      try {
+        centralController.configure({ enabled: true, ...centralFormValues() });
+        $("#centralPassword").value = "";
+      } catch (error) {
+        setSettingsTab("data", { focus: true });
+        $("#centralEndpoint").focus();
+        toast(error.message || "La configuration du serveur central est invalide.", "error");
+        return;
+      }
+    }
     const data = new FormData(event.currentTarget);
+    const uniqueNumberingRequested = data.has("centralUniqueQuoteNumbers");
+    if (uniqueNumberingRequested && !centralController.getConfig().connected) {
+      setSettingsTab("data", { focus: true });
+      toast("Connectez d’abord ce poste avant d’activer les numéros uniques.", "error");
+      return;
+    }
     const desiredLaunchAtLogin = data.has("launchAtLogin");
     let savedLaunchAtLogin = db.settings.launchAtLogin === true;
     const submitButton = $('button[type="submit"]', event.currentTarget);
@@ -3511,8 +4085,9 @@
       theme: KNOWN_THEMES.includes(pendingTheme) ? pendingTheme : currentTheme(),
       fontFamily: KNOWN_FONTS.includes(pendingFont) ? pendingFont : currentFont(),
       catalogMode: data.get("catalogMode") === "body" ? "body" : "tiles",
-      ipadLayoutMode: IPAD_LAYOUT_MODES.includes(data.get("ipadLayoutMode")) ? data.get("ipadLayoutMode") : "off",
+      ipadLayoutMode: IPAD_LAYOUT_MODES.includes(data.get("ipadLayoutMode")) ? data.get("ipadLayoutMode") : "auto",
       launchAtLogin: savedLaunchAtLogin,
+      quoteDateEditable: data.has("quoteDateEditable"),
       quoteTrackingEnabled: data.has("quoteTrackingEnabled"),
       trackingDefaultFollowUpDays: boundedInteger(data.get("trackingDefaultFollowUpDays") ?? db.settings.trackingDefaultFollowUpDays, 1, 90, 7),
       trackingRemindersOnStartup: data.has("trackingRemindersOnStartup"),
@@ -3520,7 +4095,8 @@
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
-      showSignatures: data.has("showSignatures")
+      showSignatures: data.has("showSignatures"),
+      centralUniqueQuoteNumbers: uniqueNumberingRequested
     };
     if (!quote.conditions || quote.conditions === oldConditions) quote.conditions = db.settings.conditions;
     const checkedFamilies = data.getAll("visibleFamilies").map(String).filter(Boolean);
@@ -3531,6 +4107,16 @@
     applyTheme(db.settings.theme);
     applyFont(db.settings.fontFamily);
     applyIpadLayout(db.settings.ipadLayoutMode);
+    if (db.settings.centralUniqueQuoteNumbers === true) {
+      try {
+        await ensureCentralQuoteNumberPool({ required: 1 });
+      } catch (error) {
+        db.settings.centralUniqueQuoteNumbers = false;
+        if (event.currentTarget.elements.centralUniqueQuoteNumbers) event.currentTarget.elements.centralUniqueQuoteNumbers.checked = false;
+        toast(error.message || "Impossible de réserver les premiers numéros uniques.", "error");
+        return;
+      }
+    }
     if (!saveLocal()) return;
     renderAll(); renderHistory(); closeLayer("settingsLayer"); toast("Réglages enregistrés");
   });
@@ -3565,6 +4151,28 @@
     if (action === "display-mode") setDisplayModePreference(button.dataset.displayModeOption);
   });
   $("#settingsButton").addEventListener("click", openSettingsLayer);
+  $("#pdfLibraryButton").addEventListener("click", openPdfLibrary);
+  $("#pdfLibrarySearch").addEventListener("input", (event) => {
+    centralDocumentSearch = event.target.value;
+    renderCentralDocuments();
+  });
+  $("#pdfLibraryList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-pdf-document-id]");
+    if (button) void selectCentralDocument(button.dataset.pdfDocumentId);
+  });
+  $("#pdfLibraryImportButton").addEventListener("click", () => $("#pdfLibraryInput").click());
+  $("#pdfLibraryInput").addEventListener("change", async (event) => {
+    try {
+      await importCentralPdf(event.target.files?.[0]);
+    } catch (error) {
+      console.error("Import PDF impossible", error);
+      toast(error.message || "Le PDF n’a pas pu être importé.", "error");
+      $("#pdfLibraryStatus").textContent = error.message || "Import impossible";
+    } finally {
+      event.target.value = "";
+    }
+  });
+  $("#pdfLibraryDownloadButton").addEventListener("click", downloadSelectedCentralDocument);
   $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
   $("#newQuoteButton").addEventListener("click", createNewQuote);
   $("#saveButton").addEventListener("click", saveQuote);
@@ -3723,6 +4331,8 @@
   window.addEventListener("resize", syncToastPlacement);
   window.addEventListener("resize", syncViewportMetrics);
   window.visualViewport?.addEventListener("resize", syncViewportMetrics);
+  window.addEventListener("online", () => centralController.schedule(0));
+  window.addEventListener("offline", () => void centralController.sync().catch(() => {}));
   window.addEventListener("resize", () => {
     closeTileDetail({ immediate: true });
     scheduleTileDensityAnalysis();
@@ -3757,6 +4367,9 @@
   syncToastPlacement();
   saveLocal(false);
   renderAll();
+  void centralController.initialize()
+    .then(() => db.settings.centralUniqueQuoteNumbers === true ? ensureCentralQuoteNumberPool({ required: 1 }) : null)
+    .catch((error) => console.warn("Centralisation différée", error));
   const releaseNotesOpened = showReleaseNotesOnce();
   if (!releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
 })();

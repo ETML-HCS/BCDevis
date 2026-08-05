@@ -1,7 +1,7 @@
 {
   "type": "atelier-devis-quote",
-  "version": 21,
-  "template": "BCDevis V6 - devis vierge",
+  "version": 23,
+  "template": "BCDevis V7 - devis vierge",
   "quote": {
     "status": "draft",
     "client": {

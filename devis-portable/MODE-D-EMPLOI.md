@@ -233,21 +233,21 @@ a {
 <div class="cover">
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
-  <p class="cover-subtitle">Guide utilisateur de l’application locale de création de devis.</p>
-  <p class="cover-version">Version 6.0.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
+  <p class="cover-version">Version 7.0.1 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
-BCDevis fonctionne localement, sans compte ni serveur. Après l’installation initiale, l’application et les devis restent utilisables hors ligne.
+BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-6.0.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-6.0.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-6.0.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-7.0.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-7.0.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-7.0.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
-Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V6** et un **modèle de devis** importable.
+Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V7** et un **modèle de devis** importable.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -265,7 +265,7 @@ Dans la barre supérieure :
 - **Séance** : tarif à l’unité ;
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
-- **Réglages** et **Raccourcis** : les deux boutons utilitaires placés après les tarifs ;
+- **Documents PDF**, **Réglages** et **Raccourcis** : les trois boutons utilitaires placés après les tarifs ;
 - **Catalogue** : **Sur mesure** et affichage des prix.
 
 Dans l’en-tête du devis, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…`.
@@ -305,9 +305,9 @@ Le mode choisi est mémorisé pour les prochains lancements. **Tuiles** reste le
 
 Dans **Réglages > Interface > iPad**, trois choix sont disponibles :
 
-- **Automatique** reconnaît iPadOS et adapte les zones tactiles, les champs, les marges sûres et le clavier virtuel ;
+- **Automatique** - valeur par défaut des nouveaux profils - reconnaît iPadOS et adapte les zones tactiles, les champs, les marges sûres et le clavier virtuel ;
 - **Toujours** force ce confort tactile si Safari ou un navigateur intégré n’est pas reconnu ;
-- **Désactivée** — valeur par défaut — conserve uniquement le responsive standard.
+- **Désactivée** conserve uniquement le responsive standard.
 
 Le choix est mémorisé. En portrait, les soins utilisent deux colonnes ; en paysage, ils exploitent davantage la largeur ; en Split View, ils repassent sur une colonne. La navigation **Soins / Devis** reste toujours accessible en bas. Cette optimisation ne modifie ni les prix, ni les données, ni le PDF A4.
 
@@ -317,9 +317,9 @@ Ouvrez une famille, par exemple **Visage**, **Bras & aisselles**, **Maillot**, *
 
 La famille **Zones combinées** propose quatorze associations tarifées. En mode **Séance**, le catalogue affiche le prix d’une séance. Avec le **Pack 6 + 1**, il affiche le prix moyen par session communiqué pour ce pack ; le devis conserve le détail exact de six séances payées et d’une séance offerte.
 
-Pour adapter une tuile, ouvrez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Recherchez le soin, puis modifiez son pictogramme SVG, son nom, son temps ou son prix et cliquez sur **Enregistrer**. Ces personnalisations restent locales, sont incluses dans la sauvegarde complète et s’appliquent aux prochains ajouts ; elles ne réécrivent pas les lignes déjà présentes dans un devis. **Réinitialiser** restaure une tuile, tandis que **Tout réinitialiser** restaure le catalogue d’origine.
+Pour adapter une tuile, ouvrez **Réglages > Interface > Catalogue > Éditeur des tuiles**. Recherchez le soin ou filtrez par catégorie, puis modifiez son pictogramme SVG, son nom, son temps ou son prix : l’aperçu placé au-dessus des champs se met à jour immédiatement. Le filtre **Modifiées** retrouve les personnalisations enregistrées et celles en cours. Cliquez ensuite sur **Enregistrer** ; l’éditeur vous prévient si vous tentez de le fermer avant cette étape. Ces personnalisations restent locales, sont incluses dans la sauvegarde complète et s’appliquent aux prochains ajouts ; elles ne réécrivent pas les lignes déjà présentes dans un devis. **Réinitialiser** prépare le retour d’une tuile à sa valeur d’origine, tandis que **Tout réinitialiser** le prépare pour tout le catalogue ; validez ensuite avec **Enregistrer**.
 
-#### Mode Mannequin — Corps interactif
+#### Mode Mannequin - Corps interactif
 
 Le bouton **Corps interactif** active le mannequin anatomique :
 
@@ -375,7 +375,8 @@ Chaque ligne affiche le nom, la catégorie, la quantité et le prix. La suppress
 - Le bouton **−** devient indisponible lorsque la quantité minimale est atteinte.
 - Le nom d’une ligne peut être corrigé directement dans le devis.
 - Avec une souris, allez jusqu’au bord droit de la ligne pour faire apparaître la corbeille.
-- Sur un écran tactile, balayez la ligne vers la gauche, puis touchez la corbeille pour confirmer la suppression.
+- En mode iPad ou Smartphone, une indication présente le geste lors de la première utilisation : balayez la ligne vers la gauche, puis touchez la corbeille pour confirmer la suppression.
+- Après une suppression tactile, utilisez **Annuler** dans la notification pendant quelques secondes pour restaurer la ligne.
 - Appuyez sur `Échap` ou touchez de nouveau la ligne pour refermer l’action sans supprimer.
 
 En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **+1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes ne sont jamais facturées.
@@ -446,18 +447,65 @@ Pour déplacer BCDevis sous Windows, copiez **l’EXE et le dossier `data`** ens
 
 Ouvrez **Réglages**, choisissez l’onglet concerné, puis cliquez sur **Enregistrer les réglages** après toute modification.
 
-Les quatre onglets disponibles sont :
+Les cinq onglets disponibles sont :
 
 - **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux ; polices Red Hat Display, Roboto, Roboto Slab ou Système ; navigation **Tuiles / Corps interactif** ; familles visibles dans le catalogue ; option **Lancer au démarrage** pour Windows, Linux et macOS ;
 - **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo principal, logo du PDF, préfixe et nom du poste pour la numérotation. Si le logo PDF est vide, le logo principal est réutilisé ;
 - **Tarifs** : taux et mode de TVA, nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
-- **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature, note de bas de page, suivi commercial facultatif, validité et délai de relance.
+- **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature, note de bas de page, suivi commercial facultatif, validité et délai de relance ;
+- **Données** : activation du mode centralisé, adresse HTTPS de l’API BCDevis, compte, nom de l’appareil, numéros uniques facultatifs, test PostgreSQL, connexion, synchronisation et résolution des conflits.
 
 Le format de numéro par défaut ressemble à `DEV-20260718A001`. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
 
-Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés puis conservés uniquement dans les données locales.
+Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés avant leur enregistrement. En mode centralisé, les réglages métier et les personnalisations du catalogue sont partagés ; le thème, la police, l’affichage et les préférences propres au poste restent locaux.
 
-## 7. Raccourcis clavier V6
+## 7. Relier plusieurs postes à PostgreSQL
+
+Le serveur BCDevis Central doit d’abord être déployé par l’administrateur sur une adresse HTTPS. PostgreSQL n’est jamais ouvert directement aux postes : l’application dialogue avec l’API sécurisée, tandis que l’hôte SQL, le port, l’utilisateur et le mot de passe restent uniquement sur le serveur.
+
+Pour connecter un poste :
+
+1. ouvrez **Réglages > Données** et activez **Connecter ce poste** ;
+2. saisissez l’adresse HTTPS de l’API, par exemple `https://devis.clinique.example` ;
+3. indiquez l’e-mail du compte, son mot de passe et un nom permettant d’identifier l’appareil ;
+4. cliquez sur **Tester le serveur** : le résultat doit confirmer l’API V7 et **PostgreSQL prêt** ;
+5. cliquez sur **Se connecter**.
+
+Après la première connexion, le panneau affiche l’état en ligne ou hors ligne, le code unique du poste (`P01`, `P02`, etc.), la disponibilité de PostgreSQL, la révision centrale et l’heure de la dernière synchronisation. Le mot de passe du compte n’est pas conservé par BCDevis ; seule la session protégée est mémorisée sur le poste.
+
+### Numéros uniques centralisés
+
+Après la connexion, cochez **Numéros uniques centralisés**, puis enregistrez les réglages. PostgreSQL attribue alors une séquence commune à toute l’organisation, au format `DEV-YYYYMMDDC000001`. L’application réserve automatiquement plusieurs numéros à l’avance pour que les nouveaux devis puissent encore être créés pendant une coupure. Ces réservations empêchent les doublons entre postes ; elles peuvent créer des trous si un numéro réservé n’est finalement jamais utilisé.
+
+Sont partagés entre les postes :
+
+- les devis enregistrés et leur suivi commercial ;
+- la numérotation et les compteurs de devis ;
+- les données d’entreprise, tarifs, conditions, signatures et réglages métier ;
+- les soins sur mesure conservés et les personnalisations du catalogue.
+
+### Fenêtre Documents PDF
+
+Le bouton **Documents PDF** de la barre supérieure ouvre la bibliothèque partagée. Vous pouvez :
+
+- cliquer sur **Importer un PDF** pour charger un document de 8 Mo maximum ;
+- rechercher par titre, nom de fichier, numéro de devis ou client ;
+- sélectionner un document pour l’afficher directement dans BCDevis ;
+- utiliser **Télécharger** pour en conserver une copie locale.
+
+Lors d’un import, le devis et le client actuellement ouverts sont associés au document pour faciliter la recherche. Les PDF sont conservés dans PostgreSQL et ne sont chargés qu’à la demande par l’API sécurisée. La liste et l’aperçu exigent donc une connexion active ; ils ne font pas partie de la réserve hors ligne.
+
+Le brouillon actuellement ouvert, le thème, la police, la navigation, le confort iPad, l’affichage des prix et le lancement automatique restent propres à chaque appareil.
+
+### Travail hors ligne et conflits
+
+Une coupure de réseau ne bloque pas la création d’un devis. Les changements sont enregistrés localement et remis en attente ; BCDevis tente automatiquement de les synchroniser lorsque la connexion revient. Le bouton **Synchroniser maintenant** permet de relancer l’opération manuellement.
+
+Si deux postes modifient le même devis avant de se synchroniser, BCDevis ne choisit pas silencieusement. Le panneau **Conflit à résoudre** propose de conserver la version de ce poste ou celle du serveur. Une sauvegarde JSON complète est créée avant l’application du choix.
+
+Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce poste** puis désactivez l’option. Les données déjà présentes sur l’appareil restent disponibles.
+
+## 8. Raccourcis clavier V7
 
 | Raccourci | Action |
 | --- | --- |
@@ -478,21 +526,21 @@ Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent e
 | `?` | Afficher l’aide des raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V6.pdf` reprend ces 16 commandes.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V7.pdf` reprend ces 16 commandes.
 
-## 8. Utiliser le modèle de devis
+## 9. Utiliser le modèle de devis
 
-Le livrable contient `MODELE-DEVIS-V6.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
+Le livrable contient `MODELE-DEVIS-V7.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
 
 1. Ouvrez le menu `...` dans l’en-tête du devis.
 2. Cliquez sur **Importer**.
-3. Sélectionnez `MODELE-DEVIS-V6.json`.
+3. Sélectionnez `MODELE-DEVIS-V7.json`.
 4. BCDevis crée un devis vierge avec la date, la numérotation et les réglages actuels.
 5. Ajoutez le client et les soins, puis enregistrez.
 
 Pour créer un modèle personnalisé, préparez un devis type puis utilisez `...` > **Exporter**. Ne confondez pas cette fonction avec **Restaurer**, qui remplace toute la base locale par une sauvegarde complète.
 
-## 9. Résoudre les situations courantes
+## 10. Résoudre les situations courantes
 
 **Le devis n’apparaît pas dans Mes devis.**
 
@@ -516,7 +564,11 @@ Depuis **Historique**, cliquez sur **Sauvegarde complète**, copiez le fichier J
 
 **Les données semblent avoir disparu.**
 
-Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. Sous Linux et macOS, vérifiez que vous utilisez le même compte local. Sous ChromeOS, vérifiez le profil Chrome actif. L’application ne stocke pas les données dans un compte en ligne.
+Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. Sous Linux et macOS, vérifiez que vous utilisez le même compte local. Sous ChromeOS, vérifiez le profil Chrome actif. Si la centralisation est active, ouvrez **Réglages > Données** et contrôlez l’état de la session et la dernière synchronisation.
+
+**La synchronisation ne démarre pas.**
+
+Ouvrez **Réglages > Données**, vérifiez l’adresse HTTPS, puis cliquez sur **Tester le serveur**. La ligne Base de données doit indiquer **PostgreSQL prêt**. Si le serveur répond mais que la session a expiré, renseignez de nouveau le mot de passe et reconnectez le poste.
 
 **Le lancement automatique ne s’active pas.**
 

@@ -7,6 +7,7 @@ const path = require("node:path");
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const APP_PATH = path.join(PROJECT_ROOT, "devis-portable", "index.html");
 const OUTPUT_PATH = path.join(PROJECT_ROOT, "tmp", "ipad");
+const IPAD_USER_AGENT = "Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1";
 
 app.commandLine.appendSwitch("disable-gpu");
 
@@ -92,15 +93,23 @@ async function auditCatalogSearch(window) {
     const panel = document.querySelector("#catalogSearchPanel");
     const panelRect = panel.getBoundingClientRect();
     const toggleRect = document.querySelector("#catalogSearchToggle").getBoundingClientRect();
+    const icon = panel.querySelector("svg");
+    const iconRect = icon.getBoundingClientRect();
+    const inputRect = panel.querySelector("input").getBoundingClientRect();
     return {
       visible: !panel.hidden,
       focused: document.activeElement === document.querySelector("#catalogSearch"),
       height: Math.round(head.height),
       clearOfToggle: panelRect.right <= toggleRect.left - 4,
+      iconWidth: Math.round(iconRect.width),
+      iconProtected: getComputedStyle(icon).flexShrink === "0",
+      inputReduced: inputRect.width < panelRect.width - 30,
+      bottomMargin: Math.round(Number.parseFloat(getComputedStyle(panel).marginBottom)),
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!opened.visible || !opened.focused || opened.height < 44 || !opened.clearOfToggle || opened.horizontalOverflow) throw new Error(`Recherche prestations invalide ${JSON.stringify(opened)}`);
+  if (!opened.visible || !opened.focused || opened.height < 44 || !opened.clearOfToggle || opened.iconWidth < 18 || !opened.iconProtected || !opened.inputReduced || opened.bottomMargin < 8 || opened.horizontalOverflow) throw new Error(`Recherche prestations invalide ${JSON.stringify(opened)}`);
+  await capture(window, "01a-ipad-paysage-recherche.png");
   await clickElementCenter(window, "#catalogSearchToggle");
   const collapsed = await window.webContents.executeJavaScript(`document.querySelector(".family-head").getBoundingClientRect().height <= 1 && document.querySelector("#catalogSearchPanel").hidden`);
   if (!collapsed) throw new Error("La recherche refermée conserve une ligne vide");
@@ -116,8 +125,13 @@ async function auditCheckoutQuantities(window) {
     const buttons = steppers.flatMap((stepper) => [...stepper.querySelectorAll(".quantity-stepper-button")]);
     const deleteButton = line?.querySelector('.cart-line-delete-zone [data-line-action="remove"]');
     const iconActions = [...document.querySelectorAll(".checkout-primary-actions > button")];
+    const checkoutPanelRect = document.querySelector("#checkoutPanel").getBoundingClientRect();
+    const checkoutCardRect = document.querySelector(".checkout-card").getBoundingClientRect();
     return {
       visible: steppers.length === 2 && steppers.every((stepper) => getComputedStyle(stepper).display !== "none"),
+      panelWidth: Math.round(checkoutPanelRect.width),
+      cardWidth: Math.round(checkoutCardRect.width),
+      panelSpaceUsed: checkoutCardRect.width >= checkoutPanelRect.width - 24,
       stepperCount: steppers.length,
       buttonCount: buttons.length,
       touchTargets: buttons.map((button) => {
@@ -137,8 +151,8 @@ async function auditCheckoutQuantities(window) {
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!result.visible || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.iconActionCount !== 4 || !result.emailDirectEnabled || !result.iconActionsOnly || result.pdfIcon !== "#icon-pdf" || result.horizontalOverflow) throw new Error(`Devis iPad : contrôles invalides ${JSON.stringify(result)}`);
-  if (result.touchTargets.some(({ width, height }) => width < 34 || height < 34)) throw new Error(`Caisse iPad : cibles tactiles trop petites ${JSON.stringify(result)}`);
+  if (!result.visible || !result.panelSpaceUsed || result.buttonCount !== 4 || !result.deleteOutsideControls || !result.deleteHiddenUntilRequested || result.iconActionCount !== 4 || !result.emailDirectEnabled || !result.iconActionsOnly || result.pdfIcon !== "#icon-pdf" || result.horizontalOverflow) throw new Error(`Devis iPad : contrôles invalides ${JSON.stringify(result)}`);
+  if (result.touchTargets.some(({ width, height }) => width < 44 || height < 44)) throw new Error(`Caisse iPad : cibles tactiles sous 44 px ${JSON.stringify(result)}`);
   if (result.iconTouchTargets.some(({ width, height }) => width < 48 || height < 48)) throw new Error(`Caisse iPad : sorties SVG trop petites ${JSON.stringify(result)}`);
   return result;
 }
@@ -284,6 +298,18 @@ async function auditQuoteHeaderActions(window) {
   await clickElementCenter(window, "#newQuoteButton");
   const newQuoteWorked = await window.webContents.executeJavaScript(`document.querySelectorAll(".cart-line").length === 0 && /Nouveau devis prêt/.test(document.querySelector("#toastRegion").textContent)`);
   if (!newQuoteWorked) throw new Error("Le clic réel sur Nouveau devis ne répond pas");
+  const emptyCheckout = await window.webContents.executeJavaScript(`(() => {
+    const panel = document.querySelector("#checkoutPanel").getBoundingClientRect();
+    const card = document.querySelector(".checkout-card").getBoundingClientRect();
+    return {
+      panelWidth: Math.round(panel.width),
+      cardWidth: Math.round(card.width),
+      panelSpaceUsed: card.width >= panel.width - 24,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+    };
+  })()`);
+  if (!emptyCheckout.panelSpaceUsed || emptyCheckout.horizontalOverflow) throw new Error(`Caisse desktop vide mal dimensionnée ${JSON.stringify(emptyCheckout)}`);
+  await capture(window, "09a-desktop-large-caisse-vide.png");
   await window.webContents.executeJavaScript(`document.querySelector(".toast-close")?.click()`);
 
   await clickElementCenter(window, "#saveButton");
@@ -309,7 +335,7 @@ async function auditQuoteHeaderActions(window) {
   if (!menuOpened) throw new Error("Le clic réel sur Actions n’ouvre pas le menu");
   await clickElementCenter(window, "#moreQuoteButton");
 
-  return { geometry, clientOpened, newQuoteWorked, emptySaveExplained, saveWorked, historyOpened, menuOpened };
+  return { geometry, clientOpened, newQuoteWorked, emptyCheckout, emptySaveExplained, saveWorked, historyOpened, menuOpened };
 }
 
 async function hoverDesktopDelete(window) {
@@ -398,6 +424,7 @@ async function main() {
       partition: `bcdevis-ipad-${process.pid}-${Date.now()}`
     }
   });
+  window.webContents.setUserAgent(IPAD_USER_AGENT);
 
   try {
     await window.loadFile(APP_PATH);
@@ -407,7 +434,7 @@ async function main() {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector("#settingsButton").click();
       const form = document.querySelector("#settingsForm");
-      if (form.elements.ipadLayoutMode.value !== "off") throw new Error("Le confort iPad n’est pas désactivé par défaut");
+      if (form.elements.ipadLayoutMode.value !== "auto" || document.documentElement.dataset.ipadLayout !== "optimized") throw new Error("Le confort iPad automatique ne reconnaît pas iPadOS par défaut");
       form.elements.ipadLayoutMode.value = "always";
       form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     })()`);
@@ -454,6 +481,50 @@ async function main() {
     await capture(window, "06a-ipad-split-view-envoi.png");
     await window.webContents.executeJavaScript(`document.querySelector("#checkoutTransmitButton").click()`);
 
+    const splitSettings = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="interface"]').click();
+      const modal = document.querySelector("#settingsLayer .settings-modal").getBoundingClientRect();
+      const tabs = document.querySelector("#settingsTabs");
+      const panel = document.querySelector('#settingsPanelInterface');
+      const actions = document.querySelector(".settings-actions").getBoundingClientRect();
+      panel.scrollTop = 0;
+      return {
+        contained: modal.left >= 0 && modal.right <= innerWidth + 1 && modal.top >= 0 && modal.bottom <= innerHeight + 1,
+        horizontalTabs: getComputedStyle(tabs).flexDirection === "row",
+        fiveTabs: tabs.querySelectorAll('[role="tab"]').length === 5,
+        panelContained: panel.scrollWidth <= panel.clientWidth + 1,
+        actionsVisible: actions.top >= modal.top && actions.bottom <= modal.bottom + 1,
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (!splitSettings.contained || !splitSettings.horizontalTabs || !splitSettings.fiveTabs || !splitSettings.panelContained || !splitSettings.actionsVisible || splitSettings.horizontalOverflow) throw new Error(`Personnalisation Split View invalide ${JSON.stringify(splitSettings)}`);
+    await capture(window, "06b-ipad-split-view-reglages.png");
+    await window.webContents.executeJavaScript(`document.querySelector('#settingsLayer [data-close="settingsLayer"]').click()`);
+
+    await setViewport(window, 390, 844);
+    const mobileSettings = await window.webContents.executeJavaScript(`(() => {
+      document.querySelector("#settingsButton").click();
+      document.querySelector('[data-settings-tab="interface"]').click();
+      const modal = document.querySelector("#settingsLayer .settings-modal").getBoundingClientRect();
+      const tabs = document.querySelector("#settingsTabs");
+      const tabBounds = tabs.getBoundingClientRect();
+      const tabRects = [...tabs.querySelectorAll('[role="tab"]')].map((tab) => tab.getBoundingClientRect());
+      const panel = document.querySelector('#settingsPanelInterface');
+      const actions = document.querySelector(".settings-actions").getBoundingClientRect();
+      panel.scrollTop = 0;
+      return {
+        contained: modal.left >= 0 && modal.right <= innerWidth + 1 && modal.top >= 0 && modal.bottom <= innerHeight + 1,
+        allTabsVisible: tabRects.length === 5 && tabRects.every((rect) => rect.left >= tabBounds.left - 1 && rect.right <= tabBounds.right + 1),
+        panelContained: panel.scrollWidth <= panel.clientWidth + 1,
+        actionsVisible: actions.top >= modal.top && actions.bottom <= modal.bottom + 1,
+        horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    })()`);
+    if (!mobileSettings.contained || !mobileSettings.allTabsVisible || !mobileSettings.panelContained || !mobileSettings.actionsVisible || mobileSettings.horizontalOverflow) throw new Error(`Personnalisation mobile invalide ${JSON.stringify(mobileSettings)}`);
+    await capture(window, "06c-mobile-reglages.png");
+    await window.webContents.executeJavaScript(`document.querySelector('#settingsLayer [data-close="settingsLayer"]').click()`);
+
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector("#settingsButton").click();
       const form = document.querySelector("#settingsForm");
@@ -461,7 +532,7 @@ async function main() {
       form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       document.querySelector(".toast-close")?.click();
     })()`);
-    await setViewport(window, 1450, 900);
+    await setViewport(window, 1960, 900);
     const desktopCheckout = await auditDesktopCheckout(window);
     await window.webContents.executeJavaScript(`document.querySelector("#checkoutEmailButton").disabled = false`);
     await capture(window, "07-desktop-caisse-pack.png");
@@ -471,7 +542,7 @@ async function main() {
 
     await window.loadFile(APP_PATH, { query: { windowShell: "custom" } });
     await settle(window);
-    await setViewport(window, 1450, 900);
+    await setViewport(window, 1960, 900);
     await window.webContents.executeJavaScript(`(() => {
       document.querySelector('#releaseNotesLayer:not([hidden]) [data-close="releaseNotesLayer"]')?.click();
       document.querySelector('[data-offer-mode="pack"]')?.click();
@@ -485,7 +556,7 @@ async function main() {
     await capture(window, "10-desktop-entete-fenetre-deplie.png");
 
     console.log("IPAD_VISUAL_OK");
-    console.log(JSON.stringify({ landscape, catalogSearch, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, desktopCheckout, desktopDelete, displayMode, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
+    console.log(JSON.stringify({ landscape, catalogSearch, checkout, transmission, deleteSwipe, portrait, splitView, splitCheckout, splitTransmission, splitSettings, mobileSettings, desktopCheckout, desktopDelete, displayMode, quoteHeaderActions, windowHeader, output: OUTPUT_PATH }, null, 2));
   } finally {
     if (!window.isDestroyed()) window.destroy();
   }

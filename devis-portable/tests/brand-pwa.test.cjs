@@ -14,6 +14,7 @@ const text = (relativePath) => fs.readFileSync(path.join(appRoot, relativePath),
 for (const relativePath of [
   "assets/clinique-bellecour-logo-officiel.jpeg",
   "assets/clinique-bellecour-logo-officiel.png",
+  "assets/icon-save.svg",
   "assets/red-hat-display-regular.ttf",
   "assets/red-hat-display-medium.ttf",
   "assets/red-hat-display-semibold.ttf",
@@ -33,6 +34,7 @@ const styles = text("styles.css");
 const appSource = text("app.js");
 const bodyAnatomy = text("body-anatomy.js");
 const index = text("index.html");
+const saveIcon = text("assets/icon-save.svg");
 const manifest = JSON.parse(text("manifest.webmanifest"));
 const serviceWorker = text("service-worker.js");
 const packageJson = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
@@ -59,6 +61,7 @@ assert.match(appSource, /window\.visualViewport\?\.addEventListener\("resize", s
 assert.doesNotMatch(index, /id="headerLogo"/);
 assert.match(index, /id="headerLogoPreview"/);
 assert.match(index, /<script src="body-anatomy\.js"><\/script>/);
+assert.match(index, /<script src="central-sync\.js"><\/script>/);
 assert.ok(bodyAnatomy.length > 1000, "La géométrie du sélecteur anatomique doit être livrée");
 assert.equal(manifest.display, "standalone");
 assert.deepEqual(manifest.icons.map((icon) => icon.sizes), ["192x192", "512x512"]);
@@ -67,7 +70,9 @@ assert.match(serviceWorker, /\.\/body-anatomy\.js/);
 assert.match(serviceWorker, /red-hat-display-extrabold\.ttf/);
 assert.match(serviceWorker, /roboto-latin\.woff2/);
 assert.match(serviceWorker, /roboto-slab-latin\.woff2/);
-assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}"`), "Le cache PWA doit changer avec la version livrée");
+assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone"`), "Le cache PWA doit changer avec la passe tactile iPad et Smartphone");
+assert.match(saveIcon, /stroke="currentColor"[^>]*stroke-width="2\.15"/, "L’icône Enregistrer livrée doit rester nette et adaptable au thème");
+assert.equal((saveIcon.match(/<path\b/g) || []).length, 3, "L’icône Enregistrer doit conserver ses trois tracés lisibles");
 
 function get(url) {
   return new Promise((resolve, reject) => {

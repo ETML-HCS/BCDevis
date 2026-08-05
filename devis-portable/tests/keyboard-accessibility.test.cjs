@@ -36,6 +36,8 @@ assert.match(html, /<kbd>Alt<\/kbd><kbd>M<\/kbd><\/dt><dd>Ouvrir le menu Catalog
 assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>S<\/kbd><\/dt><dd>Télécharger le PDF<\/dd>/, "Le raccourci PDF doit reprendre l’action actuelle");
 assert.match(html, /id="appMenuButton"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-keyshortcuts="Alt\+M"/, "Le bouton du menu principal doit annoncer son menu et son raccourci");
 assert.match(html, /id="appMenuButton"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "Le bouton du menu principal doit rester un SVG seul");
+assert.match(html, /id="pdfLibraryButton"[^>]*aria-label="Ouvrir les documents PDF"[^>]*aria-haspopup="dialog"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "La bibliothèque PDF doit être annoncée comme une fenêtre et conserver un bouton SVG compact");
+assert.match(html, /id="pdfLibraryLayer"[\s\S]*?role="dialog" aria-modal="true"[^>]*aria-labelledby="pdfLibraryTitle"[\s\S]*?id="pdfPreviewFrame"[^>]*title="Aperçu du document PDF"/, "La bibliothèque et son aperçu PDF doivent être accessibles");
 assert.doesNotMatch(html, /id="appMenuButton"[^>]*>[\s\S]*?<span>Actions<\/span>[\s\S]*?<\/button>/, "Le titre Actions ne doit plus prendre de place dans le header");
 assert.match(html, /id="appActionsMenu" role="menu" aria-label="Catalogue"/, "Le menu Catalogue doit être identifié par son usage");
 assert.doesNotMatch(html, /app-menu-status|100% local|id="saveState"/, "Le menu Actions ne doit pas contenir une ligne d’état inutile");
@@ -64,6 +66,14 @@ assert.match(html, /<symbol id="icon-user-plus"[\s\S]*?id="clientButton"[^>]*cla
 assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[^>]*>[\s\S]*?<use href="#icon-user-plus">[\s\S]*?id="clientName" hidden><\/strong>/, "Le client vide doit rester une action SVG accessible et sans texte visible");
 assert.match(html, /id="quoteHeadActions"[\s\S]*?id="clientButton"[\s\S]*?id="newQuoteButton"/, "Le client doit précéder les actions du devis sur la même ligne");
 assert.match(app, /clientButton\.classList\.toggle\("has-client", hasClient\)[\s\S]*?clientNameLabel\.hidden = !hasClient[\s\S]*?clientAddIcon\.hidden = hasClient/, "Le client renseigné doit remplacer l’icône par son seul nom");
+assert.match(html, /id="quoteDateControl"[^>]*data-editable="false"[\s\S]*?<time id="quoteDateDisplay"[^>]*aria-label="Date du devis"><\/time>[\s\S]*?<input id="quoteDate" type="date" aria-label="Modifier la date du devis" hidden disabled>/, "La date verrouillée doit utiliser un texte compact et réserver le champ natif à l’édition");
+assert.doesNotMatch(html, /<label>\s*<span>Date<\/span>\s*<input id="quoteDate"/, "Le libellé Date ne doit plus occuper une ligne dans la caisse");
+assert.match(html, /name="quoteDateEditable" type="checkbox"[\s\S]*?<strong>Autoriser la modification<\/strong>/, "Le panneau Devis doit proposer l’édition facultative de la date");
+assert.match(app, /quoteDateEditable: false/, "La date du devis doit être verrouillée par défaut");
+assert.match(app, /function renderQuoteDate\(\)[\s\S]*?input\.disabled = !editable/, "Le rendu doit alterner explicitement entre date compacte et champ modifiable");
+assert.match(app, /if \(db\.settings\.quoteDateEditable !== true\)[\s\S]*?event\.target\.value = quote\.date/, "Une modification de date doit être refusée lorsque le réglage est désactivé");
+assert.doesNotMatch(styles, /\.checkout-card\{[^}]*container-type:/, "La carte de caisse ne doit jamais perdre sa largeur intrinsèque à cause d’un conteneur CSS");
+assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{[\s\S]*?\.checkout-context\{[\s\S]*?position:absolute[\s\S]*?\.receipt-head\{padding-left:86px/, "La date doit rejoindre visuellement receipt-head uniquement dans la caisse tablette suffisamment large");
 assert.match(app, /function saveQuote\(\) \{[\s\S]*?if \(!quote\.lines\.length\) \{[\s\S]*?Ajoutez une prestation avant d’enregistrer/, "Enregistrer doit répondre explicitement quand le devis est vide");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
@@ -100,6 +110,10 @@ for (const [id, label, shortcut] of [
   assert.match(html, new RegExp(`class="round-button quote-icon-button" id="${id}"[^>]*aria-label="${label}"[^>]*aria-keyshortcuts="${shortcut}"[^>]*data-tooltip="[^"]+"`), `${id} doit être une action SVG documentée de la caisse`);
   assert.match(html, new RegExp(`id="${id}"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} ne doit contenir que son SVG`);
 }
+assert.match(html, /<symbol id="icon-new-quote"[^>]*>[\s\S]*?<\/symbol>[\s\S]*?id="newQuoteButton"[^>]*>[\s\S]*?<use href="#icon-new-quote">/, "Nouveau devis doit utiliser le monogramme SVG D+");
+assert.match(html, /<path class="icon-new-quote-plus" d="M19\.5 3\.5v5M17 6h5" stroke-width="1\.75"><\/path>/, "Le + de Nouveau devis doit rester petit et placé en exposant du D");
+assert.match(html, /<symbol id="icon-save" viewBox="0 0 24 24" data-design="save-v2">(?:<path[^>]+><\/path>){3}<\/symbol>/, "Enregistrer doit utiliser le SVG net en trois tracés");
+assert.match(html, /#saveButton svg\{width:19px;height:19px;stroke-width:2\.15;shape-rendering:geometricPrecision\}/, "L’icône Enregistrer doit garder une taille et une épaisseur nettes dans la caisse");
 assert.match(app, /\$\("#newQuoteButton"\)\.addEventListener\("click", createNewQuote\)/, "Le bouton Nouveau devis de la caisse doit fonctionner");
 assert.match(app, /\$\("#saveButton"\)\.addEventListener\("click", saveQuote\)/, "Le bouton Enregistrer de la caisse doit fonctionner");
 assert.match(app, /\$\("#historyButton"\)\.addEventListener\("click", openHistoryLayer\)/, "Le bouton Historique de la caisse doit fonctionner");
@@ -124,8 +138,11 @@ assert.match(styles, /\.visually-hidden\{[\s\S]*?clip-path:inset\(50%\)/, "Les r
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Soins et Devis doivent nommer les zones sans rester visibles");
 assert.match(html, /class="family-title-row"><h2[\s\S]*?id="catalogSearchToggle"[\s\S]*?<strong class="visually-hidden" id="activeOfferHint"/, "La ligne Soins ne doit conserver visuellement que la loupe");
 assert.match(styles, /\.family-head\{position:relative;z-index:2;height:0;min-height:0;padding:0;border:0\}/, "La loupe doit sortir du flux sans réserver une ligne");
-assert.match(styles, /\.family-title-row\{position:absolute;z-index:3;top:0;right:0;/, "La loupe doit rester ancrée en position absolue");
-assert.match(styles, /\.family-head:has\(\.family-search:not\(\[hidden\]\)\)\{height:43px\}/, "L’ouverture de la recherche doit seule rendre sa hauteur à l’en-tête");
+assert.match(styles, /\.family-title-row\{position:absolute;z-index:3;top:0;right:-10px;/, "La loupe doit rester ancrée dans le rail droit");
+assert.doesNotMatch(styles, /family-group:first-child>\.family-button\{padding-right:/, "La première famille ne doit plus compenser seule la loupe");
+assert.match(styles, /\.family-head:has\(\.family-search:not\(\[hidden\]\)\)\{height:47px\}/, "L’ouverture de la recherche doit seule rendre sa hauteur à l’en-tête");
+assert.match(styles, /\.family-search svg\{[\s\S]*?flex:0 0 18px;[\s\S]*?stroke-width:2\.35/, "La loupe gauche doit conserver une largeur et un trait lisibles");
+assert.match(styles, /\.family-search input\{[\s\S]*?width:auto;[\s\S]*?flex:1 1 auto;/, "Le champ de recherche doit laisser une zone réservée à la loupe");
 assert.doesNotMatch(html, />\s*(?:Prestations|Caisse|Ajouter à la caisse)\s*</, "Les noms visibles doivent rester ultra courts");
 assert.match(html, /id="installmentTableWrap" hidden><table class="installment-table"[^>]*><tbody id="installmentGrid"/, "L’échelonnement doit utiliser un tableau compact");
 assert.doesNotMatch(html, /<details class="installments"|Paiement échelonné \(CHF\)|class="installment-note"/, "La caisse ne doit plus afficher le panneau explicatif de l’échelonnement");
@@ -188,12 +205,13 @@ assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la po
 assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les quatre polices doivent rester accessibles au clavier");
 assert.match(app, /moveRadioSelection\(event\.currentTarget, "\.font-card"/, "Les polices doivent accepter les flèches du clavier");
 assert.match(html, /id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation"/, "Les groupes de réglages doivent être annoncés comme des onglets");
-assert.equal((html.match(/id="settingsTab[^"]*" type="button" role="tab" aria-selected=/g) || []).length, 4, "Les quatre onglets de Personnalisation doivent exposer leur état");
+assert.equal((html.match(/id="settingsTab[^"]*" type="button" role="tab" aria-selected=/g) || []).length, 5, "Les cinq onglets de Personnalisation doivent exposer leur état");
 assert.equal((html.match(/data-history-view="(?:history|tracking)"/g) || []).length, 2, "Mes devis doit proposer les vues Historique et Suivi");
-assert.equal((html.match(/data-settings-panel="[^"]+" tabindex="0"(?: hidden)?/g) || []).length, 4, "Chaque onglet de Personnalisation doit piloter un panneau");
-assert.match(app, /const SETTINGS_TAB_IDS = \["interface", "company", "pricing", "document"\]/, "La navigation doit rester limitée aux quatre groupes prévus");
+assert.equal((html.match(/data-settings-panel="[^"]+" tabindex="0"(?: hidden)?/g) || []).length, 5, "Chaque onglet de Personnalisation doit piloter un panneau");
+assert.match(app, /const SETTINGS_TAB_IDS = \["interface", "company", "pricing", "document", "data"\]/, "La navigation doit inclure le groupe Données de la V7");
+assert.match(html, /id="centralUniqueQuoteNumbers" name="centralUniqueQuoteNumbers" type="checkbox" disabled/, "Les numéros uniques doivent être une option explicite, verrouillée avant connexion");
 assert.match(app, /function setSettingsTab\(/, "La navigation de Personnalisation doit synchroniser onglets et panneaux");
-assert.match(app, /\["ArrowLeft", "ArrowRight", "Home", "End"\]/, "Les onglets de Personnalisation doivent accepter les flèches, Début et Fin");
+assert.match(app, /\["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"\]/, "Les onglets de Personnalisation doivent accepter les quatre flèches, Début et Fin");
 assert.doesNotMatch(html, /class="layer-backdrop"[^>]*?(?<!tabindex="-1")>/, "Les fonds de modale ne doivent pas interrompre l’ordre de tabulation");
 assert.doesNotMatch(html, /id="checkoutToastSlot"/, "La notification ne doit plus dépendre d’un conteneur rogné dans la caisse");
 assert.match(html, /<div class="toast-region" id="toastRegion" aria-live="polite"/, "La notification doit rester dans le calque global");

@@ -33,13 +33,13 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "6\.0\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "7\.0\.1";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 6\.0\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.0\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran de nouveautés doit rester limité à trois informations");
-assert.match(html, /<strong>Suivi<\/strong>[\s\S]*?<strong>Couleurs<\/strong>[\s\S]*?<strong>Relances<\/strong>/, "Les nouveautés doivent résumer le suivi commercial de la version 6.0.0");
+assert.match(html, /<strong>Confort tactile<\/strong>[\s\S]*?<strong>Caisse plus sûre<\/strong>[\s\S]*?<strong>Tuiles plus simples<\/strong>/, "Les nouveautés doivent résumer les améliorations tactiles de la version 7.0.1");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
 assert.match(html, /<symbol id="icon-swipe-left"/, "Le pictogramme du balayage tactile doit rester disponible");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Les deux zones principales doivent conserver des noms courts mais non visibles");
@@ -166,13 +166,14 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3><\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Navigation", "iPad", "Démarrage", "Catalogue", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Suivi des devis", "Mentions"],
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Date du devis", "Suivi des devis", "Mentions", "Centralisation", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
-assert.match(app, /ipadLayoutMode: "off"/, "L’optimisation iPad doit être désactivée par défaut");
-assert.match(app, /const preference = IPAD_LAYOUT_MODES\.includes\(mode\) \? mode : "off"/, "Une valeur iPad invalide doit conserver le rendu standard");
+assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
+assert.match(app, /const preference = IPAD_LAYOUT_MODES\.includes\(mode\) \? mode : "auto"/, "Une valeur iPad invalide doit revenir à la détection automatique");
 assert.equal((html.match(/name="ipadLayoutMode" type="radio"/g) || []).length, 3, "Le réglage iPad doit proposer Automatique, Toujours et Désactivée");
 assert.match(html, /value="auto"[\s\S]*?value="always"[\s\S]*?value="off"/, "Les trois modes iPad doivent rester explicites et ordonnés");
+assert.match(html, /value="auto"[\s\S]*?Par défaut · reconnaît iPadOS[\s\S]*?value="off"[\s\S]*?Responsive standard/, "Le réglage doit expliquer que la détection iPad est désormais le choix initial");
 assert.match(app, /function isLikelyIpad\(\)[\s\S]*?navigator\.maxTouchPoints/, "iPadOS en mode bureau doit être reconnu sans dépendre uniquement du user-agent");
 assert.match(app, /document\.documentElement\.dataset\.ipadLayout = optimized \? "optimized" : "standard"/, "Le choix iPad doit piloter un état de rendu unique");
 assert.match(html, /html\[data-ipad-layout="optimized"\][\s\S]*?touch-action:manipulation/, "Le mode iPad doit supprimer le délai des interactions tactiles");
@@ -182,8 +183,10 @@ assert.match(
   /name="showTaxInformation" type="checkbox"[\s\S]*?<strong>Afficher et calculer la TVA<\/strong>[\s\S]*?les prix sont conservés tels quels/,
   "Le réglage TVA doit expliquer que sa désactivation conserve les prix existants"
 );
-assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 3, "TVA, suivi et signatures doivent partager le même contrôle premium");
-assert.match(html, /id="icon-percent"[\s\S]*?id="icon-signature"/, "Les deux réglages doivent utiliser des pictogrammes explicites");
+assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 4, "TVA, date, suivi et signatures doivent partager le même contrôle premium");
+assert.match(html, /name="quoteDateEditable"[\s\S]*?<use href="#icon-clock">/, "Le réglage de date doit utiliser un pictogramme explicite");
+assert.match(html, /name="showTaxInformation"[\s\S]*?<use href="#icon-percent">/, "Le réglage TVA doit utiliser un pictogramme explicite");
+assert.match(html, /name="showSignatures"[\s\S]*?<use href="#icon-signature">/, "Le réglage des signatures doit utiliser un pictogramme explicite");
 assert.match(html, /name="showSignatures" type="checkbox"[\s\S]*?<strong>Zones de signature<\/strong>[\s\S]*?Date et lieu/, "Le réglage des signatures doit expliquer son effet sur le devis");
 assert.doesNotMatch(html, /class="checkbox-field full-field"><input[^>]*name="(?:showTaxInformation|showSignatures)"/, "Les deux réglages ne doivent plus ressembler à des cases à cocher génériques");
 assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:checked\)/, "La carte doit rendre son état actif immédiatement visible");
@@ -216,8 +219,14 @@ assert.doesNotMatch(
 );
 assert.match(app, /single: \{ top: "Séance unique", hint: "Séance", fullHint: "Prix par séance" \}/, "Le tarif actif doit conserver son libellé accessible");
 assert.match(app, /activeOfferHint\.setAttribute\("aria-label", content\.fullHint\)/, "Le libellé complet du tarif doit rester accessible sans être affiché");
-assert.equal((html.match(/data-settings-tab="/g) || []).length, 4, "Personnalisation doit proposer quatre groupes");
-assert.equal((html.match(/data-settings-panel="/g) || []).length, 4, "Chaque groupe doit avoir un panneau dédié");
+assert.equal((html.match(/data-settings-tab="/g) || []).length, 5, "Personnalisation doit proposer cinq groupes");
+assert.equal((html.match(/data-settings-panel="/g) || []).length, 5, "Chaque groupe doit avoir un panneau dédié");
+assert.equal((html.match(/class="settings-tab-icon"/g) || []).length, 5, "Chaque groupe doit garder un repère visuel compact");
+assert.match(html, /class="settings-workspace">[\s\S]*?id="settingsTabs"[\s\S]*?class="settings-panels"/, "Le rail et les panneaux doivent partager un espace de travail unique");
+assert.match(html, /\.settings-workspace\{[\s\S]*?grid-template-columns:210px minmax\(0,1fr\)/, "Le bureau doit utiliser un rail latéral compact");
+assert.match(html, /@media screen and \(max-width:900px\)\{[\s\S]*?\.settings-workspace\{display:flex;flex-direction:column\}/, "Le rail doit redevenir horizontal sur une fenêtre étroite");
+assert.match(html, /--settings-space-xs:6px;[\s\S]*?--settings-radius-card:11px;[\s\S]*?--settings-line-soft:/, "Les groupes doivent partager les mêmes tokens d’espacement, de rayon et de bordure");
+assert.match(html, /Thème, navigation, catalogue[\s\S]*?Coordonnées, logos, numéros[\s\S]*?TVA, packs, tarif étudiant[\s\S]*?Date, relances, mentions[\s\S]*?Centralisation, synchronisation/, "Le rail doit conserver des résumés courts et homogènes");
 assert.match(
   html,
   /\.settings-panel\[hidden\]\{display:none!important\}/,
@@ -275,13 +284,31 @@ assert.match(
 );
 assert.match(
   styles,
-  /html\[data-ipad-layout="optimized"\] \.cart-line-inline-controls \.quantity-stepper\{min-height:40px;grid-template-columns:34px minmax\(28px,auto\) 34px\}/,
-  "Le mode iPad doit conserver des boutons de quantité tactiles"
+  /html\[data-ipad-layout="optimized"\] \.cart-line-inline-controls \.quantity-stepper,[\s\S]*?min-height:44px;[\s\S]*?grid-template-columns:44px minmax\(30px,auto\) 44px/,
+  "Le mode iPad doit garantir des boutons de quantité de 44 px"
 );
+assert.match(styles, /html\[data-display-mode="smartphone"\] \.cart-line-inline-controls \.quantity-stepper[\s\S]*?min-height:44px/, "Le mode Smartphone doit partager le contrat tactile de 44 px");
+assert.match(styles, /html\[data-ipad-layout="optimized"\] \.tile-catalog-fields input,[\s\S]*?height:44px;font-size:16px/, "L’éditeur des tuiles iPad doit agrandir ses champs sans zoom Safari");
+assert.match(styles, /html\[data-display-mode="smartphone"\] \.tile-catalog-fields input[\s\S]*?height:44px;font-size:16px/, "L’éditeur des tuiles Smartphone doit agrandir ses champs");
+assert.match(styles, /html\[data-ipad-layout="optimized"\] \.topbar-utility-button,[\s\S]*?width:44px;[\s\S]*?height:44px/, "Les utilitaires iPad doivent atteindre 44 px");
+assert.match(styles, /html\[data-display-mode="smartphone"\] \.modal-head \.round-button[\s\S]*?height:44px/, "Les fermetures de modale Smartphone doivent atteindre 44 px");
+assert.match(html, /\.topbar-utility-button\{[\s\S]*?width:42px;[\s\S]*?height:42px/, "Le profil Bureau doit conserver ses dimensions compactes");
+assert.match(styles, /\.tile-catalog-fields input\{width:100%;height:36px/, "Les champs compacts du profil Bureau ne doivent pas être agrandis globalement");
 assert.match(styles, /\.cart-line-main\{[^}]*touch-action:pan-y/, "La ligne de caisse doit conserver le défilement vertical pendant un geste tactile");
+assert.match(styles, /\.cart-section \.cart-line\.offer-single\+\.cart-line\.offer-single\{border-top:0\}/, "Deux prestations à la séance consécutives ne doivent pas être séparées par une ligne");
+assert.match(styles, /\.cart-section\{margin-top:4px\}[\s\S]*?\.cart-section-title\{min-height:26px\}[\s\S]*?\.cart-section \.cart-line\{padding-block:2px\}[\s\S]*?\.cart-section \.cart-line \.cart-line-main\{padding-block:7px\}/, "Toutes les prestations doivent conserver une présentation compacte");
+assert.match(styles, /\.checkout-panel\.is-full-height \.checkout-card\{width:100%;max-width:none;flex:1 1 auto\}/, "La carte de caisse desktop doit remplir son panneau même lorsqu’elle est vide");
+assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{\s*\.checkout-panel\.active-panel \.checkout-card\{width:100%;max-width:none;margin-inline:0\}/, "La caisse tablette doit utiliser toute la largeur disponible");
+assert.match(styles, /html\[data-theme\] \.family-panel \.family-options\{\s*display:flex;\s*flex-wrap:wrap;/, "Les tuiles de soins doivent s’adapter à la largeur réelle de familyList");
+assert.match(styles, /html\[data-theme\] \.family-panel \.family-options>\.family-option-shell\{\s*width:auto;\s*flex:1 1 220px;/, "Chaque rangée de soins doit remplir tout l’espace disponible");
+assert.match(styles, /@media screen and \(max-width:640px\)\{\s*html\[data-theme\] \.family-panel \.family-options>\.family-option-shell\{flex-basis:100%\}/, "Une fenêtre très étroite doit conserver une seule tuile par rangée");
 assert.match(styles, /\.cart-line\.is-delete-revealed\{--cart-line-swipe-offset:-56px\}/, "Le balayage gauche doit dégager la zone de suppression");
 assert.match(styles, /@media \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.cart-line-delete-zone:hover \.remove-line/, "La poubelle doit apparaître au bord droit avec une souris");
 assert.match(app, /CART_DELETE_REVEAL_WIDTH = 56[\s\S]*?pointerType[\s\S]*?"touch", "pen"/, "La caisse doit gérer le balayage tactile et le stylet");
+assert.match(app, /CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1"[\s\S]*?class="cart-swipe-hint"[\s\S]*?Balayez une ligne vers la gauche/, "Le premier usage tactile doit expliquer le balayage de suppression sans synchroniser cet état local");
+assert.match(styles, /\.cart-swipe-hint\{display:none\}[\s\S]*?html\[data-ipad-layout="optimized"\] \.cart-swipe-hint,[\s\S]*?html\[data-display-mode="smartphone"\] \.cart-swipe-hint/, "L’indication de balayage doit rester limitée aux modes iPad et Smartphone");
+assert.match(app, /actionLabel: "Annuler"[\s\S]*?undoRemovedLine/, "Une suppression tactile doit proposer une annulation temporaire");
+assert.match(app, /data-tile-field="duration" type="number" inputmode="numeric"[\s\S]*?data-tile-field="price" type="number" inputmode="decimal"/, "L’éditeur tactile doit demander les claviers adaptés aux durées et aux prix");
 assert.match(app, /cart-line-delete-zone[\s\S]*?data-line-action="remove"[\s\S]*?cart-line-main[\s\S]*?cart-line-inline-controls/, "La poubelle doit être rendue hors des contrôles de quantité");
 assert.match(app, /decreaseAction: "decrease"[\s\S]*?increaseAction: "increase"/, "La quantité payée doit proposer des contrôles −/+ explicites");
 assert.match(app, /decreaseAction: "decrease-free"[\s\S]*?increaseAction: "increase-free"/, "La quantité offerte doit proposer des contrôles −/+ explicites");

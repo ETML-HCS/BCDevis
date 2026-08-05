@@ -8,7 +8,7 @@ const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 
-assert.match(app, /const APP_VERSION = 21;/, "La V6 doit migrer la base locale");
+assert.match(app, /const APP_VERSION = 23;/, "La V7 doit préserver et migrer la base locale");
 assert.match(app, /const TRACKING_STATUSES = \["draft", "ready", "sent", "accepted", "refused", "expired"\]/, "Les statuts commerciaux doivent rester bornés");
 assert.match(app, /status: "draft"[\s\S]*?tracking: freshTracking/, "Le statut de sauvegarde et le suivi commercial doivent rester séparés");
 assert.match(app, /tracking: sanitizeTracking\(source\.tracking/, "Les suivis importés doivent être nettoyés");
