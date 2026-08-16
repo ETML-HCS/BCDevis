@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.0.2 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.0.2") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.0 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.0") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -68,10 +68,14 @@ async function run() {
       if (document.activeElement !== releaseButton) throw new Error("Le bouton principal des nouveautés ne reçoit pas le focus initial");
       releaseButton.click();
       if (!releaseLayer.hidden || document.querySelector("#appShell").inert) throw new Error("L’écran des nouveautés ne se ferme pas proprement");
+      window.__bcdevisPdfDirectory = { available: true, directory: "C:/BCDevis/PDF", isDefault: false };
       window.bcdevisDesktop = {
         savePdf: async (fileName) => ({ saved: true, fileName, filePath: "C:/Downloads/" + fileName }),
         composeEmail: async () => ({ opened: true, attached: true, client: "test" }),
-        openExternal: async () => true
+        openExternal: async () => true,
+        getPdfDirectory: async () => ({ ...window.__bcdevisPdfDirectory }),
+        choosePdfDirectory: async () => (window.__bcdevisPdfDirectory = { available: true, directory: "D:/Devis PDF", isDefault: false }),
+        resetPdfDirectory: async () => (window.__bcdevisPdfDirectory = { available: true, directory: "C:/Downloads", isDefault: true })
       };
       const normalizedColor = (value) => {
         const probe = document.createElement("span");
@@ -82,6 +86,17 @@ async function run() {
         return result;
       };
       document.querySelector("#settingsButton").click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      const quotePreview = document.querySelector("#settingsQuotePreview").textContent;
+      const invoicePreview = document.querySelector("#settingsInvoicePreview").textContent;
+      if (quotePreview.replace(/^DEV-/, "") !== invoicePreview.replace(/^FAC-/, "")) throw new Error("Les aperçus devis et facture n’utilisent pas le même poste");
+      if (document.querySelector("#pdfDirectoryPath").textContent !== "C:/BCDevis/PDF" || document.querySelector("#choosePdfDirectoryButton").hidden) throw new Error("Le dossier PDF natif n’est pas affiché dans les réglages");
+      document.querySelector("#choosePdfDirectoryButton").click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (document.querySelector("#pdfDirectoryPath").textContent !== "D:/Devis PDF") throw new Error("Le nouveau dossier PDF n’est pas appliqué dans les réglages");
+      document.querySelector("#resetPdfDirectoryButton").click();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (document.querySelector("#pdfDirectoryPath").textContent !== "C:/Downloads" || !document.querySelector("#resetPdfDirectoryButton").disabled) throw new Error("Le dossier PDF par défaut n’est pas restauré");
       const catalogEditorButton = document.querySelector("#tileCatalogEditorButton");
       catalogEditorButton.click();
       const catalogEditorLayer = document.querySelector("#tileCatalogEditorLayer");
@@ -252,9 +267,12 @@ async function run() {
       if (!document.querySelector("#catalogSearchPanel").hidden || document.querySelector(".family-head").getBoundingClientRect().height > 1) throw new Error("La recherche refermée conserve encore de la hauteur");
       const topbarUtilities = document.querySelector(".topbar-utilities");
       const utilityButtons = [...topbarUtilities.querySelectorAll(".topbar-utility-button")];
+      const visibleUtilityButtons = utilityButtons.filter((button) => !button.hidden);
+      const centralLibraryButtons = utilityButtons.filter((button) => button.hasAttribute("data-central-library"));
       const utilityRect = topbarUtilities.getBoundingClientRect();
-      if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 3) throw new Error("Les trois utilitaires ne suivent pas directement le groupe des tarifs");
-      if (utilityButtons.some((button) => button.textContent.trim() || !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne sont pas des SVG compacts ou empiètent sur la caisse");
+      if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 4 || visibleUtilityButtons.length !== 2) throw new Error("Les utilitaires ne distinguent pas correctement les actions locales des bibliothèques centrales");
+      if (centralLibraryButtons.length !== 2 || centralLibraryButtons.some((button) => !button.hidden || !button.disabled)) throw new Error("Les bibliothèques centrales restent visibles sans connexion PostgreSQL");
+      if (document.querySelector("#settingsButton").textContent.trim() || document.querySelector("#helpButton").textContent.trim() !== "Aide" || utilityButtons.some((button) => !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne présentent pas correctement Réglages et Aide ou empiètent sur la caisse");
       const menuButton = document.querySelector("#appMenuButton");
       if (menuButton.childElementCount !== 1 || !menuButton.firstElementChild.matches("svg")) throw new Error("Le menu principal n’est pas réduit à son icône");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));
@@ -306,22 +324,31 @@ async function run() {
       if (document.querySelector("#historyLayer").hidden) throw new Error("Ctrl+H n’ouvre pas l’historique");
       document.querySelector('#historyLayer [data-close="historyLayer"]').click();
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "?", code: "Slash", shiftKey: true, bubbles: true, cancelable: true }));
-      if (document.querySelector("#shortcutHelpLayer").hidden) throw new Error("? n’ouvre pas l’aide des raccourcis");
-      const shortcutCard = document.querySelector(".shortcut-help-modal");
-      const shortcutRect = shortcutCard.getBoundingClientRect();
-      const shortcutGroups = shortcutCard.querySelector(".shortcut-groups");
-      const shortcutLists = [...shortcutCard.querySelectorAll(".shortcut-list")];
-      if (shortcutRect.left < 0 || shortcutRect.right > innerWidth + 1 || shortcutRect.bottom > innerHeight + 1) throw new Error("L’aide des raccourcis déborde de la fenêtre");
-      if (shortcutGroups.scrollWidth > shortcutGroups.clientWidth + 1 || getComputedStyle(shortcutGroups).gridTemplateColumns.trim().split(/\\s+/).length !== 2) throw new Error("L’aide des raccourcis n’utilise pas correctement ses deux colonnes");
-      if (shortcutLists.length !== 4 || shortcutLists.some((list) => getComputedStyle(list).gridTemplateColumns.trim().split(/\\s+/).length !== 1) || shortcutCard.querySelectorAll(".shortcut-list>div").length !== 16) throw new Error("Les groupes de raccourcis sont incomplets ou mal structurés");
-      document.querySelector('#shortcutHelpLayer [data-close="shortcutHelpLayer"]').click();
+      const helpLayer = document.querySelector("#helpLayer");
+      const helpFrame = document.querySelector("#helpFrame");
+      if (helpLayer.hidden) throw new Error("? n’ouvre pas le centre d’aide");
+      if (!helpFrame.contentDocument?.querySelector("#helpSearch")) await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error("Le centre d’aide ne charge pas")), 3000);
+        helpFrame.addEventListener("load", () => { clearTimeout(timeout); resolve(); }, { once: true });
+      });
+      const helpRect = document.querySelector(".help-center-modal").getBoundingClientRect();
+      const helpDocument = helpFrame.contentDocument;
+      if (helpRect.left < 0 || helpRect.right > innerWidth + 1 || helpRect.top < 0 || helpRect.bottom > innerHeight + 1 || helpRect.width < 1000) throw new Error("Le centre d’aide n’exploite pas correctement la grande fenêtre");
+      if (helpDocument.querySelectorAll("[data-help-topic]").length !== 8 || helpFrame.contentWindow.location.hash !== "#shortcuts") throw new Error("Le raccourci ? n’ouvre pas le bon thème d’aide");
+      const helpSearch = helpDocument.querySelector("#helpSearch");
+      helpSearch.value = "facture PDF";
+      helpSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (helpDocument.querySelectorAll("[data-help-topic]:not([hidden])").length < 1 || !/trouvé/.test(helpDocument.querySelector("#helpSearchStatus").textContent)) throw new Error("La recherche multi-mots de l’aide ne filtre pas les thèmes");
+      helpDocument.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (!helpLayer.hidden) throw new Error("Échap dans le centre d’aide ne ferme pas sa fenêtre");
       const taxHeaderToggle = document.querySelector(".tax-header-toggle");
       if (taxHeaderToggle.textContent.trim() !== "TVA") throw new Error("Le toggle TVA conserve un libellé inutilement long");
       if (!taxHeaderToggle.hidden) throw new Error("La TVA doit être masquée par défaut dans la caisse");
       document.querySelector("#moreQuoteButton").click();
       const quoteMenu = document.querySelector("#quoteActionMenu");
       const quoteMenuRect = quoteMenu.getBoundingClientRect();
-      if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 4) throw new Error("Le menu des actions du devis est incomplet");
+      if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 5) throw new Error("Le menu des actions du devis est incomplet");
       if (quoteMenuRect.left < checkoutRect.left || quoteMenuRect.right > checkoutRect.right + 1) throw new Error("Le menu des actions du devis déborde de la caisse");
       document.querySelector("#newQuoteButton").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
       if (!quoteMenu.hidden) throw new Error("Le menu … reste coincé lors d’un clic sur une autre action de la caisse");
@@ -384,8 +411,8 @@ async function run() {
       }
       const adjacentSingleMain = adjacentSingleLine.querySelector(".cart-line-main");
       const cartSection = adjacentSingleLine.closest(".cart-section");
-      if (Number.parseFloat(getComputedStyle(adjacentSingleLine).paddingTop) !== 2
-        || Number.parseFloat(getComputedStyle(adjacentSingleMain).paddingTop) !== 7
+      if (Number.parseFloat(getComputedStyle(adjacentSingleLine).paddingTop) !== 1
+        || Number.parseFloat(getComputedStyle(adjacentSingleMain).paddingTop) !== 4
         || Number.parseFloat(getComputedStyle(cartSection).marginTop) !== 4
         || Number.parseFloat(getComputedStyle(cartSection.querySelector(".cart-section-title")).minHeight) !== 26) {
         throw new Error("Les espacements des prestations ne sont pas assez compacts");
@@ -400,8 +427,8 @@ async function run() {
       if (!convertedPackLine || convertedPackLine.querySelector('[data-quantity-value="free"]')?.textContent.trim() !== "1") {
         throw new Error("La conversion en pack ne conserve pas correctement la séance offerte");
       }
-      if (Number.parseFloat(getComputedStyle(convertedPackLine).paddingTop) !== 2
-        || Number.parseFloat(getComputedStyle(convertedPackLine.querySelector(".cart-line-main")).paddingTop) !== 7) {
+      if (Number.parseFloat(getComputedStyle(convertedPackLine).paddingTop) !== 1
+        || Number.parseFloat(getComputedStyle(convertedPackLine.querySelector(".cart-line-main")).paddingTop) !== 4) {
         throw new Error("La ligne Pack ne reprend pas le compactage de la caisse");
       }
       const increasePaid = convertedPackLine.querySelector('[data-line-action="increase"]');
@@ -415,11 +442,20 @@ async function run() {
       document.querySelector('.cart-line.offer-pack [data-line-action="decrease-free"]').click();
       adjustedPackLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.offerType === "pack");
       if (adjustedPackLine?.freeQuantity !== 1) throw new Error("Le bouton − des séances offertes ne fonctionne pas");
+      const packLineId = convertedPackLine.dataset.lineId;
       document.querySelector('.cart-line.offer-pack [data-line-action="decrease"]').click();
-      document.querySelector('.cart-line.offer-pack [data-line-action="increase"]').click();
-      adjustedPackLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.offerType === "pack");
-      if (adjustedPackLine?.quantity !== 6) throw new Error("Les boutons −/+ des séances payées ne restaurent pas la quantité");
-      if (!document.querySelector('.cart-line:not(.offer-pack) [data-line-action="decrease"]')?.disabled) throw new Error("Le bouton − doit être désactivé à la quantité minimale");
+      const revertedLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.id === packLineId);
+      if (JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.some((line) => line.offerType === "pack")) throw new Error("Descendre sous le seuil du pack doit retirer la séance offerte");
+      if (!revertedLine || revertedLine.offerType !== "single" || revertedLine.freeQuantity !== 0) throw new Error("La ligne doit redevenir une séance unique sans séance offerte");
+      if (!document.querySelector('.cart-line.offer-single[data-line-id="' + packLineId + '"]')) throw new Error("La ligne baissée doit être annoncée comme séance unique");
+      document.querySelector('.cart-line.offer-single[data-line-id="' + packLineId + '"] [data-line-action="increase"]').click();
+      const afterIncrease = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.id === packLineId);
+      if (afterIncrease?.quantity !== 6 || afterIncrease.offerType !== "single") throw new Error("L’augmentation doit rétablir la quantité sans recréer le pack automatiquement");
+      const offerButton = document.querySelector('.cart-line.offer-single[data-line-id="' + packLineId + '"] .pack-offer-action');
+      if (!offerButton) throw new Error("Le bouton d’offre doit réapparaître au seuil du pack");
+      const minimumLine = JSON.parse(localStorage.getItem("bcdevis-v1")).current.lines.find((line) => line.quantity === 1);
+      if (!document.querySelector('.cart-line[data-line-id="' + minimumLine.id + '"] [data-line-action="decrease"]')?.disabled) throw new Error("Le bouton − doit être désactivé à la quantité minimale");
+      offerButton.click();
       const totalsQuote = JSON.parse(localStorage.getItem("bcdevis-v1")).current;
       const totalsPackLine = totalsQuote.lines.find((line) => line.offerType === "pack");
       const displayMoney = (value) => new Intl.NumberFormat("fr-CH", { style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0).replaceAll(" ", " ");
@@ -429,7 +465,7 @@ async function run() {
       }, 0);
       const packDiscount = Number(totalsPackLine.price) * Number(totalsPackLine.freeQuantity);
       const paidTotal = catalogTotal - packDiscount;
-      if (convertedPackLine.querySelector(".cart-line-price").textContent !== displayMoney(Number(totalsPackLine.price) * (Number(totalsPackLine.quantity) + Number(totalsPackLine.freeQuantity)))) throw new Error("La ligne Pack n’affiche pas sa valeur complète avant offre");
+      if (document.querySelector(".cart-line.offer-pack .cart-line-price").textContent !== displayMoney(Number(totalsPackLine.price) * (Number(totalsPackLine.quantity) + Number(totalsPackLine.freeQuantity)))) throw new Error("La ligne Pack n’affiche pas sa valeur complète avant offre");
       if (document.querySelector("#subtotalValue").textContent !== displayMoney(catalogTotal)) throw new Error("Le total avant offres ne reprend pas toutes les séances");
       if (document.querySelector("#totalDiscountRow").hidden || document.querySelector("#totalDiscountValue").textContent !== "− " + displayMoney(packDiscount)) throw new Error("Le rabais total ne valorise pas la séance offerte");
       if (document.querySelector("#grandTotalValue").textContent !== displayMoney(paidTotal)) throw new Error("Le total à payer facture encore une séance offerte");
@@ -543,14 +579,30 @@ async function run() {
       document.querySelector('#settingsLayer .modal-head [data-close="settingsLayer"]').click();
 
       const emptyClientButton = document.querySelector("#clientButton");
-      if (!emptyClientButton.classList.contains("is-empty") || emptyClientButton.classList.contains("has-client") || emptyClientButton.getBoundingClientRect().width > 44 || !emptyClientButton.querySelector('#clientInitials use[href="#icon-user-plus"]') || !document.querySelector("#clientName").hidden) throw new Error("Le client vide n’est pas réduit au pictogramme client plus");
+      if (!emptyClientButton.classList.contains("is-empty") || emptyClientButton.classList.contains("has-client") || emptyClientButton.getBoundingClientRect().width > 44 || !emptyClientButton.querySelector('#clientInitials use[href="#icon-user-plus"]') || emptyClientButton.querySelector("#clientActionLabel") || !document.querySelector("#clientName").hidden || emptyClientButton.dataset.tooltip !== "Ajouter un client") throw new Error("Le bouton Ajouter un client n’est pas un SVG compact et accessible");
       document.querySelector("#clientButton").click();
       const client = document.querySelector("#clientForm");
       client.elements.name.value = "Sophie Martin";
       client.elements.phone.value = "+41 79 111 22 33";
       client.elements.email.value = "sophie@example.test";
+      client.elements.company.value = "Cabinet Martin";
+      client.elements.address.value = "Rue du Rhône 10";
+      client.elements.postalCode.value = "1204";
+      client.elements.city.value = "Genève";
+      client.elements.reference.value = "PAT-001";
       client.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       if (!document.querySelector("#clientButton").classList.contains("has-client") || !document.querySelector("#clientInitials").hidden || document.querySelector("#clientName").hidden || document.querySelector("#clientName").textContent !== "Sophie Martin" || !document.querySelector("#clientButton").getAttribute("aria-label").includes("Sophie Martin")) throw new Error("Le client renseigné n’affiche pas uniquement son nom");
+      const contactDatabase = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      const savedContacts = Object.values(contactDatabase.contacts || {});
+      if (savedContacts.length !== 1 || savedContacts[0].company !== "Cabinet Martin" || savedContacts[0].city !== "Genève" || savedContacts[0].reference !== "PAT-001") throw new Error("Le formulaire détaillé n’enregistre pas le contact complet");
+      if (!contactDatabase.current.client.contactId || contactDatabase.current.client.contactId !== savedContacts[0].id || contactDatabase.current.client.postalCode !== "1204") throw new Error("Le devis ne conserve pas son instantané lié au contact");
+      document.querySelector("#clientButton").click();
+      if (document.querySelectorAll("#contactList [data-contact-id]").length !== 1 || document.querySelector("#contactList [aria-selected=\"true\"]")?.dataset.contactId !== savedContacts[0].id) throw new Error("Le répertoire ne sélectionne pas le contact du devis");
+      const contactSearch = document.querySelector("#contactSearch");
+      contactSearch.value = "introuvable";
+      contactSearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (!document.querySelector("#contactEmpty").textContent.includes("Aucun résultat") || document.querySelector("#contactEmpty").hidden) throw new Error("La recherche de contacts ne signale pas une absence de résultat");
+      document.querySelector('#clientLayer [data-close="clientLayer"]').click();
       if (document.querySelector("#checkoutEmailButton use")?.getAttribute("href") !== "#icon-mail-attach" || document.querySelector("#checkoutEmailButton").closest("#checkoutTransmissionMenu")) throw new Error("L’e-mail avec PDF joint n’est pas directement accessible dans le devis");
       document.querySelector("#checkoutTransmitButton").click();
       if (document.querySelector("#checkoutTransmissionMenu").hidden) throw new Error("Envoyer n’ouvre pas les choix WhatsApp et Outlook Web");
@@ -569,11 +621,11 @@ async function run() {
       document.querySelector('[data-theme="night"]').click();
       document.querySelector('[data-font="roboto"]').click();
       document.querySelector('#settingsLayer .modal-head [data-close="settingsLayer"]').click();
-      if (document.documentElement.dataset.theme !== "light") throw new Error("L’annulation des réglages doit restaurer le thème enregistré");
+      if (document.documentElement.dataset.theme !== "white") throw new Error("L’annulation des réglages doit restaurer le thème enregistré");
       if (document.documentElement.dataset.font !== "red-hat") throw new Error("L’annulation des réglages doit restaurer la police enregistrée");
 
       document.querySelector("#settingsButton").click();
-      for (const theme of ["light", "night", "forest", "bordeaux"]) {
+      for (const theme of ["white", "light", "night", "forest", "bordeaux"]) {
         const themeCard = document.querySelector('[data-theme="' + theme + '"]');
         themeCard.click();
         if (document.documentElement.dataset.theme !== theme) throw new Error("Le thème " + theme + " ne s’applique pas");
@@ -787,11 +839,18 @@ async function run() {
     const trackingWorkflow = await window.webContents.executeJavaScript(`(() => {
       document.querySelector("#historyButton").click();
       const historyTabs = document.querySelector("#historyTabs");
-      const sentCard = document.querySelector(".history-item--sent");
-      if (historyTabs.hidden || !sentCard || sentCard.querySelector(".history-status")?.textContent !== "Envoyé") throw new Error("Le statut coloré n’apparaît pas dans l’historique standard");
+      const archiveCard = document.querySelector(".history-item--archive");
+      if (historyTabs.hidden || !archiveCard || archiveCard.querySelector(".history-status")?.textContent !== "Envoyé" || !archiveCard.querySelector(".history-status--commercial")) throw new Error("L’Historique n’affiche pas la liste compacte avec son tag de statut");
+      if (document.querySelector("[data-tracking-toggle]") || document.querySelector("[data-tracking-form]")) throw new Error("L’Historique ne doit pas dupliquer les outils du suivi commercial");
       const trackingTab = historyTabs.querySelector('[data-history-view="tracking"]');
       trackingTab.click();
       if (trackingTab.getAttribute("aria-selected") !== "true" || document.querySelector("#trackingFilters").hidden) throw new Error("L’onglet Suivi ne commute pas la vue");
+      const sentCard = document.querySelector(".history-item--sent");
+      if (!sentCard || sentCard.querySelector(".history-status")?.textContent !== "Envoyé") throw new Error("Le statut coloré n’apparaît pas dans le suivi commercial");
+      sentCard.querySelector(".history-item-open").dispatchEvent(new PointerEvent("click", { bubbles: true, pointerType: "touch" }));
+      if (document.querySelector("[data-tracking-toggle]").getAttribute("aria-expanded") !== "true") throw new Error("Un toucher sur la fiche n’ouvre pas son suivi");
+      document.querySelector(".history-item-open").dispatchEvent(new PointerEvent("click", { bubbles: true, pointerType: "touch" }));
+      if (document.querySelector("[data-tracking-toggle]").getAttribute("aria-expanded") !== "false") throw new Error("Un second toucher sur la fiche ne referme pas son suivi");
       const sentFilter = document.querySelector('[data-tracking-filter="sent"]');
       sentFilter.click();
       const activeSentFilter = document.querySelector('[data-tracking-filter="sent"]');
@@ -800,6 +859,12 @@ async function run() {
       disclosure.click();
       const expandedDisclosure = document.querySelector("[data-tracking-toggle]");
       if (expandedDisclosure.getAttribute("aria-expanded") !== "true" || document.querySelector(".tracking-detail").hidden) throw new Error("Le triangle n’ouvre pas la chronologie");
+      const workspaceRect = document.querySelector("#historyLayer .history-workspace").getBoundingClientRect();
+      const expandedCard = document.querySelector(".history-item--tracked.is-expanded");
+      if (!expandedCard) throw new Error("La fiche de suivi ouverte n’est pas identifiée");
+      const expandedLayout = getComputedStyle(expandedCard);
+      if (workspaceRect.width < 1100 || Math.abs((workspaceRect.left + workspaceRect.right) / 2 - innerWidth / 2) > 2) throw new Error("L’espace de suivi n’est pas suffisamment large ou centré");
+      if (expandedLayout.display !== "grid" || expandedLayout.gridTemplateColumns === "none") throw new Error("La fiche de suivi ouverte n’exploite pas la largeur disponible");
       const timelineCopy = document.querySelector(".tracking-timeline").textContent;
       if (!timelineCopy.includes("Brouillon créé") || !timelineCopy.includes("Devis envoyé") || !timelineCopy.includes("Canal : E-mail")) throw new Error("La chronologie ne reprend pas les changements de statut");
       const form = document.querySelector("[data-tracking-form]");
@@ -808,17 +873,63 @@ async function run() {
       form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
       const saved = Object.values(stored.quotes)[0];
+      document.querySelector('[data-tracking-filter="accepted"]').click();
+      const hasAcceptedColor = Boolean(document.querySelector(".history-item--accepted"));
+      const invoiceAction = Boolean(document.querySelector("[data-tracking-invoice]"));
+      const revisionAction = Boolean(document.querySelector("[data-tracking-revision]"));
+      const undoDisabled = document.querySelector("[data-tracking-undo]")?.disabled === true;
+      document.querySelector("#clientButton").click();
+      const clientLockExplained = document.querySelector("#clientLayer").hidden && /créez une V2/.test(document.querySelector("#toastRegion").textContent);
       document.querySelector('[data-history-view="history"]').click();
       return {
         status: saved.tracking.status,
         followUpAt: saved.tracking.nextFollowUpAt,
-        hasAcceptedColor: Boolean(document.querySelector(".history-item--accepted")),
+        hasAcceptedColor,
         hasAcceptedEvent: saved.tracking.events.some((event) => event.status === "accepted" && event.note === "Accord confirmé par la cliente"),
+        hasActor: saved.tracking.events.some((event) => event.status === "accepted" && event.actor === "Utilisateur local" && event.device),
+        invoiceAction,
+        revisionAction,
+        undoDisabled,
+        clientLockExplained,
+        historyCompact: Boolean(document.querySelector(".history-item--archive")) && !document.querySelector(".history-item--tracked") && !document.querySelector("[data-tracking-form]"),
+        quoteLocked: document.querySelector("#saveButton").disabled && document.querySelector("#clientButton").getAttribute("aria-disabled") === "true" && !document.querySelector("#clientButton").disabled,
+        checkoutTrackingHidden: !document.querySelector("#quoteTrackingState") && !document.querySelector("#quoteLockedState") && !document.querySelector(".quote-state-caption"),
+        workspaceWide: workspaceRect.width >= 1100,
+        expandedWorkspace: expandedCard.classList.contains("is-expanded"),
         tabsVisible: !document.querySelector("#historyTabs").hidden
       };
     })()`);
-    assert.deepEqual(trackingWorkflow, { status: "accepted", followUpAt: "", hasAcceptedColor: true, hasAcceptedEvent: true, tabsVisible: true });
-    await window.webContents.executeJavaScript(`document.querySelector('#historyLayer [data-close="historyLayer"]').click()`);
+    assert.deepEqual(trackingWorkflow, { status: "accepted", followUpAt: "", hasAcceptedColor: true, hasAcceptedEvent: true, hasActor: true, invoiceAction: true, revisionAction: true, undoDisabled: true, clientLockExplained: true, historyCompact: true, quoteLocked: true, checkoutTrackingHidden: true, workspaceWide: true, expandedWorkspace: true, tabsVisible: true });
+    const revisionWorkflow = await window.webContents.executeJavaScript(`(() => {
+      const storedBefore = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      const original = Object.values(storedBefore.quotes)[0];
+      document.querySelector('[data-history-view="tracking"]').click();
+      const revisionButton = document.querySelector("[data-tracking-revision]");
+      if (!revisionButton) throw new Error("L’action de création d’une nouvelle version est absente");
+      revisionButton.click();
+      const storedAfter = JSON.parse(localStorage.getItem("bcdevis-v1"));
+      const revision = storedAfter.current;
+      return {
+        revisionNumber: revision.revisionNumber,
+        previousQuoteId: revision.previousQuoteId,
+        rootQuoteId: revision.rootQuoteId,
+        expectedOriginalId: original.id,
+        status: revision.tracking.status,
+        hasNewNumber: revision.number !== original.number,
+        quoteUnlocked: !document.querySelector("#saveButton").disabled && !document.querySelector("#clientButton").disabled,
+        historyClosed: document.querySelector("#historyLayer").hidden
+      };
+    })()`);
+    assert.deepEqual(revisionWorkflow, {
+      revisionNumber: 2,
+      previousQuoteId: revisionWorkflow.expectedOriginalId,
+      rootQuoteId: revisionWorkflow.expectedOriginalId,
+      expectedOriginalId: revisionWorkflow.expectedOriginalId,
+      status: "draft",
+      hasNewNumber: true,
+      quoteUnlocked: true,
+      historyClosed: true
+    });
 
     await reload(window.webContents);
     const restored = await window.webContents.executeJavaScript(`(() => {

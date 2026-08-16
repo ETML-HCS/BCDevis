@@ -2,6 +2,7 @@
 
 const SNAPSHOT_SCHEMA_VERSION = 1;
 const MAX_QUOTES = 10000;
+const MAX_CONTACTS = 10000;
 const MAX_CUSTOM_SERVICES = 500;
 const MAX_SETTINGS = 100;
 const SAFE_KEY = /^[a-zA-Z0-9:_-]{1,128}$/;
@@ -56,6 +57,7 @@ function normalizeSnapshot(source) {
     settings,
     customServices,
     catalogOverrides: normalizeMap(input.catalogOverrides, MAX_CUSTOM_SERVICES + 1000),
+    contacts: normalizeMap(input.contacts, MAX_CONTACTS),
     quotes: normalizeMap(input.quotes, MAX_QUOTES)
   };
 }
@@ -133,6 +135,7 @@ function mergeSnapshots(baseSource, localSource, remoteSource, { strategy = "con
       conflicts
     )),
     catalogOverrides: mergeMap(base.catalogOverrides, local.catalogOverrides, remote.catalogOverrides, "catalogOverrides", strategy, conflicts),
+    contacts: mergeMap(base.contacts, local.contacts, remote.contacts, "contacts", strategy, conflicts),
     quotes: mergeMap(base.quotes, local.quotes, remote.quotes, "quotes", strategy, conflicts)
   });
   return { snapshot: merged, conflicts: [...new Set(conflicts)] };

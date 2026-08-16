@@ -9,6 +9,7 @@ const originalPlatformDescriptor = Object.getOwnPropertyDescriptor(process, "pla
 Object.defineProperty(process, "platform", { ...originalPlatformDescriptor, value: "win32" });
 const testRoot = path.resolve(__dirname, ".pdf-main-fixtures");
 const testDownloads = path.join(testRoot, "Downloads");
+const testCustomDirectory = path.join(testRoot, "Devis PDF");
 const testTemp = path.join(testRoot, "Temp");
 const restorePlatform = () => Object.defineProperty(process, "platform", originalPlatformDescriptor);
 
@@ -41,7 +42,7 @@ Module._load = function loadWithElectronMocks(request, parent, isMain) {
     return {
       app: fakeApp,
       BrowserWindow: { fromWebContents() { return null; } },
-      dialog: {},
+      dialog: { showOpenDialog: async () => ({ canceled: false, filePaths: [testCustomDirectory] }) },
       ipcMain: { handle(channel, handler) { handlers.set(channel, handler); } },
       shell: {
         openExternal: async (target) => externalTargets.push(target),
@@ -112,6 +113,26 @@ assert.doesNotMatch(
     sender: { printToPDF: async () => Buffer.from("%PDF-share") }
   }, "DEV-000001.pdf");
   assert.equal(shareResult.contentBase64, Buffer.from("%PDF-share").toString("base64"));
+  const initialDirectory = await handlers.get("bcdevis:pdf-directory-get")();
+  assert.deepEqual(initialDirectory, { available: true, directory: testDownloads, isDefault: true });
+  const chosenDirectory = await handlers.get("bcdevis:pdf-directory-choose")({ sender: {} });
+  assert.deepEqual(chosenDirectory, { available: true, directory: testCustomDirectory, isDefault: false });
+  const customResult = await handlers.get("bcdevis:save-pdf")({
+    sender: { printToPDF: async () => Buffer.from("%PDF-custom") }
+  }, "DEV-000003.pdf");
+  assert.equal(customResult.filePath, path.join(testCustomDirectory, "DEV-000003.pdf"));
+  assert.equal(customResult.directory, testCustomDirectory);
+  assert.ok(writes.some(({ filePath, contents }) => filePath.endsWith("desktop-preferences.json") && JSON.parse(contents).pdfDirectory === testCustomDirectory));
+  const customEmailResult = await handlers.get("bcdevis:compose-email")(null, {
+    subject: "Devis depuis le dossier personnalisé",
+    attachmentPath: customResult.filePath
+  });
+  assert.equal(customEmailResult.attached, true, "Le PDF du dossier personnalisé doit pouvoir être joint à l’e-mail");
+  processRuns.length = 0;
+  deletedFiles.length = 0;
+  writes.length = 0;
+  const resetDirectory = await handlers.get("bcdevis:pdf-directory-reset")();
+  assert.deepEqual(resetDirectory, { available: true, directory: testDownloads, isDefault: true });
   const emailResult = await handlers.get("bcdevis:compose-email")(null, {
     to: "sophie@example.test",
     subject: "Votre devis DEV-000001",

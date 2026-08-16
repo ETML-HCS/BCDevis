@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr" data-theme="light">
+<html lang="fr" data-theme="white">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta id="themeColorMeta" name="theme-color" content="#171512">
+  <meta id="themeColorMeta" name="theme-color" content="#ffffff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BCDevis">
@@ -13,8 +13,21 @@
   <link rel="apple-touch-icon" href="assets/pwa-icon-192.png">
   <link rel="stylesheet" href="styles.css">
   <style>
-  /* === Système de thèmes (4 palettes) === */
-  /* Thème 1 — Lumière : crème chaud, encre et champagne */
+  /* === Système de thèmes (5 palettes) === */
+  /* Thème 1 — Blanc : pur et lumineux, accents champagne */
+  html[data-theme="white"]{
+    --black:#171512;--black-2:#f6f2eb;--black-3:#f0ebe2;
+    --paper:#ffffff;--soft:#f4f1eb;--line:#e4dfd4;--line-dark:#8a8172;
+    --taupe:#b69c78;--taupe-light:#f2ebde;--taupe-dark:#6e5942;--taupe-active:#ecdfc9;
+    --ink:#191714;--muted:#6f6a60;
+    --topbar-bg:#ffffff;--topbar-fg:#191714;--topbar-border:#e6e0d4;
+    --panel-bg:#ffffff;--panel-border:#e9e3d8;
+    --accent:#b69c78;--accent-ink:#211b14;--contrast:#171512;--contrast-ink:#fffdf8;
+    --action:#171512;--action-ink:#fffdf8;
+    --surface:#ffffff;--surface-raised:#ffffff;--surface-soft:#f7f4ee;
+    --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
+  }
+  /* Thème 2 — Lumière : crème chaud, encre et champagne */
   html[data-theme="light"]{
     --black:#171512;--black-2:#1e1c19;--black-3:#2b2824;
     --paper:#f4f1eb;--soft:#e9e5dd;--line:#d8d1c5;--line-dark:#464039;
@@ -27,7 +40,7 @@
     --surface:#fffdfa;--surface-raised:#fffefa;--surface-soft:#f8f5ef;
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
-  /* Thème 2 — Nuit : miroir sombre élégant, accents taupe doré */
+  /* Thème 3 — Nuit : miroir sombre élégant, accents taupe doré */
   html[data-theme="night"]{
     --black:#ece4d5;--black-2:#171612;--black-3:#29261f;
     --paper:#11110f;--soft:#181713;--line:#3a362e;--line-dark:#4c463b;
@@ -40,7 +53,7 @@
     --surface:#201e19;--surface-raised:#25221c;--surface-soft:#1a1814;
     --settings-bar-bg:var(--surface-raised);--settings-bar-border:var(--line);
   }
-  /* Thème 3 — Forêt : ivoire, vert sapin */
+  /* Thème 4 — Forêt : ivoire, vert sapin */
   html[data-theme="forest"]{
     --black:#1c3429;--black-2:#223a2e;--black-3:#315041;
     --paper:#f3f1e8;--soft:#e4e7da;--line:#cdd4c5;--line-dark:#55705e;
@@ -53,7 +66,7 @@
     --surface:#fffef9;--surface-raised:#fffffb;--surface-soft:#f4f7f0;
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
-  /* Thème 4 — Bordeaux : ivoire rosé, lie-de-vin et cuivre */
+  /* Thème 5 — Bordeaux : ivoire rosé, lie-de-vin et cuivre */
   html[data-theme="bordeaux"]{
     --black:#4a1f2b;--black-2:#3b1b25;--black-3:#572a36;
     --paper:#f7f0ed;--soft:#eadfdb;--line:#d9c9c5;--line-dark:#81515d;
@@ -67,7 +80,7 @@
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
   /* === Sélecteur de thèmes === */
-  .theme-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .theme-picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
   .theme-card{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fafafa;text-align:left;transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease}
   .theme-card:hover{border-color:var(--accent);box-shadow:0 8px 18px rgba(22,18,14,.08);transform:translateY(-1px)}
   .theme-card[aria-checked="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 8px 18px rgba(22,18,14,.08);background:var(--taupe-light)}
@@ -75,6 +88,11 @@
   .ts-top{grid-column:1/-1;border-bottom:1px solid rgba(0,0,0,.1)}
   .ts-panel{}
   .ts-accent{width:18px;height:18px;margin:8px 0 0 8px;border-radius:50%;align-self:start;justify-self:start;grid-column:2;grid-row:2}
+  /* Swatch Blanc */
+  .theme-card-swatch.white{background:#ffffff}
+  .theme-card-swatch.white .ts-top{background:#ffffff}
+  .theme-card-swatch.white .ts-panel{background:#ffffff;border-right:1px solid #e9e3d8}
+  .theme-card-swatch.white .ts-accent{background:#b69c78}
   /* Swatch Lumière */
   .theme-card-swatch.light{background:#f4f1eb}
   .theme-card-swatch.light .ts-top{background:#171512}
@@ -558,8 +576,6 @@
   .student-discount-control input[type="range"]{width:100%;height:8px;margin:8px 0 2px;accent-color:var(--accent);cursor:pointer}
   .student-discount-control input[type="range"]:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:5px}
   html[data-theme="night"] .student-discount-control output{color:var(--accent-ink)}
-  .shortcut-help-modal{width:min(780px,100%)}.shortcut-groups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.shortcut-group{min-width:0;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft,#fafafa)}.shortcut-group h3{margin:0 0 8px;color:var(--ink);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.shortcut-list{display:grid;margin:0;grid-template-columns:1fr;gap:5px}.shortcut-list>div{display:flex;min-width:0;min-height:38px;padding:6px 8px;align-items:center;justify-content:space-between;gap:10px;border-radius:6px;background:var(--surface-raised,#fff)}.shortcut-list dt,.shortcut-list dd{margin:0}.shortcut-list dt{display:flex;flex:0 0 auto;align-items:center;flex-wrap:wrap;gap:4px}.shortcut-list dt span{color:var(--muted);font-size:10px}.shortcut-list dd{min-width:0;color:var(--muted);font-size:10px;font-weight:650;line-height:1.25;text-align:right}.shortcut-list kbd,.shortcut-help-note kbd{display:inline-grid;min-width:25px;min-height:24px;padding:3px 6px;place-items:center;border:1px solid var(--line-dark);border-bottom-width:2px;border-radius:6px;color:var(--ink);background:var(--surface,#fff);font:700 10px/1 var(--sans);text-align:center}.shortcut-help-note{margin:12px 0 0;color:var(--muted);font-size:10px;line-height:1.5}@media(max-width:640px){.shortcut-groups{grid-template-columns:1fr}.shortcut-help-modal{width:min(560px,100%)}}
-
   /* === Finition luxe : hiérarchie calme, surfaces ouvertes et accents rares === */
   @media screen{
     /* Trio tarifaire : trois tickets issus du même système graphique */
@@ -761,7 +777,7 @@
       line-height:1.45;
     }
     .theme-picker{
-      grid-template-columns:repeat(2,minmax(0,1fr));
+      grid-template-columns:repeat(3,minmax(0,1fr));
       gap:14px;
     }
     html[data-theme] .theme-card{
@@ -1740,6 +1756,49 @@
   @media screen and (max-width:700px){
     html[data-ipad-layout="optimized"] .topbar-context .offer-mode-selector button small{display:none}
   }
+  /* === Thème Blanc : sélection contrastée et surfaces pures === */
+  html[data-theme="white"] .family-head{border-bottom-color:var(--line)}
+  html[data-theme="white"] .family-search{background:var(--surface-soft);border-color:var(--line)}
+  html[data-theme="white"] .family-search input{color:var(--ink)}
+  html[data-theme="white"] .family-search input::placeholder{color:var(--muted)}
+  html[data-theme="white"] .family-search svg{color:var(--muted)}
+  html[data-theme="white"] .family-search:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-ring)}
+  html[data-theme="white"] .family-button{color:var(--ink)}
+  html[data-theme="white"] .family-button small{color:var(--muted)}
+  html[data-theme="white"] .family-button-icon{color:var(--taupe-dark)}
+  /* Les creux anatomiques des icônes de tuiles reprennent la couleur de la tuile (champagne), pas le blanc */
+  html[data-theme="white"] .anatomy-negative{fill:color-mix(in srgb,var(--taupe-light) 88%,transparent)}
+  html[data-theme="white"] .anatomy-negative-line{stroke:color-mix(in srgb,var(--taupe-light) 88%,transparent)}
+  html[data-theme="white"] .family-option{color:var(--ink)}
+  html[data-theme="white"] .family-option:hover small,
+  html[data-theme="white"] .family-option:active small,
+  html[data-theme="white"] .family-option:hover b,
+  html[data-theme="white"] .family-option:active b{color:var(--taupe-dark)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button{color:var(--ink)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button:hover{color:var(--ink);background:var(--taupe-light);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--accent) 60%,transparent)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button .offer-mode-copy small,
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active .offer-mode-copy small{color:var(--muted)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button .offer-mode-symbol{color:var(--taupe-dark)}
+  /* Survol des tuiles non sélectionnées : champagne doux et lisible */
+  html[data-theme="white"] .family-button:hover,
+  html[data-theme="white"] .family-button:focus-visible{color:var(--ink);border-color:var(--accent);background:var(--taupe-light)}
+  html[data-theme="white"] .family-button:hover small,
+  html[data-theme="white"] .family-button:focus-visible small{color:var(--taupe-dark)}
+  html[data-theme="white"] .family-button:hover .family-button-icon,
+  html[data-theme="white"] .family-button:focus-visible .family-button-icon{color:var(--taupe-dark)}
+  /* La tuile principale sélectionnée conserve sa couleur d’origine au survol */
+  html[data-theme="white"] .family-button.active{color:var(--ink);border-color:var(--accent);background:var(--taupe-active);box-shadow:inset 3px 0 0 var(--accent)}
+  html[data-theme="white"] .family-button.active:hover,
+  html[data-theme="white"] .family-button.active:focus-visible{color:var(--ink);border-color:var(--accent);background:var(--taupe-active);box-shadow:inset 3px 0 0 var(--accent)}
+  html[data-theme="white"] .family-button.active .family-button-icon,
+  html[data-theme="white"] .family-button.active:hover .family-button-icon,
+  html[data-theme="white"] .family-button.active:focus-visible .family-button-icon{color:var(--accent-ink);background:var(--accent)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active{color:var(--ink);background:var(--taupe-active);box-shadow:inset 0 -2px 0 var(--accent)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active:hover,
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active:focus-visible{color:var(--ink);background:var(--taupe-active);box-shadow:inset 0 -2px 0 var(--accent)}
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active .offer-mode-symbol,
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active:hover .offer-mode-symbol,
+  html[data-theme="white"] .topbar-context .offer-mode-selector button.active:focus-visible .offer-mode-symbol{color:var(--accent-ink);border-color:var(--accent);background:var(--accent)}
   </style>
 </head>
 <body>
@@ -1754,6 +1813,8 @@
     <symbol id="icon-save" viewBox="0 0 24 24" data-design="save-v2"><path d="M5 3h10.2a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path><path d="M7 3v5a1 1 0 0 0 1 1h7"></path><path d="M17 21v-8H7v8"></path></symbol>
     <symbol id="icon-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H4V9h16v8h-3M7 14h10v7H7z"></path><circle cx="17" cy="12" r=".6" fill="currentColor" stroke="none"></circle></symbol>
     <symbol id="icon-pdf" viewBox="0 0 24 24"><path class="pdf-page" d="M6 2.5h7.7L18 6.8v14.7H6zM13.7 2.5V7H18" stroke-width="2"></path><rect class="pdf-badge" x="2" y="9.2" width="20" height="9.8" rx="2.1" fill="#d83b31" stroke="none"></rect><path class="pdf-letters" d="M5.5 17v-6h2c1.2 0 2 .7 2 1.7s-.8 1.7-2 1.7h-2M11.2 11v6h1.5c1.7 0 2.7-1.1 2.7-3s-1-3-2.7-3h-1.5ZM17 17v-6h3.3M17 13.8h2.7" fill="none" stroke="#fff" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path></symbol>
+    <symbol id="icon-documents" viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7zM15 3v5h4M10 12h6M10 16h6"></path><path d="M4 7v14h10"></path></symbol>
+    <symbol id="icon-invoice" viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21zM9 8h6M9 12h6M9 16h3M15 16h.01"></path></symbol>
     <symbol id="icon-whatsapp" viewBox="0 0 24 24"><path d="M20.5 11.6a8.3 8.3 0 0 1-12.3 7.3L3.5 20l1.2-4.5A8.3 8.3 0 1 1 20.5 11.6Z"></path><path d="M9 7.8c.3-.5.6-.5.9-.5h.3c.3 0 .5.1.6.5l.6 1.4c.1.3 0 .5-.1.7l-.4.5c.5 1 1.2 1.7 2.2 2.2l.5-.4c.2-.2.4-.2.7-.1l1.4.6c.3.1.5.3.5.6v.3c0 .3 0 .6-.5.9-.4.2-1 .3-1.6.1-1.1-.4-2.4-1.2-3.5-2.3-1.1-1.1-1.9-2.4-2.3-3.5-.2-.6-.1-1.2.1-1.6Z"></path></symbol>
     <symbol id="icon-send" viewBox="0 0 24 24"><path d="m3 11 18-8-8 18-2.4-7.6L3 11Z"></path><path d="m10.6 13.4 4.8-4.8"></path></symbol>
     <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></symbol>
@@ -1761,7 +1822,7 @@
     <symbol id="icon-web-mail" viewBox="0 0 24 24"><rect x="3" y="6" width="15" height="12" rx="2"></rect><path d="m4 8 6.5 5L17 8"></path><circle cx="18" cy="7" r="3"></circle><path d="M15 7h6M18 4a5 5 0 0 1 0 6M18 4a5 5 0 0 0 0 6"></path></symbol>
     <symbol id="icon-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v6l4 2"></path></symbol>
     <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path></symbol>
-    <symbol id="icon-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"></rect><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h6M16 14h1"></path></symbol>
+    <symbol id="icon-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9a2.35 2.35 0 0 1 4.55.8c0 1.8-2.35 2.05-2.35 3.7M12 17h.01"></path></symbol>
     <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></symbol>
     <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></symbol>
     <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"></path></symbol>
@@ -2013,9 +2074,10 @@
         <button type="button" data-offer-mode="student" role="radio" aria-checked="false" tabindex="-1"><span class="offer-mode-symbol" aria-hidden="true"><svg><use href="#icon-student"></use></svg></span><span class="offer-mode-copy">Étudiant <small>−50 %</small></span></button>
       </div></div>
       <div class="topbar-utilities" aria-label="Application">
-        <button class="topbar-utility-button" id="pdfLibraryButton" type="button" aria-label="Ouvrir les documents PDF" aria-haspopup="dialog" data-tooltip="Documents PDF"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></button>
+        <button class="topbar-utility-button" id="pdfLibraryButton" type="button" aria-label="Ouvrir les documents partagés" aria-haspopup="dialog" data-tooltip="Documents partagés" data-central-library hidden disabled><svg aria-hidden="true"><use href="#icon-documents"></use></svg></button>
+        <button class="topbar-utility-button" id="invoiceLibraryButton" type="button" aria-label="Ouvrir les factures partagées" aria-haspopup="dialog" data-tooltip="Factures partagées" data-central-library hidden disabled><svg aria-hidden="true"><use href="#icon-invoice"></use></svg></button>
         <button class="topbar-utility-button" id="settingsButton" type="button" aria-label="Ouvrir les réglages" aria-keyshortcuts="Control+Comma Meta+Comma" data-tooltip="Réglages"><svg aria-hidden="true"><use href="#icon-settings"></use></svg></button>
-        <button class="topbar-utility-button" id="shortcutHelpButton" type="button" aria-label="Afficher les raccourcis clavier" aria-keyshortcuts="?" aria-haspopup="dialog" data-tooltip="Raccourcis clavier"><svg aria-hidden="true"><use href="#icon-keyboard"></use></svg></button>
+        <button class="topbar-utility-button topbar-utility-button--help" id="helpButton" type="button" aria-label="Ouvrir le centre d’aide" aria-keyshortcuts="?" aria-haspopup="dialog" data-tooltip="Aide"><svg aria-hidden="true"><use href="#icon-help"></use></svg><span>Aide</span></button>
       </div>
       <div class="app-actions" id="appActions">
         <button class="app-menu-trigger" id="appMenuButton" type="button" aria-label="Ouvrir le menu Catalogue" aria-haspopup="menu" aria-controls="appActionsMenu" aria-expanded="false" aria-keyshortcuts="Alt+M" title="Catalogue (Alt+M)">
@@ -2066,7 +2128,7 @@
             <div class="quote-title-row"><h2 class="visually-hidden" id="checkoutTitle">Devis</h2></div>
             <div class="quote-head-actions" id="quoteHeadActions">
               <label class="switch-label tax-header-toggle"><input id="taxEnabled" type="checkbox" checked aria-label="TVA"><span class="switch"></span><span>TVA</span></label>
-              <button class="client-card is-empty" id="clientButton" type="button" aria-label="Ajouter un client" title="Ajouter un client"><span class="client-avatar" id="clientInitials" aria-hidden="true"><svg><use href="#icon-user-plus"></use></svg></span><strong id="clientName" hidden></strong><small class="visually-hidden" id="clientDetails">Nom, téléphone et e-mail</small></button>
+              <button class="client-card is-empty" id="clientButton" type="button" aria-label="Ajouter un client" title="Ajouter un client" data-tooltip="Ajouter un client"><span class="client-avatar" id="clientInitials" aria-hidden="true"><svg><use href="#icon-user-plus"></use></svg></span><strong id="clientName" hidden></strong><small class="visually-hidden" id="clientDetails">Nom, téléphone et e-mail</small></button>
               <button class="round-button quote-icon-button" id="newQuoteButton" type="button" aria-label="Nouveau devis" aria-keyshortcuts="Control+N Meta+N" data-tooltip="Nouveau devis"><svg aria-hidden="true"><use href="#icon-new-quote"></use></svg></button>
               <button class="round-button quote-icon-button" id="saveButton" type="button" aria-label="Enregistrer le devis" aria-keyshortcuts="Control+S Meta+S" data-tooltip="Enregistrer"><svg aria-hidden="true"><use href="#icon-save"></use></svg></button>
               <button class="round-button quote-icon-button" id="historyButton" type="button" aria-label="Ouvrir l’historique" aria-keyshortcuts="Control+H Meta+H" data-tooltip="Historique"><svg aria-hidden="true"><use href="#icon-history"></use></svg></button>
@@ -2075,14 +2137,15 @@
                 <button type="button" role="menuitem" data-action="duplicate" aria-label="Dupliquer le devis" title="Dupliquer le devis (Ctrl/Cmd+D)" aria-keyshortcuts="Control+D Meta+D"><svg><use href="#icon-copy"></use></svg><span>Dupliquer</span><kbd>Ctrl D</kbd></button>
                 <button type="button" role="menuitem" data-action="export" aria-label="Exporter ce devis" title="Exporter ce devis (Ctrl/Cmd+E)" aria-keyshortcuts="Control+E Meta+E"><svg><use href="#icon-download"></use></svg><span>Exporter</span><kbd>Ctrl E</kbd></button>
                 <button type="button" role="menuitem" data-action="import" aria-label="Importer un devis" title="Importer un devis (Ctrl/Cmd+O)" aria-keyshortcuts="Control+O Meta+O"><svg><use href="#icon-upload"></use></svg><span>Importer</span><kbd>Ctrl O</kbd></button>
+                <button type="button" role="menuitem" data-help-topic="quotes" aria-label="Ouvrir l’aide sur les devis"><svg><use href="#icon-help"></use></svg><span>Aide sur les devis</span></button>
                 <button class="danger-text" type="button" role="menuitem" data-action="clear" aria-label="Vider le devis" title="Vider le devis"><svg><use href="#icon-trash"></use></svg><span>Vider</span></button>
               </div>
             </div>
           </div>
           <div class="checkout-context">
-            <span class="quote-save-state" id="quoteSaveState" data-state="draft" role="status" aria-live="polite" aria-atomic="true" aria-label="Brouillon. Ce devis n’est pas encore enregistré dans Mes devis.">
+            <span class="quote-save-state" id="quoteSaveState" data-state="draft" role="status" aria-live="polite" aria-atomic="true" aria-label="Non archivé. Ce devis n’est pas encore enregistré dans Mes devis.">
               <span class="quote-save-state-dot" aria-hidden="true"></span>
-              <span id="quoteSaveStateLabel">Brouillon</span>
+              <span id="quoteSaveStateLabel">Non archivé</span>
             </span>
             <div class="quote-date-control" id="quoteDateControl" data-editable="false">
               <time id="quoteDateDisplay" datetime="" aria-label="Date du devis"></time>
@@ -2128,8 +2191,9 @@
 
   <div class="drawer-layer" id="historyLayer" hidden>
     <button class="layer-backdrop" type="button" data-close="historyLayer" aria-label="Fermer" tabindex="-1"></button>
-    <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
-      <div class="modal-head"><div><p class="section-kicker">Archives locales</p><h2 id="historyTitle">Mes devis</h2></div><button class="round-button" type="button" data-close="historyLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+    <aside class="drawer history-workspace" role="dialog" aria-modal="true" aria-labelledby="historyTitle" aria-describedby="historyWorkspaceDescription">
+      <div class="modal-head"><div><p class="section-kicker">Archives locales</p><h2 id="historyTitle">Mes devis</h2></div><div class="modal-head-actions"><button class="context-help-link" type="button" data-help-topic="tracking"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide sur le suivi</button><button class="round-button" type="button" data-close="historyLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div></div>
+      <p class="history-workspace-intro" id="historyWorkspaceDescription">Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.</p>
       <div class="history-tabs" id="historyTabs" role="tablist" aria-label="Vues des devis" hidden>
         <button id="historyViewHistoryTab" type="button" role="tab" aria-selected="true" aria-controls="historyList" data-history-view="history">Historique</button>
         <button id="historyViewTrackingTab" type="button" role="tab" aria-selected="false" aria-controls="historyList" data-history-view="tracking" tabindex="-1">Suivi <span id="trackingDueCount" hidden></span></button>
@@ -2147,20 +2211,51 @@
       </div>
       <div class="history-list" id="historyList" role="tabpanel" aria-labelledby="historyViewHistoryTab"></div>
       <div class="drawer-footer"><button class="button secondary" id="exportBackupButton" type="button"><svg><use href="#icon-download"></use></svg>Sauvegarde complète</button><button class="button secondary" id="importBackupButton" type="button"><svg><use href="#icon-upload"></use></svg>Restaurer</button></div>
+      <input id="trackingInvoiceInput" type="file" accept="application/pdf,.pdf" hidden>
     </aside>
   </div>
 
   <div class="modal-layer" id="clientLayer" hidden>
     <button class="layer-backdrop" type="button" data-close="clientLayer" aria-label="Fermer" tabindex="-1"></button>
-    <section class="modal-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
-      <div class="modal-head"><div><p class="section-kicker">Destinataire</p><h2 id="clientModalTitle">Client</h2></div><button class="round-button" type="button" data-close="clientLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
-      <form id="clientForm" class="form-grid">
-        <label class="full-field"><span>Nom complet</span><input name="name" type="text" autocomplete="name" placeholder="Ex. Camille Martin" autofocus></label>
-        <label><span>Téléphone</span><input name="phone" type="tel" autocomplete="tel" placeholder="+41 79 000 00 00"></label>
-        <label><span>E-mail</span><input name="email" type="email" autocomplete="email" placeholder="client@exemple.ch"></label>
-        <label class="full-field"><span>Adresse</span><input name="address" type="text" autocomplete="street-address" placeholder="Rue, NPA, ville"></label>
-        <div class="form-actions full-field"><button class="button ghost" type="button" id="clearClientButton">Effacer</button><button class="button primary" type="submit" aria-label="Valider le client">Valider</button></div>
-      </form>
+    <section class="modal-card contact-modal" role="dialog" aria-modal="true" aria-labelledby="clientModalTitle">
+      <div class="modal-head"><div><p class="section-kicker">Destinataire</p><h2 id="clientModalTitle">Contacts</h2></div><div class="modal-head-actions"><button class="context-help-link" type="button" data-help-topic="contacts"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide</button><button class="round-button" type="button" data-close="clientLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div></div>
+      <div class="contact-workspace">
+        <aside class="contact-directory" aria-label="Répertoire de contacts">
+          <div class="contact-directory-head"><div><strong>Répertoire</strong><small id="contactCount">0 contact</small></div><button class="round-button" id="newContactButton" type="button" aria-label="Nouveau contact" title="Nouveau contact"><svg><use href="#icon-user-plus"></use></svg></button></div>
+          <label class="contact-search"><span class="visually-hidden">Rechercher un contact</span><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="contactSearch" type="search" autocomplete="off" placeholder="Nom, téléphone, e-mail…"></label>
+          <div class="contact-list" id="contactList" role="listbox" aria-label="Contacts"></div>
+          <p class="contact-empty" id="contactEmpty" hidden>Aucun contact.</p>
+          <div class="contact-file-actions">
+            <button class="button ghost" id="contactImportButton" type="button"><svg><use href="#icon-upload"></use></svg>Importer</button>
+            <div class="contact-export-actions" role="group" aria-label="Exporter les contacts">
+              <button type="button" data-contact-export="csv">CSV</button><button type="button" data-contact-export="vcf">vCard</button><button type="button" data-contact-export="json">JSON</button>
+            </div>
+          </div>
+        </aside>
+        <form id="clientForm" class="form-grid contact-form">
+          <input name="contactId" type="hidden">
+          <div class="contact-form-head full-field"><div><strong id="contactFormTitle">Nouveau contact</strong><small>Les données sont copiées dans le devis.</small></div><button class="round-button danger" id="deleteContactButton" type="button" aria-label="Supprimer ce contact" title="Supprimer ce contact" hidden><svg><use href="#icon-trash"></use></svg></button></div>
+          <label class="full-field"><span>Nom complet</span><input name="name" type="text" autocomplete="name" placeholder="Ex. Camille Martin" required></label>
+          <label><span>Téléphone</span><input name="phone" type="tel" autocomplete="tel" placeholder="+41 79 000 00 00"></label>
+          <label><span>E-mail</span><input name="email" type="email" autocomplete="email" placeholder="client@exemple.ch"></label>
+          <details class="contact-details full-field" id="contactMoreDetails">
+            <summary>Plus d’informations</summary>
+            <div class="form-grid">
+              <label class="full-field"><span>Société</span><input name="company" type="text" autocomplete="organization"></label>
+              <label class="full-field"><span>Adresse</span><input name="address" type="text" autocomplete="street-address" placeholder="Rue et numéro"></label>
+              <label><span>NPA</span><input name="postalCode" type="text" autocomplete="postal-code"></label>
+              <label><span>Ville</span><input name="city" type="text" autocomplete="address-level2"></label>
+              <label><span>Pays</span><input name="country" type="text" autocomplete="country-name" value="Suisse"></label>
+              <label><span>Date de naissance</span><input name="birthDate" type="date" autocomplete="bday"></label>
+              <label><span>Langue</span><select name="language"><option value="">Non précisée</option><option value="Français">Français</option><option value="Anglais">Anglais</option><option value="Allemand">Allemand</option><option value="Italien">Italien</option></select></label>
+              <label><span>Référence interne</span><input name="reference" type="text" autocomplete="off"></label>
+              <label class="full-field"><span>Notes</span><textarea name="notes" rows="3" placeholder="Informations utiles pour le suivi"></textarea></label>
+            </div>
+          </details>
+          <div class="form-actions full-field"><button class="button ghost" type="button" id="clearClientButton">Retirer du devis</button><button class="button primary" type="submit">Enregistrer et utiliser</button></div>
+        </form>
+      </div>
+      <input id="contactImportInput" type="file" accept=".csv,text/csv,.vcf,.vcard,text/vcard,.json,application/json" hidden>
     </section>
   </div>
 
@@ -2212,6 +2307,7 @@
                   <div class="settings-section-head"><h3>Apparence</h3></div>
                   <p class="settings-subheading">Thème</p>
                   <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
+                    <button class="theme-card" type="button" data-theme="white" role="radio" aria-checked="false"><span class="theme-card-swatch white"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Blanc</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
@@ -2296,8 +2392,16 @@
                 <section class="settings-section">
                   <div class="settings-section-head"><h3>Numérotation</h3></div>
                   <div class="form-grid">
-                    <label><span>Préfixe</span><input name="quotePrefix" type="text" maxlength="8"></label><label><span>Poste</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"></label>
-                    <div class="hint-box full-field" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span>Prochain : <code id="settingsQuotePreview">DEV-20260718A001</code></span></div>
+                    <label><span>Préfixe devis</span><input name="quotePrefix" type="text" maxlength="8" placeholder="DEV"></label><label><span>Préfixe facture</span><input name="invoicePrefix" type="text" maxlength="8" placeholder="FAC"></label>
+                    <label class="full-field"><span>Poste commun aux deux documents</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"><small class="field-help">Le code du poste reste identique dans le devis et la facture associée.</small></label>
+                    <div class="hint-box full-field document-number-previews" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span>Devis : <code id="settingsQuotePreview">DEV-20260718A001</code><br>Facture : <code id="settingsInvoicePreview">FAC-20260718A001</code></span></div>
+                  </div>
+                </section>
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Fichiers PDF</h3><button class="context-help-link" type="button" data-help-topic="pdf"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide PDF</button></div>
+                  <div class="pdf-directory-setting">
+                    <div class="pdf-directory-copy"><strong>Dossier des devis téléchargés</strong><code id="pdfDirectoryPath">Téléchargements</code><small id="pdfDirectoryStatus">Vérification du dossier de ce poste…</small></div>
+                    <div class="pdf-directory-actions"><button class="button secondary" id="choosePdfDirectoryButton" type="button"><svg aria-hidden="true"><use href="#icon-download"></use></svg>Choisir un dossier</button><button class="button ghost" id="resetPdfDirectoryButton" type="button">Par défaut</button></div>
                   </div>
                 </section>
               </div>
@@ -2355,16 +2459,32 @@
 
           <section class="settings-panel settings-panel--data" id="settingsPanelData" role="tabpanel" aria-labelledby="settingsTabData" data-settings-panel="data" tabindex="0" hidden>
             <div class="settings-panel-grid settings-panel-grid--data">
-              <section class="settings-section settings-section--central-switch">
-                <div class="settings-section-head"><h3>Centralisation</h3></div>
-                <label class="settings-toggle-card central-enable-card" for="centralEnabled">
-                  <input class="settings-toggle-input" id="centralEnabled" type="checkbox">
-                  <span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-database"></use></svg></span>
-                  <span class="settings-toggle-copy"><strong>Connecter ce poste</strong><small>Les devis enregistrés, tarifs partagés et suivis restent disponibles hors connexion puis sont synchronisés avec PostgreSQL.</small></span>
-                  <span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span>
-                </label>
-                <p class="central-security-note">BCDevis se connecte à l’API sécurisée, jamais directement à PostgreSQL. Aucun mot de passe de base de données n’est enregistré dans l’application.</p>
-              </section>
+              <div class="settings-panel-stack">
+                <section class="settings-section settings-section--central-switch">
+                  <div class="settings-section-head"><h3>Centralisation</h3><button class="context-help-link" type="button" data-help-topic="central"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide</button></div>
+                  <label class="settings-toggle-card central-enable-card" for="centralEnabled">
+                    <input class="settings-toggle-input" id="centralEnabled" type="checkbox">
+                    <span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-database"></use></svg></span>
+                    <span class="settings-toggle-copy"><strong>Connecter ce poste</strong><small>Les devis enregistrés, tarifs partagés et suivis restent disponibles hors connexion puis sont synchronisés avec PostgreSQL.</small></span>
+                    <span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span>
+                  </label>
+                  <p class="central-security-note">BCDevis se connecte à l’API sécurisée, jamais directement à PostgreSQL. Aucun mot de passe de base de données n’est enregistré dans l’application.</p>
+                </section>
+
+                <section class="settings-section settings-section--site-migration">
+                  <div class="settings-section-head"><h3>Changer l’adresse du site</h3><button class="context-help-link" type="button" data-help-topic="migration"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide</button></div>
+                  <p class="site-migration-intro">Le navigateur ne déplace pas automatiquement les données locales vers un autre domaine. Préparez un fichier, puis importez-le sur la nouvelle adresse.</p>
+                  <dl class="site-migration-current"><div><dt>Adresse ouverte</dt><dd id="siteMigrationCurrent">Application locale installée</dd></div></dl>
+                  <label class="full-field site-migration-target"><span>Nouvelle adresse</span><input id="siteMigrationTarget" type="url" inputmode="url" value="https://bcd.athys.ch/" autocomplete="url"><small>HTTPS obligatoire. Le fichier contient les devis et réglages locaux, mais aucun mot de passe ni jeton de session.</small></label>
+                  <div class="site-migration-actions">
+                    <button class="button primary" id="siteMigrationExportButton" type="button"><svg aria-hidden="true"><use href="#icon-download"></use></svg>1. Préparer le transfert</button>
+                    <button class="button ghost" id="siteMigrationOpenButton" type="button" disabled><svg aria-hidden="true"><use href="#icon-upload"></use></svg>2. Ouvrir la nouvelle adresse</button>
+                    <button class="button ghost" id="siteMigrationImportButton" type="button"><svg aria-hidden="true"><use href="#icon-check"></use></svg>3. Importer ici</button>
+                  </div>
+                  <p class="site-migration-status" id="siteMigrationStatus" data-state="idle" role="status" aria-live="polite">Commencez par télécharger le fichier de transfert le plus récent.</p>
+                  <p class="site-migration-warning"><strong>À conserver temporairement :</strong> gardez le fichier JSON dans un emplacement sécurisé jusqu’à avoir vérifié les devis sur la nouvelle adresse, puis supprimez-le.</p>
+                </section>
+              </div>
 
               <div class="central-connection-details" id="centralConnectionDetails" hidden>
                 <section class="settings-section settings-section--central-connection">
@@ -2435,8 +2555,9 @@
     <section class="modal-card pdf-library-modal" role="dialog" aria-modal="true" aria-labelledby="pdfLibraryTitle" aria-describedby="pdfLibraryIntro">
       <div class="modal-head pdf-library-head">
         <div><p class="section-kicker">Base centrale</p><h2 id="pdfLibraryTitle">Documents PDF</h2><p id="pdfLibraryIntro">Importez, retrouvez et consultez les PDF partagés avec les postes autorisés.</p></div>
-        <div class="pdf-library-head-actions"><button class="button primary" id="pdfLibraryImportButton" type="button"><svg><use href="#icon-upload"></use></svg>Importer un PDF</button><button class="round-button" type="button" data-close="pdfLibraryLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+        <div class="pdf-library-head-actions"><button class="context-help-link" id="pdfLibraryHelpButton" type="button"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide</button><button class="button primary" id="pdfLibraryImportButton" type="button"><svg><use href="#icon-upload"></use></svg><span>Importer un PDF</span></button><button class="round-button" type="button" data-close="pdfLibraryLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
       </div>
+      <div class="pdf-library-tabs" id="pdfLibraryTabs" role="tablist" aria-label="Type de PDF"><button type="button" role="tab" aria-selected="true" data-pdf-library-view="documents">Documents</button><button type="button" role="tab" aria-selected="false" data-pdf-library-view="invoices" tabindex="-1">Factures</button></div>
       <div class="pdf-library-toolbar">
         <label for="pdfLibrarySearch"><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="pdfLibrarySearch" type="search" autocomplete="off" placeholder="Rechercher un PDF, un devis ou un client…"></label>
         <p id="pdfLibraryStatus" role="status" aria-live="polite">Connexion à la bibliothèque…</p>
@@ -2444,7 +2565,7 @@
       <div class="pdf-library-workspace">
         <aside class="pdf-library-list" id="pdfLibraryList" aria-label="Documents PDF disponibles"></aside>
         <section class="pdf-library-preview" aria-labelledby="pdfPreviewTitle">
-          <div class="pdf-preview-head"><div><p class="section-kicker">Aperçu</p><h3 id="pdfPreviewTitle">Sélectionnez un document</h3><p id="pdfPreviewMeta"></p></div><button class="button ghost" id="pdfLibraryDownloadButton" type="button" disabled><svg><use href="#icon-download"></use></svg>Télécharger</button></div>
+          <div class="pdf-preview-head"><div><p class="section-kicker">Aperçu</p><h3 id="pdfPreviewTitle">Sélectionnez un document</h3><p id="pdfPreviewMeta"></p></div><div class="pdf-preview-actions"><button class="button ghost" id="pdfLibraryPrintButton" type="button" disabled><svg><use href="#icon-print"></use></svg>Imprimer</button><button class="button ghost" id="pdfLibraryDownloadButton" type="button" disabled><svg><use href="#icon-download"></use></svg>Télécharger</button></div></div>
           <div class="pdf-preview-empty" id="pdfPreviewEmpty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>Aucun PDF sélectionné</strong><span>Choisissez un document dans la liste.</span></div>
           <iframe id="pdfPreviewFrame" title="Aperçu du document PDF" hidden></iframe>
         </section>
@@ -2484,49 +2605,11 @@
     </section>
   </div>
 
-  <div class="modal-layer" id="shortcutHelpLayer" hidden>
-    <button class="layer-backdrop" type="button" data-close="shortcutHelpLayer" aria-label="Fermer" tabindex="-1"></button>
-    <section class="modal-card compact-modal shortcut-help-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle">
-      <div class="modal-head"><div><p class="section-kicker">Utilisation rapide</p><h2 id="shortcutHelpTitle">Raccourcis clavier</h2></div><button class="round-button" type="button" data-close="shortcutHelpLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
-      <div class="shortcut-groups">
-        <section class="shortcut-group" aria-labelledby="shortcutCatalogTitle">
-          <h3 id="shortcutCatalogTitle">Catalogue</h3>
-          <dl class="shortcut-list">
-            <div><dt><kbd>Alt</kbd><kbd>M</kbd></dt><dd>Ouvrir le menu Catalogue</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>K</kbd> <span>ou</span> <kbd>/</kbd></dt><dd>Rechercher</dd></div>
-            <div><dt><kbd>Alt</kbd><kbd>P</kbd></dt><dd>Afficher ou masquer les prix</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>N</kbd></dt><dd>Sur mesure</dd></div>
-          </dl>
-        </section>
-        <section class="shortcut-group" aria-labelledby="shortcutQuoteTitle">
-          <h3 id="shortcutQuoteTitle">Devis</h3>
-          <dl class="shortcut-list">
-            <div><dt><kbd>Ctrl</kbd><kbd>N</kbd></dt><dd>Nouveau devis</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>S</kbd></dt><dd>Enregistrer le devis</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>H</kbd></dt><dd>Ouvrir l’historique</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>D</kbd></dt><dd>Dupliquer</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>O</kbd></dt><dd>Importer</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>E</kbd></dt><dd>Exporter le devis</dd></div>
-          </dl>
-        </section>
-        <section class="shortcut-group" aria-labelledby="shortcutOutputTitle">
-          <h3 id="shortcutOutputTitle">Impression et partage</h3>
-          <dl class="shortcut-list">
-            <div><dt><kbd>Ctrl</kbd><kbd>P</kbd></dt><dd>Imprimer le devis</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>S</kbd></dt><dd>Télécharger le PDF</dd></div>
-            <div><dt><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>W</kbd></dt><dd>Préparer via WhatsApp</dd></div>
-          </dl>
-        </section>
-        <section class="shortcut-group" aria-labelledby="shortcutAppTitle">
-          <h3 id="shortcutAppTitle">Application</h3>
-          <dl class="shortcut-list">
-            <div><dt><kbd>Ctrl</kbd><kbd>,</kbd></dt><dd>Ouvrir les réglages</dd></div>
-            <div><dt><kbd>?</kbd></dt><dd>Afficher cette aide</dd></div>
-            <div><dt><kbd>Échap</kbd></dt><dd>Fermer un menu, une fenêtre ou la recherche</dd></div>
-          </dl>
-        </section>
-      </div>
-      <p class="shortcut-help-note">Sur Mac, remplacez <kbd>Ctrl</kbd> par <kbd>⌘</kbd>. Utilisez les flèches pour parcourir les tarifs, les thèmes, les onglets et les menus.</p>
+  <div class="modal-layer help-center-layer" id="helpLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="helpLayer" aria-label="Fermer le centre d’aide" tabindex="-1"></button>
+    <section class="modal-card help-center-modal" role="dialog" aria-modal="true" aria-labelledby="helpLayerTitle">
+      <div class="modal-head help-center-modal-head"><div><p class="section-kicker">Guide embarqué</p><h2 id="helpLayerTitle">Centre d’aide</h2></div><button class="round-button" type="button" data-close="helpLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <iframe id="helpFrame" src="help.html#overview" title="Centre d’aide BCDevis" data-initial-focus></iframe>
     </section>
   </div>
 
@@ -2535,16 +2618,18 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 7.0.2</p>
+        <p class="release-notes-version">Mise à jour 7.1.0</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">Suivi commercial, affichage au choix, travail multi-postes et confort tactile&nbsp;: découvrez les fonctions essentielles de cette version.</p>
+        <p id="releaseNotesIntro">Migration du site, suivi commercial, travail multi-postes et confort tactile&nbsp;: découvrez les fonctions essentielles de cette version.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-save"></use></svg></span><div><strong>État du devis</strong><p>Brouillon, Enregistré ou Modifié indique clairement si la version courante est à jour dans Mes devis.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-history"></use></svg></span><div><strong>Suivi des devis</strong><p>Statuts, filtres, notes, prochaines relances et rappels permettent de suivre chaque réponse client.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-upload"></use></svg></span><div><strong>Nouvelle adresse sans perte</strong><p>Réglages &gt; Données prépare un transfert guidé vers bcd.athys.ch, sans copier les mots de passe ni les sessions.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-save"></use></svg></span><div><strong>Une caisse plus lisible</strong><p>La caisse reste centrée sur le devis ; les statuts commerciaux sont regroupés dans l’espace Suivi.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-history"></use></svg></span><div><strong>Workflow, V2 et factures</strong><p>Les transitions sont contrôlées, les devis terminaux sont verrouillés et une facture envoyée rejoint la vue Factures.</p></div></li>
         <li><span><svg aria-hidden="true"><use href="#icon-display-auto"></use></svg></span><div><strong>Affichage au choix</strong><p>Le menu Catalogue permet de choisir une vue Auto, Mobile ou Bureau, mémorisée sur ce poste.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-settings"></use></svg></span><div><strong>Thème Blanc par défaut</strong><p>L’interface s’ouvre désormais en clair et épuré ; les cinq palettes restent au choix dans Réglages &gt; Interface.</p></div></li>
         <li><span><svg aria-hidden="true"><use href="#icon-scan"></use></svg></span><div><strong>Travail multi-postes</strong><p>La centralisation PostgreSQL synchronise les devis et continue hors ligne avec résolution des conflits.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>Documents PDF partagés</strong><p>Importez, recherchez, consultez et téléchargez les documents de la bibliothèque centrale.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>Documents PDF et Factures</strong><p>Importez, recherchez, consultez, téléchargez et imprimez les PDF de la bibliothèque centrale.</p></div></li>
         <li><span><svg aria-hidden="true"><use href="#icon-swipe-left"></use></svg></span><div><strong>Confort tactile</strong><p>Sur iPad et smartphone, le balayage, Annuler et l’éditeur des tuiles sont adaptés au doigt.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
@@ -2559,10 +2644,12 @@
   </div>
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <section class="print-quote" id="printQuote" aria-hidden="true"></section>
+  <script src="contact-core.js"></script>
   <script src="quote-core.js"></script>
   <script src="catalog.js"></script>
   <script src="body-anatomy.js"></script>
   <script src="central-sync.js"></script>
+  <script src="site-migration.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

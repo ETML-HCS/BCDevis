@@ -27,6 +27,7 @@ if (windowsPortableDirectory) {
 
 const startupManager = createStartupManager({ app });
 let mainWindow;
+let desktopPreferences;
 const TABLET_WINDOW_SIZE = Object.freeze({ width: 1180, height: 820 });
 
 const OUTLOOK_COMPOSE_SCRIPT = [
@@ -65,14 +66,58 @@ function runExecutable(file, args, options = {}) {
   });
 }
 
-function safeEmailPayload(payload) {
+function desktopPreferencesPath() {
+  return path.join(app.getPath("userData"), "desktop-preferences.json");
+}
+
+function safeConfiguredDirectory(value) {
+  const directory = String(value || "").trim();
+  return directory && path.isAbsolute(directory) ? path.resolve(directory) : "";
+}
+
+async function readDesktopPreferences() {
+  if (desktopPreferences) return desktopPreferences;
+  try {
+    const parsed = JSON.parse(await fs.readFile(desktopPreferencesPath(), "utf8"));
+    desktopPreferences = { pdfDirectory: safeConfiguredDirectory(parsed?.pdfDirectory) };
+  } catch {
+    desktopPreferences = { pdfDirectory: "" };
+  }
+  return desktopPreferences;
+}
+
+async function writeDesktopPreferences(nextPreferences) {
+  desktopPreferences = { pdfDirectory: safeConfiguredDirectory(nextPreferences?.pdfDirectory) };
+  await fs.mkdir(app.getPath("userData"), { recursive: true });
+  await fs.writeFile(desktopPreferencesPath(), `${JSON.stringify(desktopPreferences, null, 2)}\n`, "utf8");
+  return desktopPreferences;
+}
+
+async function configuredPdfDirectory() {
+  const preferences = await readDesktopPreferences();
+  return preferences.pdfDirectory || path.resolve(app.getPath("downloads"));
+}
+
+async function pdfDirectoryState() {
+  const preferences = await readDesktopPreferences();
+  return {
+    available: true,
+    directory: preferences.pdfDirectory || path.resolve(app.getPath("downloads")),
+    isDefault: !preferences.pdfDirectory
+  };
+}
+
+function pathIsWithin(directory, targetPath) {
+  const relative = path.relative(path.resolve(directory), path.resolve(targetPath));
+  return !relative.startsWith("..") && !path.isAbsolute(relative);
+}
+
+async function safeEmailPayload(payload) {
   const attachmentPath = path.resolve(String(payload?.attachmentPath || ""));
-  const downloadsPath = path.resolve(app.getPath("downloads"));
-  const relativeAttachment = path.relative(downloadsPath, attachmentPath);
+  const allowedDirectories = [app.getPath("downloads"), await configuredPdfDirectory()];
   if (
     path.extname(attachmentPath).toLowerCase() !== ".pdf"
-    || relativeAttachment.startsWith("..")
-    || path.isAbsolute(relativeAttachment)
+    || !allowedDirectories.some((directory) => pathIsWithin(directory, attachmentPath))
   ) {
     throw new Error("Pièce jointe e-mail non autorisée.");
   }
@@ -110,7 +155,7 @@ async function availableEmlPath(attachmentPath) {
 }
 
 async function composeEmailWithEml(payload) {
-  const email = safeEmailPayload(payload);
+  const email = await safeEmailPayload(payload);
   const attachment = await fs.readFile(email.attachmentPath);
   if (attachment.length > 25 * 1024 * 1024) {
     throw new Error("Le PDF est trop volumineux pour être joint automatiquement.");
@@ -151,7 +196,7 @@ async function composeEmailWithEml(payload) {
 }
 
 async function composeEmailWithOutlook(payload) {
-  const email = safeEmailPayload(payload);
+  const email = await safeEmailPayload(payload);
   const payloadPath = path.join(app.getPath("temp"), `bcdevis-email-${process.pid}-${randomUUID()}.json`);
   await fs.writeFile(payloadPath, JSON.stringify(email), "utf8");
   try {
@@ -236,7 +281,7 @@ function createWindow() {
     minWidth: 980,
     minHeight: 680,
     show: false,
-    backgroundColor: "#0e0e0e",
+    backgroundColor: "#ffffff",
     icon: appIcon,
     autoHideMenuBar: true,
     ...windowChrome,
@@ -274,13 +319,14 @@ function createWindow() {
 }
 
 async function savePdf(event, requestedName, includeContents = false) {
-  const filePath = await availablePdfPath(app.getPath("downloads"), requestedName);
+  const filePath = await availablePdfPath(await configuredPdfDirectory(), requestedName);
   const pdf = await event.sender.printToPDF({ pageSize: "A4", printBackground: false, preferCSSPageSize: true });
   await fs.writeFile(filePath, pdf);
   return {
     saved: true,
     fileName: path.basename(filePath),
     filePath,
+    directory: path.dirname(filePath),
     // The renderer only receives the contents for the native share operation.
     // Keeping this opt-in avoids transferring a PDF for a regular download.
     contentBase64: includeContents ? pdf.toString("base64") : undefined
@@ -289,8 +335,26 @@ async function savePdf(event, requestedName, includeContents = false) {
 
 ipcMain.handle("bcdevis:save-pdf", (event, requestedName) => savePdf(event, requestedName));
 ipcMain.handle("bcdevis:save-pdf-for-share", (event, requestedName) => savePdf(event, requestedName, true));
+ipcMain.handle("bcdevis:pdf-directory-get", () => pdfDirectoryState());
+ipcMain.handle("bcdevis:pdf-directory-choose", async (event) => {
+  const current = await pdfDirectoryState();
+  const owner = BrowserWindow.fromWebContents(event.sender);
+  const options = {
+    title: "Choisir le dossier des devis PDF",
+    defaultPath: current.directory,
+    properties: ["openDirectory", "createDirectory"]
+  };
+  const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options);
+  if (result.canceled || !result.filePaths?.[0]) return { ...current, canceled: true };
+  await writeDesktopPreferences({ pdfDirectory: result.filePaths[0] });
+  return pdfDirectoryState();
+});
+ipcMain.handle("bcdevis:pdf-directory-reset", async () => {
+  await writeDesktopPreferences({ pdfDirectory: "" });
+  return pdfDirectoryState();
+});
 ipcMain.handle("bcdevis:compose-email", async (_event, payload) => {
-  const email = safeEmailPayload(payload);
+  const email = await safeEmailPayload(payload);
   if (process.platform !== "win32") return composeEmailWithEml(email);
   try {
     return await composeEmailWithOutlook(email);

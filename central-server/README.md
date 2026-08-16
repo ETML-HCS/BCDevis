@@ -1,4 +1,4 @@
-# BCDevis Central 7.0.2
+# BCDevis Central 7.1.0
 
 BCDevis Central est le service multi-postes de la V7. L’application Electron ou PWA communique avec cette API en HTTPS. Seule l’API possède les identifiants PostgreSQL ; ils ne sont jamais envoyés aux appareils.
 
@@ -9,11 +9,11 @@ Le schéma [schema.sql](schema.sql) crée des tables distinctes pour :
 - les organisations, utilisateurs, appareils et sessions ;
 - les devis, avec unicité du numéro par organisation ;
 - les séquences et réservations de numéros uniques par date ;
-- les documents PDF, conservés dans PostgreSQL en `BYTEA` avec taille et empreinte SHA-256 ;
-- les réglages partagés, compteurs, prestations personnalisées et adaptations du catalogue ;
+- les documents PDF et les factures, distingués par leur type et conservés dans PostgreSQL en `BYTEA` avec taille et empreinte SHA-256 ;
+- les réglages partagés, compteurs, contacts, prestations personnalisées et adaptations du catalogue ;
 - les révisions de synchronisation et le journal d’activité.
 
-Les préférences d’écran et le brouillon en cours restent sur chaque appareil. Les devis enregistrés et les réglages métier sont synchronisés.
+Les préférences d’écran et le brouillon en cours restent sur chaque appareil. Les devis enregistrés, les contacts et les réglages métier sont synchronisés.
 
 ## Démarrage avec Docker Compose
 
@@ -61,13 +61,13 @@ Chaque appareil reçoit un code permanent (`P01`, `P02`, etc.) utilisé dans les
 
 Une fois le poste connecté, **Numéros uniques centralisés** peut être activé dans le même panneau. L’API réserve atomiquement dans PostgreSQL des blocs quotidiens sans doublon. Le poste conserve une petite réserve locale : les numéros déjà attribués restent donc disponibles pendant une coupure, avec des trous possibles si une réservation n’est jamais utilisée.
 
-Le bouton **Documents PDF** de l’application ouvre la bibliothèque centrale. Un compte `admin` ou `editor` peut importer un PDF de **8 Mo maximum** ; tout compte authentifié peut lister et afficher les documents de son organisation. Le contenu n’est jamais inclus dans la synchronisation JSON : il est lu séparément, à la demande, par une route authentifiée.
+Les boutons **Documents PDF** et **Factures** ouvrent deux vues de la bibliothèque centrale. Un compte `admin` ou `editor` peut importer un PDF de **8 Mo maximum** avec le type `document` ou `invoice` ; tout compte authentifié peut le lister et l’afficher. Le contenu n’est jamais inclus dans la synchronisation JSON : il est lu séparément, à la demande, par une route authentifiée. Une facture importée depuis un devis accepté clôt son suivi actif côté application seulement après la réussite de l’archivage.
 
 Pour Electron, conservez l’origine `null` dans `BCDEVIS_ALLOWED_ORIGINS`. Pour la PWA, ajoutez uniquement son origine exacte, sans chemin, par exemple `https://etml-hcs.github.io`.
 
 ## Conflits et mode hors ligne
 
-Le serveur garde la dernière révision vue par chaque appareil. Les modifications portant sur des devis différents sont fusionnées. Si deux appareils modifient le même devis ou le même réglage, aucune version n’est écrasée automatiquement : BCDevis demande laquelle conserver et télécharge auparavant une sauvegarde JSON du poste.
+Le serveur garde la dernière révision vue par chaque appareil. Les modifications portant sur des devis ou contacts différents sont fusionnées. Si deux appareils modifient le même devis, le même contact ou le même réglage, aucune version n’est écrasée automatiquement : BCDevis demande laquelle conserver et télécharge auparavant une sauvegarde JSON du poste.
 
 Sans réseau, l’application continue d’enregistrer localement. La synchronisation reprend au retour de la connexion.
 

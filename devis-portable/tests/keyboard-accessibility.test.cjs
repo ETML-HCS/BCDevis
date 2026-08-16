@@ -6,6 +6,7 @@ const path = require("node:path");
 
 const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+const help = fs.readFileSync(path.join(__dirname, "..", "help.html"), "utf8");
 const main = fs.readFileSync(path.join(__dirname, "..", "main.cjs"), "utf8");
 const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 
@@ -24,19 +25,14 @@ assert.match(styles, /html\.bcdevis-catalog-menu-open \.topbar\{z-index:auto\}/,
 assert.match(styles, /html\.bcdevis-catalog-menu-open \.app-actions\{z-index:410\}[\s\S]*?html\.bcdevis-catalog-menu-open \.app-actions-menu\{z-index:420\}/, "Seuls le bouton et le menu Catalogue doivent rester au-dessus de la caisse");
 assert.match(app, /event\.key === "ArrowDown"/, "Le menu Actions doit accepter les flèches");
 assert.match(app, /data-logo-picker/, "Le choix de logo doit être atteignable au clavier");
-assert.match(html, /id="shortcutHelpLayer"/, "L’aide des raccourcis doit être accessible dans l’interface");
-assert.deepEqual(
-  [...html.matchAll(/class="shortcut-group" aria-labelledby="[^"]+">\s*<h3[^>]*>([^<]+)<\/h3>/g)].map((match) => match[1]),
-  ["Catalogue", "Devis", "Impression et partage", "Application"],
-  "L’aide des raccourcis doit être organisée selon les quatre zones de travail"
-);
-assert.equal((html.match(/<dl class="shortcut-list">/g) || []).length, 4, "Chaque zone doit avoir sa liste de raccourcis");
-assert.equal((html.match(/<div><dt><kbd>/g) || []).length, 16, "Les seize raccourcis actifs doivent rester documentés");
-assert.match(html, /<kbd>Alt<\/kbd><kbd>M<\/kbd><\/dt><dd>Ouvrir le menu Catalogue<\/dd>/, "Alt+M doit reprendre le nom actuel du menu Catalogue");
-assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>S<\/kbd><\/dt><dd>Télécharger le PDF<\/dd>/, "Le raccourci PDF doit reprendre l’action actuelle");
+assert.match(html, /id="helpLayer"[\s\S]*?<iframe id="helpFrame" src="help\.html#overview"/, "Le centre d’aide doit être accessible dans l’interface");
+assert.doesNotMatch(html, /id="shortcutHelpLayer"|class="shortcut-group"/, "L’ancienne aide dupliquée ne doit plus rester dans index.html");
+assert.equal((help.match(/<div><dt><kbd>/g) || []).length, 16, "Les seize raccourcis actifs doivent rester documentés dans la source HTML unique");
+assert.match(help, /<kbd>Alt<\/kbd> <kbd>M<\/kbd><\/dt><dd>Menu Catalogue<\/dd>/, "Alt+M doit reprendre le nom actuel du menu Catalogue");
+assert.match(help, /<kbd>Ctrl<\/kbd> <kbd>Maj<\/kbd> <kbd>S<\/kbd><\/dt><dd>Télécharger le PDF<\/dd>/, "Le raccourci PDF doit reprendre l’action actuelle");
 assert.match(html, /id="appMenuButton"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-keyshortcuts="Alt\+M"/, "Le bouton du menu principal doit annoncer son menu et son raccourci");
 assert.match(html, /id="appMenuButton"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "Le bouton du menu principal doit rester un SVG seul");
-assert.match(html, /id="pdfLibraryButton"[^>]*aria-label="Ouvrir les documents PDF"[^>]*aria-haspopup="dialog"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*<\/button>/s, "La bibliothèque PDF doit être annoncée comme une fenêtre et conserver un bouton SVG compact");
+assert.match(html, /id="pdfLibraryButton"[^>]*aria-label="Ouvrir les documents partagés"[^>]*aria-haspopup="dialog"[^>]*data-central-library hidden disabled[^>]*>\s*<svg[^>]*><use href="#icon-documents"><\/use><\/svg>\s*<\/button>/s, "La bibliothèque centrale doit être annoncée comme une fenêtre et rester masquée hors connexion");
 assert.match(html, /id="pdfLibraryLayer"[\s\S]*?role="dialog" aria-modal="true"[^>]*aria-labelledby="pdfLibraryTitle"[\s\S]*?id="pdfPreviewFrame"[^>]*title="Aperçu du document PDF"/, "La bibliothèque et son aperçu PDF doivent être accessibles");
 assert.doesNotMatch(html, /id="appMenuButton"[^>]*>[\s\S]*?<span>Actions<\/span>[\s\S]*?<\/button>/, "Le titre Actions ne doit plus prendre de place dans le header");
 assert.match(html, /id="appActionsMenu" role="menu" aria-label="Catalogue"/, "Le menu Catalogue doit être identifié par son usage");
@@ -63,9 +59,10 @@ assert.match(
   "Le menu compact doit afficher Sur mesure tout en exposant son libellé complet"
 );
 assert.match(html, /<symbol id="icon-user-plus"[\s\S]*?id="clientButton"[^>]*class="client-card is-empty"|class="client-card is-empty"[^>]*id="clientButton"/, "Le client vide doit utiliser le pictogramme client plus");
-assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[^>]*>[\s\S]*?<use href="#icon-user-plus">[\s\S]*?id="clientName" hidden><\/strong>/, "Le client vide doit rester une action SVG accessible et sans texte visible");
+assert.match(html, /id="clientButton"[^>]*aria-label="Ajouter un client"[^>]*data-tooltip="Ajouter un client"[^>]*>[\s\S]*?<use href="#icon-user-plus">[\s\S]*?id="clientName" hidden><\/strong>/, "Le client vide doit rester un bouton SVG accessible sans texte visible");
 assert.match(html, /id="quoteHeadActions"[\s\S]*?id="clientButton"[\s\S]*?id="newQuoteButton"/, "Le client doit précéder les actions du devis sur la même ligne");
 assert.match(app, /clientButton\.classList\.toggle\("has-client", hasClient\)[\s\S]*?clientNameLabel\.hidden = !hasClient[\s\S]*?clientAddIcon\.hidden = hasClient/, "Le client renseigné doit remplacer l’icône par son seul nom");
+assert.match(app, /clientButton\.setAttribute\("aria-disabled", String\(locked\)\)[\s\S]*?\$\("#clientButton"\)\.disabled = false/, "Un devis verrouillé doit expliquer le blocage du client au lieu de rendre le bouton muet");
 assert.match(html, /id="quoteDateControl"[^>]*data-editable="false"[\s\S]*?<time id="quoteDateDisplay"[^>]*aria-label="Date du devis"><\/time>[\s\S]*?<input id="quoteDate" type="date" aria-label="Modifier la date du devis" hidden disabled>/, "La date verrouillée doit utiliser un texte compact et réserver le champ natif à l’édition");
 assert.doesNotMatch(html, /<label>\s*<span>Date<\/span>\s*<input id="quoteDate"/, "Le libellé Date ne doit plus occuper une ligne dans la caisse");
 assert.match(html, /name="quoteDateEditable" type="checkbox"[\s\S]*?<strong>Autoriser la modification<\/strong>/, "Le panneau Devis doit proposer l’édition facultative de la date");
@@ -73,26 +70,22 @@ assert.match(app, /quoteDateEditable: false/, "La date du devis doit être verro
 assert.match(app, /function renderQuoteDate\(\)[\s\S]*?input\.disabled = !editable/, "Le rendu doit alterner explicitement entre date compacte et champ modifiable");
 assert.match(app, /if \(db\.settings\.quoteDateEditable !== true\)[\s\S]*?event\.target\.value = quote\.date/, "Une modification de date doit être refusée lorsque le réglage est désactivé");
 assert.doesNotMatch(styles, /\.checkout-card\{[^}]*container-type:/, "La carte de caisse ne doit jamais perdre sa largeur intrinsèque à cause d’un conteneur CSS");
-assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{[\s\S]*?\.checkout-context\{[\s\S]*?position:absolute[\s\S]*?\.receipt-head\{padding-left:174px/, "L’état et la date doivent rejoindre visuellement receipt-head uniquement dans la caisse tablette suffisamment large");
-assert.match(html, /id="quoteSaveState" data-state="draft" role="status" aria-live="polite" aria-atomic="true"[\s\S]*?id="quoteSaveStateLabel">Brouillon<\/span>/, "L’état du devis doit être visible et annoncé sans interrompre la saisie");
+assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{[\s\S]*?\.checkout-context\{[\s\S]*?position:absolute[\s\S]*?\.receipt-head\{padding-left:174px/, "L’enregistrement et la date doivent rejoindre visuellement receipt-head uniquement dans la caisse tablette suffisamment large");
+assert.match(html, /id="quoteSaveState" data-state="draft" role="status" aria-live="polite" aria-atomic="true"[\s\S]*?id="quoteSaveStateLabel">Non archivé<\/span>/, "L’état d’archivage doit être visible sans être confondu avec le statut commercial");
 assert.match(app, /function currentQuoteSaveState\(\)[\s\S]*?quoteSaveFingerprint\(archived\) !== quoteSaveFingerprint\(quote\)[\s\S]*?key: "modified"/, "L’état Modifié doit comparer le devis courant à sa version archivée");
 assert.match(app, /delete comparable\.status;[\s\S]*?delete comparable\.updatedAt;/, "La comparaison d’archivage doit ignorer les métadonnées techniques");
 assert.match(app, /function saveQuote\(\) \{[\s\S]*?if \(!quote\.lines\.length\) \{[\s\S]*?Ajoutez une prestation avant d’enregistrer/, "Enregistrer doit répondre explicitement quand le devis est vide");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
-for (const [id, label, shortcut] of [
-  ["settingsButton", "Ouvrir les réglages", "Control\\+Comma Meta\\+Comma"],
-  ["shortcutHelpButton", "Afficher les raccourcis clavier", "\\?"]
-]) {
-  assert.match(html, new RegExp(`class="topbar-utility-button" id="${id}"[^>]*aria-label="${label}"[^>]*aria-keyshortcuts="${shortcut}"[^>]*data-tooltip="[^"]+"`), `${id} doit suivre les tarifs sous forme de SVG documenté`);
-  assert.match(html, new RegExp(`id="${id}"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} ne doit contenir que son SVG`);
-}
+assert.match(html, /class="topbar-utility-button" id="settingsButton"[^>]*aria-label="Ouvrir les réglages"[^>]*aria-keyshortcuts="Control\+Comma Meta\+Comma"[^>]*data-tooltip="Réglages"/, "Le bouton Réglages doit rester documenté");
+assert.match(html, /id="settingsButton"[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*<\/button>/, "Réglages doit conserver son SVG compact");
+assert.match(html, /id="helpButton"[^>]*aria-label="Ouvrir le centre d’aide"[^>]*aria-keyshortcuts="\?"[^>]*data-tooltip="Aide"[^>]*>[\s\S]*?<use href="#icon-help">[\s\S]*?<span>Aide<\/span>/, "Le centre d’aide doit être identifié explicitement dans le header");
 assert.match(app, /\$\("#settingsButton"\)\.addEventListener\("click", openSettingsLayer\)/, "Le bouton Réglages du header doit fonctionner");
-assert.match(app, /\$\("#shortcutHelpButton"\)\.addEventListener\("click", \(\) => openLayer\("shortcutHelpLayer"\)\)/, "Le bouton Raccourcis du header doit fonctionner");
+assert.match(app, /\$\("#helpButton"\)\.addEventListener\("click", \(\) => openHelp\("overview"\)\)/, "Le bouton Aide du header doit fonctionner");
 assert.ok(
-  html.indexOf('id="shortcutHelpButton"') < html.indexOf('id="appActions"'),
-  "Le menu principal doit être placé après le bouton Raccourcis clavier"
+  html.indexOf('id="helpButton"') < html.indexOf('id="appActions"'),
+  "Le menu principal doit être placé après le bouton Aide"
 );
 assert.match(
   html,
@@ -101,9 +94,9 @@ assert.match(
 );
 assert.doesNotMatch(html, />Devis<\/p>[\s\S]*?id="newQuoteButton"/, "Les actions essentielles du devis ne doivent plus être dupliquées dans le menu principal");
 assert.match(html, /id="familyPriceToggle"[^>]*title="Afficher ou masquer les prix \(Alt\+P\)"[^>]*aria-keyshortcuts="Alt\+P"/, "Le basculement compact des prix doit annoncer Alt+P sans afficher une touche supplémentaire");
-assert.match(html, /<kbd>Alt<\/kbd><kbd>P<\/kbd><\/dt><dd>Afficher ou masquer les prix<\/dd>/, "Alt+P doit figurer dans l’aide des raccourcis");
-assert.match(html, /<kbd>Ctrl<\/kbd><kbd>K<\/kbd>[\s\S]*?<dd>Rechercher<\/dd>/, "La recherche doit utiliser un nom court");
-assert.match(html, /<kbd>Ctrl<\/kbd><kbd>Maj<\/kbd><kbd>N<\/kbd><\/dt><dd>Sur mesure<\/dd>/, "Le service libre doit utiliser un nom court");
+assert.match(help, /<kbd>Alt<\/kbd> <kbd>P<\/kbd><\/dt><dd>Afficher les prix<\/dd>/, "Alt+P doit figurer dans le centre d’aide");
+assert.match(help, /<kbd>Ctrl<\/kbd> <kbd>K<\/kbd> ou <kbd>\/<\/kbd><\/dt><dd>Rechercher<\/dd>/, "La recherche doit utiliser un nom court");
+assert.match(help, /<kbd>Ctrl<\/kbd> <kbd>Maj<\/kbd> <kbd>N<\/kbd><\/dt><dd>Sur mesure<\/dd>/, "Le service libre doit utiliser un nom court");
 assert.match(app, /\$\("#familyPriceToggle"\)\.addEventListener\("click", toggleFamilyPrices\)/, "Le menu et le raccourci doivent partager le même basculement des prix");
 for (const [id, label, shortcut] of [
   ["newQuoteButton", "Nouveau devis", "Control\\+N Meta\\+N"],
@@ -203,7 +196,7 @@ assert.match(app, /replace\(\/\[\\s—–-\]\+\$\/u, ""\)/, "Les séparateurs d�
 assert.doesNotMatch(app, /setCheckoutFocus|familyFooterCollapsed/, "L’ancien basculement de la caisse doit être supprimé");
 assert.match(html, /role="radiogroup" aria-label="Tarif appliqué aux soins"/, "Le tarif doit être annoncé comme un groupe de choix");
 assert.match(html, /id="themePicker" role="radiogroup" aria-label="Choix du thème"/, "Les thèmes doivent être annoncés comme un groupe de choix");
-assert.equal((html.match(/class="theme-card"/g) || []).length, 4, "Les quatre thèmes doivent rester accessibles au clavier");
+assert.equal((html.match(/class="theme-card"/g) || []).length, 5, "Les cinq thèmes doivent rester accessibles au clavier");
 assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la police"/, "Les polices doivent être annoncées comme un groupe de choix");
 assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les quatre polices doivent rester accessibles au clavier");
 assert.match(app, /moveRadioSelection\(event\.currentTarget, "\.font-card"/, "Les polices doivent accepter les flèches du clavier");

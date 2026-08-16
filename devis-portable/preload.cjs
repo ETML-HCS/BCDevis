@@ -5,6 +5,9 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("bcdevisDesktop", {
   savePdf: (defaultName) => ipcRenderer.invoke("bcdevis:save-pdf", String(defaultName || "devis.pdf")),
   savePdfForShare: (defaultName) => ipcRenderer.invoke("bcdevis:save-pdf-for-share", String(defaultName || "devis.pdf")),
+  getPdfDirectory: () => ipcRenderer.invoke("bcdevis:pdf-directory-get"),
+  choosePdfDirectory: () => ipcRenderer.invoke("bcdevis:pdf-directory-choose"),
+  resetPdfDirectory: () => ipcRenderer.invoke("bcdevis:pdf-directory-reset"),
   composeEmail: (payload) => ipcRenderer.invoke("bcdevis:compose-email", {
     to: String(payload?.to || ""),
     subject: String(payload?.subject || ""),

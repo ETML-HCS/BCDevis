@@ -26,6 +26,20 @@
     return roundMoney(referenceUnitPrice(line) * (paidQuantity + freeQuantity));
   }
 
+  function cleanDocumentPrefix(value, fallback = "DEV") {
+    const prefix = String(value || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 8);
+    return prefix || fallback;
+  }
+
+  function relatedDocumentNumber(sourceNumber, requestedPrefix = "FAC") {
+    const prefix = cleanDocumentPrefix(requestedPrefix, "FAC");
+    const source = String(sourceNumber || "").trim().toUpperCase();
+    const suffix = source.match(/(?:^|-)(\d{8}[A-Z0-9-]*\d{3,})$/)?.[1];
+    if (suffix) return `${prefix}-${suffix}`;
+    const fallbackSuffix = source.replace(/^[A-Z0-9-]+?-/, "").replace(/[^A-Z0-9-]/g, "");
+    return fallbackSuffix ? `${prefix}-${fallbackSuffix}` : prefix;
+  }
+
   function calculate(target) {
     const lines = Array.isArray(target?.lines) ? target.lines : [];
     const paidLineAmount = (line) => roundMoney(referenceUnitPrice(line) * Math.max(0, Number(line?.quantity) || 0));
@@ -62,5 +76,5 @@
     return { subtotal, packDiscount, studentDiscount, studentRate, discount, totalDiscount, discounted, net, tax, total, rate };
   }
 
-  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal };
+  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber };
 });

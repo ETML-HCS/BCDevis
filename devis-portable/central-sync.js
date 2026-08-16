@@ -11,7 +11,7 @@
   const REQUEST_TIMEOUT_MS = 15000;
   const SHARED_SETTING_KEYS = [
     "companyName", "companySubtitle", "companyAddress", "companyPhone", "companyEmail", "companyUid",
-    "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
+    "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
     "studentDiscount", "taxRate", "taxMode", "showTaxInformation", "visibleFamilies", "quoteDateEditable",
     "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowCounters",
     "conditions", "studentConditions", "footerNote", "showSignatures", "centralUniqueQuoteNumbers"
@@ -94,6 +94,7 @@
       settings,
       customServices: clone(Array.isArray(source.customServices) ? source.customServices : []),
       catalogOverrides: clone(isRecord(source.catalogOverrides) ? source.catalogOverrides : {}),
+      contacts: clone(isRecord(source.contacts) ? source.contacts : {}),
       quotes: clone(isRecord(source.quotes) ? source.quotes : {})
     };
   }
@@ -105,6 +106,7 @@
     database.settings = { ...(database.settings || {}), ...source.settings };
     database.customServices = source.customServices;
     database.catalogOverrides = source.catalogOverrides;
+    database.contacts = source.contacts;
     database.quotes = source.quotes;
     return database;
   }

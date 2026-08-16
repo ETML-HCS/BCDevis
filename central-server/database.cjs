@@ -296,7 +296,7 @@ class CentralDatabase {
 
   async listDocuments(organizationId, limit = 250) {
     const result = await this.pool.query(`
-      SELECT documents.id, documents.quote_id, documents.quote_number, documents.client_name, documents.title,
+      SELECT documents.id, documents.quote_id, documents.quote_number, documents.client_name, documents.kind, documents.title,
              documents.filename, documents.mime_type, documents.byte_size, documents.sha256,
              documents.created_at, users.email AS uploaded_by_email,
              devices.name AS uploaded_by_device, devices.code AS uploaded_by_device_code
@@ -312,6 +312,7 @@ class CentralDatabase {
       quoteId: row.quote_id || "",
       quoteNumber: row.quote_number || "",
       clientName: row.client_name || "",
+      kind: row.kind === "invoice" ? "invoice" : "document",
       title: row.title,
       filename: row.filename,
       mimeType: row.mime_type,
@@ -324,21 +325,21 @@ class CentralDatabase {
     }));
   }
 
-  async createDocument({ session, quoteId, quoteNumber, clientName, title, filename, content }) {
+  async createDocument({ session, quoteId, quoteNumber, clientName, kind = "document", title, filename, content }) {
     const id = identifier();
     const createdAt = now();
     const sha256 = crypto.createHash("sha256").update(content).digest("hex");
     await this.pool.query(`
       INSERT INTO documents
-        (id, organization_id, quote_id, quote_number, client_name, title, filename, mime_type,
+        (id, organization_id, quote_id, quote_number, client_name, kind, title, filename, mime_type,
          byte_size, sha256, content, uploaded_by_user_id, uploaded_by_device_id, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'application/pdf', $8, $9, $10, $11, $12, $13)
-    `, [id, session.organization_id, quoteId || null, quoteNumber || null, clientName || null, title, filename, content.length, sha256, content, session.user_id, session.device_id, createdAt]);
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'application/pdf', $9, $10, $11, $12, $13, $14)
+    `, [id, session.organization_id, quoteId || null, quoteNumber || null, clientName || null, kind, title, filename, content.length, sha256, content, session.user_id, session.device_id, createdAt]);
     await this.pool.query(`
       INSERT INTO audit_log (organization_id, user_id, device_id, action, details, created_at)
       VALUES ($1, $2, $3, 'document.upload', $4::jsonb, $5)
-    `, [session.organization_id, session.user_id, session.device_id, JSON.stringify({ documentId: id, quoteId: quoteId || null, quoteNumber: quoteNumber || null, filename, byteSize: content.length, sha256 }), createdAt]);
-    return { id, quoteId: quoteId || "", quoteNumber: quoteNumber || "", clientName: clientName || "", title, filename, mimeType: "application/pdf", byteSize: content.length, sha256, createdAt };
+    `, [session.organization_id, session.user_id, session.device_id, JSON.stringify({ documentId: id, kind, quoteId: quoteId || null, quoteNumber: quoteNumber || null, filename, byteSize: content.length, sha256 }), createdAt]);
+    return { id, quoteId: quoteId || "", quoteNumber: quoteNumber || "", clientName: clientName || "", kind, title, filename, mimeType: "application/pdf", byteSize: content.length, sha256, createdAt };
   }
 
   async document(organizationId, documentId) {

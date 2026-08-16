@@ -19,7 +19,7 @@ const services = catalogContext.window.QUOTE_SERVICES.filter((service) => Number
 const families = catalogContext.window.QUOTE_FAMILIES.filter((family) => family.id !== "all");
 const regions = catalogContext.window.QUOTE_BODY_REGIONS;
 
-assert.match(app, /const APP_VERSION = 23;/, "La migration locale doit intégrer la centralisation V7");
+assert.match(app, /const APP_VERSION = 25;/, "La migration locale doit intégrer le workflow des factures et le carnet de contacts");
 assert.match(app, /catalogMode: "tiles"/, "Le mode historique doit rester le choix par défaut");
 assert.match(app, /function currentCatalogMode\(\)/, "Le choix sauvegardé doit être normalisé");
 assert.match(app, /function renderBodySelector\(\)/, "Le sélecteur corporel doit avoir son propre rendu");
@@ -156,7 +156,7 @@ assert.match(
 );
 
 assert.match(html, /aria-label="Navigation des soins"/, "Le réglage doit annoncer son groupe");
-assert.match(html, /<script src="body-anatomy\.js"><\/script>\s*<script src="central-sync\.js"><\/script>\s*<script src="app\.js"><\/script>/, "Les tracés anatomiques et la synchronisation doivent être chargés avant l’application");
+assert.match(html, /<script src="body-anatomy\.js"><\/script>\s*<script src="central-sync\.js"><\/script>\s*<script src="site-migration\.js"><\/script>\s*<script src="app\.js"><\/script>/, "Les tracés anatomiques, la synchronisation et la migration doivent être chargés avant l’application");
 assert.match(html, /name="catalogMode" type="radio" value="tiles"/, "Le mode Tuiles doit rester disponible");
 assert.match(html, /name="catalogMode" type="radio" value="body"/, "Le mode Corps interactif doit être disponible");
 assert.match(html, />Corps interactif</, "Le nouveau mode doit être nommé explicitement");

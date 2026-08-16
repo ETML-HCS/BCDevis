@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171512">
+  <title>Centre d’aide — BCDevis</title>
+  <link rel="icon" href="assets/pwa-icon-192.png" type="image/png">
+  <link rel="stylesheet" href="help.css">
+  <script src="help.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#helpContent">Aller au contenu</a>
+  <div class="help-shell">
+    <header class="help-header">
+      <a class="help-brand" href="#overview" aria-label="Accueil du centre d’aide BCDevis">
+        <img src="assets/clinique-bellecour-logo-officiel.png" alt="">
+        <span><small>BCDevis 7.1.0</small><strong>Centre d’aide</strong></span>
+      </a>
+      <button class="print-help" id="printHelpButton" type="button" aria-label="Imprimer le centre d’aide">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"></path></svg>
+        <span>Imprimer</span>
+      </button>
+    </header>
+
+    <aside class="help-sidebar" aria-label="Thèmes d’aide">
+      <label class="help-search" for="helpSearch">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16 16 4 4"></path></svg>
+        <input id="helpSearch" type="search" autocomplete="off" placeholder="Rechercher dans l’aide…" aria-describedby="helpSearchHint helpSearchStatus">
+        <kbd title="Raccourci clavier">/</kbd>
+      </label>
+      <p class="search-hint" id="helpSearchHint">Saisissez un ou plusieurs mots. La recherche fonctionne hors ligne.</p>
+      <nav class="topic-nav">
+        <a href="#overview" data-help-nav="overview"><span aria-hidden="true">⌂</span>Premiers repères</a>
+        <a href="#quotes" data-help-nav="quotes"><span aria-hidden="true">D</span>Devis</a>
+        <a href="#contacts" data-help-nav="contacts"><span aria-hidden="true">C</span>Contacts</a>
+        <a href="#tracking" data-help-nav="tracking"><span aria-hidden="true">S</span>Suivi commercial</a>
+        <a href="#invoices" data-help-nav="invoices"><span aria-hidden="true">F</span>Factures</a>
+        <a href="#central" data-help-nav="central"><span aria-hidden="true">B</span>Base centrale</a>
+        <a href="#migration" data-help-nav="migration"><span aria-hidden="true">↗</span>Nouvelle adresse</a>
+        <a href="#pdf" data-help-nav="pdf"><span aria-hidden="true">P</span>PDF</a>
+        <a href="#shortcuts" data-help-nav="shortcuts"><span aria-hidden="true">⌘</span>Raccourcis</a>
+      </nav>
+    </aside>
+
+    <main class="help-content" id="helpContent" tabindex="-1">
+      <div class="search-summary" id="helpSearchStatus" role="status" aria-live="polite">9 thèmes disponibles</div>
+      <div class="no-results" id="helpNoResults" hidden>
+        <strong>Aucun résultat</strong>
+        <p>Essayez un mot plus court : envoi, statut, facture, dossier ou clavier.</p>
+        <button type="button" id="clearHelpSearch">Effacer la recherche</button>
+      </div>
+
+      <article class="help-topic help-topic--hero" id="overview" data-help-topic data-search-terms="accueil démarrer aide hors ligne postgresql internet sauvegarde statut documents">
+        <p class="topic-kicker">Premiers repères</p>
+        <h1>Bien démarrer avec BCDevis</h1>
+        <p class="topic-lead">Créez, enregistrez, imprimez et téléchargez vos devis en mode local. Connectez la base centrale pour partager les données entre postes et utiliser les bibliothèques Documents et Factures.</p>
+        <div class="principle-grid">
+          <section><strong>Enregistrement</strong><p>Affiche Non archivé, À enregistrer ou Enregistré. Il ne s’agit pas du statut commercial.</p></section>
+          <section><strong>Suivi commercial</strong><p>Ouvrez <b>Mes devis → Suivi</b> pour gérer les statuts, relances et événements.</p></section>
+          <section><strong>Mode local</strong><p>Les devis, l’aide et les PDF restent utilisables sans Internet ni PostgreSQL.</p></section>
+        </div>
+        <div class="callout"><strong>Statut Envoyé</strong><p>Enregistrer, imprimer ou télécharger ne change pas le statut commercial. Après E-mail, Outlook Web ou WhatsApp, confirmez le passage à Envoyé.</p></div>
+      </article>
+
+      <article class="help-topic" id="quotes" data-help-topic data-search-terms="devis caisse client soin enregistrer sauvegarder archiver statut prêt envoyer impression">
+        <p class="topic-kicker">Devis</p>
+        <h2>Créer et enregistrer un devis</h2>
+        <ol class="steps">
+          <li><span>1</span><div><strong>Choisissez les soins</strong><p>Utilisez les familles, la recherche et le tarif Séance ou Pack. Les quantités et remises se règlent dans la caisse.</p></div></li>
+          <li><span>2</span><div><strong>Ajoutez le client</strong><p>Le nom est recommandé pour retrouver le devis ; l’e-mail est repris lors de la préparation d’un message.</p></div></li>
+          <li><span>3</span><div><strong>Enregistrez</strong><p>Le bouton Enregistrer archive le devis dans Mes devis. L’indicateur discret affiche Non archivé, À enregistrer ou Enregistré.</p></div></li>
+          <li><span>4</span><div><strong>Partagez quand il est prêt</strong><p>E-mail, Outlook Web et WhatsApp préparent le PDF et le message. BCDevis propose ensuite de passer le statut à Envoyé.</p></div></li>
+        </ol>
+        <div class="two-columns">
+          <section><h3>Ce qui change le suivi</h3><ul><li>La confirmation proposée après une préparation d’envoi.</li><li>Une action volontaire dans Mes devis → Suivi.</li><li>L’expiration automatique lorsque la validité est dépassée.</li></ul></section>
+          <section><h3>Ce qui ne le change pas</h3><ul><li>Enregistrer le devis.</li><li>Télécharger son PDF.</li><li>Ouvrir la fenêtre d’impression.</li><li>Exporter le fichier JSON.</li></ul></section>
+        </div>
+        <div class="callout callout--warning"><strong>Devis verrouillé</strong><p>Un devis Accepté, Refusé, Expiré ou déjà lié à une facture envoyée ne peut plus être modifié. Utilisez <b>Créer une V2</b> pour poursuivre sans altérer la trace commerciale.</p></div>
+      </article>
+
+      <article class="help-topic" id="contacts" data-help-topic data-search-terms="contacts clients répertoire carnet adresse téléphone email société import export csv vcard vcf json doublon fusion">
+        <p class="topic-kicker">Contacts</p>
+        <h2>Gérer le répertoire clients</h2>
+        <p>Ouvrez le bouton client du devis pour rechercher, créer ou modifier un contact. Le nom, le téléphone et l’e-mail restent immédiatement accessibles ; ouvrez <b>Plus d’informations</b> pour les autres champs.</p>
+        <div class="two-columns">
+          <section><h3>Importer</h3><ul><li>CSV avec en-têtes en français ou en anglais.</li><li>vCard <code>.vcf</code> depuis un carnet d’adresses.</li><li>JSON BCDevis pour une sauvegarde complète.</li><li>Les doublons sont fusionnés par e-mail, téléphone, puis nom et adresse.</li></ul></section>
+          <section><h3>Exporter</h3><ul><li>CSV pour Excel ou un autre logiciel.</li><li>vCard pour les téléphones et carnets d’adresses.</li><li>JSON pour restaurer ou transférer le répertoire.</li><li>L’export contient tous les contacts du répertoire.</li></ul></section>
+        </div>
+        <div class="callout"><strong>Coordonnées du devis</strong><p>Quand vous utilisez un contact, BCDevis copie ses coordonnées dans le devis. Les devis déjà enregistrés conservent leur contenu même si le contact change ensuite.</p></div>
+      </article>
+
+      <article class="help-topic" id="tracking" data-help-topic data-search-terms="suivi commercial historique statut brouillon prêt envoyé accepté refusé expiré relance auteur version v2 verrouillé">
+        <p class="topic-kicker">Suivi commercial</p>
+        <h2>Piloter le cycle de vie du devis</h2>
+        <p>Activez le suivi dans <b>Réglages → Devis &amp; suivi</b>, puis ouvrez <b>Mes devis → Suivi</b>. Chaque modification ajoute une ligne datée à la chronologie avec l’auteur et le poste lorsqu’ils sont connus.</p>
+        <div class="callout callout--soft"><strong>Deux vues distinctes</strong><p><b>Historique</b> affiche une liste compacte de tous les devis avec leur dernier statut commercial lorsque le suivi est actif. Dans <b>Suivi</b>, survolez une fiche pour afficher son bouton d’ouverture ; sur écran tactile, touchez directement la fiche. Le bouton Ouvrir le devis reste disponible dans le détail.</p></div>
+        <div class="workflow" aria-label="Parcours obligatoire d’un devis">
+          <span>Brouillon</span><i aria-hidden="true">→</i><span>Prêt à envoyer</span><i aria-hidden="true">→</i><span>Envoyé</span><i aria-hidden="true">→</i><span>Accepté<br>Refusé<br>Expiré</span>
+        </div>
+        <div class="two-columns">
+          <section><h3>Relances</h3><ul><li>Une date est proposée lors du passage à Envoyé.</li><li>Le filtre À relancer regroupe les échéances arrivées.</li><li>Les rappels au démarrage sont configurables.</li><li>Une nouvelle date ou une note enrichit la chronologie.</li></ul></section>
+          <section><h3>Garde-fous</h3><ul><li>Les rétrogradations sont refusées.</li><li>Annuler le dernier changement reste disponible avant un état terminal.</li><li>Les états terminaux verrouillent le devis.</li><li>Créer une V2 conserve le lien avec la version précédente.</li></ul></section>
+        </div>
+        <details><summary>Que fait l’expiration automatique ?</summary><p>À l’ouverture du suivi, un devis Prêt à envoyer ou Envoyé dont la date de validité est dépassée passe à Expiré. Cette action est ajoutée à sa chronologie.</p></details>
+      </article>
+
+      <article class="help-topic" id="invoices" data-help-topic data-search-terms="facture envoyé import archive téléchargement imprimer accepté workflow fac postgresql">
+        <p class="topic-kicker">Factures</p>
+        <h2>Archiver une facture envoyée</h2>
+        <p>BCDevis ne transforme pas automatiquement un devis en facture lorsque son statut change. Il archive le PDF d’une facture déjà créée et envoyée.</p>
+        <ol class="steps">
+          <li><span>1</span><div><strong>Acceptez le devis</strong><p>Le bouton d’import de facture apparaît uniquement sur un devis Accepté.</p></div></li>
+          <li><span>2</span><div><strong>Importez la facture envoyée</strong><p>Choisissez son PDF. Une connexion à la base centrale est nécessaire pour stocker ce document partagé.</p></div></li>
+          <li><span>3</span><div><strong>Retrouvez-la dans Factures</strong><p>Après un import réussi, le devis quitte le suivi actif et le PDF rejoint la vue Factures pour consultation, téléchargement et impression.</p></div></li>
+        </ol>
+        <div class="callout"><strong>Nommage cohérent</strong><p>Le préfixe facture est configurable, <code>FAC</code> par défaut. La date, le code machine et la séquence restent identiques à ceux du devis associé : <code>DEV-20260806A001</code> devient <code>FAC-20260806A001</code>.</p></div>
+      </article>
+
+      <article class="help-topic" id="central" data-help-topic data-search-terms="base centrale postgresql serveur api connexion synchronisation conflit documents factures partage hors ligne compte appareil">
+        <p class="topic-kicker">Base centrale</p>
+        <h2>Partager les données entre plusieurs postes</h2>
+        <p>La base centrale est facultative. BCDevis se connecte à une API HTTPS sécurisée, jamais directement à PostgreSQL. Les identifiants de la base ne sont pas enregistrés dans l’application.</p>
+        <div class="two-columns">
+          <section><h3>Sans base centrale</h3><ul><li>Création et enregistrement des devis.</li><li>Suivi commercial local.</li><li>Impression et téléchargement PDF.</li><li>Aide complète hors ligne.</li></ul></section>
+          <section><h3>Avec base centrale</h3><ul><li>Devis et réglages partagés entre postes.</li><li>Numéros uniques centralisés facultatifs.</li><li>Bibliothèque de documents et factures PDF.</li><li>Synchronisation et résolution explicite des conflits.</li></ul></section>
+        </div>
+        <details><summary>Pourquoi les boutons Documents et Factures peuvent-ils être absents ?</summary><p>Ils sont affichés uniquement lorsqu’un poste est connecté à la base centrale. Sans connexion, ils ne promettent pas une bibliothèque indisponible ; les fonctions locales restent actives.</p></details>
+        <details><summary>Que se passe-t-il hors connexion ?</summary><p>Le poste continue avec ses données locales. La synchronisation reprend lorsqu’une connexion valide est retrouvée. En cas de divergence, BCDevis demande quelle version conserver.</p></details>
+      </article>
+
+      <article class="help-topic" id="migration" data-help-topic data-search-terms="nouvelle adresse domaine site transfert migration sauvegarde localstorage bcd athys import export json">
+        <p class="topic-kicker">Nouvelle adresse</p>
+        <h2>Déplacer BCDevis vers un nouveau domaine</h2>
+        <p>Le stockage d’un navigateur appartient à l’adresse du site. Ouvrir un nouveau domaine ne suffit donc pas pour y retrouver automatiquement les devis de l’ancien.</p>
+        <ol class="steps">
+          <li><span>1</span><div><strong>Préparez le transfert sur l’ancien site</strong><p>Dans <b>Réglages → Données → Changer l’adresse du site</b>, vérifiez la destination puis téléchargez le fichier JSON.</p></div></li>
+          <li><span>2</span><div><strong>Ouvrez la nouvelle adresse</strong><p>Le bouton devient disponible uniquement après la création d’un fichier à jour. La nouvelle page ouvre directement l’étape d’import.</p></div></li>
+          <li><span>3</span><div><strong>Importez et contrôlez</strong><p>Sélectionnez le fichier, confirmez le remplacement local, puis vérifiez les devis et les réglages. Si la centralisation était active, reconnectez le poste avec son mot de passe.</p></div></li>
+        </ol>
+        <div class="callout callout--warning"><strong>Fichier sensible</strong><p>Le transfert contient les devis, clients et réglages locaux. Il ne contient ni mot de passe ni jeton de session. Gardez-le dans un emplacement sûr, puis supprimez-le après vérification.</p></div>
+      </article>
+
+      <article class="help-topic" id="pdf" data-help-topic data-search-terms="pdf télécharger impression dossier chemin téléchargements electron pwa navigateur nom préfixe devis facture email pièce jointe">
+        <p class="topic-kicker">PDF</p>
+        <h2>Télécharger, imprimer et joindre un devis</h2>
+        <div class="platform-grid">
+          <section><span>Electron</span><h3>Dossier configurable</h3><p>Dans <b>Réglages → Entreprise → Fichiers PDF</b>, choisissez le dossier des devis téléchargés. Ce chemin appartient au poste et n’est pas synchronisé.</p></section>
+          <section><span>PWA / navigateur</span><h3>Destination contrôlée par le navigateur</h3><p>Le navigateur applique son propre réglage de téléchargement. BCDevis ne peut pas imposer un chemin local depuis une page web.</p></section>
+        </div>
+        <ul class="check-list"><li>Télécharger crée le PDF sans changer le statut commercial.</li><li>Imprimer ouvre la boîte de dialogue du système.</li><li>E-mail joint automatiquement le PDF dans Electron lorsque le client e-mail le permet.</li><li>WhatsApp et Outlook Web indiquent quel PDF joindre manuellement.</li><li>Les fichiers existants ne sont pas écrasés silencieusement.</li></ul>
+        <div class="callout callout--soft"><strong>Imprimer cette aide</strong><p>Utilisez le bouton Imprimer en haut de page pour obtenir une version papier lisible.</p></div>
+      </article>
+
+      <article class="help-topic" id="shortcuts" data-help-topic data-search-terms="raccourcis clavier ctrl commande alt maj échap recherche catalogue devis impression aide">
+        <p class="topic-kicker">Raccourcis</p>
+        <h2>Travailler plus vite au clavier</h2>
+        <p>Sur macOS, utilisez <kbd>⌘</kbd> à la place de <kbd>Ctrl</kbd>.</p>
+        <div class="shortcut-grid">
+          <section><h3>Catalogue</h3><dl><div><dt><kbd>Alt</kbd> <kbd>M</kbd></dt><dd>Menu Catalogue</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>K</kbd> ou <kbd>/</kbd></dt><dd>Rechercher</dd></div><div><dt><kbd>Alt</kbd> <kbd>P</kbd></dt><dd>Afficher les prix</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>N</kbd></dt><dd>Sur mesure</dd></div></dl></section>
+          <section><h3>Devis</h3><dl><div><dt><kbd>Ctrl</kbd> <kbd>N</kbd></dt><dd>Nouveau devis</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>S</kbd></dt><dd>Enregistrer</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>H</kbd></dt><dd>Mes devis</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>D</kbd></dt><dd>Dupliquer</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>O</kbd></dt><dd>Importer</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>E</kbd></dt><dd>Exporter</dd></div></dl></section>
+          <section><h3>PDF et partage</h3><dl><div><dt><kbd>Ctrl</kbd> <kbd>P</kbd></dt><dd>Imprimer</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>Maj</kbd> <kbd>S</kbd></dt><dd>Télécharger le PDF</dd></div><div><dt><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>W</kbd></dt><dd>Préparer WhatsApp</dd></div></dl></section>
+          <section><h3>Application</h3><dl><div><dt><kbd>Ctrl</kbd> <kbd>,</kbd></dt><dd>Réglages</dd></div><div><dt><kbd>?</kbd></dt><dd>Centre d’aide</dd></div><div><dt><kbd>Échap</kbd></dt><dd>Fermer ou revenir</dd></div></dl></section>
+        </div>
+      </article>
+
+      <footer class="help-footer"><strong>BCDevis 7.1.0</strong><span>Aide embarquée · utilisable hors ligne · imprimable</span></footer>
+    </main>
+  </div>
+</body>
+</html>

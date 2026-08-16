@@ -1,8 +1,11 @@
-BCDevis 7.0.2 - Livrable pour Aleksandra
+BCDevis 7.1.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 7.0.2
+NOUVEAUTES 7.1.0
 
+- Réglages > Données contient un assistant pour préparer le passage de
+  l'ancienne adresse web vers https://bcd.athys.ch/ sans perdre les devis.
+  Il ne copie ni mot de passe ni session centrale.
 - L'état du devis indique Brouillon, Enregistré ou Modifié selon la version
   réellement présente dans Mes devis.
 - Le suivi commercial facultatif regroupe les statuts, les filtres, les notes,
@@ -24,22 +27,26 @@ NOUVEAUTES 7.0.2
   explicitement après création d'une sauvegarde JSON.
 - L'option Numéros uniques centralisés attribue les numéros dans PostgreSQL
   et réserve quelques numéros utilisables en cas de coupure.
-- La nouvelle fenêtre Documents PDF importe, recherche et affiche les PDF
+- La nouvelle fenêtre Documents partagés importe, recherche et affiche les PDF
   partagés sans quitter BCDevis.
-- Cet écran de nouveautés apparaît une seule fois pour la version 7.0.2.
+- Le bouton Aide ouvre un centre HTML recherchable, responsive et imprimable,
+  disponible hors ligne sans Internet ni PostgreSQL. Les PDF d'aide deviennent
+  des livrables de secours.
+- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-7.0.2.exe
+  BCDevis-7.1.0.exe
 
 2-Linux
-  BCDevis-7.0.2-linux-x86_64.AppImage
+  BCDevis-7.1.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-7.0.2-chromeos.zip
+  BCDevis-7.1.0-chromeos.zip
 
 4-Documentation
+  Centre d'aide intégré au logiciel (source principale)
   BCDevis-V7-Utilisation-rapide.pdf
   BCDevis-V7-Raccourcis-clavier.pdf
   BCDevis-V7-Mode-d-emploi.pdf
@@ -50,7 +57,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-7.0.2.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-7.1.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -64,14 +71,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-7.0.2-linux-x86_64.AppImage
-  ./BCDevis-7.0.2-linux-x86_64.AppImage
+  chmod +x BCDevis-7.1.0-linux-x86_64.AppImage
+  ./BCDevis-7.1.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-7.0.2-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-7.1.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -86,6 +93,11 @@ changer de Chromebook ou de profil, créer une sauvegarde complète JSON.
 Sous ChromeOS, le bouton PDF ouvre l'impression : choisir Enregistrer au
 format PDF.
 
+Dans l'application de bureau, Réglages > Entreprise > Fichiers PDF permet de
+choisir le dossier des devis. Téléchargements reste la valeur par défaut. Le
+préfixe facture est séparé du préfixe devis, mais le code poste ne change pas :
+DEV-20260806A001 correspond à FAC-20260806A001.
+
 CONNEXION A LA BASE CENTRALE (FACULTATIVE)
 
 L'administrateur doit d'abord déployer BCDevis Central et PostgreSQL. Dans
@@ -98,7 +110,7 @@ enregistrée. Les séries sont réservées sans doublon pour tous les postes. Un
 petite réserve reste utilisable hors connexion ; des numéros non utilisés
 peuvent donc laisser des trous.
 
-Le bouton Documents PDF ouvre la bibliothèque centrale. Il permet d'importer
+Le bouton Documents partagés apparaît après connexion et ouvre la bibliothèque centrale. Il permet d'importer
 un PDF de 8 Mo maximum, de le retrouver par devis ou client, de l'afficher et
 de le télécharger. Le devis et le client ouverts sont associés à l'import.
 
@@ -110,8 +122,8 @@ central-server du projet source.
 ENVOYER
 
 E-mail ouvre directement l'application e-mail avec le PDF déjà joint. À joindre
-regroupe WhatsApp et Outlook Web ; BCDevis crée alors le PDF dans Téléchargements
-afin de pouvoir l'ajouter manuellement au message.
+regroupe WhatsApp et Outlook Web ; BCDevis crée alors le PDF dans le dossier
+configuré afin de pouvoir l'ajouter manuellement au message.
 
 MODELE DE DEVIS
 

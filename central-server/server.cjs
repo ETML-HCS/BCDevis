@@ -4,7 +4,7 @@ const http = require("node:http");
 const { CentralDatabase } = require("./database.cjs");
 const { duplicateQuoteNumbers, emptySnapshot, mergeSnapshots, normalizeSnapshot, same } = require("./sync-merge.cjs");
 
-const SERVER_VERSION = "7.0.2";
+const SERVER_VERSION = "7.1.0";
 const API_PREFIX = "/api/v1";
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
@@ -224,12 +224,13 @@ function startCentralServer(options = {}) {
         const quoteId = /^[A-Za-z0-9:_-]{1,128}$/.test(String(body.quoteId || "")) ? String(body.quoteId) : "";
         const quoteNumber = String(body.quoteNumber || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 64);
         const clientName = String(body.clientName || "").trim().slice(0, 180);
+        const kind = body.kind === "invoice" ? "invoice" : "document";
         const content = Buffer.from(String(body.contentBase64 || ""), "base64");
         if (content.length < 5 || content.length > MAX_PDF_BYTES || content.subarray(0, 5).toString("ascii") !== "%PDF-") {
           json(response, 400, { code: "PDF_INVALID", message: "Le fichier doit être un PDF valide de 8 Mo maximum." }, corsHeaders);
           return;
         }
-        json(response, 201, { document: await database.createDocument({ session, quoteId, quoteNumber, clientName, title, filename, content }) }, corsHeaders);
+        json(response, 201, { document: await database.createDocument({ session, quoteId, quoteNumber, clientName, kind, title, filename, content }) }, corsHeaders);
         return;
       }
 

@@ -22,7 +22,7 @@ const centralReadme = read("central-server/README.md");
 const centralSchema = read("central-server/schema.sql");
 const centralCompose = read("central-server/compose.yml");
 
-assert.equal(packageJson.version, "7.0.2", "La livraison doit annoncer la version 7.0.2");
+assert.equal(packageJson.version, "7.1.0", "La livraison doit annoncer la version 7.1.0");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 for (const scriptName of ["build:portable", "mac", "linux"]) {
@@ -30,7 +30,7 @@ for (const scriptName of ["build:portable", "mac", "linux"]) {
 }
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
 assert.ok(packageJson.dependencies.pg, "PostgreSQL doit être une dépendance de production du serveur central");
-assert.match(serviceWorker, /bcdevis-pwa-v7\.0\.2-touch-ipad-smartphone/, "Le cache PWA doit suivre la version tactile iPad et Smartphone");
+assert.match(serviceWorker, /bcdevis-pwa-v7\.1\.0-touch-ipad-smartphone-documents-help/, "Le cache PWA doit suivre la version tactile, les réglages documentaires et le centre d’aide");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -41,7 +41,7 @@ assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 assert.match(workflow, /\n  chromeos:\n[\s\S]*?Configurer la sandbox Electron sous Linux[\s\S]*?xvfb-run -a npm run chromeos/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /7\.0\.2/, "Chaque document client doit annoncer la version 7.0.2");
+  assert.match(document, /7\.1\.0/, "Chaque document client doit annoncer la version 7.1.0");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -53,21 +53,29 @@ assert.match(manual, /\*\*Tuiles\*\* reste le mode activé par défaut/);
 assert.match(manual, /Corps complet/);
 assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
-assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixe et nom du poste/);
+assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixes des devis et factures[\s\S]*code poste commun[\s\S]*dossier local des devis PDF/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-7\.0\.2\.exe/);
-assert.match(quick, /BCDevis-7\.0\.2-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-7\.0\.2-chromeos\.zip/);
+assert.match(quick, /BCDevis-7\.1\.0\.exe/);
+assert.match(quick, /BCDevis-7\.1\.0-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-7\.1\.0-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-7\.0\.2-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-7\.1\.0-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
-assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*Téléchargements/);
-assert.match(clientReadme, /Outlook Web[\s\S]*Téléchargements/);
+assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*dossier configuré/);
+assert.match(clientReadme, /DEV-20260806A001[\s\S]*FAC-20260806A001[\s\S]*dossier\s+configuré/);
+for (const document of [readme, manual, quick, clientReadme]) {
+  assert.match(document, /centre d'aide|centre d’aide/i, "Les documents de livraison doivent orienter vers le centre d’aide HTML");
+  assert.match(document, /hors ligne/i, "L’aide HTML doit être annoncée comme disponible hors ligne");
+}
 for (const document of [readme, manual, quick, clientReadme]) {
   assert.match(document, /Réglages > Données/);
   assert.match(document, /PostgreSQL/);
+}
+for (const document of [readme, manual, quick, clientReadme]) {
+  assert.match(document, /bcd\.athys\.ch/);
+  assert.match(document, /mot de passe|mot-de-passe/i, "La migration doit rappeler que les secrets ne sont pas transférés");
 }
 assert.match(manual, /PostgreSQL n’est jamais ouvert directement aux postes/);
 assert.match(manual, /Conflit à résoudre/);
@@ -81,7 +89,7 @@ for (const tableName of ["organizations", "users", "devices", "sessions", "works
 }
 for (const document of [readme, manual, quick, clientReadme]) {
   assert.match(document, /numéros uniques/i, "Les documents client doivent expliquer la numérotation unique centrale");
-  assert.match(document, /Documents PDF/, "Les documents client doivent présenter la bibliothèque PDF");
+  assert.match(document, /Documents partagés/, "Les documents client doivent présenter la bibliothèque centrale avec son libellé actuel");
   assert.match(document, /Suivi (?:commercial|des devis)/i, "Les documents client doivent présenter clairement le suivi commercial");
   assert.match(document, /Auto[\s\S]*Mobile[\s\S]*Bureau/i, "Les documents client doivent présenter les trois modes d’affichage");
 }
@@ -123,7 +131,7 @@ for (const label of expectedShortcutLabels) assert.match(shortcuts, new RegExp(l
 assert.equal(expectedShortcutLabels.length, 16);
 
 assert.equal(template.type, "atelier-devis-quote");
-assert.equal(template.version, 23);
+assert.equal(template.version, 24);
 assert.ok(Array.isArray(template.quote.lines));
 assert.equal(template.quote.lines.length, 0);
 for (const generatedField of ["id", "number", "date", "validUntil"]) {

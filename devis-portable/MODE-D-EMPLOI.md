@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
-  <p class="cover-version">Version 7.0.2 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 7.1.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-7.0.2.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-7.0.2-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-7.0.2-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-7.1.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-7.1.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-7.1.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -252,11 +252,12 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 ### Fonctions récentes à connaître
 
 - **Suivi commercial des devis** : activez-le dans **Réglages > Devis > Suivi des devis** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
+- **Workflow contrôlé et V2** : les statuts suivent un ordre précis ; un devis accepté, refusé, expiré ou facturé est verrouillé et peut être repris dans une nouvelle version liée.
 - **Affichage Auto, Mobile ou Bureau** : ouvrez le menu **Catalogue**, puis choisissez la vue adaptée à votre écran. Le choix reste mémorisé uniquement sur ce poste.
 - **Confort iPad et Smartphone** : les actions tactiles sont agrandies ; un balayage vers la gauche révèle la suppression et **Annuler** restaure immédiatement la dernière ligne retirée.
 - **Catalogue personnalisable** : l’éditeur des tuiles permet de rechercher un soin, prévisualiser et enregistrer son nom, son pictogramme, sa durée ou son tarif.
 - **Travail multi-postes facultatif** : PostgreSQL synchronise les devis, leur suivi et les réglages métier, réserve des numéros uniques et permet de continuer hors ligne.
-- **Documents PDF partagés** : la bibliothèque centrale importe, recherche, affiche et télécharge les documents associés aux devis et aux clients.
+- **Documents partagés et Factures partagées** : après connexion au serveur central, deux pictogrammes distincts donnent accès aux documents généraux et aux factures envoyées, avec import, aperçu, téléchargement et impression.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
 
@@ -274,7 +275,7 @@ Dans la barre supérieure :
 - **Séance** : tarif à l’unité ;
 - **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
 - **Étudiant** : réduction configurée à `50 %` par défaut ;
-- **Documents PDF**, **Réglages** et **Raccourcis** : les trois boutons utilitaires placés après les tarifs ;
+- **Réglages** et **Raccourcis** : toujours disponibles après les tarifs ; **Documents partagés** et **Factures partagées** s’ajoutent uniquement lorsque le poste est connecté au serveur central ;
 - **Catalogue** : **Sur mesure**, affichage des prix et choix de la vue **Auto / Mobile / Bureau**.
 
 Dans l’en-tête du devis, les boutons donnent directement accès au nouveau devis, à l’enregistrement, à l’historique et au menu `…`.
@@ -377,9 +378,9 @@ Cliquez sur **Ajouter**.
 
 ### Étape 4 : Renseigner le client
 
-Dans **Devis**, cliquez sur **Client**. Les champs disponibles sont : nom complet, téléphone, e-mail et adresse. Cliquez sur **Valider**.
+Dans **Devis**, cliquez sur le pictogramme client. Recherchez un contact existant ou créez-en un. Le formulaire affiche d’abord le nom, le téléphone et l’e-mail ; **Plus d’informations** ouvre la société, l’adresse complète, la date de naissance, la langue, la référence interne et les notes. Cliquez sur **Enregistrer et utiliser**.
 
-La fiche client peut être rouverte à tout moment pour corriger les coordonnées. **Effacer** supprime les coordonnées du devis en cours.
+Le répertoire accepte les imports CSV, vCard (`.vcf`) et JSON, et propose les trois formats en export. Les doublons sont fusionnés par e-mail, téléphone, puis nom et adresse. **Retirer du devis** enlève le destinataire sans supprimer le contact ; la corbeille supprime le contact du répertoire. Chaque devis conserve une copie de ses coordonnées : modifier le contact plus tard ne réécrit pas les devis déjà enregistrés.
 
 ### Étape 5 : Vérifier la date
 
@@ -419,18 +420,19 @@ La simulation indicative apparaît automatiquement sous le total. Les options so
 
 ## 4. Enregistrer, imprimer et envoyer
 
-Quatre sorties restent visibles au bas du devis sous forme d’icônes : imprimante, PDF, e-mail direct et envois avec PDF à joindre. Leur nom complet apparaît au survol ou au focus ; leur libellé reste disponible pour les aides techniques. L’enregistrement se trouve dans l’en-tête. Un indicateur près de la date précise l’état réel du devis : **Brouillon**, **Enregistré** ou **Modifié**.
+Quatre sorties restent visibles au bas du devis sous forme d’icônes : imprimante, PDF, e-mail direct et envois avec PDF à joindre. Leur nom complet apparaît au survol ou au focus ; leur libellé reste disponible pour les aides techniques. L’enregistrement se trouve dans l’en-tête. Deux indicateurs distincts évitent toute ambiguïté : l’archivage affiche **Non archivé**, **Enregistré** ou **À enregistrer** ; le suivi affiche **Brouillon**, **Prêt à envoyer**, **Envoyé**, etc.
 
+- **Ajouter un client** : ouvre les coordonnées du destinataire. Sur un devis verrouillé, le bouton reste actif pour expliquer qu’une nouvelle version est nécessaire, sans modifier le devis accepté, refusé ou expiré.
 - **Enregistrer** : archive le devis dans **Mes devis**, accessible avec le bouton **Historique**. Les modifications sont aussi sauvegardées localement en arrière-plan.
-- **Brouillon** signifie que le devis courant est conservé localement mais n’existe pas encore dans **Mes devis** ; **Modifié** signale qu’une version enregistrée a changé et doit être enregistrée de nouveau ; **Enregistré** confirme que la version affichée est à jour dans l’historique.
+- **Non archivé** signifie que le devis courant est conservé localement mais n’existe pas encore dans **Mes devis** ; **À enregistrer** signale qu’une version archivée a changé ; **Enregistré** confirme que la version affichée est à jour dans l’historique.
 - **Imprimer** : enregistre le devis puis ouvre la fenêtre d’impression du système.
-- **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans **Téléchargements**. Sous ChromeOS, choisissez **Enregistrer au format PDF** dans la fenêtre d’impression. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
+- **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans le dossier choisi dans **Réglages > Entreprise > Fichiers PDF** ; **Téléchargements** reste le dossier par défaut. Sous ChromeOS et dans la PWA, le navigateur choisit l’emplacement via **Enregistrer au format PDF**. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
 - **E-mail** ouvre directement dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe.
 - **À joindre** regroupe les deux choix manuels :
-  - **WhatsApp** prépare le PDF dans **Téléchargements**, puis ouvre WhatsApp avec le message prérempli ;
-  - **Outlook** crée le PDF dans **Téléchargements**, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Joignez ensuite le PDF téléchargé.
+  - **WhatsApp** prépare le PDF dans le dossier configuré, puis ouvre WhatsApp avec le message prérempli ;
+  - **Outlook** crée le PDF dans le dossier configuré, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Joignez ensuite le PDF téléchargé.
 
-Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement le PDF dans **Téléchargements**. Aucun message `mailto:` sans pièce jointe n’est ouvert. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
+Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. Le PDF joint peut se trouver dans le dossier configuré. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement ce PDF dans le dossier configuré. Aucun message `mailto:` sans pièce jointe n’est ouvert. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
 
 Le PDF reprend le détail des soins, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 
@@ -442,15 +444,21 @@ Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**.
 
 Le suivi commercial est facultatif. Pour l’activer, ouvrez **Réglages > Devis > Suivi des devis**, activez l’option, puis choisissez la validité par défaut, le délai de relance, les rappels au démarrage et l’affichage des compteurs. Enregistrez ensuite les réglages.
 
-Depuis **Mes devis**, ouvrez l’onglet **Suivi**, puis utilisez le triangle d’une carte pour faire progresser le devis dans son parcours : **Brouillon**, **Prêt à envoyer**, **Envoyé**, puis **Accepté**, **Refusé** ou **Expiré**. Vous pouvez ajouter une note interne et fixer la prochaine relance sans modifier le PDF remis au client. Lorsqu’il est actif :
+Depuis **Mes devis**, ouvrez l’onglet **Suivi**, puis utilisez le triangle d’une carte pour faire progresser le devis dans son parcours : **Brouillon** → **Prêt à envoyer** → **Envoyé** → **Accepté**, **Refusé** ou **Expiré**. Les retours incohérents sont refusés. Vous pouvez ajouter une note interne et fixer la prochaine relance sans modifier le PDF remis au client. Lorsqu’il est actif :
 
-- l’onglet **Historique** conserve la liste habituelle et colore chaque carte selon son dernier statut ;
+- l’onglet **Historique** conserve une liste compacte des devis et affiche uniquement leur dernier statut commercial lorsque le suivi est actif, sans tag « Enregistré » ni outils commerciaux ;
+- l’onglet **Suivi** regroupe les statuts, couleurs, filtres, relances, chronologies et actions commerciales des devis actifs ;
+- avec une souris, le bouton du détail apparaît au survol ou au focus ; sur écran tactile, touchez directement la fiche pour ouvrir ou refermer le détail ;
+- dans le détail, **Ouvrir le devis** charge le devis dans la caisse ;
 - l’onglet **Suivi** filtre les devis brouillons, prêts à envoyer, envoyés, à relancer, acceptés, refusés ou expirés ;
 - le triangle d’une carte ouvre la chronologie complète, la prochaine relance et la zone de note interne ;
 - **À relancer** reste un indicateur orange calculé à partir de la date de relance, tandis que le dernier statut commercial demeure **Envoyé** ;
 - les compteurs résument les statuts et les relances dans la fenêtre **Mes devis** ;
 - les rappels au démarrage signalent les devis arrivés à leur date de relance ;
-- après la préparation d’un e-mail, d’un message WhatsApp ou d’Outlook Web, BCDevis demande si le devis doit être marqué comme envoyé.
+- après la préparation d’un e-mail, d’un message WhatsApp ou d’Outlook Web, BCDevis demande si le devis doit être marqué comme envoyé ;
+- les nouveaux événements indiquent l’utilisateur et le poste disponibles ;
+- un devis accepté, refusé ou expiré devient non modifiable ; utilisez **Créer une V2** pour poursuivre sans écraser la version précédente ;
+- sur un devis accepté, **Importer la facture envoyée** archive le PDF sous un nom lié au devis, puis fait passer le devis à **Facture envoyée** : il quitte l’onglet **Suivi** et la facture apparaît dans **Factures**. Le statut seul ne fabrique jamais une facture.
 
 La désactivation du suivi masque les onglets, les couleurs et les rappels sans supprimer la chronologie enregistrée. Les couleurs sont toujours accompagnées du nom du statut.
 
@@ -474,12 +482,12 @@ Ouvrez **Réglages**, choisissez l’onglet concerné, puis cliquez sur **Enregi
 Les cinq onglets disponibles sont :
 
 - **Interface** : thèmes Lumière, Nuit, Forêt ou Bordeaux ; polices Red Hat Display, Roboto, Roboto Slab ou Système ; navigation **Tuiles / Corps interactif** ; familles visibles dans le catalogue ; option **Lancer au démarrage** pour Windows, Linux et macOS ;
-- **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo principal, logo du PDF, préfixe et nom du poste pour la numérotation. Si le logo PDF est vide, le logo principal est réutilisé ;
+- **Entreprise** : nom, sous-titre, adresse, téléphone, e-mail, UID / TVA, logo principal, logo du PDF, préfixes des devis et factures, code poste commun et dossier local des devis PDF. Si le logo PDF est vide, le logo principal est réutilisé ;
 - **Tarifs** : taux et mode de TVA, nombre de séances payées et offertes du pack, ainsi que le pourcentage étudiant ;
 - **Devis** : conditions de paiement, conditions du tarif étudiant, zones de signature, note de bas de page, suivi commercial facultatif, validité et délai de relance ;
-- **Données** : activation du mode centralisé, adresse HTTPS de l’API BCDevis, compte, nom de l’appareil, numéros uniques facultatifs, test PostgreSQL, connexion, synchronisation et résolution des conflits.
+- **Données** : assistant de changement d’adresse du site, activation du mode centralisé, adresse HTTPS de l’API BCDevis, compte, nom de l’appareil, numéros uniques facultatifs, test PostgreSQL, connexion, synchronisation et résolution des conflits.
 
-Le format de numéro par défaut ressemble à `DEV-20260718A001`. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
+Le format de numéro par défaut ressemble à `DEV-20260806A001`. Une facture importée pour ce devis est archivée sous `FAC-20260806A001.pdf` : seul le préfixe change, le code poste `A` et la séquence restent identiques. Le choix du dossier PDF est appliqué immédiatement et reste local à l’ordinateur. L’option **Lancer au démarrage** agit sur la session de l’ordinateur et n’est disponible que dans l’application de bureau empaquetée.
 
 Les logos acceptés sont PNG, JPG et WebP, jusqu’à 4 Mo. Un PNG transparent est recommandé. Les logos sont optimisés avant leur enregistrement. En mode centralisé, les réglages métier et les personnalisations du catalogue sont partagés ; le thème, la police, l’affichage et les préférences propres au poste restent locaux.
 
@@ -508,22 +516,33 @@ Sont partagés entre les postes :
 - les données d’entreprise, tarifs, conditions, signatures et réglages métier ;
 - les soins sur mesure conservés et les personnalisations du catalogue.
 
-### Fenêtre Documents PDF
+### Fenêtres Documents partagés et Factures partagées
 
-Le bouton **Documents PDF** de la barre supérieure ouvre la bibliothèque partagée. Vous pouvez :
+Après connexion du poste au serveur central, les boutons **Documents partagés** et **Factures partagées** apparaissent dans la barre supérieure avec deux pictogrammes différents. Ils ouvrent deux vues de la même bibliothèque partagée. Sans serveur central, ces boutons restent masqués car les fichiers ne sont pas stockés localement. Vous pouvez :
 
 - cliquer sur **Importer un PDF** pour charger un document de 8 Mo maximum ;
 - rechercher par titre, nom de fichier, numéro de devis ou client ;
 - sélectionner un document pour l’afficher directement dans BCDevis ;
-- utiliser **Télécharger** pour en conserver une copie locale.
+- utiliser **Télécharger** pour en conserver une copie locale ;
+- utiliser **Imprimer** pour lancer l’impression du PDF sélectionné.
 
-Lors d’un import, le devis et le client actuellement ouverts sont associés au document pour faciliter la recherche. Les PDF sont conservés dans PostgreSQL et ne sont chargés qu’à la demande par l’API sécurisée. La liste et l’aperçu exigent donc une connexion active ; ils ne font pas partie de la réserve hors ligne.
+Lors d’un import, le devis et le client actuellement ouverts sont associés au document pour faciliter la recherche. Une facture importée depuis un devis accepté est renommée avec le préfixe facture et la référence du devis, puis clôt son suivi actif seulement après la réussite de l’archivage. Par exemple, `DEV-20260806A001` donne `FAC-20260806A001.pdf` avec les réglages par défaut. Les PDF sont conservés dans PostgreSQL et ne sont chargés qu’à la demande par l’API sécurisée. La liste et l’aperçu exigent donc une connexion active ; ils ne font pas partie de la réserve hors ligne.
 
 Le brouillon actuellement ouvert, le thème, la police, la navigation, le confort iPad, l’affichage des prix et le lancement automatique restent propres à chaque appareil.
 
 ### Travail hors ligne et conflits
 
 Une coupure de réseau ne bloque pas la création d’un devis. Les changements sont enregistrés localement et remis en attente ; BCDevis tente automatiquement de les synchroniser lorsque la connexion revient. Le bouton **Synchroniser maintenant** permet de relancer l’opération manuellement.
+
+### Changer l’adresse du site sans perdre les données
+
+Le navigateur isole le stockage local de chaque domaine. Pour passer de l’ancienne adresse à `https://bcd.athys.ch/`, ouvrez **Réglages > Données > Changer l’adresse du site** sur l’ancien site, puis :
+
+1. vérifiez l’adresse HTTPS et cliquez sur **Préparer le transfert** ;
+2. après le téléchargement du JSON, cliquez sur **Ouvrir la nouvelle adresse** ;
+3. sur la destination, utilisez **Importer ici**, puis contrôlez l’historique, les réglages et le brouillon avant de supprimer le fichier.
+
+Le transfert reprend l’adresse de l’API, l’e-mail et le nom du poste, mais exclut le mot de passe, la session, les numéros réservés et l’identifiant technique. Une nouvelle authentification est donc demandée. BCDevis avertit également si le fichier visait un autre domaine.
 
 Si deux postes modifient le même devis avant de se synchroniser, BCDevis ne choisit pas silencieusement. Le panneau **Conflit à résoudre** propose de conserver la version de ce poste ou celle du serveur. Une sauvegarde JSON complète est créée avant l’application du choix.
 
@@ -547,10 +566,10 @@ Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce pos
 | `Ctrl` + `Maj` + `S` | Créer le PDF |
 | `Ctrl` + `Alt` + `W` | Préparer le devis via WhatsApp |
 | `Ctrl` + `,` | Ouvrir les réglages |
-| `?` | Afficher l’aide des raccourcis |
+| `?` | Ouvrir le centre d’aide sur les raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. La fiche séparée `RACCOURCIS-CLAVIER-V7.pdf` reprend ces 16 commandes.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 7.1.0.
 
 ## 9. Utiliser le modèle de devis
 
@@ -572,7 +591,7 @@ Cliquez sur **Enregistrer**. Le brouillon en cours est conservé localement sans
 
 **Le PDF n’est pas visible.**
 
-Sous Windows, Linux et macOS, ouvrez **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
+Sous Windows, Linux et macOS, vérifiez le chemin affiché dans **Réglages > Entreprise > Fichiers PDF** ; utilisez **Par défaut** pour revenir à **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
 
 **J’ai changé de tarif par erreur.**
 
@@ -594,6 +613,4 @@ Sous Windows, vérifiez que l’EXE a été déplacé avec son dossier `data`. S
 
 Ouvrez **Réglages > Données**, vérifiez l’adresse HTTPS, puis cliquez sur **Tester le serveur**. La ligne Base de données doit indiquer **PostgreSQL prêt**. Si le serveur répond mais que la session a expiré, renseignez de nouveau le mot de passe et reconnectez le poste.
 
-**Le lancement automatique ne s’active pas.**
-
-Utilisez la version empaquetée de BCDevis, puis ouvrez **Réglages > Interface**. Sous Windows, le système peut désactiver l’entrée dans ses paramètres de démarrage. Sous Linux, vérifiez que le fichier AppImage n’a pas été déplacé après l’activation ; désactivez puis réactivez l’option si son emplacement a changé.
+**Le lancement automatique ne s’active pas.** Dans la version empaquetée, ouvrez **Réglages > Interface**. Sous Windows, contrôlez aussi le démarrage dans les paramètres du système. Sous Linux, si l’AppImage a été déplacé, désactivez puis réactivez l’option.

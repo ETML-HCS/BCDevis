@@ -1,12 +1,17 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v7.0.2-touch-ipad-smartphone";
+const CACHE_NAME = "bcdevis-pwa-v7.1.0-touch-ipad-smartphone-documents-help-contacts";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./contact-core.js",
+  "./help.html",
+  "./help.css",
+  "./help.js",
   "./central-sync.js",
+  "./site-migration.js",
   "./body-anatomy.js",
   "./catalog.js",
   "./quote-core.js",
@@ -50,10 +55,10 @@ self.addEventListener("fetch", (event) => {
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")))
     );
     return;
   }

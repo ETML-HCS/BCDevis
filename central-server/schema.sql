@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS documents (
   quote_id TEXT,
   quote_number TEXT,
   client_name TEXT,
+  kind TEXT NOT NULL DEFAULT 'document' CHECK (kind IN ('document', 'invoice')),
   title TEXT NOT NULL,
   filename TEXT NOT NULL,
   mime_type TEXT NOT NULL DEFAULT 'application/pdf',
@@ -116,6 +117,8 @@ CREATE TABLE IF NOT EXISTS documents (
   uploaded_by_device_id TEXT REFERENCES devices(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL
 );
+
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'document';
 
 CREATE TABLE IF NOT EXISTS audit_log (
   id BIGSERIAL PRIMARY KEY,
@@ -134,3 +137,4 @@ CREATE INDEX IF NOT EXISTS quotes_updated_idx ON quotes(organization_id, updated
 CREATE INDEX IF NOT EXISTS quote_number_reservations_org_idx ON quote_number_reservations(organization_id, id DESC);
 CREATE INDEX IF NOT EXISTS documents_org_created_idx ON documents(organization_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS documents_quote_idx ON documents(organization_id, quote_id);
+CREATE INDEX IF NOT EXISTS documents_kind_idx ON documents(organization_id, kind, created_at DESC);

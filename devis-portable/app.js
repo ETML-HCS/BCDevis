@@ -2,13 +2,13 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.0.2";
-  const RELEASE_NOTES_REVISION = "7.0.2";
+  const RELEASE_VERSION = "7.1.0";
+  const RELEASE_NOTES_REVISION = "7.1.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
-  const APP_VERSION = 23;
+  const APP_VERSION = 25;
   const EXAMPLE_QUOTE_NUMBER = "DEV-000002";
   const QUOTE_VALIDITY_DAYS = 30;
   const QUOTE_FUTURE_DATE_LIMIT = 14;
@@ -24,6 +24,7 @@
   const MAX_LINE_QUANTITY = 999;
   const MAX_LINE_PRICE = 1000000;
   const MAX_CUSTOM_SERVICES = 500;
+  const MAX_CONTACTS = 10000;
   const CART_DELETE_REVEAL_WIDTH = 56;
   const CART_SWIPE_START_THRESHOLD = 8;
   const LEGACY_DEFAULT_PAYMENT_CONDITIONS = "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.";
@@ -37,7 +38,18 @@
     document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal } = window.QuoteCore;
+  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
+  const ContactCore = window.BCDevisContacts;
+  const {
+    DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
+    MIGRATION_QUERY_KEY,
+    TRANSFER_TYPE: SITE_TRANSFER_TYPE,
+    createTransferPackage,
+    migrationArrivalUrl,
+    normalizeSiteUrl,
+    readTransferPackage,
+    targetMatchesCurrentSite
+  } = window.BCDevisSiteMigration;
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
   const todayISO = () => {
     const date = new Date();
@@ -97,17 +109,30 @@
   const DISPLAY_MODE_PREFERENCES = ["auto", "smartphone", "full"];
   const SMARTPHONE_LAYOUT_MAX_WIDTH = 600;
   const SETTINGS_TAB_IDS = ["interface", "company", "pricing", "document", "data"];
-  const TRACKING_STATUSES = ["draft", "ready", "sent", "accepted", "refused", "expired"];
+  const TRACKING_STATUSES = ["draft", "ready", "sent", "accepted", "refused", "expired", "invoiced"];
   const TRACKING_STATUS_META = {
     draft: { label: "Brouillon", eventLabel: "Brouillon créé" },
     ready: { label: "Prêt à envoyer", eventLabel: "Prêt à envoyer" },
     sent: { label: "Envoyé", eventLabel: "Devis envoyé" },
     accepted: { label: "Accepté", eventLabel: "Devis accepté" },
     refused: { label: "Refusé", eventLabel: "Devis refusé" },
-    expired: { label: "Expiré", eventLabel: "Devis expiré" }
+    expired: { label: "Expiré", eventLabel: "Devis expiré" },
+    invoiced: { label: "Facture envoyée", eventLabel: "Facture envoyée" }
   };
   const TRACKING_FILTERS = ["all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
+  const TRACKING_TERMINAL_STATUSES = ["accepted", "refused", "expired", "invoiced"];
+  const TRACKING_TRANSITIONS = {
+    draft: ["ready"],
+    ready: ["sent", "expired"],
+    sent: ["accepted", "refused", "expired"],
+    accepted: ["invoiced"],
+    refused: [],
+    expired: [],
+    invoiced: []
+  };
   const MAX_TRACKING_EVENTS = 300;
+  const CLIENT_SNAPSHOT_FIELDS = ["name", "phone", "email", "company", "address", "postalCode", "city", "country", "birthDate", "language", "reference", "notes"];
+  const CLIENT_FIELD_LIMITS = { name: 240, phone: 80, email: 320, company: 240, address: 500, postalCode: 32, city: 120, country: 120, birthDate: 10, language: 40, reference: 80, notes: 2000 };
 
   const defaultSettings = {
     companyName: "Clinique Bellecour",
@@ -119,8 +144,9 @@
     headerLogoDataUrl: "",
     pdfLogoDataUrl: "",
     quotePrefix: "DEV",
+    invoicePrefix: "FAC",
     machineName: "A",
-    theme: "light",
+    theme: "white",
     fontFamily: "red-hat",
     validityDays: QUOTE_VALIDITY_DAYS,
     packPaidDefault: 6,
@@ -171,7 +197,7 @@
   }
 
   function freshDatabase() {
-    return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], catalogOverrides: {}, quotes: {}, current: null };
+    return { version: APP_VERSION, sequence: 0, quoteCounters: {}, settings: clone(defaultSettings), customServices: [], catalogOverrides: {}, contacts: {}, quotes: {}, current: null };
   }
 
   function configuredValidityDays(settings = defaultSettings) {
@@ -182,7 +208,15 @@
     return boundedInteger(settings?.trackingDefaultFollowUpDays, 1, 90, 7);
   }
 
-  function trackingEvent({ id = "", type = "status", status = "draft", at = new Date().toISOString(), note = "", channel = "", followUpAt = "" } = {}) {
+  function trackingActorFields() {
+    const config = centralController?.getConfig?.() || {};
+    return {
+      actor: String(config.connected && config.email ? config.email : "Utilisateur local").trim().slice(0, 320),
+      device: String(config.deviceName || db?.settings?.machineName || "Ce poste").trim().slice(0, 80)
+    };
+  }
+
+  function trackingEvent({ id = "", type = "status", status = "draft", at = new Date().toISOString(), note = "", channel = "", followUpAt = "", actor = "", device = "" } = {}) {
     return {
       id: safeLocalId(id) || uid(),
       type: ["status", "note", "follow-up"].includes(type) ? type : "status",
@@ -190,7 +224,9 @@
       at: validTimestamp(at),
       note: String(note || "").trim().slice(0, 1000),
       channel: String(channel || "").trim().slice(0, 80),
-      followUpAt: followUpAt ? validISODate(followUpAt, "") : ""
+      followUpAt: followUpAt ? validISODate(followUpAt, "") : "",
+      actor: String(actor || "").trim().slice(0, 320),
+      device: String(device || "").trim().slice(0, 80)
     };
   }
 
@@ -202,7 +238,8 @@
       sentAt: "",
       acceptedAt: "",
       refusedAt: "",
-      events: [trackingEvent({ status: "draft", at: createdAt })]
+      invoicedAt: "",
+      events: [trackingEvent({ status: "draft", at: createdAt, ...trackingActorFields() })]
     };
   }
 
@@ -221,6 +258,7 @@
       sentAt: source.sentAt ? validTimestamp(source.sentAt, "") : "",
       acceptedAt: source.acceptedAt ? validTimestamp(source.acceptedAt, "") : "",
       refusedAt: source.refusedAt ? validTimestamp(source.refusedAt, "") : "",
+      invoicedAt: source.invoicedAt ? validTimestamp(source.invoicedAt, "") : "",
       events
     };
   }
@@ -267,6 +305,69 @@
     }).filter(Boolean));
   }
 
+  function emptyClientSnapshot() {
+    return { contactId: "", ...Object.fromEntries(CLIENT_SNAPSHOT_FIELDS.map((field) => [field, ""])) };
+  }
+
+  function sanitizeClientSnapshot(source) {
+    const input = isRecord(source) ? source : {};
+    const snapshot = emptyClientSnapshot();
+    snapshot.contactId = safeLocalId(input.contactId || input.id);
+    CLIENT_SNAPSHOT_FIELDS.forEach((field) => {
+      snapshot[field] = String(input[field] || "").replace(/\u0000/g, "").trim().slice(0, CLIENT_FIELD_LIMITS[field]);
+    });
+    snapshot.email = snapshot.email.toLocaleLowerCase("fr");
+    snapshot.birthDate = snapshot.birthDate ? validISODate(snapshot.birthDate, "") : "";
+    return snapshot;
+  }
+
+  function sanitizeContactRecord(source) {
+    return ContactCore.sanitizeContact(source, { idFactory: () => `contact-${uid()}` });
+  }
+
+  function sanitizeContacts(source) {
+    const records = Array.isArray(source) ? source : isRecord(source) ? Object.values(source) : [];
+    const contacts = {};
+    const matchedIds = new Map();
+    records.slice(0, MAX_CONTACTS).forEach((record) => {
+      const contact = sanitizeContactRecord(record);
+      if (!contact) return;
+      const match = ContactCore.matchKey(contact);
+      const matchedId = match ? matchedIds.get(match) : "";
+      if (matchedId && contacts[matchedId]) {
+        contacts[matchedId] = ContactCore.mergeContacts(contacts[matchedId], contact, { now: contact.updatedAt });
+        return;
+      }
+      while (contacts[contact.id]) contact.id = `contact-${uid()}`;
+      contacts[contact.id] = contact;
+      if (match) matchedIds.set(match, contact.id);
+    });
+    return contacts;
+  }
+
+  function seedContactsFromQuotes(database) {
+    database.contacts = sanitizeContacts(database.contacts);
+    const matchedIds = new Map(Object.values(database.contacts).map((contact) => [ContactCore.matchKey(contact), contact.id]).filter(([key]) => key));
+    const records = [...Object.values(isRecord(database.quotes) ? database.quotes : {}), database.current].filter(isRecord);
+    records.forEach((record) => {
+      const snapshot = sanitizeClientSnapshot(record.client);
+      const candidate = sanitizeContactRecord({ ...snapshot, id: snapshot.contactId });
+      if (!candidate) {
+        record.client = snapshot;
+        return;
+      }
+      const match = ContactCore.matchKey(candidate);
+      const contactId = (snapshot.contactId && database.contacts[snapshot.contactId] ? snapshot.contactId : "") || matchedIds.get(match) || candidate.id;
+      if (!database.contacts[contactId] && Object.keys(database.contacts).length < MAX_CONTACTS) {
+        candidate.id = contactId;
+        database.contacts[contactId] = candidate;
+        if (match) matchedIds.set(match, contactId);
+      }
+      record.client = { ...snapshot, contactId };
+    });
+    return database;
+  }
+
   function removeExampleQuote(database) {
     Object.entries(database.quotes || {}).forEach(([id, item]) => {
       if (item?.number === EXAMPLE_QUOTE_NUMBER) delete database.quotes[id];
@@ -305,6 +406,7 @@
     if (version < 4) removeExampleQuote(database);
     if (version < 7) applyDefaultTax(database);
     if (version < 17) updateDefaultPaymentWording(database);
+    if (version < 25) seedContactsFromQuotes(database);
     return database;
   }
 
@@ -321,6 +423,7 @@
         quoteCounters: parsed.quoteCounters && typeof parsed.quoteCounters === "object" && !Array.isArray(parsed.quoteCounters) ? parsed.quoteCounters : {},
         customServices: sanitizeCustomServices(parsed.customServices),
         catalogOverrides: sanitizeCatalogOverrides(parsed.catalogOverrides),
+        contacts: sanitizeContacts(parsed.contacts),
         quotes: isRecord(parsed.quotes) ? parsed.quotes : {}
       };
       database.settings.headerLogoDataUrl = safeLogoDataUrl(database.settings.headerLogoDataUrl);
@@ -380,16 +483,21 @@
   let toastTimer = null;
   let activeToast = null;
   let cartSwipeHintSeenThisSession = false;
-  let pendingTheme = "light";
+  let pendingTheme = "white";
   let pendingFont = "red-hat";
   let pendingLogos = { headerLogoDataUrl: "", pdfLogoDataUrl: "" };
   let centralDocuments = [];
   let centralDocumentSearch = "";
   let centralDocumentObjectUrl = "";
   let selectedCentralDocumentId = "";
+  let activeCentralDocumentView = "documents";
+  let pendingInvoiceQuoteId = "";
+  let preparedSiteMigrationTarget = "";
   let activeSettingsTab = "interface";
   let activeHistoryView = "history";
   let activeTrackingFilter = "all";
+  let selectedContactId = "";
+  let contactQuery = "";
   const expandedTrackingQuotes = new Set();
   let activeLayerId = "";
   let tileDetailServiceId = "";
@@ -409,6 +517,10 @@
 
   function machineCode() {
     return compactMachineCode(db.settings.machineName);
+  }
+
+  function invoiceNumberForQuote(item) {
+    return relatedDocumentNumber(item?.number, cleanDocumentPrefix(db.settings.invoicePrefix, "FAC"));
   }
 
   function escapeRegExp(value) {
@@ -488,13 +600,17 @@
   function newQuote() {
     const date = todayISO();
     const createdAt = new Date().toISOString();
+    const id = uid();
     return {
-      id: uid(),
+      id,
       number: nextQuoteNumber(date),
       status: "draft",
+      rootQuoteId: id,
+      previousQuoteId: "",
+      revisionNumber: 1,
       date,
       validUntil: addDaysISO(date, configuredValidityDays(db.settings)),
-      client: { name: "", phone: "", email: "", address: "" },
+      client: emptyClientSnapshot(),
       lines: [],
       discount: { code: "", type: "percent", value: 0 },
       tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
@@ -510,9 +626,9 @@
     if (!isRecord(source) || !Array.isArray(source.lines)) throw new Error("Format de devis non reconnu");
     const date = todayISO();
     const base = {
-      id: uid(), number: "", status: "draft", date,
+      id: uid(), number: "", status: "draft", rootQuoteId: "", previousQuoteId: "", revisionNumber: 1, date,
       validUntil: addDaysISO(date, configuredValidityDays(db.settings)),
-      client: { name: "", phone: "", email: "", address: "" },
+      client: emptyClientSnapshot(),
       lines: [], discount: { code: "", type: "percent", value: 0 },
       tax: { enabled: db.settings.showTaxInformation === true, rate: configuredTaxRate(db.settings), mode: db.settings.taxMode === "excluded" ? "excluded" : "included" },
       conditions: db.settings.conditions, note: "", tracking: freshTracking(),
@@ -527,17 +643,21 @@
       knownLineIds.add(id);
       return id;
     };
+    const sanitizedId = safeLocalId(source.id) || uid();
     const sanitized = {
       ...base,
       ...source,
-      id: safeLocalId(source.id) || uid(),
+      id: sanitizedId,
       number: importedNumber || nextQuoteNumber(quoteDate),
       status: source.status === "saved" ? "saved" : "draft",
+      rootQuoteId: safeLocalId(source.rootQuoteId) || sanitizedId,
+      previousQuoteId: safeLocalId(source.previousQuoteId),
+      revisionNumber: boundedInteger(source.revisionNumber, 1, 999, 1),
       date: quoteDate,
       validUntil: source.validUntil
         ? validISODate(source.validUntil, addDaysISO(quoteDate, configuredValidityDays(db.settings)))
         : addDaysISO(quoteDate, configuredValidityDays(db.settings)),
-      client: Object.fromEntries(Object.entries({ ...base.client, ...(isRecord(source.client) ? source.client : {}) }).map(([key, value]) => [key, String(value || "").trim().slice(0, 500)])),
+      client: sanitizeClientSnapshot(source.client),
       discount: {
         code: String(source.discount?.code || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24),
         type: source.discount?.type === "fixed" ? "fixed" : "percent",
@@ -599,6 +719,7 @@
     db.quotes = normalized;
     db.customServices = sanitizeCustomServices(db.customServices);
     db.catalogOverrides = sanitizeCatalogOverrides(db.catalogOverrides);
+    db.contacts = sanitizeContacts(db.contacts);
     if (!db.current) return;
     try {
       db.current = sanitizeQuote(db.current);
@@ -709,6 +830,10 @@
   }
 
   function renderCentralizationState(state = centralState || centralController.getState(), config = centralController.getConfig()) {
+    $$('[data-central-library]').forEach((button) => {
+      button.hidden = config.connected !== true;
+      button.disabled = config.connected !== true;
+    });
     const enabled = $("#centralEnabled");
     if (!enabled) return;
     enabled.checked = config.enabled === true;
@@ -812,18 +937,44 @@
     $("#pdfPreviewEmpty")?.removeAttribute("hidden");
     const download = $("#pdfLibraryDownloadButton");
     if (download) download.disabled = true;
+    const print = $("#pdfLibraryPrintButton");
+    if (print) print.disabled = true;
+  }
+
+  function centralDocumentKind(item) {
+    return item?.kind === "invoice" ? "invoice" : "document";
+  }
+
+  function renderCentralDocumentView() {
+    const invoices = activeCentralDocumentView === "invoices";
+    $("#pdfLibraryTitle").textContent = invoices ? "Factures" : "Documents PDF";
+    $("#pdfLibraryIntro").textContent = invoices
+      ? "Importez, retrouvez, téléchargez et imprimez les factures envoyées."
+      : "Importez, retrouvez et consultez les PDF partagés avec les postes autorisés.";
+    $("#pdfLibraryImportButton").lastChild.textContent = invoices ? "Importer une facture" : "Importer un PDF";
+    $("#pdfLibraryList").setAttribute("aria-label", invoices ? "Factures disponibles" : "Documents PDF disponibles");
+    $$("[data-pdf-library-view]").forEach((button) => {
+      const selected = button.dataset.pdfLibraryView === activeCentralDocumentView;
+      button.setAttribute("aria-selected", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+    });
   }
 
   function renderCentralDocuments() {
     const list = $("#pdfLibraryList");
     if (!list) return;
     const query = normalize(centralDocumentSearch);
-    const items = centralDocuments.filter((item) => !query || normalize([item.title, item.filename, item.quoteNumber, item.clientName].join(" ")).includes(query));
+    const expectedKind = activeCentralDocumentView === "invoices" ? "invoice" : "document";
+    const visibleDocuments = centralDocuments.filter((item) => centralDocumentKind(item) === expectedKind);
+    const items = visibleDocuments.filter((item) => !query || normalize([item.title, item.filename, item.quoteNumber, item.clientName].join(" ")).includes(query));
+    const singular = expectedKind === "invoice" ? "facture" : "document";
     $("#pdfLibraryStatus").textContent = query
-      ? `${plural(items.length, "document")} sur ${centralDocuments.length}`
-      : plural(centralDocuments.length, "document partagé");
+      ? `${plural(items.length, singular)} sur ${visibleDocuments.length}`
+      : plural(visibleDocuments.length, expectedKind === "invoice" ? "facture" : "document partagé");
     if (!items.length) {
-      list.innerHTML = `<div class="pdf-library-empty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>${query ? "Aucun résultat" : "Aucun document"}</strong><span>${query ? "Essayez une autre recherche." : "Importez le premier PDF dans la base centrale."}</span></div>`;
+      const emptyTitle = expectedKind === "invoice" ? "Aucune facture" : "Aucun document";
+      const emptyCopy = expectedKind === "invoice" ? "Importez la première facture envoyée." : "Importez le premier PDF dans la base centrale.";
+      list.innerHTML = `<div class="pdf-library-empty"><svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>${query ? "Aucun résultat" : emptyTitle}</strong><span>${query ? "Essayez une autre recherche." : emptyCopy}</span></div>`;
       return;
     }
     list.innerHTML = items.map((item) => {
@@ -842,18 +993,20 @@
     if (targetId) await selectCentralDocument(targetId);
   }
 
-  async function openPdfLibrary() {
+  async function openPdfLibrary(view = "documents", { selectId = "" } = {}) {
     if (!centralController.getConfig().connected) {
       activeSettingsTab = "data";
       openSettingsLayer();
       toast("Connectez ce poste pour accéder aux documents PDF.", "error");
       return;
     }
+    activeCentralDocumentView = view === "invoices" ? "invoices" : "documents";
     centralDocumentSearch = "";
     $("#pdfLibrarySearch").value = "";
+    renderCentralDocumentView();
     openLayer("pdfLibraryLayer");
     try {
-      await refreshCentralDocuments();
+      await refreshCentralDocuments({ selectId });
     } catch (error) {
       console.error("Bibliothèque PDF indisponible", error);
       $("#pdfLibraryStatus").textContent = error.message || "Bibliothèque indisponible";
@@ -872,6 +1025,7 @@
     $("#pdfPreviewEmpty").hidden = false;
     $("#pdfPreviewFrame").hidden = true;
     $("#pdfLibraryDownloadButton").disabled = true;
+    $("#pdfLibraryPrintButton").disabled = true;
     try {
       const blob = await centralController.loadDocument(documentId);
       if (selectedCentralDocumentId !== documentId || $("#pdfLibraryLayer").hidden) return;
@@ -881,6 +1035,7 @@
       $("#pdfPreviewFrame").hidden = false;
       $("#pdfPreviewEmpty").hidden = true;
       $("#pdfLibraryDownloadButton").disabled = false;
+      $("#pdfLibraryPrintButton").disabled = false;
     } catch (error) {
       console.error("Lecture PDF impossible", error);
       $("#pdfPreviewEmpty").innerHTML = `<svg aria-hidden="true"><use href="#icon-pdf"></use></svg><strong>PDF indisponible</strong><span>${escapeHTML(error.message || "Le document n’a pas pu être chargé.")}</span>`;
@@ -904,21 +1059,39 @@
     return { filename: file.name, title: file.name.replace(/\.pdf$/i, ""), contentBase64: arrayBufferToBase64(buffer) };
   }
 
-  async function importCentralPdf(file) {
+  async function importCentralPdf(file, { quoteId = quote.id, completeWorkflow = false } = {}) {
     const input = await readPdfArchiveFile(file);
     if (!input) return;
+    const kind = activeCentralDocumentView === "invoices" ? "invoice" : "document";
+    const linkedQuote = db.quotes[quoteId] || (quote.id === quoteId ? quote : null);
+    const invoiceNumber = kind === "invoice" && linkedQuote ? invoiceNumberForQuote(linkedQuote) : "";
+    const archiveInput = invoiceNumber
+      ? { ...input, filename: `${invoiceNumber}.pdf`, title: invoiceNumber }
+      : input;
     const button = $("#pdfLibraryImportButton");
     button.disabled = true;
-    $("#pdfLibraryStatus").textContent = "Import du PDF dans PostgreSQL…";
+    $("#pdfLibraryStatus").textContent = kind === "invoice" ? "Import de la facture dans PostgreSQL…" : "Import du PDF dans PostgreSQL…";
     try {
       const result = await centralController.uploadDocument({
-        ...input,
-        quoteId: quote.id,
-        quoteNumber: quote.number,
-        clientName: quote.client?.name || ""
+        ...archiveInput,
+        kind,
+        quoteId: linkedQuote?.id || "",
+        quoteNumber: linkedQuote?.number || "",
+        clientName: linkedQuote?.client?.name || ""
       });
+      if (kind === "invoice" && completeWorkflow && linkedQuote?.tracking?.status === "accepted") {
+        if (!updateQuoteTracking(linkedQuote, { status: "invoiced", note: `Facture ${archiveInput.filename} envoyée` })) {
+          throw new Error("La facture est archivée, mais le devis n’a pas pu quitter le workflow.");
+        }
+        if (!persistTrackedQuote(linkedQuote)) throw new Error("La facture est archivée, mais le suivi local n’a pas pu être enregistré.");
+        renderCheckout();
+        renderHistory();
+      }
       await refreshCentralDocuments({ selectId: result.document?.id || "" });
-      toast(`PDF archivé : ${result.document?.filename || input.filename}`);
+      toast(kind === "invoice"
+        ? `Facture archivée${completeWorkflow && linkedQuote?.tracking?.status === "invoiced" ? " · devis sorti du suivi" : ""} : ${result.document?.filename || archiveInput.filename}`
+        : `PDF archivé : ${result.document?.filename || archiveInput.filename}`);
+      return result;
     } finally {
       button.disabled = false;
     }
@@ -934,6 +1107,19 @@
     document.body.append(link);
     link.click();
     link.remove();
+  }
+
+  function printSelectedCentralDocument() {
+    if (!centralDocumentObjectUrl || !selectedCentralDocumentId) return;
+    const frame = $("#pdfPreviewFrame");
+    try {
+      frame?.contentWindow?.focus();
+      frame?.contentWindow?.print();
+    } catch (error) {
+      console.warn("Impression intégrée indisponible", error);
+      const printWindow = window.open(centralDocumentObjectUrl, "_blank", "noopener");
+      if (!printWindow) toast("Autorisez l’ouverture du PDF pour l’imprimer.", "error");
+    }
   }
 
   async function runCentralAction(button, pendingLabel, action) {
@@ -1062,6 +1248,7 @@
   }
 
   function applyOfferMode(mode) {
+    if (!ensureQuoteEditable()) return;
     const currentGroup = quoteTariffMode();
     if (quote.lines.length && currentGroup !== tariffGroup(mode)) applyTariffToAllLines(mode);
     selectedOfferMode = mode;
@@ -1073,6 +1260,7 @@
   }
 
   function requestOfferMode(mode) {
+    if (!ensureQuoteEditable()) return;
     const currentGroup = quoteTariffMode();
     const changesExistingTariff = quote.lines.length && currentGroup !== tariffGroup(mode);
     if (!changesExistingTariff || db.settings.skipTariffChangeConfirmation) {
@@ -1125,6 +1313,7 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-checked", String(active));
       button.tabIndex = active ? 0 : -1;
+      button.disabled = quoteIsLocked();
       button.title = "";
     });
     $("[data-offer-mode=\"pack\"] small").textContent = `${paid} + ${free} offerte${free === 1 ? "" : "s"}`;
@@ -1678,6 +1867,7 @@
     analyzeTileDensity();
   }
   function addService(item, offerType = "single") {
+    if (!ensureQuoteEditable()) return;
     const offer = ["single", "pack", "student"].includes(offerType) ? offerType : "single";
     const existing = quote.lines.find((line) => String(line.serviceId) === String(item.id) && line.offerType === offer);
     if (existing && offer === "pack") {
@@ -1712,15 +1902,20 @@
     const clientAddIcon = $("#clientInitials");
     const clientDetails = $("#clientDetails");
     const hasClient = Boolean(clientName);
+    const locked = quoteIsLocked();
+    const actionLabel = hasClient ? `Modifier le client ${clientName}` : "Ajouter un client";
     clientButton.classList.toggle("has-client", hasClient);
     clientButton.classList.toggle("is-empty", !hasClient);
-    clientButton.setAttribute("aria-label", hasClient ? `Modifier le client ${clientName}` : "Ajouter un client");
-    clientButton.title = hasClient ? `Modifier ${clientName}` : "Ajouter un client";
+    clientButton.setAttribute("aria-label", locked ? `${actionLabel}. Devis verrouillé, créez une nouvelle version pour le modifier.` : actionLabel);
+    clientButton.setAttribute("aria-disabled", String(locked));
+    clientButton.classList.toggle("is-locked", locked);
+    clientButton.title = locked ? "Devis verrouillé · créez une nouvelle version pour modifier le client" : actionLabel;
+    clientButton.dataset.tooltip = clientButton.title;
     clientNameLabel.textContent = clientName;
     clientNameLabel.hidden = !hasClient;
     clientAddIcon.hidden = hasClient;
     clientDetails.textContent = hasClient
-      ? [client.phone, client.email].filter(Boolean).join(" · ") || client.address || "Coordonnées à compléter"
+      ? [client.company, client.phone, client.email].filter(Boolean).join(" · ") || [client.address, client.postalCode, client.city].filter(Boolean).join(" ") || "Coordonnées à compléter"
       : "Nom, téléphone et e-mail";
   }
 
@@ -1781,6 +1976,7 @@
         </div>
       </article>`;
     }).join("");
+    if (quoteIsLocked()) $$('input, button', container).forEach((control) => { control.disabled = true; });
   }
   function renderTotals() {
     const totals = calculateQuote(quote);
@@ -1828,14 +2024,14 @@
     if (!archived) {
       return {
         key: "draft",
-        label: "Brouillon",
+        label: "Non archivé",
         detail: "Ce devis n’est pas encore enregistré dans Mes devis."
       };
     }
     if (quoteSaveFingerprint(archived) !== quoteSaveFingerprint(quote)) {
       return {
         key: "modified",
-        label: "Modifié",
+        label: "À enregistrer",
         detail: "Ce devis a été modifié depuis son dernier enregistrement."
       };
     }
@@ -1869,7 +2065,7 @@
     const control = $("#quoteDateControl");
     const display = $("#quoteDateDisplay");
     const input = $("#quoteDate");
-    const editable = db.settings.quoteDateEditable === true;
+    const editable = db.settings.quoteDateEditable === true && !quoteIsLocked();
     const formattedDate = formatDate(quote.date);
     control.dataset.editable = String(editable);
     control.closest(".checkout-card")?.classList.toggle("quote-date-editable", editable);
@@ -1885,16 +2081,17 @@
     input.max = max;
   }
 
-  const KNOWN_THEMES = ["light", "night", "forest", "bordeaux"];
+  const KNOWN_THEMES = ["white", "light", "night", "forest", "bordeaux"];
   const THEME_BROWSER_COLORS = {
+    white: "#ffffff",
     light: "#171512",
     night: "#090906",
     forest: "#1c3429",
     bordeaux: "#411923"
   };
-  function currentTheme() { return KNOWN_THEMES.includes(db.settings.theme) ? db.settings.theme : "light"; }
+  function currentTheme() { return KNOWN_THEMES.includes(db.settings.theme) ? db.settings.theme : "white"; }
   function applyTheme(theme) {
-    const value = KNOWN_THEMES.includes(theme) ? theme : "light";
+    const value = KNOWN_THEMES.includes(theme) ? theme : "white";
     document.documentElement.setAttribute("data-theme", value);
     $("#themeColorMeta")?.setAttribute("content", THEME_BROWSER_COLORS[value]);
   }
@@ -1969,7 +2166,9 @@
     enforceStudentCouponRule();
     if (quote.discount.type !== previousCouponType) saveLocal(false);
     const hasLines = quote.lines.length > 0;
+    const locked = quoteIsLocked();
     $("#checkoutPanel").classList.toggle("is-empty", !hasLines);
+    $("#checkoutPanel").classList.toggle("quote-locked", locked);
     ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton", "checkoutOutlookWebButton"].forEach((id) => {
       const button = $(`#${id}`);
       if (button) button.disabled = !hasLines;
@@ -1991,6 +2190,7 @@
     renderQuoteDate();
     if (quote.discount.code || Number(quote.discount.value) > 0) couponOpen = true;
     $("#couponToggle").hidden = couponOpen;
+    $("#couponToggle").disabled = locked;
     $("#couponToggle").setAttribute("aria-expanded", String(couponOpen));
     $("#couponEditor").hidden = !couponOpen;
     $("#couponCode").value = quote.discount.code || "";
@@ -2000,15 +2200,21 @@
     $("#couponRule").textContent = studentActive ? "Avec Étudiant : coupon CHF uniquement" : "Réduction en % ou en CHF";
     $$("[data-discount-type]").forEach((button) => {
       const percentBlocked = studentActive && button.dataset.discountType === "percent";
-      button.disabled = percentBlocked;
-      button.title = percentBlocked ? "Non cumulable avec le tarif étudiant" : "";
+      button.disabled = locked || percentBlocked;
+      button.title = locked ? "Devis verrouillé" : percentBlocked ? "Non cumulable avec le tarif étudiant" : "";
       button.classList.toggle("active", button.dataset.discountType === quote.discount.type);
     });
     const taxToggle = $("#taxEnabled");
     const showTaxInformation = db.settings.showTaxInformation === true;
     taxToggle.checked = showTaxInformation && Boolean(quote.tax.enabled);
-    taxToggle.disabled = !showTaxInformation;
+    taxToggle.disabled = locked || !showTaxInformation;
     taxToggle.closest(".tax-header-toggle").hidden = !showTaxInformation;
+    $("#clientButton").disabled = false;
+    $("#saveButton").disabled = locked;
+    $("#couponCode").disabled = locked;
+    $("#discountValue").disabled = locked;
+    const clearAction = $('[data-action="clear"]', $("#quoteActionMenu"));
+    if (clearAction) clearAction.disabled = locked;
   }
 
   function renderAll() {
@@ -2022,6 +2228,7 @@
   }
 
   function updateLineInput(input) {
+    if (!ensureQuoteEditable()) return;
     const line = lineFromElement(input);
     if (!line) return;
     const field = input.dataset.lineField;
@@ -2045,6 +2252,23 @@
       || $(".history-list button", layer)
       || $("button[data-close]:not(.layer-backdrop)", layer);
     if (initialFocus) window.setTimeout(() => initialFocus.focus(), 50);
+  }
+
+  function openHelp(topic = "overview") {
+    const allowedTopics = ["overview", "quotes", "tracking", "invoices", "central", "pdf", "shortcuts"];
+    const requestedTopic = allowedTopics.includes(topic) ? topic : "overview";
+    const frame = $("#helpFrame");
+    const source = `help.html#${requestedTopic}`;
+    closeContextMenus();
+    if (frame) {
+      try {
+        if (frame.contentWindow?.location) frame.contentWindow.location.hash = requestedTopic;
+        else frame.src = source;
+      } catch {
+        frame.src = source;
+      }
+    }
+    openLayer("helpLayer");
   }
 
   function closeLayer(id) {
@@ -2083,7 +2307,7 @@
   }
 
   function focusableElements(container) {
-    return $$('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', container)
+    return $$('button:not([disabled]), [href], iframe, input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', container)
       .filter((element) => !element.closest("[hidden]") && element.getClientRects().length);
   }
 
@@ -2109,14 +2333,147 @@
     next.click();
   }
 
-  function openClient() {
+  function contactValues() {
+    return Object.values(isRecord(db.contacts) ? db.contacts : {}).sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "fr", { sensitivity: "base" }));
+  }
+
+  function contactInitials(name) {
+    return String(name || "?").trim().split(/\s+/).slice(0, 2).map((part) => part[0] || "").join("").toUpperCase() || "?";
+  }
+
+  function fillContactForm(source = {}) {
     const form = $("#clientForm");
-    for (const [key, value] of Object.entries(quote.client)) if (form.elements[key]) form.elements[key].value = value || "";
+    const values = { ...emptyClientSnapshot(), country: "Suisse", ...source };
+    form.reset();
+    form.elements.contactId.value = safeLocalId(values.contactId || values.id);
+    CLIENT_SNAPSHOT_FIELDS.forEach((field) => { if (form.elements[field]) form.elements[field].value = values[field] || ""; });
+    const hasDetails = ["company", "address", "postalCode", "city", "birthDate", "language", "reference", "notes"].some((field) => Boolean(values[field]));
+    $("#contactMoreDetails").open = hasDetails;
+    $("#contactFormTitle").textContent = selectedContactId ? "Modifier le contact" : values.name ? "Client du devis" : "Nouveau contact";
+    $("#deleteContactButton").hidden = !selectedContactId || !db.contacts[selectedContactId];
+  }
+
+  function renderContactDirectory() {
+    const contacts = contactValues();
+    const query = normalize(contactQuery);
+    const visible = query ? contacts.filter((contact) => normalize([contact.name, contact.company, contact.phone, contact.email, contact.city, contact.reference].join(" ")).includes(query)) : contacts;
+    $("#contactCount").textContent = query ? `${visible.length} / ${plural(contacts.length, "contact")}` : plural(contacts.length, "contact");
+    $("#contactEmpty").hidden = visible.length > 0;
+    $("#contactEmpty").textContent = contacts.length ? "Aucun résultat." : "Aucun contact. Importez un fichier ou créez le premier.";
+    $("#contactList").innerHTML = visible.map((contact) => {
+      const detail = contact.company || contact.email || contact.phone || contact.city || "Aucune autre information";
+      return `<button class="contact-list-item" type="button" role="option" aria-selected="${contact.id === selectedContactId}" data-contact-id="${escapeHTML(contact.id)}"><span class="contact-list-initials" aria-hidden="true">${escapeHTML(contactInitials(contact.name))}</span><span class="contact-list-copy"><strong>${escapeHTML(contact.name)}</strong><small>${escapeHTML(detail)}</small></span></button>`;
+    }).join("");
+  }
+
+  function selectContact(contactId, { focusName = false } = {}) {
+    const contact = db.contacts?.[contactId];
+    if (!contact) return;
+    selectedContactId = contact.id;
+    fillContactForm(contact);
+    renderContactDirectory();
+    if (focusName) window.setTimeout(() => $("#clientForm").elements.name.focus(), 0);
+  }
+
+  function prepareNewContact({ focusName = true } = {}) {
+    selectedContactId = "";
+    fillContactForm({ country: "Suisse" });
+    renderContactDirectory();
+    if (focusName) window.setTimeout(() => $("#clientForm").elements.name.focus(), 0);
+  }
+
+  function openClient() {
+    if (!ensureQuoteEditable()) return;
+    contactQuery = "";
+    $("#contactSearch").value = "";
+    const linked = quote.client.contactId && db.contacts?.[quote.client.contactId];
+    selectedContactId = linked ? linked.id : "";
+    fillContactForm(linked || quote.client);
+    renderContactDirectory();
     openLayer("clientLayer");
+    window.setTimeout(() => $("#contactSearch").focus(), 0);
+  }
+
+  function upsertContactFromForm(form) {
+    const data = Object.fromEntries(new FormData(form));
+    const requestedId = safeLocalId(data.contactId);
+    const current = requestedId ? db.contacts?.[requestedId] : null;
+    const candidate = sanitizeContactRecord({ ...data, id: requestedId, createdAt: current?.createdAt, updatedAt: new Date().toISOString() });
+    if (!candidate) throw new Error("Le nom du contact est requis.");
+    const duplicate = contactValues().find((contact) => contact.id !== requestedId && ContactCore.matchKey(contact) === ContactCore.matchKey(candidate));
+    if (duplicate) {
+      const merged = ContactCore.mergeContacts(duplicate, candidate);
+      db.contacts[duplicate.id] = merged;
+      if (requestedId && requestedId !== duplicate.id) delete db.contacts[requestedId];
+      return { contact: merged, merged: true };
+    }
+    db.contacts[candidate.id] = candidate;
+    return { contact: candidate, merged: false };
+  }
+
+  async function importContactsFromInput(input) {
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) throw new Error("Le fichier dépasse 10 Mo.");
+    const imported = ContactCore.parseContactFile(file.name, await file.text());
+    if (!imported.length) throw new Error("Aucun contact valide trouvé dans ce fichier.");
+    const previousContacts = clone(db.contacts);
+    let added = 0;
+    let merged = 0;
+    const matches = new Map(contactValues().map((contact) => [ContactCore.matchKey(contact), contact.id]).filter(([key]) => key));
+    imported.slice(0, MAX_CONTACTS).forEach((source) => {
+      const contact = sanitizeContactRecord(source);
+      if (!contact) return;
+      const match = ContactCore.matchKey(contact);
+      const existingId = matches.get(match);
+      if (existingId && db.contacts[existingId]) {
+        db.contacts[existingId] = ContactCore.mergeContacts(db.contacts[existingId], contact);
+        merged += 1;
+      } else if (Object.keys(db.contacts).length < MAX_CONTACTS) {
+        while (db.contacts[contact.id]) contact.id = `contact-${uid()}`;
+        db.contacts[contact.id] = contact;
+        if (match) matches.set(match, contact.id);
+        added += 1;
+      }
+    });
+    if (!saveLocal(false)) {
+      db.contacts = previousContacts;
+      return;
+    }
+    renderContactDirectory();
+    toast(`${plural(added, "contact")} ajouté${added === 1 ? "" : "s"}${merged ? ` · ${merged} fusionné${merged === 1 ? "" : "s"}` : ""}`);
+  }
+
+  function exportContacts(format) {
+    const contacts = contactValues();
+    if (!contacts.length) {
+      toast("Aucun contact à exporter.", "error");
+      return;
+    }
+    const exports = {
+      csv: { extension: "csv", type: "text/csv;charset=utf-8", content: ContactCore.toCsv(contacts) },
+      vcf: { extension: "vcf", type: "text/vcard;charset=utf-8", content: ContactCore.toVCard(contacts) },
+      json: { extension: "json", type: "application/json;charset=utf-8", content: ContactCore.toJson(contacts) }
+    };
+    const selected = exports[format];
+    if (!selected) return;
+    downloadText(`contacts-bcdevis-${todayISO()}.${selected.extension}`, selected.content, selected.type);
+    toast(`${plural(contacts.length, "contact")} exporté${contacts.length === 1 ? "" : "s"}`);
   }
 
   function trackingEnabled() {
     return db.settings.quoteTrackingEnabled === true;
+  }
+
+  function quoteIsLocked(item = quote) {
+    return TRACKING_TERMINAL_STATUSES.includes(item?.tracking?.status);
+  }
+
+  function ensureQuoteEditable() {
+    if (!quoteIsLocked()) return true;
+    toast(`${TRACKING_STATUS_META[quote.tracking.status].label} · créez une V${Math.max(2, Number(quote.revisionNumber || 1) + 1)} pour modifier ce devis.`, "error");
+    return false;
   }
 
   function formatDateTime(timestamp) {
@@ -2142,7 +2499,11 @@
   }
 
   function appendTrackingEvent(tracking, event) {
-    tracking.events = [...(tracking.events || []), trackingEvent(event)].slice(-MAX_TRACKING_EVENTS);
+    tracking.events = [...(tracking.events || []), trackingEvent({ ...event, ...trackingActorFields() })].slice(-MAX_TRACKING_EVENTS);
+  }
+
+  function trackingTransitionAllowed(from, to) {
+    return from === to || Boolean(TRACKING_TRANSITIONS[from]?.includes(to));
   }
 
   function updateQuoteTracking(item, { status, nextFollowUpAt, note = "", channel = "" } = {}) {
@@ -2151,6 +2512,7 @@
     const previousStatus = tracking.status;
     const previousFollowUp = tracking.nextFollowUpAt;
     const nextStatus = TRACKING_STATUSES.includes(status) ? status : previousStatus;
+    if (!trackingTransitionAllowed(previousStatus, nextStatus)) return false;
     const at = new Date().toISOString();
     const cleanNote = String(note || "").trim().slice(0, 1000);
     const followUpProvided = nextFollowUpAt !== undefined;
@@ -2165,6 +2527,7 @@
     if (nextStatus === "sent" && !tracking.sentAt) tracking.sentAt = at;
     if (nextStatus === "accepted") tracking.acceptedAt = at;
     if (nextStatus === "refused") tracking.refusedAt = at;
+    if (nextStatus === "invoiced") tracking.invoicedAt = at;
 
     if (nextStatus !== previousStatus) {
       appendTrackingEvent(tracking, { type: "status", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
@@ -2206,7 +2569,12 @@
 
   function promptMarkCurrentQuoteAsSent(channel) {
     if (!trackingEnabled() || quote.tracking?.status === "sent") return;
+    if (!["draft", "ready"].includes(quote.tracking?.status)) {
+      toast(`${TRACKING_STATUS_META[quote.tracking?.status]?.label || "Ce devis"} ne peut pas revenir au statut Envoyé.`, "error");
+      return;
+    }
     if (!window.confirm(`Marquer ${quote.number} comme envoyé et programmer une relance ?`)) return;
+    if (quote.tracking?.status === "draft" && !updateQuoteTracking(quote, { status: "ready", note: "Devis finalisé avant envoi" })) return;
     if (!updateQuoteTracking(quote, { status: "sent", channel })) return;
     db.quotes[quote.id] = clone(quote);
     saveLocal(false);
@@ -2215,6 +2583,7 @@
   }
 
   function saveQuote() {
+    if (!ensureQuoteEditable()) return false;
     if (!quote.lines.length) {
       toast("Ajoutez une prestation avant d’enregistrer.", "error");
       return false;
@@ -2267,6 +2636,9 @@
     copy.date = todayISO();
     copy.number = nextQuoteNumber(copy.date);
     copy.validUntil = addDaysISO(copy.date, configuredValidityDays(db.settings));
+    copy.rootQuoteId = copy.id;
+    copy.previousQuoteId = "";
+    copy.revisionNumber = 1;
     copy.tracking = freshTracking(now);
     copy.createdAt = now;
     copy.updatedAt = now;
@@ -2277,7 +2649,31 @@
     toast(`Copie créée : ${quote.number}`);
   }
 
+  function createQuoteRevision(item = quote) {
+    const source = sanitizeQuote(item);
+    const copy = clone(source);
+    const now = new Date().toISOString();
+    copy.id = uid();
+    copy.status = "draft";
+    copy.rootQuoteId = source.rootQuoteId || source.id;
+    copy.previousQuoteId = source.id;
+    copy.revisionNumber = Math.max(1, Number(source.revisionNumber) || 1) + 1;
+    copy.date = todayISO();
+    copy.number = nextQuoteNumber(copy.date);
+    copy.validUntil = addDaysISO(copy.date, configuredValidityDays(db.settings));
+    copy.tracking = freshTracking(now);
+    copy.createdAt = now;
+    copy.updatedAt = now;
+    quote = copy;
+    couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
+    saveLocal();
+    renderAll();
+    closeLayer("historyLayer");
+    toast(`V${copy.revisionNumber} créée : ${copy.number}`);
+  }
+
   function trackingFilterMatches(item, filter) {
+    if (item.tracking?.status === "invoiced") return false;
     if (filter === "all") return true;
     if (filter === "follow-up") return isFollowUpDue(item);
     return item.tracking?.status === filter;
@@ -2285,10 +2681,10 @@
 
   function trackingCounts(items) {
     const counts = Object.fromEntries(TRACKING_FILTERS.map((filter) => [filter, 0]));
-    counts.all = items.length;
+    counts.all = items.filter((item) => item.tracking?.status !== "invoiced").length;
     items.forEach((item) => {
       const status = TRACKING_STATUSES.includes(item.tracking?.status) ? item.tracking.status : "draft";
-      counts[status] += 1;
+      if (Object.hasOwn(counts, status)) counts[status] += 1;
       if (isFollowUpDue(item)) counts["follow-up"] += 1;
     });
     return counts;
@@ -2311,17 +2707,28 @@
     const events = [...(item.tracking?.events || [])].sort((left, right) => String(left.at).localeCompare(String(right.at)));
     return `<ol class="tracking-timeline">${events.map((event) => {
       const copy = trackingEventCopy(event);
-      return `<li><span class="tracking-timeline-dot" aria-hidden="true"></span><div><time datetime="${escapeHTML(event.at)}">${escapeHTML(formatDateTime(event.at))}</time><strong>${escapeHTML(copy.title)}</strong>${copy.detail ? `<p>${escapeHTML(copy.detail)}</p>` : ""}</div></li>`;
+      const actor = [event.actor, event.device].filter(Boolean).join(" · ");
+      return `<li><span class="tracking-timeline-dot" aria-hidden="true"></span><div><time datetime="${escapeHTML(event.at)}">${escapeHTML(formatDateTime(event.at))}</time><strong>${escapeHTML(copy.title)}</strong>${copy.detail ? `<p>${escapeHTML(copy.detail)}</p>` : ""}${actor ? `<small>${escapeHTML(actor)}</small>` : ""}</div></li>`;
     }).join("")}</ol>`;
   }
 
   function renderTrackingEditor(item) {
-    const options = TRACKING_STATUSES.map((status) => `<option value="${status}" ${item.tracking.status === status ? "selected" : ""}>${escapeHTML(TRACKING_STATUS_META[status].label)}</option>`).join("");
-    const canUndo = (item.tracking.events || []).length > 1;
+    const selectableStatuses = [item.tracking.status, ...(TRACKING_TRANSITIONS[item.tracking.status] || []).filter((status) => status !== "invoiced")];
+    const options = selectableStatuses.map((status) => `<option value="${status}" ${item.tracking.status === status ? "selected" : ""}>${escapeHTML(TRACKING_STATUS_META[status].label)}</option>`).join("");
+    const canUndo = !quoteIsLocked(item) && (item.tracking.events || []).length > 1;
+    const followUpDisabled = item.tracking.status !== "sent";
+    const invoiceAction = item.tracking.status === "accepted"
+      ? `<button class="button primary" type="button" data-tracking-invoice>Importer la facture envoyée</button>`
+      : "";
+    const revisionAction = quoteIsLocked(item)
+      ? `<button class="button secondary" type="button" data-tracking-revision>Créer une V${Math.max(2, Number(item.revisionNumber || 1) + 1)}</button>`
+      : "";
+    const openAction = `<button class="button ghost" type="button" data-tracking-open-quote data-quote-id="${escapeHTML(item.id)}">Ouvrir le devis</button>`;
     return `<form class="tracking-editor" data-tracking-form data-tracking-quote-id="${escapeHTML(item.id)}">
       <label><span>Dernier statut</span><select name="trackingStatus">${options}</select></label>
-      <label><span>Prochaine relance</span><input name="trackingFollowUpAt" type="date" min="${todayISO()}" value="${escapeHTML(item.tracking.nextFollowUpAt || "")}"></label>
+      <label><span>Prochaine relance</span><input name="trackingFollowUpAt" type="date" min="${todayISO()}" value="${escapeHTML(item.tracking.nextFollowUpAt || "")}" ${followUpDisabled ? "disabled" : ""}></label>
       <label class="tracking-editor-note"><span>Note interne ou motif</span><textarea name="trackingNote" rows="2" maxlength="1000" placeholder="Ajouter une information à la chronologie…"></textarea></label>
+      <div class="tracking-editor-workflow-actions">${openAction}${invoiceAction}${revisionAction}</div>
       <div class="tracking-editor-actions"><button class="button ghost" type="button" data-tracking-undo ${canUndo ? "" : "disabled"}>Annuler le dernier changement</button><button class="button primary" type="submit">Enregistrer le suivi</button></div>
     </form>`;
   }
@@ -2329,7 +2736,7 @@
   function rebuildTrackingFromEvents(item, sourceEvents) {
     const events = sourceEvents.map((event) => trackingEvent(event));
     const tracking = {
-      status: "draft", nextFollowUpAt: "", note: "", sentAt: "", acceptedAt: "", refusedAt: "", events
+      status: "draft", nextFollowUpAt: "", note: "", sentAt: "", acceptedAt: "", refusedAt: "", invoicedAt: "", events
     };
     events.forEach((event) => {
       if (event.type === "status") {
@@ -2338,6 +2745,7 @@
         if (tracking.status === "sent" && !tracking.sentAt) tracking.sentAt = event.at;
         if (tracking.status === "accepted") tracking.acceptedAt = event.at;
         if (tracking.status === "refused") tracking.refusedAt = event.at;
+        if (tracking.status === "invoiced") tracking.invoicedAt = event.at;
       }
       if (event.type === "follow-up") tracking.nextFollowUpAt = event.followUpAt || "";
       if (event.note) tracking.note = event.note;
@@ -2353,25 +2761,26 @@
     return persistTrackedQuote(item);
   }
 
-  function renderHistoryItem(item, enabled) {
+  function renderHistoryItem(item, trackingView, trackingActive = false) {
     const totals = calculateQuote(item);
-    if (!enabled) {
-      return `<button class="history-item ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${escapeHTML(item.id)}">
-        <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
+    const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
+    const visual = trackingVisualStatus(item);
+    if (!trackingView) {
+      return `<button class="history-item history-item--archive ${trackingActive ? `history-item--${visual.key}` : ""} ${item.id === quote.id ? "current" : ""}" type="button" data-quote-id="${escapeHTML(item.id)}">
+        <span class="history-item-head"><strong>${escapeHTML(item.number)}${escapeHTML(revision)}</strong><b>${money(totals.total)}</b></span>
         <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
-        <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">Enregistré</span></span>
+        <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span>${trackingActive ? `<span class="history-status history-status--commercial">${escapeHTML(visual.label)}</span>` : ""}</span>
       </button>`;
     }
-    const visual = trackingVisualStatus(item);
     const expanded = expandedTrackingQuotes.has(item.id);
     const followUpCopy = item.tracking.nextFollowUpAt
       ? `${isFollowUpLate(item) ? "Relance en retard" : "Relance"} · ${formatDate(item.tracking.nextFollowUpAt)}`
       : `Valable jusqu’au ${formatDate(item.validUntil)}`;
-    return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""}" data-history-item="${escapeHTML(item.id)}">
+    return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${escapeHTML(item.id)}">
       <div class="history-item-summary">
         <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
         <button class="history-item-open" type="button" data-quote-id="${escapeHTML(item.id)}">
-          <span class="history-item-head"><strong>${escapeHTML(item.number)}</strong><b>${money(totals.total)}</b></span>
+          <span class="history-item-head"><strong>${escapeHTML(item.number)}${escapeHTML(revision)}</strong><b>${money(totals.total)}</b></span>
           <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
           <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
           <span class="history-follow-up">${escapeHTML(followUpCopy)}</span>
@@ -2395,6 +2804,9 @@
       tab.tabIndex = selected ? 0 : -1;
     });
     $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
+    $("#historyWorkspaceDescription").textContent = activeHistoryView === "tracking"
+      ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
+      : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
     const counts = trackingCounts(items);
     const dueBadge = $("#trackingDueCount");
     dueBadge.textContent = String(counts["follow-up"] || "");
@@ -2438,7 +2850,8 @@
       list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>${filtered ? "Aucun devis dans ce statut" : "Aucun devis enregistré"}</strong><p>${filtered ? "Choisissez un autre filtre de suivi." : "Le bouton Enregistrer ajoutera le devis en cours à cet historique local."}</p></div>`;
       return;
     }
-    list.innerHTML = quotes.map((item) => renderHistoryItem(item, enabled)).join("");
+    const trackingView = enabled && activeHistoryView === "tracking";
+    list.innerHTML = quotes.map((item) => renderHistoryItem(item, trackingView, enabled)).join("");
   }
 
   function loadHistoryQuote(id) {
@@ -2452,8 +2865,20 @@
     toast(`${quote.number} ouvert`);
   }
 
-  function downloadJSON(filename, data) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+  function toggleTrackingDetails(id, { focus = false } = {}) {
+    if (!id || !db.quotes[id]) return;
+    if (expandedTrackingQuotes.has(id)) expandedTrackingQuotes.delete(id);
+    else expandedTrackingQuotes.add(id);
+    renderHistory();
+    if (focus) $(`[data-tracking-toggle="${id}"]`, $("#historyList"))?.focus();
+  }
+
+  function isTouchTrackingActivation(event) {
+    return event?.pointerType === "touch" || window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  }
+
+  function downloadText(filename, content, type = "text/plain;charset=utf-8") {
+    const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -2462,6 +2887,10 @@
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 500);
+  }
+
+  function downloadJSON(filename, data) {
+    downloadText(filename, JSON.stringify(data, null, 2), "application/json;charset=utf-8");
   }
 
   async function readJSONFile(input) {
@@ -2496,6 +2925,61 @@
     saveLocal(false);
     downloadJSON(`sauvegarde-devis-${todayISO()}.json`, { type: "atelier-devis-backup", version: APP_VERSION, exportedAt: new Date().toISOString(), database: db });
     toast("Sauvegarde complète exportée");
+  }
+
+  function currentSiteLabel() {
+    return window.location.origin && window.location.origin !== "null"
+      ? window.location.origin
+      : "Application locale installée";
+  }
+
+  function refreshSiteMigrationPanel(message = "") {
+    const input = $("#siteMigrationTarget");
+    const current = $("#siteMigrationCurrent");
+    const status = $("#siteMigrationStatus");
+    const openButton = $("#siteMigrationOpenButton");
+    if (!input || !current || !status || !openButton) return;
+    if (!input.value) input.value = DEFAULT_SITE_MIGRATION_TARGET;
+    current.textContent = currentSiteLabel();
+    let normalizedTarget = "";
+    try { normalizedTarget = normalizeSiteUrl(input.value); } catch { /* Le message précis sera affiché au clic. */ }
+    const prepared = Boolean(normalizedTarget && preparedSiteMigrationTarget === normalizedTarget);
+    openButton.disabled = !prepared;
+    status.dataset.state = prepared ? "ready" : "idle";
+    status.textContent = message || (prepared
+      ? "Fichier prêt. Vous pouvez ouvrir la nouvelle adresse."
+      : "Commencez par télécharger le fichier de transfert le plus récent.");
+  }
+
+  function exportSiteMigration() {
+    const targetUrl = normalizeSiteUrl($("#siteMigrationTarget")?.value);
+    const currentOrigin = window.location.origin && window.location.origin !== "null" ? window.location.origin : "";
+    if (currentOrigin && new URL(targetUrl).origin === currentOrigin) {
+      throw new Error("Cette adresse est déjà celle du site actuellement ouvert.");
+    }
+    if (!saveLocal(false)) return false;
+    const payload = createTransferPackage({
+      database: db,
+      centralConfig: centralController.getConfig(),
+      releaseVersion: RELEASE_VERSION,
+      appVersion: APP_VERSION,
+      sourceUrl: window.location.href,
+      targetUrl
+    });
+    const targetHost = new URL(targetUrl).hostname.replace(/[^a-z0-9.-]/gi, "-");
+    downloadJSON(`transfert-bcdevis-vers-${targetHost}-${todayISO()}.json`, payload);
+    preparedSiteMigrationTarget = targetUrl;
+    refreshSiteMigrationPanel("Fichier de transfert téléchargé. Conservez-le jusqu’à la vérification de la nouvelle adresse.");
+    toast("Transfert du site préparé");
+    return true;
+  }
+
+  async function openSiteMigrationTarget() {
+    const targetUrl = normalizeSiteUrl($("#siteMigrationTarget")?.value);
+    if (preparedSiteMigrationTarget !== targetUrl) {
+      throw new Error("Téléchargez d’abord un fichier de transfert à jour.");
+    }
+    await openExternalUrl(migrationArrivalUrl(targetUrl));
   }
 
   function buildFamilyVisibilityGrid() {
@@ -2742,7 +3226,11 @@
     });
     db.catalogOverrides = sanitizeCatalogOverrides(nextOverrides);
     const changed = Object.keys(db.catalogOverrides).length;
-    if (!saveLocal()) {
+    const previousCentralSyncApplying = centralSyncApplying;
+    centralSyncApplying = true;
+    const restoredLocally = saveLocal();
+    centralSyncApplying = previousCentralSyncApplying;
+    if (!restoredLocally) {
       db.catalogOverrides = previousOverrides;
       return;
     }
@@ -2808,6 +3296,60 @@
     }
   }
 
+  function applyPdfDirectoryState(result) {
+    const pathElement = $("#pdfDirectoryPath");
+    const statusElement = $("#pdfDirectoryStatus");
+    const chooseButton = $("#choosePdfDirectoryButton");
+    const resetButton = $("#resetPdfDirectoryButton");
+    const available = Boolean(result?.available);
+    if (pathElement) {
+      pathElement.textContent = available ? String(result.directory || "Téléchargements") : "Réglages du navigateur";
+      pathElement.title = pathElement.textContent;
+    }
+    if (statusElement) {
+      statusElement.textContent = available
+        ? (result.isDefault ? "Dossier Téléchargements de ce poste (par défaut)." : "Dossier personnalisé de ce poste uniquement.")
+        : "Dans la version web/PWA, le navigateur choisit le dossier de téléchargement.";
+    }
+    if (chooseButton) chooseButton.hidden = !available;
+    if (resetButton) {
+      resetButton.hidden = !available;
+      resetButton.disabled = !available || result.isDefault === true;
+    }
+  }
+
+  async function refreshPdfDirectorySetting() {
+    if (typeof window.bcdevisDesktop?.getPdfDirectory !== "function") {
+      applyPdfDirectoryState({ available: false });
+      return;
+    }
+    try {
+      applyPdfDirectoryState(await window.bcdevisDesktop.getPdfDirectory());
+    } catch (error) {
+      console.error("Lecture du dossier PDF impossible.", error);
+      applyPdfDirectoryState({ available: false });
+      const status = $("#pdfDirectoryStatus");
+      if (status) status.textContent = "Le dossier PDF de ce poste n’a pas pu être lu.";
+    }
+  }
+
+  async function runPdfDirectoryAction(button, action, successMessage) {
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    let result;
+    try {
+      result = await action();
+      if (!result?.canceled) toast(successMessage);
+    } catch (error) {
+      console.error("Modification du dossier PDF impossible.", error);
+      toast(error?.message || "Le dossier PDF n’a pas pu être modifié.", "error");
+    } finally {
+      button.disabled = false;
+      button.removeAttribute("aria-busy");
+    }
+    if (result) applyPdfDirectoryState(result);
+  }
+
   function fillSettingsForm() {
     const form = $("#settingsForm");
     Object.entries(db.settings).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
@@ -2833,8 +3375,10 @@
     syncFontPicker(currentFont());
     syncTrackingSettingsState();
     renderCentralizationState();
+    refreshSiteMigrationPanel();
     if ($("#centralPassword")) $("#centralPassword").value = "";
     void refreshLaunchAtLoginSetting();
+    void refreshPdfDirectorySetting();
   }
 
   function syncTrackingSettingsState() {
@@ -2938,12 +3482,15 @@
   function refreshSettingsPreview() {
     const form = $("#settingsForm");
     if (!form) return;
-    const prefix = String(form.elements.quotePrefix?.value || "").trim().toUpperCase().replace(/[^A-Z0-9-]/g, "") || "DEV";
+    const prefix = cleanDocumentPrefix(form.elements.quotePrefix?.value, "DEV");
+    const invoicePrefix = cleanDocumentPrefix(form.elements.invoicePrefix?.value, "FAC");
     const machine = String(form.elements.machineName?.value || "").trim();
     const today = todayISO().replaceAll("-", "");
     const machinePart = compactMachineCode(machine || defaultSettings.machineName);
     const previewEl = $("#settingsQuotePreview");
     if (previewEl) previewEl.textContent = `${prefix}-${today}${machinePart}001`;
+    const invoicePreviewEl = $("#settingsInvoicePreview");
+    if (invoicePreviewEl) invoicePreviewEl.textContent = `${invoicePrefix}-${today}${machinePart}001`;
     const paid = Math.max(1, Math.round(Number(form.elements.packPaidDefault?.value) || 0));
     const free = Math.max(0, Math.round(Number(form.elements.packFreeDefault?.value) || 0));
     const totalPack = paid + free;
@@ -2996,6 +3543,7 @@
     const months = installmentMonths(totals.total);
     const contact = [settings.companyPhone, settings.companyEmail].filter(Boolean).join(" · ");
     const clientContact = [client.phone, client.email].filter(Boolean).join(" · ");
+    const clientAddress = [client.address, [client.postalCode, client.city].filter(Boolean).join(" "), client.country].filter(Boolean).join("<br>");
     const rows = quote.lines.map((line) => {
       const quantityLabel = line.offerType === "pack" ? `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}` : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
@@ -3021,7 +3569,7 @@
       </header>
       <section class="print-hero"><div><h1>DEVIS</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
       <div class="print-overview">
-        <div class="print-card print-client-card"><div class="print-label">Destinataire</div><div class="print-client-name">${escapeHTML(client.name || "Destinataire non renseigné")}</div><div class="print-muted">${escapeHTML(clientContact || "Coordonnées non renseignées")}${client.address ? `<br>${escapeHTML(client.address)}` : ""}</div></div>
+        <div class="print-card print-client-card"><div class="print-label">Destinataire</div><div class="print-client-name">${escapeHTML(client.name || "Destinataire non renseigné")}</div><div class="print-muted">${client.company ? `${escapeHTML(client.company)}<br>` : ""}${escapeHTML(clientContact || "Coordonnées non renseignées")}${clientAddress ? `<br>${clientAddress.split("<br>").map(escapeHTML).join("<br>")}` : ""}</div></div>
         <div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div>
       </div>
       <section class="print-services">
@@ -3087,7 +3635,7 @@
     try {
       await waitForPdfLayout();
       const result = await window.bcdevisDesktop.savePdf(`${quote.number}.pdf`);
-      if (result?.saved) toast(`PDF téléchargé : ${result.fileName || `${quote.number}.pdf`}`);
+      if (result?.saved) toast(`PDF enregistré : ${result.fileName || `${quote.number}.pdf`} · ${result.directory || "Téléchargements"}`);
     } catch (error) {
       console.error(error);
       toast("Le PDF n’a pas pu être enregistré.", "error");
@@ -3184,7 +3732,7 @@
     try {
       const result = await prepareTransmissionPdf();
       await openExternalUrl(url);
-      toast(result?.saved ? "PDF créé dans Téléchargements — joignez-le dans WhatsApp." : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
+      toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
       promptMarkCurrentQuoteAsSent("WhatsApp");
     } catch (error) {
       console.error(error);
@@ -3223,7 +3771,7 @@
       promptMarkCurrentQuoteAsSent("E-mail");
     } catch (error) {
       console.error(error);
-      toast("Impossible d’ouvrir un e-mail avec le PDF joint. Le PDF reste dans Téléchargements.", "error");
+      toast("Impossible d’ouvrir un e-mail avec le PDF joint. Le PDF reste dans le dossier PDF configuré.", "error");
     } finally {
       setTransmissionBusy(false);
     }
@@ -3241,12 +3789,12 @@
       const result = await prepareTransmissionPdf();
       await openExternalUrl(outlookWebComposeUrl(recipient, emailSubject(), message));
       toast(result?.saved
-        ? `Outlook Web ouvert — joignez ${result.fileName || "le PDF"} depuis Téléchargements.`
+        ? `Outlook Web ouvert — joignez ${result.fileName || "le PDF"} depuis ${result.directory || "Téléchargements"}.`
         : "Outlook Web ouvert — créez puis joignez le PDF avant l’envoi.");
       promptMarkCurrentQuoteAsSent("Outlook Web");
     } catch (error) {
       console.error(error);
-      toast("Outlook Web n’a pas pu être ouvert. Le PDF reste dans Téléchargements.", "error");
+      toast("Outlook Web n’a pas pu être ouvert. Le PDF reste dans le dossier PDF configuré.", "error");
     } finally {
       setTransmissionBusy(false);
     }
@@ -3353,14 +3901,21 @@
 
   function showTrackingReminders() {
     if (!trackingEnabled() || db.settings.trackingRemindersOnStartup === false) return;
-    expireTrackedQuotes();
+    if (expireTrackedQuotes()) renderCheckout();
     const due = Object.values(db.quotes || {}).filter((item) => isFollowUpDue(item));
     if (!due.length) return;
     const late = due.filter((item) => isFollowUpLate(item)).length;
     toast(`${plural(due.length, "devis à relancer")} aujourd’hui${late ? ` · ${late} en retard` : ""}`);
   }
 
+  function refreshExpiredTracking() {
+    if (!expireTrackedQuotes()) return;
+    renderCheckout();
+    if (!$("#historyLayer")?.hidden) renderHistory();
+  }
+
   function openCustomItemLayer() {
+    if (!ensureQuoteEditable()) return;
     $("#customItemForm").reset();
     $("#customItemForm").elements.price.value = 0;
     $("#customItemForm").elements.duration.value = 30;
@@ -3374,6 +3929,19 @@
     fillSettingsForm();
     setSettingsTab(activeSettingsTab, { resetScroll: true });
     openLayer("settingsLayer");
+  }
+
+  function openSiteMigrationArrival() {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get(MIGRATION_QUERY_KEY) !== "1") return false;
+    url.searchParams.delete(MIGRATION_QUERY_KEY);
+    window.history.replaceState(null, "", url.toString());
+    activeSettingsTab = "data";
+    openSettingsLayer();
+    refreshSiteMigrationPanel("Nouvelle adresse ouverte. Importez maintenant le fichier préparé sur l’ancien site.");
+    window.setTimeout(() => $("#siteMigrationImportButton")?.focus(), 0);
+    toast("Nouvelle adresse détectée · importez votre transfert");
+    return true;
   }
 
   function closeMenusForShortcut() {
@@ -3677,6 +4245,7 @@
     }
     const actionButton = event.target.closest("[data-line-action]");
     if (!actionButton) return;
+    if (!ensureQuoteEditable()) return;
     const line = lineFromElement(actionButton);
     if (!line) return;
     const action = actionButton.dataset.lineAction;
@@ -3691,7 +4260,14 @@
       return;
     }
     if (action === "increase") line.quantity = boundedInteger(line.quantity + 1, 1, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
-    if (action === "decrease") line.quantity = Math.max(1, line.quantity - 1);
+    if (action === "decrease") {
+      line.quantity = Math.max(1, line.quantity - 1);
+      if (line.offerType === "pack" && line.quantity < packDefaults().paid) {
+        line.offerType = "single";
+        line.freeQuantity = 0;
+        if (!quote.lines.some((item) => item.offerType === "pack")) selectedOfferMode = "single";
+      }
+    }
     if (action === "increase-free") line.freeQuantity = boundedInteger(line.freeQuantity + 1, 0, MAX_LINE_QUANTITY, MAX_LINE_QUANTITY);
     if (action === "decrease-free") line.freeQuantity = Math.max(0, line.freeQuantity - 1);
     if (action === "remove") {
@@ -3734,6 +4310,7 @@
     if (event.key === "Enter" && event.target.matches("[data-line-field]")) { event.preventDefault(); event.target.blur(); }
   });
   $("#quoteDate").addEventListener("change", (event) => {
+    if (!ensureQuoteEditable()) { event.target.value = quote.date; return; }
     if (db.settings.quoteDateEditable !== true) {
       event.target.value = quote.date;
       return;
@@ -3746,6 +4323,7 @@
     saveLocal();
   });
   $$("[data-discount-type]").forEach((button) => button.addEventListener("click", () => {
+    if (!ensureQuoteEditable()) return;
     if (button.dataset.discountType === "percent" && studentPricingActive()) {
       toast("Le coupon en % n’est pas cumulable avec le tarif étudiant");
       return;
@@ -3755,31 +4333,78 @@
     renderCheckout();
   }));
   $("#couponCode").addEventListener("input", (event) => {
+    if (!ensureQuoteEditable()) return;
     const code = String(event.target.value || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
     event.target.value = code;
     quote.discount.code = code;
     saveLocal();
     renderTotals();
   });
-  $("#discountValue").addEventListener("input", (event) => { quote.discount.value = Math.max(0, Number(event.target.value) || 0); saveLocal(); renderCheckout(); });
+  $("#discountValue").addEventListener("input", (event) => { if (!ensureQuoteEditable()) return; quote.discount.value = Math.max(0, Number(event.target.value) || 0); saveLocal(); renderCheckout(); });
   $("#couponToggle").addEventListener("click", () => {
+    if (!ensureQuoteEditable()) return;
     couponOpen = true;
     renderCheckout();
     window.setTimeout(() => $("#couponCode").focus(), 0);
   });
-  $("#taxEnabled").addEventListener("change", (event) => { quote.tax.enabled = event.target.checked; saveLocal(); renderCheckout(); });
+  $("#taxEnabled").addEventListener("change", (event) => { if (!ensureQuoteEditable()) return; quote.tax.enabled = event.target.checked; saveLocal(); renderCheckout(); });
 
   $("#clientButton").addEventListener("click", openClient);
   $("#clientForm").addEventListener("submit", (event) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    quote.client = { name: String(data.get("name") || "").trim(), phone: String(data.get("phone") || "").trim(), email: String(data.get("email") || "").trim(), address: String(data.get("address") || "").trim() };
-    saveLocal(); renderClient(); renderHeader(); closeLayer("clientLayer"); toast("Client mis à jour");
+    if (!ensureQuoteEditable()) return;
+    const previousContacts = clone(db.contacts);
+    const previousClient = clone(quote.client);
+    try {
+      const result = upsertContactFromForm(event.currentTarget);
+      selectedContactId = result.contact.id;
+      quote.client = sanitizeClientSnapshot({ ...result.contact, contactId: result.contact.id });
+      if (!saveLocal()) {
+        db.contacts = previousContacts;
+        quote.client = previousClient;
+        return;
+      }
+      renderClient();
+      renderHeader();
+      closeLayer("clientLayer");
+      toast(result.merged ? "Contact fusionné et utilisé" : "Contact enregistré et utilisé");
+    } catch (error) {
+      db.contacts = previousContacts;
+      quote.client = previousClient;
+      toast(error.message || "Contact impossible à enregistrer", "error");
+    }
   });
-  $("#clearClientButton").addEventListener("click", () => { quote.client = { name: "", phone: "", email: "", address: "" }; saveLocal(); renderClient(); renderHeader(); closeLayer("clientLayer"); });
+  $("#clearClientButton").addEventListener("click", () => { if (!ensureQuoteEditable()) return; quote.client = emptyClientSnapshot(); saveLocal(); renderClient(); renderHeader(); closeLayer("clientLayer"); toast("Client retiré du devis"); });
+  $("#newContactButton").addEventListener("click", () => prepareNewContact());
+  $("#contactSearch").addEventListener("input", (event) => { contactQuery = event.target.value; renderContactDirectory(); });
+  $("#contactList").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-contact-id]");
+    if (button) selectContact(button.dataset.contactId);
+  });
+  $("#contactImportButton").addEventListener("click", () => $("#contactImportInput").click());
+  $("#contactImportInput").addEventListener("change", (event) => void importContactsFromInput(event.target).catch((error) => toast(error.message || "Import de contacts impossible", "error")));
+  $$('[data-contact-export]').forEach((button) => button.addEventListener("click", () => exportContacts(button.dataset.contactExport)));
+  $("#deleteContactButton").addEventListener("click", () => {
+    const contact = db.contacts?.[selectedContactId];
+    if (!contact || !window.confirm(`Supprimer ${contact.name} du répertoire ? Le devis conservera ses coordonnées.`)) return;
+    const previousContacts = clone(db.contacts);
+    const previousClient = clone(quote.client);
+    delete db.contacts[selectedContactId];
+    if (quote.client.contactId === selectedContactId) quote.client.contactId = "";
+    selectedContactId = "";
+    if (!saveLocal()) {
+      db.contacts = previousContacts;
+      quote.client = previousClient;
+      return;
+    }
+    prepareNewContact({ focusName: false });
+    renderClient();
+    toast("Contact supprimé du répertoire");
+  });
 
   $("#customItemForm").addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!ensureQuoteEditable()) return;
     const data = new FormData(event.currentTarget);
     const item = { id: `custom-${uid()}`, name: String(data.get("name") || "").trim(), price: Math.max(0, Number(data.get("price")) || 0), duration: Math.max(0, Number(data.get("duration")) || 0), categoryId: Number(data.get("category")) || 0, custom: true };
     if (!item.name) return;
@@ -3830,11 +4455,12 @@
   $("#historyList").addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-tracking-toggle]");
     if (toggle) {
-      const id = toggle.dataset.trackingToggle;
-      if (expandedTrackingQuotes.has(id)) expandedTrackingQuotes.delete(id);
-      else expandedTrackingQuotes.add(id);
-      renderHistory();
-      $(`[data-tracking-toggle="${id}"]`, $("#historyList"))?.focus();
+      toggleTrackingDetails(toggle.dataset.trackingToggle, { focus: true });
+      return;
+    }
+    const touchCard = event.target.closest(".history-item--tracked .history-item-open[data-quote-id]");
+    if (touchCard && isTouchTrackingActivation(event)) {
+      toggleTrackingDetails(touchCard.dataset.quoteId);
       return;
     }
     const undo = event.target.closest("[data-tracking-undo]");
@@ -3843,11 +4469,49 @@
       const item = db.quotes[form?.dataset.trackingQuoteId];
       if (!item || !undoLastTrackingChange(item)) return;
       renderHistory();
+      if (item.id === quote.id) renderCheckout();
       toast("Dernier changement de suivi annulé");
+      return;
+    }
+    const invoice = event.target.closest("[data-tracking-invoice]");
+    if (invoice) {
+      const form = invoice.closest("[data-tracking-form]");
+      const item = db.quotes[form?.dataset.trackingQuoteId];
+      if (!item || item.tracking?.status !== "accepted") return;
+      if (!centralController.getConfig().connected) {
+        closeLayer("historyLayer");
+        activeSettingsTab = "data";
+        openSettingsLayer();
+        toast("Connectez ce poste pour archiver la facture envoyée.", "error");
+        return;
+      }
+      pendingInvoiceQuoteId = item.id;
+      $("#trackingInvoiceInput").click();
+      return;
+    }
+    const revision = event.target.closest("[data-tracking-revision]");
+    if (revision) {
+      const form = revision.closest("[data-tracking-form]");
+      const item = db.quotes[form?.dataset.trackingQuoteId];
+      if (item) createQuoteRevision(item);
+      return;
+    }
+    const openQuote = event.target.closest("[data-tracking-open-quote][data-quote-id]");
+    if (openQuote) {
+      loadHistoryQuote(openQuote.dataset.quoteId);
       return;
     }
     const button = event.target.closest(".history-item-open[data-quote-id], .history-item[data-quote-id]");
     if (button) loadHistoryQuote(button.dataset.quoteId);
+  });
+  $("#historyList").addEventListener("change", (event) => {
+    if (!event.target.matches('[name="trackingStatus"]')) return;
+    const form = event.target.closest("[data-tracking-form]");
+    const followUp = form?.elements.trackingFollowUpAt;
+    if (!followUp) return;
+    followUp.disabled = event.target.value !== "sent";
+    if (!followUp.disabled && !followUp.value) followUp.value = addDaysISO(todayISO(), configuredFollowUpDays(db.settings));
+    if (followUp.disabled) followUp.value = "";
   });
   $("#historyList").addEventListener("submit", (event) => {
     const form = event.target.closest("[data-tracking-form]");
@@ -3856,14 +4520,16 @@
     const item = db.quotes[form.dataset.trackingQuoteId];
     if (!item) return;
     const data = new FormData(form);
+    const requestedStatus = data.get("trackingStatus");
     const changed = updateQuoteTracking(item, {
-      status: data.get("trackingStatus"),
-      nextFollowUpAt: data.get("trackingFollowUpAt"),
+      status: requestedStatus,
+      nextFollowUpAt: requestedStatus === "sent" ? data.get("trackingFollowUpAt") ?? undefined : undefined,
       note: data.get("trackingNote")
     });
     if (!changed) { toast("Aucun changement de suivi"); return; }
     if (!persistTrackedQuote(item)) return;
     renderHistory();
+    if (item.id === quote.id) renderCheckout();
     toast(`Suivi mis à jour · ${TRACKING_STATUS_META[item.tracking.status].label}`);
   });
   $("#checkoutPrintButton").addEventListener("click", printQuote);
@@ -4051,9 +4717,17 @@
     closeLayer("tileIconPickerLayer");
     tileIconTargetCard = null;
   });
+  $("#choosePdfDirectoryButton").addEventListener("click", (event) => {
+    if (typeof window.bcdevisDesktop?.choosePdfDirectory !== "function") return;
+    void runPdfDirectoryAction(event.currentTarget, () => window.bcdevisDesktop.choosePdfDirectory(), "Dossier des devis PDF mis à jour");
+  });
+  $("#resetPdfDirectoryButton").addEventListener("click", (event) => {
+    if (typeof window.bcdevisDesktop?.resetPdfDirectory !== "function") return;
+    void runPdfDirectoryAction(event.currentTarget, () => window.bcdevisDesktop.resetPdfDirectory(), "Dossier Téléchargements rétabli");
+  });
   $("#settingsForm").addEventListener("input", (event) => {
     const name = event.target?.name;
-    if (["quotePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
+    if (["quotePrefix", "invoicePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
     if (name === "visibleFamilies") refreshSettingsPreview();
     if (name === "quoteTrackingEnabled") syncTrackingSettingsState();
   });
@@ -4137,7 +4811,7 @@
       companyPhone: String(data.get("companyPhone") || "").trim(), companyEmail: String(data.get("companyEmail") || "").trim(), companyUid: String(data.get("companyUid") || "").trim(),
       headerLogoDataUrl: safeLogoDataUrl(pendingLogos.headerLogoDataUrl),
       pdfLogoDataUrl: safeLogoDataUrl(pendingLogos.pdfLogoDataUrl),
-      quotePrefix: String(data.get("quotePrefix") || "DEV").trim().toUpperCase(), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName,
+      quotePrefix: cleanDocumentPrefix(data.get("quotePrefix"), "DEV"), invoicePrefix: cleanDocumentPrefix(data.get("invoicePrefix"), "FAC"), machineName: String(data.get("machineName") || "").trim() || defaultSettings.machineName,
       validityDays: boundedInteger(data.get("validityDays") ?? db.settings.validityDays, 1, 365, QUOTE_VALIDITY_DAYS),
       taxRate: configuredTaxRate({ taxRate: data.get("taxRate") }),
       taxMode: data.get("taxMode") === "excluded" ? "excluded" : "included",
@@ -4211,7 +4885,29 @@
     if (action === "display-mode") setDisplayModePreference(button.dataset.displayModeOption);
   });
   $("#settingsButton").addEventListener("click", openSettingsLayer);
-  $("#pdfLibraryButton").addEventListener("click", openPdfLibrary);
+  $("#helpButton").addEventListener("click", () => openHelp("overview"));
+  $("#pdfLibraryButton").addEventListener("click", () => void openPdfLibrary("documents"));
+  $("#invoiceLibraryButton").addEventListener("click", () => void openPdfLibrary("invoices"));
+  $("#pdfLibraryHelpButton").addEventListener("click", () => openHelp(activeCentralDocumentView === "invoices" ? "invoices" : "central"));
+  $("#pdfLibraryTabs").addEventListener("click", (event) => {
+    const tab = event.target.closest("[data-pdf-library-view]");
+    if (!tab) return;
+    activeCentralDocumentView = tab.dataset.pdfLibraryView === "invoices" ? "invoices" : "documents";
+    selectedCentralDocumentId = "";
+    releaseCentralDocumentPreview();
+    renderCentralDocumentView();
+    renderCentralDocuments();
+  });
+  $("#pdfLibraryTabs").addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = $$("[data-pdf-library-view]", event.currentTarget);
+    const index = tabs.indexOf(document.activeElement);
+    if (index < 0) return;
+    event.preventDefault();
+    const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[nextIndex].click();
+    tabs[nextIndex].focus();
+  });
   $("#pdfLibrarySearch").addEventListener("input", (event) => {
     centralDocumentSearch = event.target.value;
     renderCentralDocuments();
@@ -4223,7 +4919,10 @@
   $("#pdfLibraryImportButton").addEventListener("click", () => $("#pdfLibraryInput").click());
   $("#pdfLibraryInput").addEventListener("change", async (event) => {
     try {
-      await importCentralPdf(event.target.files?.[0]);
+      await importCentralPdf(event.target.files?.[0], {
+        quoteId: quote.id,
+        completeWorkflow: activeCentralDocumentView === "invoices"
+      });
     } catch (error) {
       console.error("Import PDF impossible", error);
       toast(error.message || "Le PDF n’a pas pu être importé.", "error");
@@ -4233,7 +4932,25 @@
     }
   });
   $("#pdfLibraryDownloadButton").addEventListener("click", downloadSelectedCentralDocument);
-  $("#shortcutHelpButton").addEventListener("click", () => openLayer("shortcutHelpLayer"));
+  $("#pdfLibraryPrintButton").addEventListener("click", printSelectedCentralDocument);
+  $("#trackingInvoiceInput").addEventListener("change", async (event) => {
+    const quoteId = pendingInvoiceQuoteId;
+    pendingInvoiceQuoteId = "";
+    if (!quoteId) { event.target.value = ""; return; }
+    try {
+      activeCentralDocumentView = "invoices";
+      const result = await importCentralPdf(event.target.files?.[0], { quoteId, completeWorkflow: true });
+      if (!result) return;
+      closeLayer("historyLayer");
+      await openPdfLibrary("invoices", { selectId: result.document?.id || "" });
+    } catch (error) {
+      console.error("Import de la facture impossible", error);
+      toast(error.message || "La facture n’a pas pu être importée.", "error");
+    } finally {
+      event.target.value = "";
+    }
+  });
+  $$('[data-help-topic]').forEach((button) => button.addEventListener("click", () => openHelp(button.dataset.helpTopic)));
   $("#newQuoteButton").addEventListener("click", createNewQuote);
   $("#saveButton").addEventListener("click", saveQuote);
   $("#historyButton").addEventListener("click", openHistoryLayer);
@@ -4271,7 +4988,7 @@
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
-    if (action === "clear" && (quote.lines.length === 0 || window.confirm("Vider tous les soins de ce devis ?"))) {
+    if (action === "clear" && ensureQuoteEditable() && (quote.lines.length === 0 || window.confirm("Vider tous les soins de ce devis ?"))) {
       quote.lines = [];
       saveLocal();
       renderAll();
@@ -4295,46 +5012,94 @@
     try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); if (!saveLocal()) return; renderAll(); toast("Devis importé"); }
     catch (error) { toast(error.message || "Import impossible", "error"); }
   });
+
+  function restoreLocalDatabase(payload) {
+    const previousDatabase = db;
+    const previousQuote = quote;
+    const previousCouponOpen = couponOpen;
+    db = migrateDatabase({
+      ...freshDatabase(),
+      ...payload.database,
+      version: APP_VERSION,
+      settings: { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
+      quoteCounters: isRecord(payload.database.quoteCounters) ? payload.database.quoteCounters : {},
+      customServices: sanitizeCustomServices(payload.database.customServices),
+      catalogOverrides: sanitizeCatalogOverrides(payload.database.catalogOverrides),
+      contacts: sanitizeContacts(payload.database.contacts),
+      quotes: isRecord(payload.database.quotes) ? payload.database.quotes : {}
+    }, payload.database.version);
+    normalizeSavedQuotes();
+    quote = db.current ? sanitizeQuote(db.current) : newQuote();
+    couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
+    applyTheme(currentTheme());
+    applyFont(currentFont());
+    applyIpadLayout(currentIpadLayoutMode());
+    if (!saveLocal()) {
+      db = previousDatabase;
+      quote = previousQuote;
+      couponOpen = previousCouponOpen;
+      applyTheme(currentTheme());
+      applyFont(currentFont());
+      applyIpadLayout(currentIpadLayoutMode());
+      renderAll();
+      renderHistory();
+      return false;
+    }
+    renderAll();
+    renderHistory();
+    closeLayer("historyLayer");
+    return true;
+  }
+
+  function restoreTransferredCentralConfig(config) {
+    if (!config?.endpoint) return false;
+    centralController.configure({
+      enabled: config.enabled === true,
+      endpoint: config.endpoint,
+      email: config.email,
+      deviceName: config.deviceName
+    });
+    renderCentralizationState();
+    return config.enabled === true;
+  }
+
   $("#exportBackupButton").addEventListener("click", exportBackup);
   $("#importBackupButton").addEventListener("click", () => $("#backupImportInput").click());
   $("#backupImportInput").addEventListener("change", async (event) => {
     try {
-      const payload = await readJSONFile(event.target);
-      if (!payload?.database || payload.type !== "atelier-devis-backup") throw new Error("Cette sauvegarde n’est pas compatible");
-      if (!window.confirm("Restaurer cette sauvegarde remplacera les données locales actuelles. Continuer ?")) return;
-      const previousDatabase = db;
-      const previousQuote = quote;
-      const previousCouponOpen = couponOpen;
-      db = migrateDatabase({
-        ...freshDatabase(),
-        ...payload.database,
-        version: APP_VERSION,
-        settings: { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
-        quoteCounters: isRecord(payload.database.quoteCounters) ? payload.database.quoteCounters : {},
-        customServices: sanitizeCustomServices(payload.database.customServices),
-        catalogOverrides: sanitizeCatalogOverrides(payload.database.catalogOverrides),
-        quotes: isRecord(payload.database.quotes) ? payload.database.quotes : {}
-      }, payload.database.version);
-      normalizeSavedQuotes();
-      quote = db.current ? sanitizeQuote(db.current) : newQuote();
-      couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
-      applyTheme(currentTheme());
-      applyFont(currentFont());
-      applyIpadLayout(currentIpadLayoutMode());
-      if (!saveLocal()) {
-        db = previousDatabase;
-        quote = previousQuote;
-        couponOpen = previousCouponOpen;
-        applyTheme(currentTheme());
-        applyFont(currentFont());
-        applyIpadLayout(currentIpadLayoutMode());
-        renderAll();
-        renderHistory();
-        return;
+      let payload = await readJSONFile(event.target);
+      if (!payload) return;
+      const isSiteTransfer = payload.type === SITE_TRANSFER_TYPE;
+      if (isSiteTransfer) payload = readTransferPackage(payload);
+      else if (!payload.database || payload.type !== "atelier-devis-backup") throw new Error("Cette sauvegarde n’est pas compatible");
+      if (isSiteTransfer && !targetMatchesCurrentSite(payload, window.location.href)) {
+        const expected = payload.target?.origin || payload.target?.url || "une autre adresse";
+        if (!window.confirm(`Ce transfert a été préparé pour ${expected}, mais vous consultez ${currentSiteLabel()}. L’importer quand même ?`)) return;
       }
-      renderAll(); renderHistory(); closeLayer("historyLayer"); toast("Sauvegarde restaurée");
+      const confirmation = isSiteTransfer
+        ? "Importer ce transfert remplacera les données locales de cette adresse. Continuer ?"
+        : "Restaurer cette sauvegarde remplacera les données locales actuelles. Continuer ?";
+      if (!window.confirm(confirmation) || !restoreLocalDatabase(payload)) return;
+      const reconnectRequired = isSiteTransfer && restoreTransferredCentralConfig(payload.central);
+      if (!$("#settingsLayer")?.hidden) fillSettingsForm();
+      toast(isSiteTransfer
+        ? (reconnectRequired ? "Transfert terminé · reconnectez ce poste au serveur central" : "Transfert terminé sur cette adresse")
+        : "Sauvegarde restaurée");
     } catch (error) { toast(error.message || "Restauration impossible", "error"); }
   });
+
+  $("#siteMigrationTarget").addEventListener("input", () => {
+    preparedSiteMigrationTarget = "";
+    refreshSiteMigrationPanel();
+  });
+  $("#siteMigrationExportButton").addEventListener("click", () => {
+    try { exportSiteMigration(); }
+    catch (error) { toast(error.message || "Le transfert n’a pas pu être préparé.", "error"); }
+  });
+  $("#siteMigrationOpenButton").addEventListener("click", () => {
+    void openSiteMigrationTarget().catch((error) => toast(error.message || "La nouvelle adresse n’a pas pu être ouverte.", "error"));
+  });
+  $("#siteMigrationImportButton").addEventListener("click", () => $("#backupImportInput").click());
 
   $$('[data-close]').forEach((button) => button.addEventListener("click", () => closeLayer(button.dataset.close)));
   $$(".mobile-tabs [data-panel]").forEach((button) => button.addEventListener("click", () => switchMobilePanel(button.dataset.panel)));
@@ -4380,7 +5145,10 @@
     if (command && event.altKey && !event.shiftKey && event.code === "KeyW") { event.preventDefault(); closeMenusForShortcut(); shareQuoteViaWhatsApp(); return; }
     if (command && !event.altKey && !event.shiftKey && event.key === ",") { event.preventDefault(); closeMenusForShortcut(); openSettingsLayer(); return; }
     if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "/") { event.preventDefault(); closeMenusForShortcut(); switchMobilePanel("familyPanel"); setCatalogSearchOpen(true, { focus: true }); return; }
-    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "?") { event.preventDefault(); closeMenusForShortcut(); openLayer("shortcutHelpLayer"); }
+    if (!command && !event.altKey && !isTextEntryTarget(event.target) && event.key === "?") { event.preventDefault(); closeMenusForShortcut(); openHelp("shortcuts"); }
+  });
+  window.addEventListener("message", (event) => {
+    if (event.source === $("#helpFrame")?.contentWindow && event.data?.type === "bcdevis-help-close") closeLayer("helpLayer");
   });
   window.addEventListener("beforeprint", renderPrint);
   window.addEventListener("beforeunload", () => saveLocal(false));
@@ -4425,11 +5193,15 @@
   syncViewportMetrics();
   syncPermanentCheckoutLayout();
   syncToastPlacement();
+  expireTrackedQuotes();
   saveLocal(false);
   renderAll();
+  window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshExpiredTracking(); });
   void centralController.initialize()
     .then(() => db.settings.centralUniqueQuoteNumbers === true ? ensureCentralQuoteNumberPool({ required: 1 }) : null)
     .catch((error) => console.warn("Centralisation différée", error));
-  const releaseNotesOpened = showReleaseNotesOnce();
-  if (!releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
+  const migrationArrivalOpened = openSiteMigrationArrival();
+  const releaseNotesOpened = migrationArrivalOpened ? false : showReleaseNotesOnce();
+  if (!migrationArrivalOpened && !releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
 })();

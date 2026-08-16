@@ -2,40 +2,47 @@
 
 ## Statut du document
 
-- **Dernière analyse :** 5 août 2026
-- **Version examinée :** BCDevis 7.0.2, candidat local du 5 août 2026
+- **Dernière analyse :** 7 août 2026
+- **Version examinée :** BCDevis 7.1.0 et évolutions locales non taguées du 7 août 2026
 - **Portée :** application Electron, PWA, mode local, serveur central PostgreSQL, synchronisation, PDF, documentation, tests et livrables
-- **État :** feuille de route consolidée après l’ajout du suivi commercial en V6 et de la centralisation facultative en V7
+- **État :** feuille de route consolidée après la fermeture du workflow par facture envoyée, le verrouillage des devis terminaux, les V2, les réglages documentaires par poste et le centre d’aide HTML hors ligne
 - **Documents associés :** [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md), [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md) et [plan de protection de la PWA](PLAN-PROTECTION-ACCES-GITHUB-PAGES.md)
 
 ## Résultat de l’analyse
 
-BCDevis 7.0.2 est fonctionnel et dispose d’un socle de validation sérieux pour une application JavaScript native :
+BCDevis 7.1.0 est fonctionnel et dispose d’un socle de validation sérieux pour une application JavaScript native :
 
-- `npm run check` passe les contrôles syntaxiques et les 13 suites de tests ;
+- `npm run check` passe les contrôles syntaxiques et les 16 suites de tests ;
 - les calculs, le catalogue, le corps interactif, les thèmes, le clavier, les PDF, le suivi commercial, la centralisation, la persistance, la PWA, les plateformes et les documents sont couverts ;
 - `npm audit` et `npm audit --omit=dev` ne signalent aucune vulnérabilité connue ;
 - `docker compose config` valide la configuration fournie pour PostgreSQL et l’API ;
 - Electron conserve l’isolation du contexte, désactive Node dans le renderer et limite les ouvertures externes ;
 - la V7 permet un usage local complet ou une synchronisation PostgreSQL facultative avec conflits explicites et numéros centralisés.
+- le suivi distingue désormais l’archivage local du statut commercial, borne les transitions et sort une facture envoyée du workflow actif vers la bibliothèque **Factures**.
+- l’aide principale est désormais une page HTML unique, recherchable, responsive, imprimable et mise en cache pour Electron comme pour la PWA.
 
 Le risque principal a changé depuis l’audit V5 : il ne s’agit plus d’ajouter rapidement des fonctions commerciales, mais de rendre la nouvelle architecture multi-postes exploitable, récupérable et mesurable avant sa mise en production. La priorité doit donc rester la stabilisation de la V7.
 
 ## Suivi des recommandations précédentes
 
-| Référence | Sujet | État en 7.0.2 | Suite recommandée |
+| Référence | Sujet | État en 7.1.0 | Suite recommandée |
 | --- | --- | --- | --- |
 | A1 | Quantités tactiles explicites | **Traité** | Conserver les tests tactiles et clavier. |
-| A2 | Documentation alignée sur le produit | **Partiellement traité** | Les guides V7 et les tests documentaires sont à jour, mais la version reste dupliquée dans plusieurs sources. |
-| A3 | Historique opérationnel | **Partiellement traité** | Statuts, filtres, chronologie, relances et tri métier sont livrés ; recherche libre, archivage, suppression récupérable et actions par carte restent à faire. |
+| A2 | Documentation alignée sur le produit | **Partiellement traité** | Le centre d’aide HTML devient la référence intégrée unique ; les guides de livraison restent versionnés séparément et la version reste dupliquée dans plusieurs sources. |
+| A3 | Historique opérationnel | **Partiellement traité** | Statuts contrôlés, filtres, chronologie, relances, factures sorties du workflow et tri métier sont livrés ; recherche libre, archivage et suppression récupérable restent à faire. |
 | A4 | Sauvegarde et restauration fiables | **Partiellement traité** | L’import est borné, migré et restauré avec retour en mémoire si l’écriture locale échoue ; aucun instantané utilisateur n’est créé automatiquement avant une restauration. |
 | A5 | Protection des données | **Partiellement traité** | HTTPS distant obligatoire, sessions, rôles et séparation API/PostgreSQL sont présents ; données locales, sauvegardes et jeton client ne sont pas chiffrés. |
-| A6 | État clair du brouillon | **Traité en 7.0.2** | Un indicateur accessible affiche désormais `Brouillon`, `Enregistré` ou `Modifié` en comparant le devis courant à sa version réellement archivée. |
-| A7 | Découpage de `app.js` | **À faire** | Le fichier atteint 4 435 lignes et 235 Ko. |
-| A8 | Consolidation CSS | **À faire** | `styles.css` compte 3 012 lignes et `index.html` embarque encore environ 1 729 lignes, soit près de 98 Ko de CSS intégré. |
+| A6 | État clair du devis | **Traité localement** | La caisse affiche seulement l’état d’enregistrement ; le statut commercial et ses détails sont réservés à l’espace **Suivi**. |
+| A7 | Découpage de `app.js` | **À faire** | Le moteur de formats contacts est isolé, mais le contrôleur du répertoire porte `app.js` à 5 199 lignes et environ 267 Kio. |
+| A8 | Consolidation CSS | **À faire** | `styles.css` compte 3 106 lignes et `index.html` embarque encore environ 1 729 lignes, soit près de 98 Ko de CSS intégré. |
 | A9 | Tests comportementaux | **Partiellement traité** | Une CI indépendante et un test PostgreSQL 17 réel sont maintenant présents ; la première exécution sur le service réel, la matrice navigateur et les essais de volume restent à prouver. |
 | A10 | Durcissement Electron/PWA/API | **En cours** | Les protections de base sont présentes ; CSP, limitation globale, administration des accès et épinglage immuable des actions restent ouverts. |
 | A11 | Signature des livrables | **À faire** | Windows n’est pas signé et macOS n’est ni signé ni notarisé. |
+| A15 | Clôture par facture envoyée | **Traité localement** | Import central de la facture, sortie du suivi actif, consultation, téléchargement et impression sont reliés au devis accepté. |
+| A16 | Espace de travail du suivi | **Traité localement** | Le volet étroit est remplacé par une surface large et responsive avec grille, fiche étendue, chronologie et actions lisibles. |
+| A17 | Sortie PDF et nommage facture | **Traité localement** | Dossier des devis configurable par poste, préfixe facture distinct et référence machine identique au devis. |
+| A18 | Centre d’aide HTML hors ligne | **Traité localement** | Bouton Aide, recherche instantanée, neuf thèmes, liens contextuels, rendu responsive, impression et cache PWA sans dépendance PostgreSQL. |
+| A19 | Répertoire de contacts | **Traité localement** | Recherche, formulaire progressif, suppression, import/export CSV-vCard-JSON, fusion des doublons, instantané par devis et synchronisation centrale sont reliés ; l’anonymisation reste à cadrer. |
 
 ## P0 — Stabiliser la centralisation avant un usage réel
 
@@ -131,17 +138,73 @@ Chaque synchronisation envoie un instantané complet. Lorsqu’il change, le ser
 - Ajouter un verrouillage facultatif et un export chiffré si le risque métier le justifie.
 - Définir les durées de conservation des devis, suivis, PDF et journaux.
 
-### A6. Afficher l’état réel du devis courant
+### A6. Séparer l’archivage et le statut commercial sans surcharger la caisse
 
 **Traitement intégré à la version locale 7.0.2 le 5 août 2026 :**
 
-- un indicateur visible et annoncé aux technologies d’assistance affiche `Brouillon`, `Enregistré` ou `Modifié` dans le contexte du devis ;
+- un indicateur discret, sans fond ni bordure, et annoncé aux technologies d’assistance affiche `Non archivé`, `Enregistré` ou `À enregistrer` dans le contexte du devis ;
+- les statuts commerciaux, les relances, la chronologie et les auteurs sont volontairement regroupés dans l’espace large **Mes devis > Suivi** ;
+- la caisse n’affiche ni statut commercial, ni verrouillage, ni numéro de version ; ces informations et l’action **Créer une Vn** restent dans l’espace **Suivi** ;
 - l’état est recalculé après chaque sauvegarde locale en comparant le contenu métier courant à la version de **Mes devis** ;
 - les métadonnées techniques `status` et `updatedAt` sont exclues de la comparaison afin d’éviter les faux changements ;
 - le libellé accessible et l’infobulle du bouton d’enregistrement suivent le même état ;
-- un test Electron vérifie la transition complète `Brouillon` → `Enregistré` → `Modifié` → `Enregistré`.
+- un test Electron vérifie la transition complète `Non archivé` → `Enregistré` → `À enregistrer` → `Enregistré` et l’absence des détails de suivi dans la caisse.
 
 L’auto-sauvegarde du brouillon reste distincte de l’archivage : seul l’état `Enregistré` confirme que la version affichée est à jour dans **Mes devis**.
+
+### A15. Clore le workflow avec la facture envoyée
+
+**Traitement intégré localement le 5 août 2026 :**
+
+- les transitions commerciales sont explicites : `Brouillon` → `Prêt à envoyer` → `Envoyé` → `Accepté` / `Refusé` / `Expiré` ;
+- un devis accepté, refusé, expiré ou facturé est verrouillé ; une modification passe par une V2 liée à la version précédente ;
+- chaque événement de suivi conserve l’auteur et le poste disponibles ;
+- un devis accepté propose **Importer la facture envoyée** ; la transition `Accepté` → `Facture envoyée` n’est créée qu’après l’archivage réussi du PDF central ;
+- la facture quitte l’onglet **Suivi**, reste traçable dans l’historique et rejoint **Factures**, avec aperçu, import, téléchargement et impression ;
+- les factures restent des documents commerciaux archivés : BCDevis ne devient pas un logiciel comptable et ne calcule aucun paiement.
+- aucun changement de statut ne fabrique une facture ; seul l’import réussi d’un PDF clôt le suivi, et son nom d’archive reprend la référence du devis avec le préfixe facture configuré.
+
+La prochaine validation de livraison devra encore tester ce parcours contre le PostgreSQL 17 réel de la CI, puis sur l’artefact de la plateforme distribuée.
+
+### A16. Donner au suivi un véritable espace de travail
+
+**Traitement intégré localement le 5 août 2026 :**
+
+- sur ordinateur, **Mes devis** s’ouvre désormais dans une surface centrée pouvant atteindre 1 180 px de large et 900 px de haut ;
+- les devis sont présentés sur deux colonnes pour exploiter la largeur disponible ;
+- **Historique** reste une liste compacte de tous les devis enregistrés avec leur tag de statut, tandis que **Suivi** porte seul les filtres, relances, chronologies et actions commerciales ;
+- dans **Suivi**, le bouton du détail apparaît au survol ou au focus avec une souris ; une interaction tactile sur la fiche ouvre ou referme directement le détail, qui conserve une action explicite **Ouvrir le devis** ;
+- l’ouverture d’un devis étend sa fiche sur toute la largeur et sépare le résumé, la chronologie et les actions de suivi ;
+- entre 581 et 900 px, le contenu repasse sur une colonne dans une grande fenêtre adaptée ;
+- sur mobile, l’espace devient plein écran afin de préserver la lisibilité et les cibles tactiles ;
+- le dialogue reste modal, pilotable au clavier et identique dans Electron et la PWA.
+
+### A17. Configurer la sortie PDF sans casser la traçabilité
+
+**Traitement intégré localement le 6 août 2026 :**
+
+- l’application Electron conserve dans une préférence propre au poste le dossier des devis PDF ; **Téléchargements** reste le repli par défaut ;
+- ce chemin absolu n’entre pas dans les réglages synchronisés, afin qu’un ordinateur ne remplace pas le dossier d’un autre ;
+- la PWA explique que le navigateur garde la maîtrise du dossier, conformément aux restrictions de la plateforme ;
+- les préfixes devis et facture sont distincts (`DEV` et `FAC` par défaut), tandis que date, code machine et séquence sont recopiés à l’identique ;
+- la validation couvre le choix, la persistance, la réinitialisation, l’enregistrement dans le dossier retenu et l’autorisation de la pièce jointe e-mail.
+
+### A18. Remplacer l’aide PDF principale par un centre HTML
+
+**Traitement intégré localement le 6 août 2026 :**
+
+- le bouton **Aide** ouvre une grande surface de travail qui charge `help.html`, également utilisable comme page autonome dans la PWA ;
+- la recherche instantanée ignore les accents, accepte plusieurs mots et filtre les thèmes devis, suivi, factures, base centrale, PDF et raccourcis ;
+- les parcours et libellés de l’aide reprennent exactement ceux de l’interface, notamment **À enregistrer**, **Devis & suivi** et la confirmation du statut **Envoyé** ;
+- les écrans devis, suivi, bibliothèque PDF, réglages de sortie et centralisation ouvrent directement le thème pertinent ;
+- `help.html`, `help.css` et `help.js` sont embarqués dans Electron et préchargés par le service worker ; la navigation hors ligne conserve la page demandée au lieu de revenir systématiquement à l’accueil ;
+- une feuille d’impression produit la version papier depuis la même source, sans imposer un second document d’aide à maintenir ;
+- l’ancienne modale de raccourcis, son contenu dupliqué, son SVG et ses styles morts ont été retirés ;
+- une quatorzième suite contrôle le contenu, les ressources locales, les liens contextuels, l’impression, le cache hors ligne et la livraison HTTP par la PWA.
+
+**Passe du 7 août 2026 :** textes raccourcis, parcours alignés sur les libellés réels, recherche multi-mots et thème actif synchronisé avec la lecture.
+
+Les PDF de documentation livrés restent des secours figés de la version 7.1.0. Ils ne sont plus présentés comme la référence principale dans l’application.
 
 ## P2 — Réduire la dette et le coût de maintenance
 

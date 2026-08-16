@@ -8,7 +8,7 @@ const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.webmanifest"), "utf8"));
-const themes = ["light", "night", "forest", "bordeaux"];
+const themes = ["white", "light", "night", "forest", "bordeaux"];
 const fonts = ["red-hat", "roboto", "roboto-slab", "system"];
 const requiredTokens = [
   "--paper",
@@ -33,14 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.0\.2";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "7\.0\.2";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "7\.1\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.0\.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.1\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
-assert.equal((releaseNotesList.match(/<li>/g) || []).length, 6, "L’écran des nouveautés doit présenter les six familles de fonctions livrées");
-assert.match(html, /<strong>État du devis<\/strong>[\s\S]*?<strong>Suivi des devis<\/strong>[\s\S]*?<strong>Affichage au choix<\/strong>[\s\S]*?<strong>Travail multi-postes<\/strong>[\s\S]*?<strong>Documents PDF partagés<\/strong>[\s\S]*?<strong>Confort tactile<\/strong>/, "Les nouveautés doivent résumer l’état du devis, le suivi, l’affichage, la centralisation, les PDF et le tactile");
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 8, "L’écran des nouveautés doit présenter les huit familles de fonctions livrées");
+assert.match(html, /<strong>Nouvelle adresse sans perte<\/strong>[\s\S]*?<strong>Une caisse plus lisible<\/strong>[\s\S]*?<strong>Workflow, V2 et factures<\/strong>[\s\S]*?<strong>Affichage au choix<\/strong>[\s\S]*?<strong>Thème Blanc par défaut<\/strong>[\s\S]*?<strong>Travail multi-postes<\/strong>[\s\S]*?<strong>Documents PDF et Factures<\/strong>[\s\S]*?<strong>Confort tactile<\/strong>/, "Les nouveautés doivent résumer la migration, la caisse allégée, le workflow, l’affichage, le thème Blanc, la centralisation, les PDF et le tactile");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -67,8 +67,8 @@ function contrast(first, second) {
 
 assert.match(
   app,
-  /const KNOWN_THEMES = \["light", "night", "forest", "bordeaux"\]/,
-  "La liste applicative doit exposer les quatre thèmes"
+  /const KNOWN_THEMES = \["white", "light", "night", "forest", "bordeaux"\]/,
+  "La liste applicative doit exposer les cinq thèmes"
 );
 assert.match(
   app,
@@ -76,6 +76,8 @@ assert.match(
   "La liste applicative doit rester limitée aux quatre polices prévues"
 );
 assert.match(app, /fontFamily: "red-hat"/, "Red Hat Display doit rester la police par défaut");
+assert.match(app, /theme: "white"/, "Le thème Blanc doit être le thème par défaut des réglages");
+assert.match(html, /<html lang="fr" data-theme="white">/, "Le thème Blanc doit être appliqué dès le chargement de la page");
 
 for (const theme of themes) {
   const themeBlock = html.match(new RegExp(`html\\[data-theme="${theme}"\\]\\{([\\s\\S]*?)\\n  \\}`));
@@ -120,8 +122,8 @@ for (const theme of themes) {
 
 assert.match(
   html,
-  /\.theme-picker\{display:grid;grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/,
-  "Le sélecteur desktop doit présenter les quatre palettes"
+  /\.theme-picker\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/,
+  "Le sélecteur desktop doit présenter les cinq palettes"
 );
 assert.match(
   html,
@@ -147,8 +149,8 @@ assert.match(
   /@media print\{[\s\S]*?html\[data-theme\] body,[\s\S]*?background:#fff!important;[\s\S]*?color-scheme:light!important/,
   "Le thème sombre ne doit jamais colorer les marges physiques du PDF"
 );
-assert.equal(manifest.background_color, "#f4f1eb", "Le lancement PWA doit reprendre le papier du thème Lumière");
-assert.equal(manifest.theme_color, "#171512", "Le lancement PWA doit reprendre l’en-tête du thème Lumière");
+assert.equal(manifest.background_color, "#ffffff", "Le lancement PWA doit reprendre le papier du thème Blanc par défaut");
+assert.equal(manifest.theme_color, "#ffffff", "Le lancement PWA doit reprendre l’en-tête du thème Blanc par défaut");
 assert.doesNotMatch(html, /id="headerLogo"/, "Le logo ne doit plus occuper l’en-tête de l’application");
 assert.doesNotMatch(html, /class="brand-logo"/, "Le header doit réserver sa largeur au tarif et aux actions");
 assert.match(
@@ -168,8 +170,8 @@ assert.doesNotMatch(
   "Les titres de section ne doivent pas être doublés par une phrase descriptive"
 );
 assert.deepEqual(
-  [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3><\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "TVA", "Offres", "Date du devis", "Suivi des devis", "Mentions", "Centralisation", "Serveur et compte", "Numérotation des devis", "Données partagées"],
+  [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3>(?:<button[^>]*>[\s\S]*?<\/button>)?<\/div>/g)].map((match) => match[1]),
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "Fichiers PDF", "TVA", "Offres", "Date du devis", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
@@ -290,6 +292,8 @@ assert.match(
   /html\[data-ipad-layout="optimized"\] \.cart-line-inline-controls \.quantity-stepper,[\s\S]*?min-height:44px;[\s\S]*?grid-template-columns:44px minmax\(30px,auto\) 44px/,
   "Le mode iPad doit garantir des boutons de quantité de 44 px"
 );
+assert.match(html, /name="quotePrefix"[\s\S]*?name="invoicePrefix"[\s\S]*?Poste commun aux deux documents[\s\S]*?settingsInvoicePreview/, "Les devis et factures doivent avoir des préfixes distincts mais un poste commun");
+assert.match(html, /id="pdfDirectoryPath"[\s\S]*?id="choosePdfDirectoryButton"[\s\S]*?id="resetPdfDirectoryButton"/, "Le dossier PDF du poste doit être visible, modifiable et réinitialisable");
 assert.match(styles, /html\[data-display-mode="smartphone"\] \.cart-line-inline-controls \.quantity-stepper[\s\S]*?min-height:44px/, "Le mode Smartphone doit partager le contrat tactile de 44 px");
 assert.match(styles, /html\[data-ipad-layout="optimized"\] \.tile-catalog-fields input,[\s\S]*?height:44px;font-size:16px/, "L’éditeur des tuiles iPad doit agrandir ses champs sans zoom Safari");
 assert.match(styles, /html\[data-display-mode="smartphone"\] \.tile-catalog-fields input[\s\S]*?height:44px;font-size:16px/, "L’éditeur des tuiles Smartphone doit agrandir ses champs");
@@ -299,7 +303,7 @@ assert.match(html, /\.topbar-utility-button\{[\s\S]*?width:42px;[\s\S]*?height:4
 assert.match(styles, /\.tile-catalog-fields input\{width:100%;height:36px/, "Les champs compacts du profil Bureau ne doivent pas être agrandis globalement");
 assert.match(styles, /\.cart-line-main\{[^}]*touch-action:pan-y/, "La ligne de caisse doit conserver le défilement vertical pendant un geste tactile");
 assert.match(styles, /\.cart-section \.cart-line\.offer-single\+\.cart-line\.offer-single\{border-top:0\}/, "Deux prestations à la séance consécutives ne doivent pas être séparées par une ligne");
-assert.match(styles, /\.cart-section\{margin-top:4px\}[\s\S]*?\.cart-section-title\{min-height:26px\}[\s\S]*?\.cart-section \.cart-line\{padding-block:2px\}[\s\S]*?\.cart-section \.cart-line \.cart-line-main\{padding-block:7px\}/, "Toutes les prestations doivent conserver une présentation compacte");
+assert.match(styles, /\.cart-section\{margin-top:4px\}[\s\S]*?\.cart-section-title\{min-height:26px\}[\s\S]*?\.cart-section \.cart-line\{padding-block:1px\}[\s\S]*?\.cart-section \.cart-line \.cart-line-main\{padding-block:4px\}/, "Toutes les prestations doivent conserver une présentation compacte");
 assert.match(styles, /\.checkout-panel\.is-full-height \.checkout-card\{width:100%;max-width:none;flex:1 1 auto\}/, "La carte de caisse desktop doit remplir son panneau même lorsqu’elle est vide");
 assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{\s*\.checkout-panel\.active-panel \.checkout-card\{width:100%;max-width:none;margin-inline:0\}/, "La caisse tablette doit utiliser toute la largeur disponible");
 assert.match(styles, /html\[data-theme\] \.family-panel \.family-options\{\s*display:flex;\s*flex-wrap:wrap;/, "Les tuiles de soins doivent s’adapter à la largeur réelle de familyList");

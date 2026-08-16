@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { calculate, installmentMonths, referenceLineTotal } = require("../quote-core.js");
+const { calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = require("../quote-core.js");
 
 const base = {
   lines: [{ price: 122, quantity: 7 }, { price: 322, quantity: 7 }, { price: 222, quantity: 7 }],
@@ -26,4 +26,8 @@ assert.deepEqual(installmentMonths(999.99), [3, 4, 6], "Sous CHF 1’000, seules
 assert.deepEqual(installmentMonths(1000), [3, 4, 6, 10], "Dès CHF 1’000, l’option 10 mois est ajoutée");
 assert.deepEqual(installmentMonths(1999.99), [3, 4, 6, 10], "Sous CHF 2’000, l’option 12 mois reste masquée");
 assert.deepEqual(installmentMonths(2000), [3, 4, 6, 10, 12], "Dès CHF 2’000, l’option 12 mois est ajoutée");
+assert.equal(cleanDocumentPrefix(" fac ! ", "FAC"), "FAC", "Le préfixe documentaire doit rester sûr pour un nom de fichier");
+assert.equal(relatedDocumentNumber("DEV-20260806A001", "FAC"), "FAC-20260806A001", "La facture reprend la date, le poste et la séquence du devis");
+assert.equal(relatedDocumentNumber("DEV-CL-20260806P01007", "INV"), "INV-20260806P01007", "Un préfixe de devis composé ne doit pas modifier le poste");
+assert.equal(relatedDocumentNumber("DEV-20260806-A-001", "FAC"), "FAC-20260806-A-001", "Les anciens numéros conservent aussi leur code poste");
 console.log("QUOTE_CORE_TESTS_OK");

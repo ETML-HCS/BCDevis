@@ -40,7 +40,7 @@ function quote(id, number, amount, updatedAt) {
 }
 
 function snapshot(quotes = {}, settings = { companyName: "Clinique Bellecour", quotePrefix: "DEV" }) {
-  return { schemaVersion: 1, quoteCounters: {}, settings, customServices: [], catalogOverrides: {}, quotes };
+  return { schemaVersion: 1, quoteCounters: {}, settings, customServices: [], catalogOverrides: {}, contacts: {}, quotes };
 }
 
 async function api(base, route, { token, body, method = "GET" } = {}) {
@@ -62,14 +62,16 @@ async function main() {
   assert.equal(centralClient.normalizeEndpoint("http://127.0.0.1:8787"), "http://127.0.0.1:8787/");
 
   const localDatabase = {
-    settings: { companyName: "Bellecour", theme: "night", machineName: "A", conditions: "Paiement" },
+    settings: { companyName: "Bellecour", theme: "night", machineName: "A", quotePrefix: "DEV", invoicePrefix: "FAC", conditions: "Paiement" },
     quoteCounters: { "20260805:A": 2 },
-    customServices: [], catalogOverrides: {}, quotes: {}, current: { id: "draft-local" }
+    customServices: [], catalogOverrides: {}, contacts: { "contact-1": { id: "contact-1", name: "Camille Martin", email: "camille@example.ch" } }, quotes: {}, current: { id: "draft-local" }
   };
   const shared = centralClient.sharedSnapshot(localDatabase);
   assert.equal(shared.settings.companyName, "Bellecour");
+  assert.equal(shared.settings.invoicePrefix, "FAC", "Le préfixe facture doit être partagé comme le préfixe devis");
   assert.equal(Object.hasOwn(shared.settings, "theme"), false, "Le thème doit rester propre à l’appareil");
   assert.equal(Object.hasOwn(shared, "current"), false, "Le brouillon en cours doit rester local");
+  assert.equal(shared.contacts["contact-1"].name, "Camille Martin", "Le répertoire doit être partagé");
   centralClient.applySharedSnapshot(localDatabase, snapshot({}, { companyName: "Central", conditions: "Central" }));
   assert.equal(localDatabase.settings.companyName, "Central");
   assert.equal(localDatabase.settings.theme, "night");
@@ -81,6 +83,14 @@ async function main() {
   assert.deepEqual(mergeSnapshots(base, local, remote).conflicts, ["quotes.q1"]);
   assert.equal(mergeSnapshots(base, local, remote, { strategy: "server" }).snapshot.quotes.q1.lines[0].price, 130);
   assert.equal(duplicateQuoteNumbers(snapshot({ q1: quote("q1", "DEV-1", 1, "2026-08-05T08:00:00.000Z"), q2: quote("q2", "DEV-1", 2, "2026-08-05T08:00:00.000Z") })).length, 1);
+  const contactBase = snapshot();
+  contactBase.contacts = { "contact-1": { id: "contact-1", name: "Camille Martin", phone: "+41 79 000 00 00" } };
+  const contactLocal = structuredClone(contactBase);
+  const contactRemote = structuredClone(contactBase);
+  contactLocal.contacts["contact-1"].phone = "+41 79 111 11 11";
+  contactRemote.contacts["contact-1"].phone = "+41 79 222 22 22";
+  assert.deepEqual(mergeSnapshots(contactBase, contactLocal, contactRemote).conflicts, ["contacts.contact-1"]);
+  assert.equal(mergeSnapshots(contactBase, contactLocal, contactRemote, { strategy: "local" }).snapshot.contacts["contact-1"].phone, "+41 79 111 11 11");
 
   const postgres = newDb({ autoCreateForeignKeyIndices: true });
   const { Pool } = postgres.adapters.createPg();
@@ -134,7 +144,7 @@ async function main() {
     assert.equal(resolveB.status, 200);
     assert.equal(resolveB.payload.snapshot.quotes.q1.lines[0].price, 120);
 
-    const browserDatabase = { settings: { companyName: "Local", theme: "forest", machineName: "A" }, quoteCounters: {}, customServices: [], catalogOverrides: {}, quotes: {}, current: null };
+    const browserDatabase = { settings: { companyName: "Local", theme: "forest", machineName: "A" }, quoteCounters: {}, customServices: [], catalogOverrides: {}, contacts: {}, quotes: {}, current: null };
     let assignedCode = "";
     const controller = centralClient.createController({
       storage: memoryStorage(),
@@ -149,6 +159,7 @@ async function main() {
     assert.equal(controller.getConfig().connected, true);
     assert.equal(browserDatabase.settings.theme, "forest");
     assert.ok(browserDatabase.quotes.q1);
+    assert.equal(typeof browserDatabase.contacts, "object");
     const controllerReservation = await controller.reserveQuoteNumbers({ prefix: "DEV", date: "2026-08-05" }, 2);
     assert.ok(controllerReservation.available >= 2);
     assert.match(controller.takeReservedQuoteNumber({ prefix: "DEV", date: "2026-08-05" }), /^DEV-20260805C\d{6}$/);
@@ -163,6 +174,7 @@ async function main() {
         quoteId: "q1",
         quoteNumber: "DEV-20260805C000001",
         clientName: "Sophie Martin",
+        kind: "invoice",
         contentBase64: pdfContents.toString("base64")
       }
     });
@@ -170,6 +182,7 @@ async function main() {
     const documents = await api(started.url, "documents", { token: loginB.payload.token });
     assert.equal(documents.status, 200);
     assert.equal(documents.payload.documents[0].clientName, "Sophie Martin");
+    assert.equal(documents.payload.documents[0].kind, "invoice");
     const documentResponse = await fetch(new URL(`api/v1/documents/${uploaded.payload.document.id}/content`, started.url), { headers: { authorization: `Bearer ${loginB.payload.token}` } });
     assert.equal(documentResponse.status, 200);
     assert.equal(documentResponse.headers.get("content-type"), "application/pdf");
@@ -203,7 +216,13 @@ async function main() {
   assert.match(html, /id="pdfPreviewFrame"/);
   assert.match(html, /id="centralUseServerButton"[\s\S]*?id="centralUseDeviceButton"/);
   assert.ok(html.indexOf("central-sync.js") < html.indexOf("app.js"));
-  assert.match(app, /const APP_VERSION = 23;/);
+  assert.match(app, /const APP_VERSION = 25;/);
+  assert.match(schema, /kind TEXT NOT NULL DEFAULT 'document'/);
+  assert.match(html, /id="invoiceLibraryButton"/);
+  assert.match(html, /id="pdfLibraryButton"[\s\S]*?data-central-library hidden disabled[\s\S]*?#icon-documents/);
+  assert.match(html, /id="invoiceLibraryButton"[\s\S]*?data-central-library hidden disabled[\s\S]*?#icon-invoice/);
+  assert.match(app, /\$\$\('\[data-central-library\]'\)[\s\S]*?button\.hidden = config\.connected !== true[\s\S]*?button\.disabled = config\.connected !== true/);
+  assert.match(html, /id="pdfLibraryPrintButton"/);
   assert.match(app, /centralController\.initialize\(\)/);
   assert.match(serviceWorker, /\.\/central-sync\.js/);
   for (const table of ["users", "devices", "sessions", "shared_settings", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {

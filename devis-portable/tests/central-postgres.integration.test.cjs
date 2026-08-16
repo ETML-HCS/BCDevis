@@ -196,13 +196,15 @@ async function main() {
         quoteId: "q1",
         quoteNumber: "DEV-20260805C000001",
         clientName: "Client intégration",
+        kind: "invoice",
         contentBase64: pdfContents.toString("base64")
       }
     });
     assert.equal(uploaded.status, 201);
-    const storedDocument = await applicationPool.query("SELECT octet_length(content) AS size, sha256 FROM documents WHERE id = $1", [uploaded.payload.document.id]);
+    const storedDocument = await applicationPool.query("SELECT octet_length(content) AS size, sha256, kind FROM documents WHERE id = $1", [uploaded.payload.document.id]);
     assert.equal(Number(storedDocument.rows[0].size), pdfContents.length);
     assert.equal(storedDocument.rows[0].sha256, crypto.createHash("sha256").update(pdfContents).digest("hex"));
+    assert.equal(storedDocument.rows[0].kind, "invoice");
 
     const audit = await api(started.url, "audit?limit=200", { token: loginA.token });
     assert.equal(audit.status, 200);

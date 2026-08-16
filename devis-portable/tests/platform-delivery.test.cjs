@@ -15,6 +15,7 @@ const index = read("devis-portable/index.html");
 const readme = read("devis-portable/README.md");
 const guide = read("devis-portable/MODE-D-EMPLOI.md");
 const workflow = read(".github/workflows/livrables.yml");
+const chromeosBuilder = read("scripts/build-chromeos.cjs");
 
 assert.equal(packageJson.version, lock.version, "La version du lockfile doit suivre package.json");
 assert.equal(packageJson.version, lock.packages[""].version, "La version racine du lockfile doit être synchronisée");
@@ -30,6 +31,11 @@ const appIcon = fs.readFileSync(path.join(projectRoot, packageJson.build.icon));
 assert.equal(appIcon.readUInt32BE(16), 512, "L'icône doit mesurer 512 px de large");
 assert.equal(appIcon.readUInt32BE(20), 512, "L'icône doit mesurer 512 px de haut");
 assert.match(packageJson.scripts.chromeos, /build-chromeos\.cjs/);
+for (const helpFile of ["help.html", "help.css", "help.js"]) {
+  assert.match(chromeosBuilder, new RegExp(`"${helpFile.replace(".", "\\.")}"`), `${helpFile} doit être copié dans le livrable ChromeOS`);
+}
+assert.match(chromeosBuilder, /"contact-core\.js"/, "Le moteur de contacts doit être copié dans le livrable ChromeOS");
+assert.match(chromeosBuilder, /fetch\(new URL\("help\.html", url\)\)[\s\S]*?helpPage\.ok[\s\S]*?text\/html/, "L’assembleur ChromeOS doit vérifier le centre d’aide livré");
 assert.match(packageJson.scripts.mac, /require-build-platform\.cjs darwin/);
 assert.match(packageJson.scripts.linux, /require-build-platform\.cjs linux/);
 

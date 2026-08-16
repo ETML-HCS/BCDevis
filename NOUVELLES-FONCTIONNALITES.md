@@ -2,9 +2,9 @@
 
 ## Statut du document
 
-- **Dernière mise à jour :** 5 août 2026
-- **Version de référence :** BCDevis 7.0.2
-- **État :** portefeuille fonctionnel réévalué après le suivi commercial V6 et la centralisation PostgreSQL V7
+- **Dernière mise à jour :** 6 août 2026
+- **Version de référence :** BCDevis 7.1.0
+- **État :** portefeuille réévalué après le verrouillage des devis terminaux, les V2, la bibliothèque Factures et le nommage lié des documents
 - **Documents associés :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md) et [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md)
 
 ## Orientation produit
@@ -23,19 +23,19 @@ Principes à préserver :
 
 ## État des propositions précédentes
 
-| Référence | Fonction | État en 7.0.2 | Manque principal |
+| Référence | Fonction | État en 7.1.0 | Manque principal |
 | --- | --- | --- | --- |
-| F1 | Cycle de vie du devis | **Largement livré en V6** | Archivage, verrouillage d’un devis accepté et création explicite d’une nouvelle version. |
-| F2 | Carnet clients | **Non commencé** | Modèle de données, doublons, fusion, anonymisation et synchronisation. |
+| F1 | Cycle de vie du devis | **Livré localement** | Recherche globale et actions de masse restent hors de ce cycle. |
+| F2 | Carnet clients | **Partiel livré localement** | Répertoire, recherche, détails, suppression, import/export, fusion, instantané par devis et synchronisation sont livrés ; anonymisation et gestion manuelle des conflits restent à définir. |
 | F3 | Relances | **Livré en V6** | Recherche globale et, si utile, vue planifiée plus détaillée. |
 | F4 | Modèles et favoris | **Partiel** | Un modèle JSON et la duplication existent ; pas de bibliothèque de modèles ni de favoris. |
-| F5 | Versions d’un devis | **Non commencé** | Version immuable, comparaison et lien entre versions. |
+| F5 | Versions d’un devis | **Partiel localement** | Verrouillage, V2 liée et lecture seule sont livrés ; comparaison et numéro de version dans le PDF restent à faire. |
 | F6 | Signature sur iPad | **Non commencé** | Validation juridique et protection de la signature. |
 | F7 | Plan de traitement | **Non commencé** | Décision produit à confirmer. |
 | F8 | Export de gestion | **Non commencé** | Schéma d’export, anonymisation et indicateurs retenus. |
 | F9 | Catalogue versionné | **Partiel** | L’éditeur de tuiles existe ; import de masse, date d’effet et historique tarifaire manquent. |
 | F10 | Sauvegarde et synchronisation | **Partiel en V7** | Synchronisation centrale livrée ; sauvegarde locale automatique chiffrée, administration et restauration serveur prouvée manquent. |
-| F11 | Partage natif | **Partiel** | E-mail avec pièce jointe sur Electron et canaux web existants ; partage natif de fichier à étudier sur PWA. |
+| F11 | Partage natif | **Partiel** | E-mail avec pièce jointe et dossier PDF configurable sur Electron ; partage natif de fichier à étudier sur PWA. |
 | F12 | Multilingue | **Non commencé** | Architecture de traduction et validation des textes commerciaux. |
 
 ## Priorité haute — terminer les parcours déjà engagés
@@ -81,14 +81,17 @@ Rendre l’historique efficace lorsqu’il contient plusieurs centaines de devis
 
 Éviter qu’un devis déjà envoyé ou accepté soit remplacé silencieusement.
 
-#### Fonctions proposées
+#### Avancement local du 5 août 2026
 
-- figer une version envoyée ou acceptée ;
-- créer une V2 liée à la version précédente ;
+Les devis acceptés, refusés, expirés ou passés en **Facture envoyée** sont maintenant en lecture seule. L’action **Créer une V2** recopie le contenu, attribue un nouveau numéro et conserve le lien avec la version précédente. La chronologie attribue les nouveaux événements à l’utilisateur et au poste disponibles.
+
+Lorsqu’une facture PDF est importée depuis un devis accepté, le devis sort du workflow actif et la facture rejoint une bibliothèque centrale séparée, où elle peut être consultée, téléchargée et imprimée. Son nom d’archive utilise le préfixe facture configurable tout en conservant la date, le poste et la séquence du devis. Un changement de statut seul ne génère aucun document.
+
+#### Fonctions restantes
+
 - comparer lignes, quantités, réductions, mentions et totaux ;
 - indiquer la version dans le PDF ;
-- conserver les anciennes versions en lecture seule ;
-- journaliser l’auteur et la date en mode central.
+- définir une politique de suppression ou de conservation des liens entre versions.
 
 ### F15. Sauvegardes guidées et vérifiables
 
@@ -109,12 +112,12 @@ Transformer la sauvegarde en fonction contrôlable, pas seulement en bouton d’
 
 ### F2. Carnet clients local ou central
 
-- Rechercher par nom, téléphone ou e-mail.
-- Créer ou sélectionner un client depuis le devis.
-- Conserver une copie des coordonnées dans chaque devis historique.
-- Détecter les doublons et proposer une fusion manuelle.
-- Permettre suppression ou anonymisation selon la politique de conservation.
-- Définir le comportement hors ligne et les conflits avant synchronisation.
+- **Livré :** recherche par nom, téléphone, e-mail, société, ville ou référence.
+- **Livré :** création, sélection, modification et suppression depuis le devis.
+- **Livré :** formulaire simple avec section détaillée facultative.
+- **Livré :** import/export CSV, vCard et JSON avec fusion automatique des doublons.
+- **Livré :** copie figée des coordonnées dans chaque devis historique et partage du répertoire par la synchronisation centrale.
+- **Restant :** anonymisation selon la politique de conservation et résolution manuelle d’un conflit portant sur la même fiche.
 
 Le carnet ne doit pas devenir un dossier médical. Aucune donnée clinique ne doit y être ajoutée implicitement.
 
@@ -155,7 +158,7 @@ Le carnet ne doit pas devenir un dossier médical. Aucune donnée clinique ne do
 
 ### F11. Partage natif de fichier
 
-Étudier l’API de partage disponible sur les plateformes PWA, avec repli clair vers les fonctions existantes. Aucun message ne doit être envoyé sans confirmation humaine.
+L’application Electron sait désormais choisir un dossier local pour les devis PDF et joindre le fichier depuis cet emplacement. Étudier encore l’API de partage disponible sur les plateformes PWA, avec repli clair vers les fonctions existantes. Le navigateur garde la maîtrise de ses téléchargements et aucun message ne doit être envoyé sans confirmation humaine.
 
 ### F12. Interface multilingue et PDF bilingue
 
@@ -165,7 +168,7 @@ Préparer une architecture de traduction stable, conserver les identifiants inte
 
 - dossier médical et notes cliniques détaillées ;
 - agenda complet ;
-- facturation et comptabilité ;
+- émission comptable, paiements, écritures et comptabilité complète ;
 - paiement automatique ;
 - envoi automatique de relances sans validation ;
 - exposition directe de PostgreSQL aux postes ;
@@ -182,8 +185,7 @@ Préparer une architecture de traduction stable, conserver les identifiants inte
 
 ### Étape 2 — Traçabilité commerciale
 
-- versions de devis ;
-- verrouillage après acceptation ;
+- comparaison des versions de devis et mention Vn dans le PDF ;
 - carnet clients ;
 - export de gestion.
 
