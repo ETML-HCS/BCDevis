@@ -1,7 +1,7 @@
-BCDevis 7.1.0 - Livrable pour Aleksandra
+BCDevis 7.1.1 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 7.1.0
+NOUVEAUTES 7.1.1
 
 - Réglages > Données contient un assistant pour préparer le passage de
   l'ancienne adresse web vers https://bcd.athys.ch/ sans perdre les devis.
@@ -32,18 +32,18 @@ NOUVEAUTES 7.1.0
 - Le bouton Aide ouvre un centre HTML recherchable, responsive et imprimable,
   disponible hors ligne sans Internet ni PostgreSQL. Les PDF d'aide deviennent
   des livrables de secours.
-- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.0.
+- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.1.
 
 CONTENU
 
 1-Windows
-  BCDevis-7.1.0.exe
+  BCDevis-7.1.1.exe
 
 2-Linux
-  BCDevis-7.1.0-linux-x86_64.AppImage
+  BCDevis-7.1.1-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-7.1.0-chromeos.zip
+  BCDevis-7.1.1-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -57,7 +57,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-7.1.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-7.1.1.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -71,14 +71,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-7.1.0-linux-x86_64.AppImage
-  ./BCDevis-7.1.0-linux-x86_64.AppImage
+  chmod +x BCDevis-7.1.1-linux-x86_64.AppImage
+  ./BCDevis-7.1.1-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-7.1.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-7.1.1-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

@@ -33,11 +33,11 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.1\.0";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "7\.1\.1";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.1\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.1\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 8, "L’écran des nouveautés doit présenter les huit familles de fonctions livrées");
 assert.match(html, /<strong>Nouvelle adresse sans perte<\/strong>[\s\S]*?<strong>Une caisse plus lisible<\/strong>[\s\S]*?<strong>Workflow, V2 et factures<\/strong>[\s\S]*?<strong>Affichage au choix<\/strong>[\s\S]*?<strong>Thème Blanc par défaut<\/strong>[\s\S]*?<strong>Travail multi-postes<\/strong>[\s\S]*?<strong>Documents PDF et Factures<\/strong>[\s\S]*?<strong>Confort tactile<\/strong>/, "Les nouveautés doivent résumer la migration, la caisse allégée, le workflow, l’affichage, le thème Blanc, la centralisation, les PDF et le tactile");
