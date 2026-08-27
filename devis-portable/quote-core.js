@@ -1,7 +1,7 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
-  root.QuoteCore = api;
+  else root.QuoteCore = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const roundMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));

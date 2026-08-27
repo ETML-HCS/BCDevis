@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.1";
-  const RELEASE_NOTES_REVISION = "7.1.1";
+  const RELEASE_VERSION = "7.1.2";
+  const RELEASE_NOTES_REVISION = "7.1.2";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
@@ -29,6 +29,11 @@
   const CART_SWIPE_START_THRESHOLD = 8;
   const LEGACY_DEFAULT_PAYMENT_CONDITIONS = "Le règlement peut s’effectuer à chaque séance ou par l’achat d’un pack. Les paiements sont acceptés par carte, en espèces, via TWINT, par virement bancaire ou par paiement échelonné. L’échelonnement est soumis à l’accord du partenaire financier.";
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
+  const DEFAULT_STUDENT_CONDITIONS = "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.";
+  const DEFAULT_FOOTER_NOTE = "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.";
+  const DEFAULT_PAYMENT_CONDITIONS_EN = "Payment is due as treatments are provided or upon purchase of a package. Accepted payment methods are payment cards, cash, TWINT and bank transfer. Any installment payment solution is subject to the prior acceptance of the financial partner.";
+  const DEFAULT_STUDENT_CONDITIONS_EN = "The student rate is granted upon presentation of a valid student ID.";
+  const DEFAULT_FOOTER_NOTE_EN = "Prices are expressed in Swiss francs. This quote is not an invoice.";
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const windowShell = new URLSearchParams(window.location.search).get("windowShell");
@@ -168,9 +173,10 @@
     trackingRemindersOnStartup: true,
     trackingShowCounters: true,
     conditions: DEFAULT_PAYMENT_CONDITIONS,
-    studentConditions: "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.",
-    footerNote: "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.",
+    studentConditions: DEFAULT_STUDENT_CONDITIONS,
+    footerNote: DEFAULT_FOOTER_NOTE,
     showSignatures: true,
+    pdfLanguage: "fr",
     centralUniqueQuoteNumbers: false
   };
 
@@ -755,6 +761,12 @@
       renderQuoteSaveState();
       return false;
     }
+  }
+
+  let saveLocalTimer = 0;
+  function scheduleSaveLocal() {
+    clearTimeout(saveLocalTimer);
+    saveLocalTimer = setTimeout(() => saveLocal(), 200);
   }
 
   function showReleaseNotesOnce() {
@@ -2833,7 +2845,7 @@
     expireTrackedQuotes();
     const list = $("#historyList");
     const enabled = trackingEnabled();
-    let quotes = Object.values(db.quotes).map((item) => ({ ...item, tracking: sanitizeTracking(item.tracking, item.createdAt) }));
+    let quotes = Object.values(db.quotes);
     renderTrackingNavigation(quotes);
     if (enabled && activeHistoryView === "tracking") {
       quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter));
@@ -3531,33 +3543,74 @@
     return "print-layout-extended";
   }
 
-  function defaultLogoForPrint() {
-    return DEFAULT_LOGO_PATH;
+  function pdfEnglish() {
+    return db.settings.pdfLanguage === "en";
+  }
+
+  function printOfferLabel(line) {
+    if (pdfEnglish()) {
+      if (line.offerType === "pack") return `Pack ${line.quantity} + ${line.freeQuantity} free`;
+      if (line.offerType === "student") return "Student rate";
+      return "Single session";
+    }
+    return offerLabel(line);
+  }
+
+  function printCategoryName(category) {
+    if (!pdfEnglish()) return category.name;
+    const englishNames = {
+      13: "Laser hair removal",
+      32: "Microneedling · Mesotherapy · Peels",
+      7: "Initial consultation",
+      16: "Injection treatments",
+      17: "Laser treatments",
+      35: "Combined areas",
+      15: "Electrolysis hair removal",
+      9: "Aesthetic medicine with Dr. Poiraud",
+      20: "Face",
+      8: "Permanent hair removal",
+      21: "Chest and abdomen",
+      22: "Back",
+      23: "Arms",
+      24: "Bikini (intimate area)",
+      25: "Legs",
+      36: "Students"
+    };
+    return englishNames[category.id] || category.name;
   }
 
   function renderPrint() {
     const totals = calculateQuote(quote);
     const taxEnabled = taxInformationEnabled(quote);
     const settings = db.settings;
+    const en = pdfEnglish();
     const client = quote.client;
     const months = installmentMonths(totals.total);
     const contact = [settings.companyPhone, settings.companyEmail].filter(Boolean).join(" · ");
     const clientContact = [client.phone, client.email].filter(Boolean).join(" · ");
-    const clientAddress = [client.address, [client.postalCode, client.city].filter(Boolean).join(" "), client.country].filter(Boolean).join("<br>");
+    const clientAddressParts = [client.address, [client.postalCode, client.city].filter(Boolean).join(" "), client.country].filter(Boolean).map(escapeHTML);
     const rows = quote.lines.map((line) => {
-      const quantityLabel = line.offerType === "pack" ? `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}` : String(line.quantity);
+      const quantityLabel = line.offerType === "pack"
+        ? (en ? `${line.quantity} paid + ${line.freeQuantity} free` : `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}`)
+        : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
-      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${escapeHTML(offerLabel(line))} · ${escapeHTML(categoryFor(line.categoryId).name)}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(referenceLineTotal(line))}</td></tr>`;
+      const meta = `${escapeHTML(printOfferLabel(line))} · ${escapeHTML(printCategoryName(categoryFor(line.categoryId)))}`;
+      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${meta}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(referenceLineTotal(line))}</td></tr>`;
     }).join("");
-    const studentConditions = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
+    const studentConditionsSource = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
+    const studentConditions = en && studentConditionsSource === DEFAULT_STUDENT_CONDITIONS ? DEFAULT_STUDENT_CONDITIONS_EN : studentConditionsSource;
+    const conditionsSource = String(quote.conditions || settings.conditions);
+    const conditions = en && (conditionsSource === DEFAULT_PAYMENT_CONDITIONS || conditionsSource === LEGACY_DEFAULT_PAYMENT_CONDITIONS) ? DEFAULT_PAYMENT_CONDITIONS_EN : conditionsSource;
+    const footerNoteSource = String(settings.footerNote || "").trim();
+    const footerNote = en && footerNoteSource === DEFAULT_FOOTER_NOTE ? DEFAULT_FOOTER_NOTE_EN : footerNoteSource;
     const customLogoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl);
-    const logoSource = customLogoSource || defaultLogoForPrint();
+    const logoSource = customLogoSource || DEFAULT_LOGO_PATH;
     const logoClass = customLogoSource ? "print-logo print-logo-custom" : "print-logo print-logo-official";
-    const brandCopy = customLogoSource ? `<div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || "Établissement")}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div>` : "";
+    const brandCopy = customLogoSource ? `<div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || (en ? "Establishment" : "Établissement"))}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div>` : "";
     const signatureBlock = settings.showSignatures !== false
-      ? `<div class="print-signature"><div><span>Date et lieu</span></div><div><span>Signature du client et mention « Bon pour accord »</span></div></div>`
+      ? `<div class="print-signature"><div><span>${en ? "Date and place" : "Date et lieu"}</span></div><div><span>${en ? "Client signature and “Approved” mention" : "Signature du client et mention « Bon pour accord »"}</span></div></div>`
       : "";
-    const totalLabel = taxEnabled ? "Total à payer TTC" : "Total à payer";
+    const totalLabel = taxEnabled ? (en ? "Total to pay incl. VAT" : "Total à payer TTC") : (en ? "Total to pay" : "Total à payer");
     const printRoot = $("#printQuote");
     const layoutClass = printLayoutClass(totals, months, studentConditions);
     printRoot.className = `print-quote ${layoutClass}`;
@@ -3565,28 +3618,28 @@
     printRoot.innerHTML = `
       <header class="print-header">
         <div class="print-brand"><img class="${logoClass}" src="${escapeHTML(logoSource)}" alt="">${brandCopy}</div>
-        <div class="print-company-lines"><span class="print-contact-label">Coordonnées</span>${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>IDE : ${escapeHTML(settings.companyUid)}` : ""}</div>
+        <div class="print-company-lines"><span class="print-contact-label">${en ? "Contact details" : "Coordonnées"}</span>${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>${en ? "UID" : "IDE"} : ${escapeHTML(settings.companyUid)}` : ""}</div>
       </header>
-      <section class="print-hero"><div><h1>DEVIS</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
+      <section class="print-hero"><div><h1>${en ? "QUOTE" : "DEVIS"}</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
       <div class="print-overview">
-        <div class="print-card print-client-card"><div class="print-label">Destinataire</div><div class="print-client-name">${escapeHTML(client.name || "Destinataire non renseigné")}</div><div class="print-muted">${client.company ? `${escapeHTML(client.company)}<br>` : ""}${escapeHTML(clientContact || "Coordonnées non renseignées")}${clientAddress ? `<br>${clientAddress.split("<br>").map(escapeHTML).join("<br>")}` : ""}</div></div>
-        <div class="print-card"><div class="print-label">Références</div><div class="print-reference-grid"><span>Date du devis</span><span>${formatDate(quote.date)}</span><span>Valable jusqu’au</span><span>${formatDate(quote.validUntil)}</span><span>Devise</span><span>CHF</span></div></div>
+        <div class="print-card print-client-card"><div class="print-label">${en ? "Client" : "Destinataire"}</div><div class="print-client-name">${escapeHTML(client.name || (en ? "Client not specified" : "Destinataire non renseigné"))}</div><div class="print-muted">${client.company ? `${escapeHTML(client.company)}<br>` : ""}${escapeHTML(clientContact || (en ? "Contact details not provided" : "Coordonnées non renseignées"))}${clientAddressParts.length ? `<br>${clientAddressParts.join("<br>")}` : ""}</div></div>
+        <div class="print-card"><div class="print-label">${en ? "References" : "Références"}</div><div class="print-reference-grid"><span>${en ? "Quote date" : "Date du devis"}</span><span>${formatDate(quote.date)}</span><span>${en ? "Valid until" : "Valable jusqu’au"}</span><span>${formatDate(quote.validUntil)}</span><span>${en ? "Currency" : "Devise"}</span><span>CHF</span></div></div>
       </div>
       <section class="print-services">
-        <div class="print-section-heading"><div><strong>Soins</strong></div></div>
-        <table class="print-table"><thead><tr><th>Soin</th><th>Quantité</th><th>Prix unitaire</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="print-section-heading"><div><strong>${en ? "Treatments" : "Soins"}</strong></div></div>
+        <table class="print-table"><thead><tr><th>${en ? "Treatment" : "Soin"}</th><th>${en ? "Quantity" : "Quantité"}</th><th>${en ? "Unit price" : "Prix unitaire"}</th><th>${en ? "Total" : "Total"}</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
-        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>Total avant offres</td><td>${money(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>Rabais total</td><td>− ${money(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>Net HT</td><td>${money(totals.net)}</td></tr><tr><td>TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${en ? "Total before offers" : "Total avant offres"}</td><td>${money(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${en ? "Total discount" : "Rabais total"}</td><td>− ${money(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${en ? "Net excl. VAT" : "Net HT"}</td><td>${money(totals.net)}</td></tr><tr><td>${en ? "VAT" : "TVA"} ${totals.rate} %${quote.tax.mode === "included" ? (en ? " included" : " incluse") : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
         <section class="print-followup">
-          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>Modalités de paiement</strong></div></div><p class="print-installment-intro">Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier.</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} mois</b><span>${money(totals.total / month)}</span><small>mensualité indicative</small></div>`).join("")}</div>` : ""}
+          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${en ? "Payment terms" : "Modalités de paiement"}</strong></div></div><p class="print-installment-intro">${en ? "The installments shown below are indicative. Any installment plan is subject to prior acceptance by the financial partner." : "Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier."}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${en ? "months" : "mois"}</b><span>${money(totals.total / month)}</span><small>${en ? "indicative installment" : "mensualité indicative"}</small></div>`).join("")}</div>` : ""}
           <div class="print-legal-block">
-            <div class="print-section-heading print-legal-heading"><div><strong>Conditions et acceptation</strong></div></div>
-            <div class="print-conditions print-conditions-single"><div><strong>Conditions de règlement</strong>${escapeHTML(quote.conditions || settings.conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>Conditions du tarif étudiant</strong>${escapeHTML(studentConditions)}</div>` : ""}${settings.footerNote ? `<div class="print-legal-note">${escapeHTML(settings.footerNote)}</div>` : ""}</div></div>
+            <div class="print-section-heading print-legal-heading"><div><strong>${en ? "Terms and acceptance" : "Conditions et acceptation"}</strong></div></div>
+            <div class="print-conditions print-conditions-single"><div><strong>${en ? "Payment conditions" : "Conditions de règlement"}</strong>${escapeHTML(conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>${en ? "Student rate conditions" : "Conditions du tarif étudiant"}</strong>${escapeHTML(studentConditions)}</div>` : ""}${footerNote ? `<div class="print-legal-note">${escapeHTML(footerNote)}</div>` : ""}</div></div>
             ${signatureBlock}
           </div>
         </section>
-        <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>Valable jusqu’au ${formatDate(quote.validUntil)}</span></footer>
+        <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>${en ? "Valid until" : "Valable jusqu’au"} ${formatDate(quote.validUntil)}</span></footer>
       </div>`;
   }
 
@@ -3829,6 +3882,20 @@
 
   function transmissionMenuItems() {
     return $$('[role="menuitem"]:not([disabled])', $("#checkoutTransmissionMenu"));
+  }
+
+  function handleMenuKeydown(event, getItems) {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = getItems();
+    const index = items.indexOf(document.activeElement);
+    let nextIndex = -1;
+    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
+    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    items[nextIndex]?.focus();
   }
 
   function syncContextMenuState() {
@@ -4337,10 +4404,10 @@
     const code = String(event.target.value || "").toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 24);
     event.target.value = code;
     quote.discount.code = code;
-    saveLocal();
+    scheduleSaveLocal();
     renderTotals();
   });
-  $("#discountValue").addEventListener("input", (event) => { if (!ensureQuoteEditable()) return; quote.discount.value = Math.max(0, Number(event.target.value) || 0); saveLocal(); renderCheckout(); });
+  $("#discountValue").addEventListener("input", (event) => { if (!ensureQuoteEditable()) return; quote.discount.value = Math.max(0, Number(event.target.value) || 0); scheduleSaveLocal(); renderCheckout(); });
   $("#couponToggle").addEventListener("click", () => {
     if (!ensureQuoteEditable()) return;
     couponOpen = true;
@@ -4544,16 +4611,7 @@
     setTransmissionMenuOpen(true, { focusFirst: true });
   });
   $("#checkoutTransmissionMenu").addEventListener("keydown", (event) => {
-    const items = transmissionMenuItems();
-    const index = items.indexOf(document.activeElement);
-    let nextIndex = -1;
-    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
-    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = items.length - 1;
-    if (nextIndex < 0) return;
-    event.preventDefault();
-    items[nextIndex]?.focus();
+    handleMenuKeydown(event, transmissionMenuItems);
   });
   $("#checkoutWhatsAppButton").addEventListener("click", () => {
     setTransmissionMenuOpen(false);
@@ -4830,6 +4888,7 @@
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
       showSignatures: data.has("showSignatures"),
+      pdfLanguage: data.get("pdfLanguage") === "en" ? "en" : "fr",
       centralUniqueQuoteNumbers: uniqueNumberingRequested
     };
     if (!quote.conditions || quote.conditions === oldConditions) quote.conditions = db.settings.conditions;
@@ -4865,16 +4924,7 @@
     setAppMenuOpen(true, { focusFirst: true });
   });
   $("#appActionsMenu").addEventListener("keydown", (event) => {
-    const items = appMenuItems();
-    const index = items.indexOf(document.activeElement);
-    let nextIndex = -1;
-    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
-    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = items.length - 1;
-    if (nextIndex < 0) return;
-    event.preventDefault();
-    items[nextIndex]?.focus();
+    handleMenuKeydown(event, appMenuItems);
   });
   $("#appActionsMenu").addEventListener("click", (event) => {
     const button = event.target.closest("[data-app-action]");
@@ -4969,16 +5019,7 @@
     setQuoteMenuOpen(true, { focusFirst: true });
   });
   $("#quoteActionMenu").addEventListener("keydown", (event) => {
-    const items = quoteMenuItems();
-    const index = items.indexOf(document.activeElement);
-    let nextIndex = -1;
-    if (event.key === "ArrowDown") nextIndex = index < 0 ? 0 : (index + 1) % items.length;
-    if (event.key === "ArrowUp") nextIndex = index < 0 ? items.length - 1 : (index - 1 + items.length) % items.length;
-    if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = items.length - 1;
-    if (nextIndex < 0) return;
-    event.preventDefault();
-    items[nextIndex]?.focus();
+    handleMenuKeydown(event, quoteMenuItems);
   });
   $("#quoteActionMenu").addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");

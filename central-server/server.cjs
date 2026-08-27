@@ -4,11 +4,12 @@ const http = require("node:http");
 const { CentralDatabase } = require("./database.cjs");
 const { duplicateQuoteNumbers, emptySnapshot, mergeSnapshots, normalizeSnapshot, same } = require("./sync-merge.cjs");
 
-const SERVER_VERSION = "7.1.1";
+const SERVER_VERSION = "7.1.2";
 const API_PREFIX = "/api/v1";
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
 const DEVICE_ID_PATTERN = /^[A-Za-z0-9_-]{8,128}$/;
+const DOCUMENT_CONTENT_PATTERN = /^\/api\/v1\/documents\/([A-Za-z0-9_-]{8,128})\/content$/;
 
 function json(response, status, payload, extraHeaders = {}) {
   const body = JSON.stringify(payload);
@@ -234,7 +235,7 @@ function startCentralServer(options = {}) {
         return;
       }
 
-      const documentContentMatch = url.pathname.match(new RegExp(`^${API_PREFIX}/documents/([A-Za-z0-9_-]{8,128})/content$`));
+      const documentContentMatch = url.pathname.match(DOCUMENT_CONTENT_PATTERN);
       if (request.method === "GET" && documentContentMatch) {
         const document = await database.document(session.organization_id, documentContentMatch[1]);
         if (!document) {

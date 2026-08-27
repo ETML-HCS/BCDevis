@@ -166,7 +166,12 @@
   }
 
   function vcardUnescape(value) {
-    return String(value || "").replace(/\\n/gi, "\n").replace(/\\,/g, ",").replace(/\\;/g, ";").replace(/\\\\/g, "\\");
+    return String(value || "")
+      .replace(/\\\\/g, "\x00")
+      .replace(/\\n/gi, "\n")
+      .replace(/\\,/g, ",")
+      .replace(/\\;/g, ";")
+      .replace(/\x00/g, "\\");
   }
 
   function vcardEscape(value) {

@@ -61,6 +61,7 @@
 
   search?.addEventListener("input", filterTopics);
   document.querySelector("#clearHelpSearch")?.addEventListener("click", () => {
+    if (!search) return;
     search.value = "";
     filterTopics();
     search.focus();
@@ -101,7 +102,7 @@
         search.focus();
         return;
       }
-      if (window.parent !== window) window.parent.postMessage({ type: "bcdevis-help-close" }, "*");
+      if (window.parent !== window) window.parent.postMessage({ type: "bcdevis-help-close" }, window.location.origin);
     }
   });
 

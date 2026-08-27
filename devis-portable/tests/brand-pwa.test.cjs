@@ -48,7 +48,7 @@ assert.match(styles, /--sans:"Red Hat Display","Roboto",Arial,sans-serif/);
 assert.match(styles, /\.print-hero h1\{[^}]*font-weight:800/);
 assert.match(styles, /\.print-client-card \.print-label\{font-weight:600\}/);
 assert.match(styles, /\.print-contact-label\{[^}]*font-weight:600/);
-assert.match(appSource, /<h1>DEVIS<\/h1>/);
+assert.match(appSource, /<h1>\$\{en \? "QUOTE" : "DEVIS"\}<\/h1>/);
 assert.match(appSource, /settings\.showSignatures !== false/);
 const printItemMetaTemplate = appSource.match(/<span class="print-item-meta">([\s\S]*?)<\/span>/)?.[1] || "";
 assert.ok(printItemMetaTemplate, "Le détail secondaire des prestations doit être présent dans le PDF");

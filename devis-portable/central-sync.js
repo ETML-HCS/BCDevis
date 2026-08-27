@@ -14,7 +14,7 @@
     "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
     "studentDiscount", "taxRate", "taxMode", "showTaxInformation", "visibleFamilies", "quoteDateEditable",
     "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowCounters",
-    "conditions", "studentConditions", "footerNote", "showSignatures", "centralUniqueQuoteNumbers"
+    "conditions", "studentConditions", "footerNote", "showSignatures", "pdfLanguage", "centralUniqueQuoteNumbers"
   ];
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -101,6 +101,7 @@
 
   function applySharedSnapshot(database, snapshot) {
     if (!isRecord(database) || !isRecord(snapshot)) throw new Error("La réponse centrale ne contient pas une base compatible.");
+    if (snapshot.schemaVersion !== undefined && Number(snapshot.schemaVersion) !== SCHEMA_VERSION) throw new Error("Version de schéma central incompatible.");
     const source = sharedSnapshot(snapshot);
     database.quoteCounters = source.quoteCounters;
     database.settings = { ...(database.settings || {}), ...source.settings };
@@ -157,6 +158,8 @@
         config.quoteNumberPool = [];
         config.deviceCode = "";
         config.revision = 0;
+        config.token = "";
+        config.tokenExpiresAt = "";
       }
       persist();
       if (patch.enabled === true && state.status === "local") publish({ status: "disconnected", message: "Centralisation activée · identification requise", conflicts: [] });

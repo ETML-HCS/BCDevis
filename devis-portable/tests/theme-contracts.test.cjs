@@ -33,14 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.1\.1";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "7\.1\.2";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.2";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.1\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.1\.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
-assert.equal((releaseNotesList.match(/<li>/g) || []).length, 8, "L’écran des nouveautés doit présenter les huit familles de fonctions livrées");
-assert.match(html, /<strong>Nouvelle adresse sans perte<\/strong>[\s\S]*?<strong>Une caisse plus lisible<\/strong>[\s\S]*?<strong>Workflow, V2 et factures<\/strong>[\s\S]*?<strong>Affichage au choix<\/strong>[\s\S]*?<strong>Thème Blanc par défaut<\/strong>[\s\S]*?<strong>Travail multi-postes<\/strong>[\s\S]*?<strong>Documents PDF et Factures<\/strong>[\s\S]*?<strong>Confort tactile<\/strong>/, "Les nouveautés doivent résumer la migration, la caisse allégée, le workflow, l’affichage, le thème Blanc, la centralisation, les PDF et le tactile");
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit présenter les trois familles de fonctions livrées");
+assert.match(html, /<strong>PDF en anglais<\/strong>[\s\S]*?<strong>Contacts vCard fiabilisés<\/strong>[\s\S]*?<strong>Synchronisation plus fiable<\/strong>/, "Les nouveautés doivent résumer le PDF en anglais, l’import vCard et la synchronisation centrale");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -171,7 +171,7 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3>(?:<button[^>]*>[\s\S]*?<\/button>)?<\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "Fichiers PDF", "TVA", "Offres", "Date du devis", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "Fichiers PDF", "TVA", "Offres", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
@@ -193,6 +193,9 @@ assert.match(html, /name="quoteDateEditable"[\s\S]*?<use href="#icon-clock">/, "
 assert.match(html, /name="showTaxInformation"[\s\S]*?<use href="#icon-percent">/, "Le réglage TVA doit utiliser un pictogramme explicite");
 assert.match(html, /name="showSignatures"[\s\S]*?<use href="#icon-signature">/, "Le réglage des signatures doit utiliser un pictogramme explicite");
 assert.match(html, /name="showSignatures" type="checkbox"[\s\S]*?<strong>Zones de signature<\/strong>[\s\S]*?Date et lieu/, "Le réglage des signatures doit expliquer son effet sur le devis");
+assert.match(html, /name="pdfLanguage"[\s\S]*?<option value="fr">Français<\/option>[\s\S]*?<option value="en">English<\/option>/, "Le réglage de langue doit proposer Français et English pour le PDF");
+assert.match(app, /pdfLanguage: "fr"/, "Le PDF doit rester en français par défaut");
+assert.match(app, /function pdfEnglish\(\)[\s\S]*?db\.settings\.pdfLanguage === "en"/, "Le rendu du PDF doit pouvoir basculer en anglais");
 assert.doesNotMatch(html, /class="checkbox-field full-field"><input[^>]*name="(?:showTaxInformation|showSignatures)"/, "Les deux réglages ne doivent plus ressembler à des cases à cocher génériques");
 assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:checked\)/, "La carte doit rendre son état actif immédiatement visible");
 assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:focus-visible\)/, "Le nouveau contrôle doit conserver un focus clavier visible");
@@ -209,7 +212,7 @@ assert.match(
 );
 assert.match(
   app,
-  /<tr><td>Total avant offres<\/td>[\s\S]*?<td>Rabais total<\/td>[\s\S]*?Total à payer/,
+  /<tr><td>\$\{en \? "Total before offers" : "Total avant offres"\}<\/td>[\s\S]*?"Total discount" : "Rabais total"[\s\S]*?Total à payer/,
   "Le PDF doit reprendre le même récapitulatif commercial que la caisse"
 );
 assert.match(

@@ -56,6 +56,21 @@ class CentralDatabase {
     await this.pool.query(fs.readFileSync(this.schemaPath, "utf8"));
   }
 
+  async withTransaction(work) {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await work(client);
+      await client.query("COMMIT");
+      return result;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async health() {
     const result = await this.pool.query("SELECT 1 AS ready");
     return result.rows[0]?.ready === 1;
@@ -70,21 +85,13 @@ class CentralDatabase {
     const organizationId = identifier();
     const userId = identifier();
     const createdAt = now();
-    const client = await this.pool.connect();
-    try {
-      await client.query("BEGIN");
+    return this.withTransaction(async (client) => {
       await client.query("INSERT INTO organizations (id, name, created_at) VALUES ($1, $2, $3)", [organizationId, String(organizationName || "Clinique Bellecour"), createdAt]);
       await client.query("INSERT INTO users (id, organization_id, email, password_hash, role, created_at) VALUES ($1, $2, $3, $4, 'admin', $5)", [userId, organizationId, email, passwordHash(adminPassword), createdAt]);
       await client.query("INSERT INTO workspace_state (organization_id, revision, updated_at) VALUES ($1, 0, $2)", [organizationId, createdAt]);
       await client.query("INSERT INTO audit_log (organization_id, user_id, action, revision, details, created_at) VALUES ($1, $2, 'server.bootstrap', 0, $3::jsonb, $4)", [organizationId, userId, JSON.stringify({ email }), createdAt]);
-      await client.query("COMMIT");
       return true;
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async login({ email, password, deviceId, deviceName, sessionDays = 30 }) {
@@ -95,14 +102,9 @@ class CentralDatabase {
     `, [normalizeEmail(email)]);
     const user = userResult.rows[0];
     if (!user || !passwordMatches(password, user.password_hash)) return null;
-    const client = await this.pool.connect();
-    try {
-      await client.query("BEGIN");
+    return this.withTransaction(async (client) => {
       const knownDevice = (await client.query("SELECT * FROM devices WHERE id = $1 FOR UPDATE", [deviceId])).rows[0];
-      if (knownDevice && knownDevice.organization_id !== user.organization_id) {
-        await client.query("ROLLBACK");
-        return null;
-      }
+      if (knownDevice && knownDevice.organization_id !== user.organization_id) return null;
       const seenAt = now();
       let device = knownDevice;
       if (!device) {
@@ -122,7 +124,6 @@ class CentralDatabase {
       await client.query("DELETE FROM sessions WHERE expires_at <= $1", [seenAt]);
       await client.query("INSERT INTO sessions (token_hash, user_id, device_id, expires_at, created_at, last_seen_at) VALUES ($1, $2, $3, $4, $5, $6)", [tokenHash(token), user.id, device.id, expiresAt, seenAt, seenAt]);
       await client.query("INSERT INTO audit_log (organization_id, user_id, device_id, action, details, created_at) VALUES ($1, $2, $3, 'auth.login', $4::jsonb, $5)", [user.organization_id, user.id, device.id, JSON.stringify({ email: user.email }), seenAt]);
-      await client.query("COMMIT");
       return {
         token,
         expiresAt,
@@ -130,12 +131,7 @@ class CentralDatabase {
         organization: { id: user.organization_id, name: user.organization_name },
         device: { id: device.id, name: device.name, code: device.code }
       };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async authenticate(token) {
@@ -218,9 +214,7 @@ class CentralDatabase {
   async commitSync({ session, snapshot, previousRevision, action, details }) {
     const synchronizedAt = now();
     const normalized = normalizeSnapshot(snapshot);
-    const client = await this.pool.connect();
-    try {
-      await client.query("BEGIN");
+    return this.withTransaction(async (client) => {
       const state = (await client.query("SELECT revision FROM workspace_state WHERE organization_id = $1 FOR UPDATE", [session.organization_id])).rows[0];
       if (Number(state.revision) !== Number(previousRevision)) throw Object.assign(new Error("La base centrale a changé pendant la synchronisation."), { code: "CENTRAL_RETRY" });
       const current = await this.workspace(session.organization_id, client);
@@ -232,14 +226,8 @@ class CentralDatabase {
       }
       await client.query("UPDATE devices SET last_revision = $1, last_snapshot = $2::jsonb, last_seen_at = $3 WHERE id = $4", [revision, JSON.stringify(normalized), synchronizedAt, session.device_id]);
       await client.query("INSERT INTO audit_log (organization_id, user_id, device_id, action, revision, details, created_at) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)", [session.organization_id, session.user_id, session.device_id, action, revision, JSON.stringify(details || {}), synchronizedAt]);
-      await client.query("COMMIT");
       return { revision, synchronizedAt, changed };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async audit(organizationId, limit = 50) {
@@ -256,10 +244,8 @@ class CentralDatabase {
   }
 
   async reserveQuoteNumbers({ session, prefix, quoteDay, count }) {
-    const client = await this.pool.connect();
     const reservedAt = now();
-    try {
-      await client.query("BEGIN");
+    return this.withTransaction(async (client) => {
       const result = await client.query(`
         INSERT INTO quote_number_sequences (organization_id, prefix, quote_day, next_value)
         VALUES ($1, $2, $3, $4)
@@ -279,19 +265,13 @@ class CentralDatabase {
         INSERT INTO audit_log (organization_id, user_id, device_id, action, details, created_at)
         VALUES ($1, $2, $3, 'quote_numbers.reserve', $4::jsonb, $5)
       `, [session.organization_id, session.user_id, session.device_id, JSON.stringify({ prefix, quoteDay, firstValue, lastValue }), reservedAt]);
-      await client.query("COMMIT");
       return {
         prefix,
         quoteDay,
         numbers: Array.from({ length: count }, (_, index) => `${prefix}-${quoteDay}C${String(firstValue + index).padStart(6, "0")}`),
         reservedAt
       };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+    });
   }
 
   async listDocuments(organizationId, limit = 250) {

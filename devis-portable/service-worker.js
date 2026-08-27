@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v7.1.1-touch-ipad-smartphone-documents-help-contacts";
+const CACHE_NAME = "bcdevis-pwa-v7.1.2-touch-ipad-smartphone-documents-help-contacts";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -33,8 +33,13 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(async (cache) => {
+      const results = await Promise.allSettled(APP_SHELL.map((url) => cache.add(url)));
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length) console.warn("Service worker: certains fichiers n'ont pas été mis en cache.", failed.length);
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -73,7 +78,7 @@ self.addEventListener("fetch", (event) => {
         refreshed.catch(() => {});
         return cached;
       }
-      return refreshed;
+      return refreshed.catch(() => caches.match("./index.html"));
     })
   );
 });
