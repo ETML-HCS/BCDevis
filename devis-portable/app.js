@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.4";
-  const RELEASE_NOTES_REVISION = "7.1.4";
+  const RELEASE_VERSION = "7.1.5";
+  const RELEASE_NOTES_REVISION = "7.1.5";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
@@ -3908,6 +3908,13 @@
     if (action) action.setAttribute("aria-label", english ? "PDF en anglais — cliquer pour passer en français" : "PDF en français — cliquer pour passer en anglais");
   }
 
+  function togglePdfLanguage() {
+    db.settings.pdfLanguage = db.settings.pdfLanguage === "en" ? "fr" : "en";
+    saveLocal();
+    syncPdfLanguageMenu();
+    toast(db.settings.pdfLanguage === "en" ? "PDF du devis en anglais" : "PDF du devis en français");
+  }
+
   function transmissionMenuItems() {
     return $$('[role="menuitem"]:not([disabled])', $("#checkoutTransmissionMenu"));
   }
@@ -5055,12 +5062,7 @@
     if (!button) return;
     const action = button.dataset.action;
     setQuoteMenuOpen(false, { restoreFocus: true });
-    if (action === "pdf-language") {
-      db.settings.pdfLanguage = db.settings.pdfLanguage === "en" ? "fr" : "en";
-      saveLocal();
-      syncPdfLanguageMenu();
-      toast(db.settings.pdfLanguage === "en" ? "PDF du devis en anglais" : "PDF du devis en français");
-    }
+    if (action === "pdf-language") togglePdfLanguage();
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
@@ -5085,7 +5087,17 @@
   window.addEventListener("blur", closeContextMenus);
 
   $("#quoteImportInput").addEventListener("change", async (event) => {
-    try { const payload = await readJSONFile(event.target); if (!payload) return; quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload)); couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0); if (!saveLocal()) return; renderAll(); toast("Devis importé"); }
+    try {
+      const payload = await readJSONFile(event.target);
+      if (!payload) return;
+      quote = giveImportedQuoteANewIdentityIfNeeded(sanitizeQuote(payload.quote || payload));
+      couponOpen = Boolean(quote.discount.code || Number(quote.discount.value) > 0);
+      // Un devis exporté alors qu’il était enregistré revient « Enregistré » dans Mes devis.
+      if (quote.status === "saved" && quote.lines.length) db.quotes[quote.id] = clone(quote);
+      if (!saveLocal()) return;
+      renderAll(); renderHistory();
+      toast("Devis importé");
+    }
     catch (error) { toast(error.message || "Import impossible", "error"); }
   });
 
@@ -5217,6 +5229,7 @@
     if (command && !event.altKey && !event.shiftKey && key === "o") { event.preventDefault(); closeMenusForShortcut(); $("#quoteImportInput").click(); return; }
     if (command && !event.altKey && !event.shiftKey && key === "e") { event.preventDefault(); closeMenusForShortcut(); exportQuote(); return; }
     if (command && !event.altKey && !event.shiftKey && key === "p") { event.preventDefault(); closeMenusForShortcut(); printQuote(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "l") { event.preventDefault(); closeMenusForShortcut(); togglePdfLanguage(); return; }
     if (command && !event.altKey && event.shiftKey && key === "s") { event.preventDefault(); closeMenusForShortcut(); downloadPdf(); return; }
     if (command && event.altKey && !event.shiftKey && event.code === "KeyW") { event.preventDefault(); closeMenusForShortcut(); shareQuoteViaWhatsApp(); return; }
     if (command && !event.altKey && !event.shiftKey && event.key === ",") { event.preventDefault(); closeMenusForShortcut(); openSettingsLayer(); return; }

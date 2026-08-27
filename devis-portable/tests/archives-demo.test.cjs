@@ -33,3 +33,6 @@ assert.match(app, /Aucun devis enregistré/, "Le centre doit nommer clairement l
 assert.match(html, /id="quoteDate" type="date"/, "Le devis doit disposer d’un champ de date");
 assert.match(app, /quoteDateEditable: false/, "La date du devis doit être verrouillée par défaut");
 assert.match(app, /const validISODate = \(value, fallback = todayISO\(\)\)/, "Une date ISO valide doit être acceptée, y compris une date passée");
+
+// Importer un devis exporté « Enregistré » le replace dans le centre.
+assert.match(app, /quote\.status === "saved" && quote\.lines\.length\) db\.quotes\[quote\.id\] = clone\(quote\)/, "Un devis importé enregistré doit revenir « Enregistré » dans Mes devis");

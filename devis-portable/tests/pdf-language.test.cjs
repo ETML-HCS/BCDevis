@@ -34,7 +34,9 @@ assert.match(app, /function syncPdfLanguageMenu\(\)[\s\S]*?PDF : \$\{english \? 
 
 // Un clic bascule la langue, la mémorise et resynchronise le libellé.
 assert.match(app, /db\.settings\.pdfLanguage = db\.settings\.pdfLanguage === "en" \? "fr" : "en"/, "Un clic doit basculer la langue du PDF");
-assert.match(app, /if \(action === "pdf-language"\)[\s\S]*?saveLocal\(\)[\s\S]*?syncPdfLanguageMenu\(\)/, "La bascule doit être mémorisée et synchronisée");
+assert.match(app, /function togglePdfLanguage\(\)[\s\S]*?saveLocal\(\)[\s\S]*?syncPdfLanguageMenu\(\)/, "La bascule doit être factorisée en une fonction réutilisable");
+assert.match(app, /if \(action === "pdf-language"\) togglePdfLanguage\(\)/, "Le menu doit appeler la bascule factorisée");
+assert.match(app, /key === "l"\) \{ event\.preventDefault\(\); closeMenusForShortcut\(\); togglePdfLanguage\(\)/, "Le raccourci Ctrl+L doit basculer la langue du PDF");
 
 // Le menu rafraîchit son libellé à chaque ouverture.
 assert.match(app, /function setQuoteMenuOpen\(open[\s\S]*?if \(open\) \{\s*syncPdfLanguageMenu\(\)/, "L’ouverture du menu doit rafraîchir le libellé de langue");

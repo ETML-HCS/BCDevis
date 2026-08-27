@@ -27,7 +27,7 @@ assert.match(app, /event\.key === "ArrowDown"/, "Le menu Actions doit accepter l
 assert.match(app, /data-logo-picker/, "Le choix de logo doit être atteignable au clavier");
 assert.match(html, /id="helpLayer"[\s\S]*?<iframe id="helpFrame" src="help\.html#overview"/, "Le centre d’aide doit être accessible dans l’interface");
 assert.doesNotMatch(html, /id="shortcutHelpLayer"|class="shortcut-group"/, "L’ancienne aide dupliquée ne doit plus rester dans index.html");
-assert.equal((help.match(/<div><dt><kbd>/g) || []).length, 16, "Les seize raccourcis actifs doivent rester documentés dans la source HTML unique");
+assert.equal((help.match(/<div><dt><kbd>/g) || []).length, 17, "Les dix-sept raccourcis actifs doivent rester documentés dans la source HTML unique");
 assert.match(help, /<kbd>Alt<\/kbd> <kbd>M<\/kbd><\/dt><dd>Menu Catalogue<\/dd>/, "Alt+M doit reprendre le nom actuel du menu Catalogue");
 assert.match(help, /<kbd>Ctrl<\/kbd> <kbd>Maj<\/kbd> <kbd>S<\/kbd><\/dt><dd>Télécharger le PDF<\/dd>/, "Le raccourci PDF doit reprendre l’action actuelle");
 assert.match(html, /id="appMenuButton"[^>]*aria-haspopup="menu"[^>]*aria-expanded="false"[^>]*aria-keyshortcuts="Alt\+M"/, "Le bouton du menu principal doit annoncer son menu et son raccourci");
@@ -80,7 +80,7 @@ assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libel
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
 assert.match(html, /class="topbar-utility-button" id="settingsButton"[^>]*aria-label="Ouvrir les réglages"[^>]*aria-keyshortcuts="Control\+Comma Meta\+Comma"[^>]*data-tooltip="Réglages"/, "Le bouton Réglages doit rester documenté");
 assert.match(html, /id="settingsButton"[^>]*>\s*<svg[^>]*>[\s\S]*?<\/svg>\s*<\/button>/, "Réglages doit conserver son SVG compact");
-assert.match(html, /id="helpButton"[^>]*aria-label="Ouvrir le centre d’aide"[^>]*aria-keyshortcuts="\?"[^>]*data-tooltip="Aide"[^>]*>[\s\S]*?<use href="#icon-help">[\s\S]*?<span>Aide<\/span>/, "Le centre d’aide doit être identifié explicitement dans le header");
+assert.match(html, /id="helpButton"[^>]*aria-label="Ouvrir le centre d’aide"[^>]*aria-keyshortcuts="\?"[^>]*data-tooltip="Aide"[^>]*>[\s\S]*?<use href="#icon-help">/, "Le centre d’aide doit être identifié explicitement dans le header");
 assert.match(app, /\$\("#settingsButton"\)\.addEventListener\("click", openSettingsLayer\)/, "Le bouton Réglages du header doit fonctionner");
 assert.match(app, /\$\("#helpButton"\)\.addEventListener\("click", \(\) => openHelp\("overview"\)\)/, "Le bouton Aide du header doit fonctionner");
 assert.ok(
@@ -155,7 +155,7 @@ for (const [action, label] of [
 ]) {
   assert.match(html, new RegExp(`role="menuitem" data-action="${action}"[^>]*aria-label="${label}"`), `Action de devis absente : ${label}`);
 }
-for (const [action, shortcut] of [["duplicate", "Control\\+D Meta\\+D"], ["export", "Control\\+E Meta\\+E"], ["import", "Control\\+O Meta\\+O"]]) {
+for (const [action, shortcut] of [["duplicate", "Control\\+D Meta\\+D"], ["export", "Control\\+E Meta\\+E"], ["import", "Control\\+O Meta\\+O"], ["pdf-language", "Control\\+L Meta\\+L"]]) {
   assert.match(html, new RegExp(`data-action="${action}"[^>]*aria-keyshortcuts="${shortcut}"`), `Raccourci non annoncé pour l’action ${action}`);
 }
 assert.doesNotMatch(html, /data-action="clear"[^>]*aria-keyshortcuts=/, "Vider la caisse ne doit pas avoir de raccourci risqué");

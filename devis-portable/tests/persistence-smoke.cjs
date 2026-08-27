@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.4 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.4") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.5 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.5") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -272,7 +272,7 @@ async function run() {
       const utilityRect = topbarUtilities.getBoundingClientRect();
       if (topbarUtilities.previousElementSibling !== document.querySelector(".topbar-context") || utilityButtons.length !== 4 || visibleUtilityButtons.length !== 2) throw new Error("Les utilitaires ne distinguent pas correctement les actions locales des bibliothèques centrales");
       if (centralLibraryButtons.length !== 2 || centralLibraryButtons.some((button) => !button.hidden || !button.disabled)) throw new Error("Les bibliothèques centrales restent visibles sans connexion PostgreSQL");
-      if (document.querySelector("#settingsButton").textContent.trim() || document.querySelector("#helpButton").textContent.trim() !== "Aide" || utilityButtons.some((button) => !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne présentent pas correctement Réglages et Aide ou empiètent sur la caisse");
+      if (document.querySelector("#settingsButton").textContent.trim() || document.querySelector("#helpButton").textContent.trim() || utilityButtons.some((button) => !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne présentent pas correctement Réglages et Aide ou empiètent sur la caisse");
       const menuButton = document.querySelector("#appMenuButton");
       if (menuButton.childElementCount !== 1 || !menuButton.firstElementChild.matches("svg")) throw new Error("Le menu principal n’est pas réduit à son icône");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));

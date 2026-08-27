@@ -35,7 +35,7 @@ assert.match(html, /Historique[\s\S]*?liste compacte[\s\S]*?dernier statut comme
 assert.match(html, /survolez une fiche[\s\S]*?sur écran tactile, touchez directement la fiche/i, "L’aide doit expliquer l’ouverture adaptée à la souris et au tactile");
 assert.match(html, /sans Internet ni PostgreSQL/i, "L’aide doit expliquer l’autonomie du mode local");
 assert.match(html, /Le navigateur applique son propre réglage de téléchargement/i, "La limite de destination PDF de la PWA doit être exacte");
-assert.equal((html.match(/<dt><kbd>/g) || []).length, 16, "Les seize raccourcis actifs doivent être centralisés dans l’aide HTML");
+assert.equal((html.match(/<dt><kbd>/g) || []).length, 17, "Les dix-sept raccourcis actifs doivent être centralisés dans l’aide HTML");
 assert.doesNotMatch(html, /(?:href|src)="https?:\/\//i, "Le centre d’aide ne doit dépendre d’aucune ressource Internet");
 
 assert.match(script, /addEventListener\("input", filterTopics\)/, "La recherche doit filtrer à chaque saisie");
@@ -48,7 +48,8 @@ assert.match(css, /@media print\{/, "Une mise en page imprimable doit être four
 assert.match(css, /@media\(max-width:820px\)/, "L’aide doit adapter sa navigation à la tablette");
 assert.match(css, /@media\(max-width:620px\)/, "L’aide doit adapter son contenu au mobile");
 
-assert.match(index, /id="helpButton"[^>]*aria-label="Ouvrir le centre d’aide"[^>]*>[\s\S]*?<span>Aide<\/span>/, "Le header doit exposer un bouton Aide explicite");
+assert.match(index, /id="helpButton"[^>]*aria-label="Ouvrir le centre d’aide"[^>]*data-tooltip="Aide"[^>]*>[\s\S]*?<use href="#icon-help">/, "Le header doit exposer un bouton Aide en icône");
+assert.doesNotMatch(index, /id="helpButton"[^>]*>[\s\S]*?<span>Aide<\/span>/, "Le bouton Aide ne doit plus afficher de texte");
 assert.match(index, /id="helpLayer"[\s\S]*?class="modal-card help-center-modal"[\s\S]*?<iframe id="helpFrame" src="help\.html#overview"/, "L’aide doit s’ouvrir dans une grande surface intégrée");
 assert.doesNotMatch(index, /id="shortcutHelpLayer"|class="shortcut-groups"/, "La petite aide dupliquée ne doit plus rester dans l’application");
 for (const topic of ["quotes", "contacts", "tracking", "central", "migration", "pdf"]) assert.match(index, new RegExp(`data-help-topic="${topic}"`), `Un accès contextuel ${topic} doit être présent`);
