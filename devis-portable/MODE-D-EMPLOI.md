@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
-  <p class="cover-version">Version 7.1.3 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 7.1.4 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-7.1.3.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-7.1.3-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-7.1.3-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-7.1.4.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-7.1.4-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-7.1.4-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -569,7 +569,7 @@ Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce pos
 | `?` | Ouvrir le centre d’aide sur les raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 7.1.3.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 7.1.4.
 
 ## 9. Utiliser le modèle de devis
 

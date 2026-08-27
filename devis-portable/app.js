@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.3";
-  const RELEASE_NOTES_REVISION = "7.1.3";
+  const RELEASE_VERSION = "7.1.4";
+  const RELEASE_NOTES_REVISION = "7.1.4";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
@@ -3530,7 +3530,7 @@
     const adjustmentRows = 2
       + (totals.totalDiscount > 0 ? 1 : 0)
       + (taxInformationEnabled(quote) ? 2 : 0);
-    const longLineCount = quote.lines.filter((line) => String(line.name || "").length > 44).length;
+    const longLineCount = quote.lines.filter((line) => String(pdfEnglish() ? printServiceName(line) : line.name || "").length > 44).length;
     const singlePageEligible = quote.lines.length <= 5
       && longLineCount <= 2
       && conditionsLength <= 620
@@ -3579,6 +3579,26 @@
     return englishNames[category.id] || category.name;
   }
 
+  function printServiceName(line) {
+    const name = String(line.name || "").trim();
+    if (!pdfEnglish() || !name) return line.name;
+    const englishNames = window.QUOTE_SERVICE_NAMES_EN || {};
+    const translated = englishNames[line.serviceId];
+    if (!translated) return line.name;
+    // Un nom renommé manuellement ou un libellé personnalisé reste tel quel.
+    const base = (window.QUOTE_SERVICES || []).find((item) => String(item.id) === String(line.serviceId));
+    if (base && base.name !== name) return line.name;
+    return translated;
+  }
+
+  function pdfMoney(value) {
+    const amount = Number(value) || 0;
+    if (!pdfEnglish()) return money(amount);
+    return new Intl.NumberFormat("en-GB", {
+      style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2
+    }).format(amount);
+  }
+
   function renderPrint() {
     const totals = calculateQuote(quote);
     const taxEnabled = taxInformationEnabled(quote);
@@ -3595,7 +3615,7 @@
         : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
       const meta = `${escapeHTML(printOfferLabel(line))} · ${escapeHTML(printCategoryName(categoryFor(line.categoryId)))}`;
-      return `<tr><td><span class="print-item-name">${escapeHTML(line.name)}</span><span class="print-item-meta">${meta}</span></td><td>${quantityLabel}</td><td>${money(unitPrice)}</td><td>${money(referenceLineTotal(line))}</td></tr>`;
+      return `<tr><td><span class="print-item-name">${escapeHTML(printServiceName(line))}</span><span class="print-item-meta">${meta}</span></td><td>${quantityLabel}</td><td>${pdfMoney(unitPrice)}</td><td>${pdfMoney(referenceLineTotal(line))}</td></tr>`;
     }).join("");
     const studentConditionsSource = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
     const studentConditions = en && studentConditionsSource === DEFAULT_STUDENT_CONDITIONS ? DEFAULT_STUDENT_CONDITIONS_EN : studentConditionsSource;
@@ -3630,9 +3650,9 @@
         <table class="print-table"><thead><tr><th>${en ? "Treatment" : "Soin"}</th><th>${en ? "Quantity" : "Quantité"}</th><th>${en ? "Unit price" : "Prix unitaire"}</th><th>${en ? "Total" : "Total"}</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
-        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${en ? "Total before offers" : "Total avant offres"}</td><td>${money(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${en ? "Total discount" : "Rabais total"}</td><td>− ${money(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${en ? "Net excl. VAT" : "Net HT"}</td><td>${money(totals.net)}</td></tr><tr><td>${en ? "VAT" : "TVA"} ${totals.rate} %${quote.tax.mode === "included" ? (en ? " included" : " incluse") : ""}</td><td>${money(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${money(totals.total)}</td></tr></table></div>
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${en ? "Total before offers" : "Total avant offres"}</td><td>${pdfMoney(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${en ? "Total discount" : "Rabais total"}</td><td>− ${pdfMoney(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${en ? "Net excl. VAT" : "Net HT"}</td><td>${pdfMoney(totals.net)}</td></tr><tr><td>${en ? "VAT" : "TVA"} ${totals.rate} %${quote.tax.mode === "included" ? (en ? " included" : " incluse") : ""}</td><td>${pdfMoney(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${pdfMoney(totals.total)}</td></tr></table></div>
         <section class="print-followup">
-          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${en ? "Payment terms" : "Modalités de paiement"}</strong></div></div><p class="print-installment-intro">${en ? "The installments shown below are indicative. Any installment plan is subject to prior acceptance by the financial partner." : "Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier."}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${en ? "months" : "mois"}</b><span>${money(totals.total / month)}</span><small>${en ? "indicative installment" : "mensualité indicative"}</small></div>`).join("")}</div>` : ""}
+          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${en ? "Payment terms" : "Modalités de paiement"}</strong></div></div><p class="print-installment-intro">${en ? "The installments shown below are indicative. Any installment plan is subject to prior acceptance by the financial partner." : "Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier."}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${en ? "months" : "mois"}</b><span>${pdfMoney(totals.total / month)}</span><small>${en ? "indicative installment" : "mensualité indicative"}</small></div>`).join("")}</div>` : ""}
           <div class="print-legal-block">
             <div class="print-section-heading print-legal-heading"><div><strong>${en ? "Terms and acceptance" : "Conditions et acceptation"}</strong></div></div>
             <div class="print-conditions print-conditions-single"><div><strong>${en ? "Payment conditions" : "Conditions de règlement"}</strong>${escapeHTML(conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>${en ? "Student rate conditions" : "Conditions du tarif étudiant"}</strong>${escapeHTML(studentConditions)}</div>` : ""}${footerNote ? `<div class="print-legal-note">${escapeHTML(footerNote)}</div>` : ""}</div></div>

@@ -11,6 +11,7 @@ const text = (relativePath) => fs.readFileSync(path.join(appRoot, relativePath),
 const html = text("index.html");
 const app = text("app.js");
 const centralSync = text("central-sync.js");
+const catalog = text("catalog.js");
 
 // Le menu « ... » de la caisse propose le toggle en première position.
 const quoteMenu = html.match(/<div class="action-menu" id="quoteActionMenu"[\s\S]*?<\/div>/)?.[0] || "";
@@ -37,6 +38,19 @@ assert.match(app, /if \(action === "pdf-language"\)[\s\S]*?saveLocal\(\)[\s\S]*?
 
 // Le menu rafraîchit son libellé à chaque ouverture.
 assert.match(app, /function setQuoteMenuOpen\(open[\s\S]*?if \(open\) \{\s*syncPdfLanguageMenu\(\)/, "L’ouverture du menu doit rafraîchir le libellé de langue");
+
+// Le PDF en anglais traduit aussi les noms des soins.
+const englishNames = catalog.match(/window\.QUOTE_SERVICE_NAMES_EN = \{([\s\S]*?)\};/)?.[1] || "";
+assert.ok(englishNames, "Le catalogue doit fournir les noms anglais des soins");
+const serviceIds = [...catalog.matchAll(/service\((\d+),/g)].map((match) => match[1]);
+assert.ok(serviceIds.length >= 80, "Le catalogue doit contenir les soins à traduire");
+for (const id of serviceIds) {
+  assert.match(englishNames, new RegExp(`^\\s*${id}: "`, "m"), `Le soin ${id} doit avoir un nom anglais`);
+}
+assert.match(app, /function printServiceName\(line\)[\s\S]*?window\.QUOTE_SERVICE_NAMES_EN/, "Le rendu du PDF doit lire les noms anglais des soins");
+assert.match(app, /printServiceName\(line\)/, "Le tableau du PDF doit afficher le nom traduit du soin");
+assert.match(app, /function pdfMoney\(value\)[\s\S]*?Intl\.NumberFormat\("en-GB"[\s\S]*?currency: "CHF"/, "Le PDF en anglais doit formater les montants en CHF anglais");
+assert.match(app, /pdfEnglish\(\) \? printServiceName\(line\)/, "La mise en page du PDF doit tenir compte des noms de soins traduits");
 
 // Le réglage est partagé entre les postes centralisés.
 assert.match(centralSync, /"pdfLanguage"/, "La langue du PDF doit être synchronisée avec la base centrale");

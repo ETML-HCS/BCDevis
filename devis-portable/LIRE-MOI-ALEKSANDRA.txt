@@ -1,8 +1,11 @@
-BCDevis 7.1.3 - Livrable pour Aleksandra
+BCDevis 7.1.4 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 7.1.3
+NOUVEAUTES 7.1.4
 
+- Le PDF en anglais traduit aussi les noms des soins et présente les
+  montants au format anglais.
+- La caisse est plus compacte : son padding a été légèrement réduit.
 - Le menu ... du devis bascule la langue du PDF en un clic : PDF : FR ou
   PDF : EN, sans passer par les réglages.
 - Réglages > Devis et suivi permet aussi de générer le PDF du devis en
@@ -21,18 +24,18 @@ NOUVEAUTES 7.1.3
 - Le bouton Aide ouvre un centre HTML recherchable, responsive et imprimable,
   disponible hors ligne sans Internet ni PostgreSQL. Les PDF d'aide deviennent
   des livrables de secours.
-- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.3.
+- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.4.
 
 CONTENU
 
 1-Windows
-  BCDevis-7.1.3.exe
+  BCDevis-7.1.4.exe
 
 2-Linux
-  BCDevis-7.1.3-linux-x86_64.AppImage
+  BCDevis-7.1.4-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-7.1.3-chromeos.zip
+  BCDevis-7.1.4-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -46,7 +49,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-7.1.3.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-7.1.4.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -60,14 +63,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-7.1.3-linux-x86_64.AppImage
-  ./BCDevis-7.1.3-linux-x86_64.AppImage
+  chmod +x BCDevis-7.1.4-linux-x86_64.AppImage
+  ./BCDevis-7.1.4-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-7.1.3-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-7.1.4-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
