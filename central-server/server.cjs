@@ -4,7 +4,7 @@ const http = require("node:http");
 const { CentralDatabase } = require("./database.cjs");
 const { duplicateQuoteNumbers, emptySnapshot, mergeSnapshots, normalizeSnapshot, same } = require("./sync-merge.cjs");
 
-const SERVER_VERSION = "7.1.2";
+const SERVER_VERSION = "7.1.3";
 const API_PREFIX = "/api/v1";
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;

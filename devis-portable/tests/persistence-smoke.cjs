@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.2 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.2") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.3 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.3") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -348,8 +348,18 @@ async function run() {
       document.querySelector("#moreQuoteButton").click();
       const quoteMenu = document.querySelector("#quoteActionMenu");
       const quoteMenuRect = quoteMenu.getBoundingClientRect();
-      if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 5) throw new Error("Le menu des actions du devis est incomplet");
+      if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 6) throw new Error("Le menu des actions du devis est incomplet");
       if (quoteMenuRect.left < checkoutRect.left || quoteMenuRect.right > checkoutRect.right + 1) throw new Error("Le menu des actions du devis déborde de la caisse");
+      const pdfLangAction = document.querySelector("#pdfLanguageMenuAction");
+      if (!pdfLangAction || pdfLangAction.dataset.action !== "pdf-language") throw new Error("Le menu ne contient pas le toggle de langue du PDF");
+      if (document.querySelector("#pdfLanguageMenuLabel").textContent !== "PDF : FR") throw new Error("Le PDF doit être en français par défaut dans le menu");
+      pdfLangAction.click();
+      if (!quoteMenu.hidden) throw new Error("Le choix de langue du PDF doit refermer le menu");
+      if (JSON.parse(localStorage.getItem("bcdevis-v1")).settings.pdfLanguage !== "en") throw new Error("La langue du PDF n’est pas mémorisée");
+      document.querySelector("#moreQuoteButton").click();
+      if (document.querySelector("#pdfLanguageMenuLabel").textContent !== "PDF : EN") throw new Error("Le toggle n’affiche pas PDF : EN après bascule");
+      document.querySelector("#pdfLanguageMenuAction").click();
+      if (JSON.parse(localStorage.getItem("bcdevis-v1")).settings.pdfLanguage !== "fr") throw new Error("Le retour au français n’est pas mémorisé");
       document.querySelector("#newQuoteButton").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
       if (!quoteMenu.hidden) throw new Error("Le menu … reste coincé lors d’un clic sur une autre action de la caisse");
       const catalogSearch = document.querySelector("#catalogSearch");
@@ -1114,6 +1124,41 @@ async function run() {
         document.querySelector('[data-family-service-id]').click();
       })()`);
     }
+
+    const demoCentre = await window.webContents.executeJavaScript(`(() => {
+      const demo = {
+        id: "demo-1608-2026",
+        number: "DEV-20260816A001",
+        date: "2026-08-16",
+        client: { name: "Démo 16 août", phone: "+41 79 999 00 00", email: "demo@example.test" },
+        lines: Array.from({ length: 5 }, (_, index) => ({ id: "demo-line-" + index, name: "Soin démo " + (index + 1), price: 100, quantity: 1, categoryId: 1, duration: 30, offerType: "single" })),
+        discount: { code: "", type: "percent", value: 0 },
+        tax: { enabled: false }
+      };
+      const payload = { type: "atelier-devis-backup", version: 17, database: { settings: {}, quotes: { [demo.id]: demo }, current: demo, customServices: [] } };
+      const input = document.querySelector("#backupImportInput");
+      const file = new File([JSON.stringify(payload)], "demo.json", { type: "application/json" });
+      Object.defineProperty(input, "files", { configurable: true, value: [file] });
+      window.confirm = () => true;
+      return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const verify = () => {
+          if (document.querySelector("#quoteSaveStateLabel")?.textContent === "Enregistré") {
+            document.querySelector("#historyButton").click();
+            const card = [...document.querySelectorAll("#historyList [data-quote-id]")].find((el) => el.textContent.includes("16.08.2026") && el.textContent.includes("5 soins"));
+            return resolve({ state: document.querySelector("#quoteSaveStateLabel").textContent, meta: card ? (card.querySelector(".history-item-meta")?.textContent || "") : "", savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length });
+          }
+          if (++attempts >= 40) return reject(new Error("Le devis démo n’est pas Enregistré dans le centre"));
+          setTimeout(verify, 50);
+        };
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        verify();
+      });
+    })()`);
+    assert.equal(demoCentre.state, "Enregistré", "Le devis démo 16.08.2026 doit être Enregistré");
+    assert.match(demoCentre.meta, /16\.08\.2026 · 5 soins/, "Le centre doit afficher la date et les cinq soins du devis démo");
+    assert.equal(demoCentre.savedQuotes, 1, "Le centre doit contenir le devis démo");
+
     console.log("DESKTOP_PERSISTENCE_SMOKE_OK");
   } finally {
     if (!window.isDestroyed()) window.destroy();

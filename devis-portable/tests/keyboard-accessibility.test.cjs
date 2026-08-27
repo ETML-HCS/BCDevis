@@ -147,6 +147,7 @@ assert.match(app, /class="installment-amounts"/, "La seconde ligne doit afficher
 assert.match(html, /id="moreQuoteButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="quoteActionMenu"[^>]*aria-expanded="false"/, "Le bouton des actions du devis doit annoncer son menu");
 assert.match(html, /id="quoteActionMenu" role="menu" aria-label="Actions du devis"/, "Le menu du devis doit être identifié");
 for (const [action, label] of [
+  ["pdf-language", "Basculer la langue du PDF"],
   ["duplicate", "Dupliquer le devis"],
   ["export", "Exporter ce devis"],
   ["import", "Importer un devis"],

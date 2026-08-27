@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.2";
-  const RELEASE_NOTES_REVISION = "7.1.2";
+  const RELEASE_VERSION = "7.1.3";
+  const RELEASE_NOTES_REVISION = "7.1.3";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.
@@ -3880,6 +3880,14 @@
     return $$('[role="menuitem"]:not([disabled])', $("#quoteActionMenu"));
   }
 
+  function syncPdfLanguageMenu() {
+    const english = db.settings.pdfLanguage === "en";
+    const label = $("#pdfLanguageMenuLabel");
+    if (label) label.textContent = `PDF : ${english ? "EN" : "FR"}`;
+    const action = $("#pdfLanguageMenuAction");
+    if (action) action.setAttribute("aria-label", english ? "PDF en anglais — cliquer pour passer en français" : "PDF en français — cliquer pour passer en anglais");
+  }
+
   function transmissionMenuItems() {
     return $$('[role="menuitem"]:not([disabled])', $("#checkoutTransmissionMenu"));
   }
@@ -3929,6 +3937,7 @@
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer les actions du devis" : "Ouvrir les actions du devis");
     if (open) {
+      syncPdfLanguageMenu();
       closeTileDetail({ immediate: true });
       setAppMenuOpen(false);
       setTransmissionMenuOpen(false);
@@ -5026,6 +5035,12 @@
     if (!button) return;
     const action = button.dataset.action;
     setQuoteMenuOpen(false, { restoreFocus: true });
+    if (action === "pdf-language") {
+      db.settings.pdfLanguage = db.settings.pdfLanguage === "en" ? "fr" : "en";
+      saveLocal();
+      syncPdfLanguageMenu();
+      toast(db.settings.pdfLanguage === "en" ? "PDF du devis en anglais" : "PDF du devis en français");
+    }
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
