@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.6 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.6") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 7.1.7 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "7.1.7") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -275,6 +275,9 @@ async function run() {
       if (document.querySelector("#settingsButton").textContent.trim() || document.querySelector("#helpButton").textContent.trim() || utilityButtons.some((button) => !button.querySelector("svg") || !button.dataset.tooltip) || utilityRect.right >= checkoutRect.left) throw new Error("Les utilitaires du header ne présentent pas correctement Réglages et Aide ou empiètent sur la caisse");
       const menuButton = document.querySelector("#appMenuButton");
       if (menuButton.childElementCount !== 1 || !menuButton.firstElementChild.matches("svg")) throw new Error("Le menu principal n’est pas réduit à son icône");
+      const menuTriggerRect = menuButton.getBoundingClientRect();
+      const settingsRect = document.querySelector("#settingsButton").getBoundingClientRect();
+      if (Math.abs(menuTriggerRect.width - settingsRect.width) > 1 || Math.abs(menuTriggerRect.height - settingsRect.height) > 1) throw new Error("Le bouton Catalogue doit avoir la même taille que Réglages et Aide");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "m", code: "KeyM", altKey: true, bubbles: true, cancelable: true }));
       if (document.querySelector("#appActionsMenu").hidden) throw new Error("Alt+M n’ouvre pas le menu principal");
       if (!document.documentElement.classList.contains("bcdevis-context-menu-open")) throw new Error("Le menu Catalogue n’active pas la protection contre les clics absorbés");
@@ -350,6 +353,8 @@ async function run() {
       const quoteMenuRect = quoteMenu.getBoundingClientRect();
       if (quoteMenu.hidden || quoteMenu.querySelectorAll('[role="menuitem"]').length !== 6) throw new Error("Le menu des actions du devis est incomplet");
       if (quoteMenuRect.left < checkoutRect.left || quoteMenuRect.right > checkoutRect.right + 1) throw new Error("Le menu des actions du devis déborde de la caisse");
+      const quoteMenuTop = document.elementFromPoint(quoteMenuRect.left + quoteMenuRect.width / 2, quoteMenuRect.top + quoteMenuRect.height / 2);
+      if (!quoteMenuTop || !quoteMenu.contains(quoteMenuTop)) throw new Error("Le menu des actions du devis est recouvert par la caisse");
       const pdfLangAction = document.querySelector("#pdfLanguageMenuAction");
       if (!pdfLangAction || pdfLangAction.dataset.action !== "pdf-language") throw new Error("Le menu ne contient pas le toggle de langue du PDF");
       if (document.querySelector("#pdfLanguageMenuLabel").textContent !== "PDF : FR") throw new Error("Le PDF doit être en français par défaut dans le menu");

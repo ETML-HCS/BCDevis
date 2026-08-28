@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.6";
-  const RELEASE_NOTES_REVISION = "7.1.6";
+  const RELEASE_VERSION = "7.1.7";
+  const RELEASE_NOTES_REVISION = "7.1.7";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   // Keep the former names here so an update retains every existing quote.

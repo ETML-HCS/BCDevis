@@ -33,14 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.1\.6";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.6";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "7\.1\.7";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.7";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.1\.6[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 7\.1\.7[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit présenter les trois familles de fonctions livrées");
-assert.match(html, /<strong>Barre du haut harmonisée<\/strong>[\s\S]*?<strong>Menu d’actions toujours visible<\/strong>[\s\S]*?<strong>Fiabilité &amp; affichage<\/strong>/, "Les nouveautés doivent résumer la barre harmonisée, le menu visible et la fiabilité");
+assert.match(html, /<strong>Menu d’actions toujours visible<\/strong>[\s\S]*?<strong>Barre du haut stable<\/strong>[\s\S]*?<strong>Fiabilité &amp; contrôles<\/strong>/, "Les nouveautés doivent résumer le menu visible, la barre stable et les contrôles");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -310,6 +310,13 @@ assert.match(styles, /\.cart-section\{margin-top:4px\}[\s\S]*?\.cart-section-tit
 assert.match(styles, /\.checkout-panel\.is-full-height \.checkout-card\{width:100%;max-width:none;flex:1 1 auto\}/, "La carte de caisse desktop doit remplir son panneau même lorsqu’elle est vide");
 assert.match(styles, /\.quote-head-actions\{position:relative;z-index:60/, "Le conteneur des actions devis doit être au-dessus du contenu de la caisse");
 assert.match(styles, /\.action-menu\{position:absolute;z-index:70/, "Le menu des actions devis doit rester visible au-dessus de la caisse");
+assert.match(styles, /\.quote-head-actions \.action-menu\{top:calc\(100% \+ 7px\);left:0;right:auto\}/, "Le menu d’actions doit s’ouvrir vers la droite pour rester dans la carte de caisse");
+assert.match(styles, /\.app-actions\{position:relative;z-index:2;display:flex;flex:0 0 auto;align-items:center\}/, "Le conteneur du menu Catalogue doit centrer son bouton comme les utilitaires");
+assert.match(styles, /\.app-menu-trigger\{[\s\S]*?width:42px;[\s\S]*?height:42px;[\s\S]*?border-radius:9px/, "Le bouton Catalogue doit avoir la même taille que Réglages et Aide");
+assert.match(styles, /\.app-menu-trigger>svg\{width:18px;height:18px\}/, "L’icône du bouton Catalogue doit rester discrète comme les utilitaires");
+assert.match(styles, /@media screen and \(max-width:1180px\)\{\s*\.app-menu-trigger\{min-width:40px;width:40px;height:40px/, "Le bouton Catalogue doit rester aligné sur les utilitaires en tablette");
+assert.match(styles, /@media screen and \(max-width:760px\)\{\s*\.app-menu-trigger\{min-width:38px;width:38px;height:38px/, "Le bouton Catalogue doit rester aligné sur les utilitaires en mobile");
+assert.match(styles, /\.checkout-context\{min-height:26px;margin-top:3px;align-items:center;justify-content:space-between;gap:6px\}/, "La ligne d’état, le nombre de soins et la date doivent rester équidistants sur une seule ligne");
 assert.match(styles, /@media screen and \(min-width:761px\) and \(max-width:1180px\)\{\s*\.checkout-panel\.active-panel \.checkout-card\{width:100%;max-width:none;margin-inline:0\}/, "La caisse tablette doit utiliser toute la largeur disponible");
 assert.match(styles, /html\[data-theme\] \.family-panel \.family-options\{\s*display:flex;\s*flex-wrap:wrap;/, "Les tuiles de soins doivent s’adapter à la largeur réelle de familyList");
 assert.match(styles, /html\[data-theme\] \.family-panel \.family-options>\.family-option-shell\{\s*width:auto;\s*flex:1 1 220px;/, "Chaque rangée de soins doit remplir tout l’espace disponible");

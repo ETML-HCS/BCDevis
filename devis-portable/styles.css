@@ -1088,7 +1088,7 @@ html[data-theme] .family-visibility-icon svg{
 
 /* Header compact et menu unique : l’espace reste réservé au travail. */
 .brand-block{gap:0}
-.app-actions{position:relative;z-index:2;flex:0 0 auto}
+.app-actions{position:relative;z-index:2;display:flex;flex:0 0 auto;align-items:center}
 .app-menu-trigger{
   display:flex;
   width:42px;
@@ -1345,7 +1345,7 @@ html[data-theme] .family-visibility-icon svg{
 .checkout-transmission-menu .transmission-option-outlook>svg{color:#1473e6}
 .quote-head-actions{position:relative;z-index:60;display:flex;min-width:0;max-width:100%;flex:0 0 auto;align-items:center;gap:6px;-webkit-app-region:no-drag}
 .quote-head-actions>button,.quote-head-actions>label{position:relative;pointer-events:auto;-webkit-app-region:no-drag}
-.quote-head-actions .action-menu{top:calc(100% + 7px);right:0}
+.quote-head-actions .action-menu{top:calc(100% + 7px);left:0;right:auto}
 .quote-head-actions .action-menu button{
   display:grid;
   justify-content:stretch;
@@ -3239,7 +3239,7 @@ html[data-theme] .family-panel .family-options>.family-option-shell{
   html[data-display-mode="smartphone"] .toast-close{width:44px;height:44px}
 }
 
-/* V7.1.6 — boutons du haut alignés à gauche ; les contrôles de fenêtre restent à droite. */
+/* V7.1.7 — boutons du haut alignés à gauche ; les contrôles de fenêtre restent à droite. */
 @media screen and (min-width:1181px){
   .topbar{grid-template-columns:auto auto auto auto;justify-content:start}
 }

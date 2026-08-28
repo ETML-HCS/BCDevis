@@ -46,7 +46,7 @@ const database = {
 const transfer = createTransferPackage({
   database,
   centralConfig: { ...safeCentral, token: "must-not-leak" },
-  releaseVersion: "7.1.6",
+  releaseVersion: "7.1.7",
   appVersion: 25,
   sourceUrl: "https://etml-hcs.github.io/BCDevis/?old=1",
   targetUrl: "https://bcd.athys.ch/",
@@ -65,7 +65,7 @@ database.settings.companyName = "Modifiée après export";
 assert.equal(transfer.database.settings.companyName, "Clinique Bellecour", "Le transfert doit figer un instantané indépendant");
 
 const restored = readTransferPackage(JSON.parse(JSON.stringify(transfer)));
-assert.equal(restored.releaseVersion, "7.1.6");
+assert.equal(restored.releaseVersion, "7.1.7");
 assert.equal(targetMatchesCurrentSite(restored, "https://bcd.athys.ch/index.html"), true);
 assert.equal(targetMatchesCurrentSite(restored, "https://autre.example/"), false);
 assert.equal(targetMatchesCurrentSite(restored, "file:///C:/BCDevis/index.html"), true);

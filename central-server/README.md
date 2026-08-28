@@ -1,4 +1,4 @@
-# BCDevis Central 7.1.6
+# BCDevis Central 7.1.7
 
 BCDevis Central est le service multi-postes de la V7. L’application Electron ou PWA communique avec cette API en HTTPS. Seule l’API possède les identifiants PostgreSQL ; ils ne sont jamais envoyés aux appareils.
 
