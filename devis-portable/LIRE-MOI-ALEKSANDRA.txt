@@ -1,18 +1,18 @@
-BCDevis 7.1.5 - Livrable pour Aleksandra
+BCDevis 7.1.6 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 7.1.5
+NOUVEAUTES 7.1.6
 
+- Le bouton Catalogue a la même taille que Réglages et Aide : la barre du
+  haut est harmonisée.
+- Le menu … du devis s'affiche toujours au-dessus du panneau des soins :
+  son affichage ne passe plus derrière le catalogue.
+- Le raccourci Ctrl+L bascule la langue du PDF (FR / EN) en un instant.
 - La caisse est plus lisible : état, nombre de soins et date sont réunis
   sur une seule ligne, et les boutons du haut sont alignés à gauche.
-- Le raccourci Ctrl+L bascule la langue du PDF en un instant : PDF : FR ou
-  PDF : EN, sans passer par les réglages ni le menu du devis.
 - Un devis enregistré (Historique) réimporté revient dans le centre avec
-  son statut et sa date, au lieu d'être traité comme un simple brouillon.
-- Le menu ... du devis est toujours visible : son affichage ne passe plus
-  derrière le contenu de la caisse.
-- Le bouton Aide n'affiche plus de libellé, seulement l'icône, pour une
-  barre du haut plus épurée.
+  son statut et sa date.
+- Le bouton Aide n'affiche plus de libellé, seulement l'icône.
 - Réglages > Devis et suivi permet toujours de générer le PDF du devis en
   anglais, sans changer l'interface de BCDevis.
 - Réglages > Données conserve l'assistant de migration vers
@@ -23,20 +23,19 @@ NOUVEAUTES 7.1.5
 - Le menu Catalogue propose les vues Auto, Mobile et Bureau. Le choix est
   mémorisé sur le poste sans modifier l'affichage des autres appareils.
 - Le bouton Aide ouvre un centre HTML recherchable, responsive et imprimable,
-  disponible hors ligne sans Internet ni PostgreSQL. Les PDF d'aide deviennent
-  des livrables de secours.
-- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.5.
+  disponible hors ligne sans Internet ni PostgreSQL.
+- Cet écran de nouveautés apparaît une seule fois pour la version 7.1.6.
 
 CONTENU
 
 1-Windows
-  BCDevis-7.1.5.exe
+  BCDevis-7.1.6.exe
 
 2-Linux
-  BCDevis-7.1.5-linux-x86_64.AppImage
+  BCDevis-7.1.6-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-7.1.5-chromeos.zip
+  BCDevis-7.1.6-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -50,7 +49,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-7.1.5.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-7.1.6.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -64,14 +63,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-7.1.5-linux-x86_64.AppImage
-  ./BCDevis-7.1.5-linux-x86_64.AppImage
+  chmod +x BCDevis-7.1.6-linux-x86_64.AppImage
+  ./BCDevis-7.1.6-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-7.1.5-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-7.1.6-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
