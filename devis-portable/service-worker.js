@@ -1,12 +1,13 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v7.1.7-touch-ipad-smartphone-documents-help-contacts";
+const CACHE_NAME = "bcdevis-pwa-v8.0.0-touch-ipad-smartphone-documents-help-contacts-conversion-login";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./contact-core.js",
+  "./tracking-core.js",
   "./help.html",
   "./help.css",
   "./help.js",

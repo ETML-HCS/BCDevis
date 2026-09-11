@@ -2,10 +2,12 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "7.1.7";
-  const RELEASE_NOTES_REVISION = "7.1.7";
+  const RELEASE_VERSION = "8.0.0";
+  const RELEASE_NOTES_REVISION = "8.0.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
+  const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";
+  const ACCESS_GATE_REQUIRED = ACCESS_GATE_FORCED || (/^https?:$/.test(window.location.protocol) && !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
   const APP_VERSION = 25;
@@ -44,6 +46,7 @@
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
+  const { countAcceptedInMonth, countAwaitingInvoices } = window.BCDevisTracking;
   const ContactCore = window.BCDevisContacts;
   const {
     DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
@@ -444,6 +447,7 @@
   let db = loadDatabase();
   let centralSyncApplying = false;
   let centralState = null;
+  let applicationStarted = false;
   const centralController = window.BCDevisCentral.createController({
     storage: localStorage,
     getDatabase: () => db,
@@ -453,9 +457,11 @@
         window.BCDevisCentral.applySharedSnapshot(db, snapshot);
         normalizeSavedQuotes();
         saveLocal(false);
-        renderAll();
-        renderHistory();
-        if (!$("#settingsLayer")?.hidden) fillSettingsForm();
+        if (applicationStarted) {
+          renderAll();
+          renderHistory();
+          if (!$("#settingsLayer")?.hidden) fillSettingsForm();
+        }
         if (db.settings.centralUniqueQuoteNumbers === true) window.setTimeout(() => void ensureCentralQuoteNumberPool().catch(() => {}), 0);
       } finally {
         centralSyncApplying = false;
@@ -474,8 +480,96 @@
     onState: (state, config) => {
       centralState = state;
       renderCentralizationState(state, config);
-    }
+    },
+    onAuthenticationRequired: () => { if (ACCESS_GATE_REQUIRED) showAccessGate("Votre session a expiré. Reconnectez-vous.", "error"); }
   });
+
+  function accessEndpoint() {
+    const configured = centralController.getConfig().endpoint;
+    if (configured) return configured;
+    return /^https?:$/.test(window.location.protocol) ? `${window.location.origin}/` : "";
+  }
+
+  function fillAccessForm() {
+    const config = centralController.getConfig();
+    $("#accessEndpoint").value = config.endpoint || accessEndpoint();
+    $("#accessEmail").value = config.email || "";
+    $("#accessDeviceName").value = config.deviceName || "Poste BCDevis";
+    $("#accessPassword").value = "";
+  }
+
+  function showAccessGate(message = "Connectez-vous pour ouvrir BCDevis.", state = "") {
+    document.documentElement.classList.add("auth-pending");
+    const gate = $("#accessGate");
+    gate.hidden = false;
+    $("#appShell").inert = true;
+    $("#appShell").setAttribute("aria-hidden", "true");
+    $("#sessionLogoutButton").hidden = true;
+    const status = $("#accessStatus");
+    status.textContent = message;
+    status.dataset.state = state;
+    fillAccessForm();
+    window.setTimeout(() => $("#accessEmail")?.focus(), 0);
+  }
+
+  function unlockApplication() {
+    $("#accessGate").hidden = true;
+    $("#appShell").inert = false;
+    $("#appShell").removeAttribute("aria-hidden");
+    document.documentElement.classList.remove("auth-pending");
+    const sessionButton = $("#sessionLogoutButton");
+    const config = centralController.getConfig();
+    sessionButton.hidden = !ACCESS_GATE_REQUIRED;
+    sessionButton.setAttribute("aria-label", config.email ? `Se déconnecter (${config.email})` : "Se déconnecter");
+    sessionButton.dataset.tooltip = config.email || "Se déconnecter";
+  }
+
+  function startApplication() {
+    if (applicationStarted) {
+      unlockApplication();
+      return;
+    }
+    applicationStarted = true;
+    unlockApplication();
+    applyTheme(currentTheme());
+    applyFont(currentFont());
+    applyIpadLayout();
+    applyDisplayMode();
+    syncViewportMetrics();
+    syncPermanentCheckoutLayout();
+    syncToastPlacement();
+    expireTrackedQuotes();
+    saveLocal(false);
+    renderAll();
+    window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshExpiredTracking(); });
+    const migrationArrivalOpened = openSiteMigrationArrival();
+    const releaseNotesOpened = migrationArrivalOpened ? false : showReleaseNotesOnce();
+    if (!migrationArrivalOpened && !releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
+  }
+
+  async function initializeApplication() {
+    fillAccessForm();
+    if (!ACCESS_GATE_REQUIRED) {
+      startApplication();
+      void centralController.initialize()
+        .then(() => db.settings.centralUniqueQuoteNumbers === true ? ensureCentralQuoteNumberPool({ required: 1 }) : null)
+        .catch((error) => console.warn("Centralisation différée", error));
+      return;
+    }
+    try {
+      centralController.configure({ enabled: true, endpoint: accessEndpoint() });
+      const result = await centralController.initialize({ requireAuthentication: true });
+      if (!result.authenticated) {
+        showAccessGate("Connectez-vous pour ouvrir BCDevis.");
+        return;
+      }
+      startApplication();
+      if (db.settings.centralUniqueQuoteNumbers === true) await ensureCentralQuoteNumberPool({ required: 1 });
+    } catch (error) {
+      showAccessGate(error.message || "Le serveur BCDevis est indisponible.", "error");
+    }
+  }
   let activeFamily = "visage";
   let expandedFamily = "visage";
   let activeBodySide = "front";
@@ -849,6 +943,7 @@
     const enabled = $("#centralEnabled");
     if (!enabled) return;
     enabled.checked = config.enabled === true;
+    enabled.disabled = ACCESS_GATE_REQUIRED;
     const endpoint = $("#centralEndpoint");
     const email = $("#centralEmail");
     const deviceName = $("#centralDeviceName");
@@ -875,7 +970,10 @@
     const disconnect = $("#centralDisconnectButton");
     if (connect) connect.textContent = config.connected ? "Reconnecter" : "Se connecter";
     if (synchronize) synchronize.disabled = !config.connected || ["connecting", "syncing"].includes(state.status);
-    if (disconnect) disconnect.hidden = !config.enabled;
+    if (disconnect) {
+      disconnect.hidden = !config.enabled;
+      disconnect.textContent = ACCESS_GATE_REQUIRED ? "Se déconnecter" : "Revenir au mode local";
+    }
     const uniqueNumbers = $("#centralUniqueQuoteNumbers");
     const numberPoolStatus = $("#centralNumberPoolStatus");
     if (uniqueNumbers) {
@@ -2836,8 +2934,9 @@
       });
     }
     if (!summary.hidden) {
-      const acceptedThisMonth = items.filter((item) => item.tracking?.status === "accepted" && String(item.tracking.acceptedAt || "").slice(0, 7) === todayISO().slice(0, 7)).length;
-      summary.innerHTML = `<div><strong>${counts.ready}</strong><span>À envoyer</span></div><div><strong>${counts["follow-up"]}</strong><span>À relancer</span></div><div><strong>${items.filter((item) => isFollowUpLate(item)).length}</strong><span>En retard</span></div><div><strong>${acceptedThisMonth}</strong><span>Acceptés ce mois</span></div>`;
+      const acceptedThisMonth = countAcceptedInMonth(items, todayISO().slice(0, 7));
+      const awaitingInvoices = countAwaitingInvoices(items);
+      summary.innerHTML = `<div><strong>${counts.ready}</strong><span>À envoyer</span></div><div><strong>${counts["follow-up"]}</strong><span>À relancer</span></div><div><strong>${items.filter((item) => isFollowUpLate(item)).length}</strong><span>En retard</span></div><div><strong>${acceptedThisMonth}</strong><span>Convertis ce mois</span></div><button type="button" data-summary-filter="accepted" aria-label="Afficher les devis acceptés à facturer"><strong>${awaitingInvoices}</strong><span>À facturer</span></button>`;
     }
   }
 
@@ -4555,6 +4654,14 @@
     renderHistory();
     $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
   });
+  $("#trackingSummary").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-summary-filter]");
+    if (!button || !TRACKING_FILTERS.includes(button.dataset.summaryFilter)) return;
+    activeTrackingFilter = button.dataset.summaryFilter;
+    expandedTrackingQuotes.clear();
+    renderHistory();
+    $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
+  });
   $("#historyList").addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-tracking-toggle]");
     if (toggle) {
@@ -4713,6 +4820,11 @@
     setSettingsTab(tabs[nextIndex].dataset.settingsTab, { focus: true, resetScroll: true });
   });
   $("#centralEnabled").addEventListener("change", async (event) => {
+    if (ACCESS_GATE_REQUIRED && !event.target.checked) {
+      event.target.checked = true;
+      toast("La connexion est obligatoire dans la version web.", "error");
+      return;
+    }
     if (event.target.checked) {
       centralController.configure({ enabled: true });
       renderCentralizationState();
@@ -4750,8 +4862,13 @@
   });
   $("#centralDisconnectButton").addEventListener("click", async (event) => {
     await runCentralAction(event.currentTarget, "Déconnexion…", async () => {
-      await centralController.disconnect();
-      toast("Mode local réactivé · aucune donnée locale supprimée");
+      if (ACCESS_GATE_REQUIRED) {
+        await centralController.logout();
+        showAccessGate("Vous êtes déconnecté.");
+      } else {
+        await centralController.disconnect();
+        toast("Mode local réactivé · aucune donnée locale supprimée");
+      }
     });
   });
   $("#centralUseServerButton").addEventListener("click", async (event) => {
@@ -5192,6 +5309,7 @@
   $$('[data-close]').forEach((button) => button.addEventListener("click", () => closeLayer(button.dataset.close)));
   $$(".mobile-tabs [data-panel]").forEach((button) => button.addEventListener("click", () => switchMobilePanel(button.dataset.panel)));
   document.addEventListener("keydown", (event) => {
+    if (!applicationStarted) return;
     const layer = activeLayerId ? $(`#${activeLayerId}`) : null;
     if (event.key === "Tab" && layer && !layer.hidden) { trapLayerFocus(event, layer); return; }
     if (event.key === "Escape") {
@@ -5275,22 +5393,39 @@
     desktopWindow.isWindowMaximized?.().then(syncWindowControlState);
   }
 
-  applyTheme(currentTheme());
-  applyFont(currentFont());
-  applyIpadLayout();
-  applyDisplayMode();
-  syncViewportMetrics();
-  syncPermanentCheckoutLayout();
-  syncToastPlacement();
-  expireTrackedQuotes();
-  saveLocal(false);
-  renderAll();
-  window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshExpiredTracking(); });
-  void centralController.initialize()
-    .then(() => db.settings.centralUniqueQuoteNumbers === true ? ensureCentralQuoteNumberPool({ required: 1 }) : null)
-    .catch((error) => console.warn("Centralisation différée", error));
-  const migrationArrivalOpened = openSiteMigrationArrival();
-  const releaseNotesOpened = migrationArrivalOpened ? false : showReleaseNotesOnce();
-  if (!migrationArrivalOpened && !releaseNotesOpened) window.setTimeout(showTrackingReminders, 250);
+  $("#accessLoginForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("#accessSubmitButton");
+    const status = $("#accessStatus");
+    button.disabled = true;
+    button.textContent = "Connexion…";
+    status.textContent = "Vérification du compte et de l’appareil…";
+    status.dataset.state = "";
+    try {
+      await centralController.connect({
+        endpoint: $("#accessEndpoint").value,
+        email: $("#accessEmail").value,
+        password: $("#accessPassword").value,
+        deviceName: $("#accessDeviceName").value
+      });
+      $("#accessPassword").value = "";
+      startApplication();
+      if (db.settings.centralUniqueQuoteNumbers === true) await ensureCentralQuoteNumberPool({ required: 1 });
+    } catch (error) {
+      $("#accessPassword").value = "";
+      status.textContent = error.message || "Connexion impossible.";
+      status.dataset.state = "error";
+      $("#accessPassword").focus();
+    } finally {
+      button.disabled = false;
+      button.textContent = "Se connecter";
+    }
+  });
+  $("#sessionLogoutButton").addEventListener("click", async () => {
+    if (!window.confirm("Se déconnecter de BCDevis sur cet appareil ?")) return;
+    await centralController.logout();
+    showAccessGate("Vous êtes déconnecté.");
+  });
+
+  void initializeApplication();
 })();

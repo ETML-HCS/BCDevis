@@ -17,6 +17,9 @@ assert.match(app, /const canUndo = !quoteIsLocked\(item\)/, "Un devis terminal n
 assert.match(app, /status: "draft"[\s\S]*?tracking: freshTracking/, "Le statut de sauvegarde et le suivi commercial doivent rester séparés");
 assert.match(app, /tracking: sanitizeTracking\(source\.tracking/, "Les suivis importés doivent être nettoyés");
 assert.match(app, /MAX_TRACKING_EVENTS = 300/, "La chronologie locale doit rester bornée");
+assert.match(html, /<script src="tracking-core\.js"><\/script>[\s\S]*?<script src="app\.js"><\/script>/, "Le moteur de conversion doit être chargé avant l’application");
+assert.match(app, /countAcceptedInMonth\(items, todayISO\(\)\.slice\(0, 7\)\)/, "Les conversions mensuelles doivent inclure les devis déjà facturés");
+assert.match(app, /data-summary-filter="accepted"[\s\S]*?>À facturer</, "Le résumé doit donner accès aux devis acceptés qui attendent leur facture");
 
 for (const setting of [
   "quoteTrackingEnabled",
@@ -66,5 +69,6 @@ assert.match(styles, /@media \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.his
 assert.match(styles, /@media \(hover:none\),\(pointer:coarse\)\{[\s\S]*?\.history-item-summary\{grid-template-columns:1fr\}[\s\S]*?\.history-disclosure\{display:none\}/, "La fiche complète doit devenir la cible sur écran tactile");
 assert.match(styles, /#historyLayer\.tracking-enabled \.history-workspace\{[\s\S]*?width:min\(1180px,calc\(100vw - 48px\)\)[\s\S]*?height:min\(900px,calc\(100vh - 48px\)\)/, "Le suivi doit utiliser un véritable espace de travail large");
 assert.match(styles, /\.history-item--tracked\.is-expanded[\s\S]*?grid-column:1\/-1[\s\S]*?grid-template-columns:minmax\(270px,\.7fr\) minmax\(0,2fr\)/, "La fiche ouverte doit séparer son résumé de sa zone de travail");
+assert.match(styles, /\.tracking-summary>div,\.tracking-summary>button/, "Le compteur À facturer doit conserver le rendu des indicateurs de suivi");
 
 console.log("QUOTE_TRACKING_TESTS_OK");

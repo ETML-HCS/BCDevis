@@ -33,14 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "7\.1\.7";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "7\.1\.7";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "8\.0\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8\.0\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 7\.1\.7[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 8\.0\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit présenter les trois familles de fonctions livrées");
-assert.match(html, /<strong>Menu d’actions toujours visible<\/strong>[\s\S]*?<strong>Barre du haut stable<\/strong>[\s\S]*?<strong>Fiabilité &amp; contrôles<\/strong>/, "Les nouveautés doivent résumer le menu visible, la barre stable et les contrôles");
+assert.match(html, /<strong>Connexion obligatoire sur le web<\/strong>[\s\S]*?<strong>Session vérifiée<\/strong>[\s\S]*?<strong>Postes partagés<\/strong>/, "Les nouveautés doivent résumer le login, la validation de session et la déconnexion");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -77,7 +77,8 @@ assert.match(
 );
 assert.match(app, /fontFamily: "red-hat"/, "Red Hat Display doit rester la police par défaut");
 assert.match(app, /theme: "white"/, "Le thème Blanc doit être le thème par défaut des réglages");
-assert.match(html, /<html lang="fr" data-theme="white">/, "Le thème Blanc doit être appliqué dès le chargement de la page");
+assert.match(html, /<html lang="fr" data-theme="white" class="auth-pending">/, "Le thème Blanc doit être défini pendant le verrouillage initial");
+assert.match(app, /function startApplication\(\)[\s\S]*?applyTheme\(currentTheme\(\)\)/, "Le thème enregistré doit être appliqué après authentification");
 
 for (const theme of themes) {
   const themeBlock = html.match(new RegExp(`html\\[data-theme="${theme}"\\]\\{([\\s\\S]*?)\\n  \\}`));

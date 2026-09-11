@@ -157,6 +157,12 @@ async function main() {
     assert.equal(connected.conflict, undefined);
     assert.equal(assignedCode, "P03");
     assert.equal(controller.getConfig().connected, true);
+    assert.equal(controller.getConfig().userRole, "admin");
+    assert.equal(controller.getConfig().organizationName, "Clinique Bellecour");
+    const validated = await controller.validateSession();
+    assert.equal(validated.authenticated, true, "Une session mémorisée doit être revalidée par le serveur");
+    assert.equal(validated.session.user.email, "admin@bellecour.test");
+    assert.equal(validated.session.organization.name, "Clinique Bellecour");
     assert.equal(browserDatabase.settings.theme, "forest");
     assert.ok(browserDatabase.quotes.q1);
     assert.equal(typeof browserDatabase.contacts, "object");
@@ -196,7 +202,10 @@ async function main() {
     assert.ok(audit.payload.events.some((event) => event.action === "sync.merge"));
     controller.schedule(60000);
     assert.equal(controller.getState().status, "pending");
-    await controller.disconnect();
+    await controller.logout();
+    assert.equal(controller.getConfig().connected, false, "La déconnexion doit supprimer le jeton local");
+    assert.equal(controller.getConfig().enabled, true, "La déconnexion V8 ne doit pas réactiver un accès local sans compte");
+    assert.equal((await controller.validateSession()).authenticationRequired, true);
   } finally {
     await new Promise((resolve) => started.server.close(resolve));
   }

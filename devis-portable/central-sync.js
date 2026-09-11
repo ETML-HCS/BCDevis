@@ -47,6 +47,8 @@
       email: "",
       token: "",
       tokenExpiresAt: "",
+      userRole: "",
+      organizationName: "",
       deviceId: identifier(),
       deviceName: "Poste BCDevis",
       deviceCode: "",
@@ -67,6 +69,9 @@
         endpoint: String(parsed.endpoint || ""),
         email: String(parsed.email || "").slice(0, 320),
         token: String(parsed.token || ""),
+        tokenExpiresAt: String(parsed.tokenExpiresAt || ""),
+        userRole: ["admin", "editor", "reader"].includes(parsed.userRole) ? parsed.userRole : "",
+        organizationName: String(parsed.organizationName || "").slice(0, 160),
         deviceId: /^[a-zA-Z0-9_-]{8,128}$/.test(String(parsed.deviceId || "")) ? String(parsed.deviceId) : identifier(),
         deviceName: String(parsed.deviceName || "Poste BCDevis").slice(0, 80),
         deviceCode: String(parsed.deviceCode || "").slice(0, 16),
@@ -160,6 +165,8 @@
         config.revision = 0;
         config.token = "";
         config.tokenExpiresAt = "";
+        config.userRole = "";
+        config.organizationName = "";
       }
       persist();
       if (patch.enabled === true && state.status === "local") publish({ status: "disconnected", message: "Centralisation activée · identification requise", conflicts: [] });
@@ -185,6 +192,7 @@
         let payload = {};
         try { payload = await response.json(); } catch { payload = {}; }
         if (!response.ok) {
+          if (authenticated && response.status === 401) invalidateSession(payload.message);
           const error = new Error(payload.message || `Le serveur a répondu ${response.status}.`);
           error.status = response.status;
           error.code = payload.code;
@@ -197,6 +205,40 @@
         throw error;
       } finally {
         globalThis.clearTimeout(timeout);
+      }
+    }
+
+    function invalidateSession(message = "Session expirée · reconnectez-vous") {
+      sessionGeneration += 1;
+      config.token = "";
+      config.tokenExpiresAt = "";
+      config.userRole = "";
+      config.organizationName = "";
+      persist();
+      publish({ status: "disconnected", message, conflicts: [] });
+      options.onAuthenticationRequired?.();
+    }
+
+    async function validateSession() {
+      if (!config.enabled || !config.endpoint || !config.token) return { authenticationRequired: true };
+      if (config.tokenExpiresAt && Date.parse(config.tokenExpiresAt) <= Date.now()) {
+        invalidateSession("Session expirée · reconnectez-vous");
+        return { authenticationRequired: true };
+      }
+      publish({ status: "connecting", message: "Validation de la session…", conflicts: [] });
+      try {
+        const session = await request("session");
+        config.userRole = ["admin", "editor", "reader"].includes(session.user?.role) ? session.user.role : "";
+        config.organizationName = String(session.organization?.name || config.organizationName || "").slice(0, 160);
+        config.deviceCode = String(session.device?.code || config.deviceCode || "").slice(0, 16);
+        config.deviceName = String(session.device?.name || config.deviceName || "Poste BCDevis").slice(0, 80);
+        persist();
+        publish({ status: "online", message: `Connecté · ${config.organizationName || config.email}`, conflicts: [] });
+        return { authenticated: true, session };
+      } catch (error) {
+        if (error.status === 401) return { authenticationRequired: true };
+        publish({ status: "offline", message: error.message, conflicts: [] });
+        throw error;
       }
     }
 
@@ -256,6 +298,8 @@
           enabled: true,
           token: String(session.token || ""),
           tokenExpiresAt: String(session.expiresAt || ""),
+          userRole: ["admin", "editor", "reader"].includes(session.user?.role) ? session.user.role : "",
+          organizationName: String(session.organization?.name || "").slice(0, 160),
           deviceCode: String(session.device?.code || ""),
           deviceName: String(session.device?.name || config.deviceName)
         };
@@ -267,6 +311,8 @@
       } catch (error) {
         config.token = "";
         config.tokenExpiresAt = "";
+        config.userRole = "";
+        config.organizationName = "";
         persist();
         publish({ status: "error", message: error.message, conflicts: [] });
         throw error;
@@ -302,14 +348,7 @@
           publish({ status: "conflict", message: error.message, conflicts: Array.isArray(error.payload?.conflicts) ? error.payload.conflicts : [] });
           return { conflict: true, ...error.payload };
         }
-        if (error.status === 401) {
-          sessionGeneration += 1;
-          config.token = "";
-          config.tokenExpiresAt = "";
-          persist();
-          publish({ status: "disconnected", message: "Session expirée · reconnectez ce poste", conflicts: [] });
-          return { authenticationRequired: true };
-        }
+        if (error.status === 401) return { authenticationRequired: true };
         publish({ status: "offline", message: `${error.message} · données conservées localement` });
         throw error;
       }
@@ -339,11 +378,26 @@
       publish({ status: "local", message: "Mode local actif · les données de ce poste sont conservées", conflicts: [] });
     }
 
-    async function initialize() {
+    async function logout() {
+      globalThis.clearTimeout(syncTimer);
+      sessionGeneration += 1;
+      if (config.token) {
+        try { await request("auth/logout", { method: "POST" }); } catch { /* La session expirera côté serveur. */ }
+      }
+      config = { ...config, enabled: true, token: "", tokenExpiresAt: "", userRole: "", organizationName: "", revision: 0, lastSyncAt: "" };
+      persist();
+      publish({ status: "disconnected", message: "Déconnecté · identification requise", conflicts: [] });
+    }
+
+    async function initialize({ requireAuthentication = false } = {}) {
       publish({});
-      if (!config.enabled || !config.token) return { skipped: true };
+      if (requireAuthentication) {
+        const authentication = await validateSession();
+        if (!authentication.authenticated) return authentication;
+      } else if (!config.enabled || !config.token) return { skipped: true };
       if (config.deviceCode) options.onDeviceCode?.(config.deviceCode);
-      return sync();
+      const result = await sync();
+      return { ...result, authenticated: true };
     }
 
     function quoteNumberKey({ prefix, date }) {
@@ -414,6 +468,7 @@
       initialize,
       listDocuments,
       loadDocument,
+      logout,
       reservedQuoteNumberCount,
       reserveQuoteNumbers,
       resolveWithDevice: () => sync("local"),
@@ -422,6 +477,7 @@
       sync,
       takeReservedQuoteNumber,
       testConnection,
+      validateSession,
       uploadDocument
     };
   }

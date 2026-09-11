@@ -136,10 +136,12 @@ class CentralDatabase {
 
   async authenticate(token) {
     const result = await this.pool.query(`
-      SELECT sessions.*, users.organization_id, users.email, users.role, users.active,
-             devices.name AS device_name, devices.code AS device_code
+            SELECT sessions.*, users.organization_id, users.email, users.role, users.active,
+              organizations.name AS organization_name,
+              devices.name AS device_name, devices.code AS device_code
       FROM sessions
       JOIN users ON users.id = sessions.user_id
+            JOIN organizations ON organizations.id = users.organization_id
       JOIN devices ON devices.id = sessions.device_id
       WHERE sessions.token_hash = $1 AND sessions.expires_at > $2 AND users.active = TRUE
     `, [tokenHash(token), now()]);

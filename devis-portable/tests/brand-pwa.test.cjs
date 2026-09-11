@@ -76,7 +76,8 @@ assert.match(serviceWorker, /\.\/site-migration\.js/);
 assert.match(serviceWorker, /red-hat-display-extrabold\.ttf/);
 assert.match(serviceWorker, /roboto-latin\.woff2/);
 assert.match(serviceWorker, /roboto-slab-latin\.woff2/);
-assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts"`), "Le cache PWA doit changer avec la passe tactile, les réglages documentaires, le centre d’aide et les contacts");
+assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts-conversion-login"`), "Le cache PWA doit changer avec le verrou d’accès V8");
+assert.match(serviceWorker, /"\.\/tracking-core\.js"/, "Le moteur de conversion doit être disponible hors ligne");
 assert.match(saveIcon, /stroke="currentColor"[^>]*stroke-width="2\.15"/, "L’icône Enregistrer livrée doit rester nette et adaptable au thème");
 assert.equal((saveIcon.match(/<path\b/g) || []).length, 3, "L’icône Enregistrer doit conserver ses trois tracés lisibles");
 

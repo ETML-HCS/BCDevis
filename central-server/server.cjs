@@ -4,7 +4,7 @@ const http = require("node:http");
 const { CentralDatabase } = require("./database.cjs");
 const { duplicateQuoteNumbers, emptySnapshot, mergeSnapshots, normalizeSnapshot, same } = require("./sync-merge.cjs");
 
-const SERVER_VERSION = "7.1.7";
+const SERVER_VERSION = "8.0.0";
 const API_PREFIX = "/api/v1";
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
@@ -169,6 +169,7 @@ function startCentralServer(options = {}) {
         const workspace = await database.workspace(session.organization_id);
         json(response, 200, {
           user: { email: session.email, role: session.role },
+          organization: { id: session.organization_id, name: session.organization_name },
           device: { id: session.device_id, name: session.device_name, code: session.device_code },
           revision: workspace.revision,
           updatedAt: workspace.updatedAt,

@@ -2,14 +2,16 @@
 
 ## Statut du document
 
-- **Dernière mise à jour :** 6 août 2026
-- **Version de référence :** BCDevis 7.1.0
-- **État :** portefeuille réévalué après le verrouillage des devis terminaux, les V2, la bibliothèque Factures et le nommage lié des documents
-- **Documents associés :** [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md) et [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md)
+- **Dernière mise à jour :** 11 septembre 2026
+- **Version de référence :** BCDevis 8.0.0
+- **État :** portefeuille complété par un axe prioritaire de conversion et de suivi, du brouillon à la facture envoyée
+- **Documents associés :** [Plan conversion et suivi commercial](PLAN-CONVERSION-ET-SUIVI-COMMERCIAL.md), [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md) et [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md)
 
 ## Orientation produit
 
 BCDevis est désormais un outil de devis local avec suivi commercial et mode multi-postes facultatif. Les prochaines fonctions doivent consolider ce positionnement sans transformer l’application en dossier médical, agenda ou logiciel comptable complet.
+
+L’axe produit recommandé est **« Aucun devis ne se perd »** : réunir dans une vue **Aujourd’hui** les brouillons à terminer, les devis prêts à envoyer, les relances dues et les devis acceptés à facturer. Les calculs de conversion, les motifs de perte et les séquences de relance assistées sont détaillés dans le [plan conversion et suivi commercial](PLAN-CONVERSION-ET-SUIVI-COMMERCIAL.md).
 
 Principes à préserver :
 
