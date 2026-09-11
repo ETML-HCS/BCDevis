@@ -232,7 +232,7 @@ Le découpage doit conserver JavaScript natif et rester couvert à chaque étape
 ### A9. Séparer validation continue et publication
 
 - Faire réussir la nouvelle CI de contrôle sur les pull requests et `main`, sans déployer Pages.
-- Conserver les workflows de livrables sur les tags. La publication Pages est désormais **manuelle** et l’environnement `github-pages` n’autorise que le tag stable `v7.1.7` : `main` porte la V8 et ne doit plus remplacer le site web tout seul.
+- Conserver les workflows de livrables sur les tags. La publication Pages est désormais **manuelle** et l’environnement `github-pages` n’autorise que le tag stable `v7.1.7`. Le développement V8+ se fait sur la branche par défaut `newFeatures` : elle ne doit jamais remplacer le site web tout seule.
 - Compléter le test PostgreSQL réel par des budgets de taille et de performance.
 - Produire des diagnostics par scénario plutôt qu’une longue chaîne de scripts uniquement séquentielle.
 
