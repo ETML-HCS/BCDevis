@@ -13,6 +13,7 @@ Ce document prépare une protection temporaire de la version web de BCDevis pend
 
 - Le dépôt `ETML-HCS/BCDevis` est public.
 - La PWA est assemblée par `npm run chromeos`, puis publiée par `.github/workflows/pages.yml`.
+- Depuis le 11 septembre 2026, cette publication est **manuelle** : l’environnement `github-pages` n’autorise que le tag stable `v7.1.7`. La branche `main`, qui porte la V8, ne peut donc plus remplacer la version web de test sans une action volontaire.
 - Le site GitHub Pages est public à l’adresse `https://etml-hcs.github.io/BCDevis/`.
 - Les devis et réglages restent dans le stockage local du navigateur utilisé. Ils ne sont pas transférés dans le dépôt GitHub par le fonctionnement actuel de l’application.
 
