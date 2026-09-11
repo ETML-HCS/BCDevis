@@ -1395,11 +1395,13 @@
     .settings-panel-grid--interface{grid-template-columns:minmax(0,1.08fr) minmax(300px,.92fr)}
     .settings-panel-grid--company{grid-template-columns:minmax(0,.95fr) minmax(360px,1.05fr)}
     .settings-panel-grid--pricing{grid-template-columns:minmax(320px,.82fr) minmax(0,1.18fr)}
-    .settings-panel-grid--document{grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr)}
+    .settings-panel-grid--document{grid-template-columns:repeat(2,minmax(0,1fr))}
     .settings-panel-grid--data{grid-template-columns:minmax(250px,.7fr) minmax(0,1.3fr)}
-    .settings-panel-grid--data:has(#centralConnectionDetails[hidden]){min-height:100%;grid-template-columns:minmax(0,520px);align-content:center;justify-content:center}
+    .settings-panel-grid--data:has(#centralConnectionDetails[hidden]){grid-template-columns:minmax(0,1fr)}
+    .settings-panel-grid--data:has(#centralConnectionDetails[hidden])>.settings-panel-stack{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
     .settings-panel-stack,.central-connection-details{display:grid;min-width:0;align-content:start;gap:var(--settings-space-lg)}
     .settings-panel-grid--interface>.settings-section--catalog,
+    .settings-panel-grid--document>.settings-section--tracking,
     .settings-panel-grid--document>.settings-section--mentions{grid-column:1/-1}
     .settings-layout section+section{padding-left:0;border-left:0}
     .settings-panel .settings-section{
@@ -1600,7 +1602,9 @@
     .settings-panel-grid--document,
     .settings-panel-grid--data{grid-template-columns:1fr}
     .settings-panel-grid--data:has(#centralConnectionDetails[hidden]){min-height:0;align-content:start}
+    .settings-panel-grid--data:has(#centralConnectionDetails[hidden])>.settings-panel-stack{grid-template-columns:1fr}
     .settings-panel-grid--interface>.settings-section--catalog,
+    .settings-panel-grid--document>.settings-section--tracking,
     .settings-panel-grid--document>.settings-section--mentions{grid-column:1}
     .settings-section--central-switch{position:static}
     .settings-panel .theme-picker{grid-template-columns:repeat(4,minmax(0,1fr))}
