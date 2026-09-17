@@ -2227,9 +2227,10 @@
       <div class="history-tabs" id="historyTabs" role="tablist" aria-label="Vues des devis" hidden>
         <button id="historyViewHistoryTab" type="button" role="tab" aria-selected="true" aria-controls="historyList" data-history-view="history">Historique</button>
         <button id="historyViewTrackingTab" type="button" role="tab" aria-selected="false" aria-controls="historyList" data-history-view="tracking" tabindex="-1">Suivi <span id="trackingDueCount" hidden></span></button>
+        <button id="historyViewStatsTab" type="button" role="tab" aria-selected="false" aria-controls="historyList" data-history-view="stats" tabindex="-1">Statistiques</button>
       </div>
-      <div class="tracking-summary" id="trackingSummary" aria-label="Résumé du suivi" hidden></div>
       <div class="tracking-filters" id="trackingFilters" role="group" aria-label="Filtrer les devis par dernier statut" hidden>
+        <button type="button" data-tracking-filter="today" aria-pressed="false">Aujourd’hui <span data-filter-count>0</span></button>
         <button type="button" data-tracking-filter="all" aria-pressed="true">Tous <span data-filter-count>0</span></button>
         <button type="button" data-tracking-filter="draft" aria-pressed="false">Brouillons <span data-filter-count>0</span></button>
         <button type="button" data-tracking-filter="ready" aria-pressed="false">Prêts <span data-filter-count>0</span></button>
@@ -2238,6 +2239,10 @@
         <button type="button" data-tracking-filter="accepted" aria-pressed="false">Acceptés <span data-filter-count>0</span></button>
         <button type="button" data-tracking-filter="refused" aria-pressed="false">Refusés <span data-filter-count>0</span></button>
         <button type="button" data-tracking-filter="expired" aria-pressed="false">Expirés <span data-filter-count>0</span></button>
+      </div>
+      <div class="history-tools" role="group" aria-label="Rechercher et trier les devis">
+        <label class="history-search"><span class="visually-hidden">Rechercher un devis</span><svg aria-hidden="true"><use href="#icon-search"></use></svg><input id="historySearch" type="search" autocomplete="off" placeholder="N° devis, client, téléphone ou e-mail"></label>
+        <label class="history-sort"><span>Trier</span><select id="historySort"><option value="updated">Dernière modification</option><option value="date">Date du devis</option><option value="client">Client</option><option value="amount">Montant</option></select></label>
       </div>
       <div class="history-list" id="historyList" role="tabpanel" aria-labelledby="historyViewHistoryTab"></div>
       <div class="drawer-footer"><button class="button secondary" id="exportBackupButton" type="button"><svg><use href="#icon-download"></use></svg>Sauvegarde complète</button><button class="button secondary" id="importBackupButton" type="button"><svg><use href="#icon-upload"></use></svg>Restaurer</button></div>
@@ -2479,7 +2484,7 @@
                     <label><span>Validité par défaut</span><span class="input-with-suffix"><input name="validityDays" type="number" min="1" max="365" step="1"><b>jours</b></span></label>
                     <label><span>Relance après l’envoi</span><select name="trackingDefaultFollowUpDays"><option value="3">3 jours</option><option value="7">7 jours</option><option value="14">14 jours</option><option value="30">30 jours</option></select></label>
                     <label class="settings-toggle-card"><input class="settings-toggle-input" name="trackingRemindersOnStartup" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-history"></use></svg></span><span class="settings-toggle-copy"><strong>Rappels au démarrage</strong><small>Signale les relances arrivées ou en retard.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
-                    <label class="settings-toggle-card"><input class="settings-toggle-input" name="trackingShowCounters" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-toggle-copy"><strong>Compteurs du suivi</strong><small>Affiche les actions dues, les conversions du mois et les devis à facturer.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
+                    <label class="settings-toggle-card"><input class="settings-toggle-input" name="trackingShowFilters" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-search"></use></svg></span><span class="settings-toggle-copy"><strong>Filtres avancés</strong><small>Ajoute les filtres par statut dans l’onglet Suivi.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
                   </div>
                 </div>
               </section>

@@ -46,7 +46,7 @@
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
-  const { countAcceptedInMonth, countAwaitingInvoices } = window.BCDevisTracking;
+  const { summarizeConversion } = window.BCDevisTracking;
   const ContactCore = window.BCDevisContacts;
   const {
     DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
@@ -127,7 +127,7 @@
     expired: { label: "Expiré", eventLabel: "Devis expiré" },
     invoiced: { label: "Facture envoyée", eventLabel: "Facture envoyée" }
   };
-  const TRACKING_FILTERS = ["all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
+  const TRACKING_FILTERS = ["today", "all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
   const TRACKING_TERMINAL_STATUSES = ["accepted", "refused", "expired", "invoiced"];
   const TRACKING_TRANSITIONS = {
     draft: ["ready"],
@@ -174,7 +174,7 @@
     quoteTrackingEnabled: false,
     trackingDefaultFollowUpDays: 7,
     trackingRemindersOnStartup: true,
-    trackingShowCounters: true,
+    trackingShowFilters: false,
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: DEFAULT_STUDENT_CONDITIONS,
     footerNote: DEFAULT_FOOTER_NOTE,
@@ -595,7 +595,9 @@
   let preparedSiteMigrationTarget = "";
   let activeSettingsTab = "interface";
   let activeHistoryView = "history";
-  let activeTrackingFilter = "all";
+  let activeTrackingFilter = "today";
+  let historyQuery = "";
+  let historySort = "updated";
   let selectedContactId = "";
   let contactQuery = "";
   const expandedTrackingQuotes = new Set();
@@ -2785,8 +2787,29 @@
   function trackingFilterMatches(item, filter) {
     if (item.tracking?.status === "invoiced") return false;
     if (filter === "all") return true;
+    if (filter === "today") return trackingTodaySections([item]).some((section) => section.items.length);
     if (filter === "follow-up") return isFollowUpDue(item);
     return item.tracking?.status === filter;
+  }
+
+  function quoteAmount(item) {
+    return calculateQuote(item).total;
+  }
+
+  function trackingTodaySections(items) {
+    const staleDraftBefore = addDaysISO(todayISO(), -7);
+    const sortByAmount = (left, right) => quoteAmount(right) - quoteAmount(left);
+    const oldestFirst = (field) => (left, right) => String(left.tracking?.[field] || left.updatedAt || "").localeCompare(String(right.tracking?.[field] || right.updatedAt || "")) || sortByAmount(left, right);
+    const followUps = items.filter((item) => isFollowUpDue(item)).sort((left, right) => {
+      const lateness = Number(isFollowUpLate(right)) - Number(isFollowUpLate(left));
+      return lateness || String(left.tracking.nextFollowUpAt).localeCompare(String(right.tracking.nextFollowUpAt)) || sortByAmount(left, right);
+    });
+    return [
+      { key: "follow-up", title: "À relancer", description: "Relances prévues aujourd’hui ou en retard", items: followUps },
+      { key: "accepted", title: "Acceptés à facturer", description: "Facture envoyée à importer", items: items.filter((item) => item.tracking?.status === "accepted").sort(oldestFirst("acceptedAt")) },
+      { key: "ready", title: "Prêts à envoyer", description: "Devis finalisés en attente d’envoi", items: items.filter((item) => item.tracking?.status === "ready").sort(oldestFirst("updatedAt")) },
+      { key: "draft", title: "Brouillons à terminer", description: "Sans modification depuis au moins 7 jours", items: items.filter((item) => item.tracking?.status === "draft" && String(item.updatedAt || item.createdAt || "").slice(0, 10) <= staleDraftBefore).sort(oldestFirst("updatedAt")) }
+    ];
   }
 
   function trackingCounts(items) {
@@ -2797,7 +2820,23 @@
       if (Object.hasOwn(counts, status)) counts[status] += 1;
       if (isFollowUpDue(item)) counts["follow-up"] += 1;
     });
+    counts.today = trackingTodaySections(items).reduce((total, section) => total + section.items.length, 0);
     return counts;
+  }
+
+  function historySearchMatches(item, needle = normalize(historyQuery)) {
+    if (!needle) return true;
+    return normalize([item.number, item.client?.name, item.client?.phone, item.client?.email].join(" ")).includes(needle);
+  }
+
+  function sortHistoryQuotes(items) {
+    const sorted = [...items];
+    const text = (value) => String(value || "");
+    const amount = (item) => quoteAmount(item);
+    if (historySort === "date") return sorted.sort((left, right) => text(right.date).localeCompare(text(left.date)) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    if (historySort === "client") return sorted.sort((left, right) => text(left.client?.name).localeCompare(text(right.client?.name), "fr", { sensitivity: "base" }) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    if (historySort === "amount") return sorted.sort((left, right) => amount(right) - amount(left) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    return sorted.sort((left, right) => text(right.updatedAt).localeCompare(text(left.updatedAt)));
   }
 
   function trackingEventCopy(event) {
@@ -2871,7 +2910,7 @@
     return persistTrackedQuote(item);
   }
 
-  function renderHistoryItem(item, trackingView, trackingActive = false) {
+  function renderHistoryItem(item, trackingView, trackingActive = false, todayAction = false) {
     const totals = calculateQuote(item);
     const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
     const visual = trackingVisualStatus(item);
@@ -2886,6 +2925,9 @@
     const followUpCopy = item.tracking.nextFollowUpAt
       ? `${isFollowUpLate(item) ? "Relance en retard" : "Relance"} · ${formatDate(item.tracking.nextFollowUpAt)}`
       : `Valable jusqu’au ${formatDate(item.validUntil)}`;
+    const action = todayAction
+      ? `<button class="tracking-today-action button secondary" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}">Traiter</button>`
+      : "";
     return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${escapeHTML(item.id)}">
       <div class="history-item-summary">
         <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
@@ -2895,6 +2937,7 @@
           <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
           <span class="history-follow-up">${escapeHTML(followUpCopy)}</span>
         </button>
+        ${action}
       </div>
       <div class="tracking-detail" id="tracking-detail-${escapeHTML(item.id)}" ${expanded ? "" : "hidden"}>${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div>
     </article>`;
@@ -2904,25 +2947,32 @@
     const enabled = trackingEnabled();
     const tabs = $("#historyTabs");
     const filters = $("#trackingFilters");
-    const summary = $("#trackingSummary");
+    const statsTab = $("#historyViewStatsTab");
+    const historyTools = $(".history-tools");
     $("#historyLayer").classList.toggle("tracking-enabled", enabled);
     tabs.hidden = !enabled;
+    statsTab.hidden = !enabled;
     if (!enabled) activeHistoryView = "history";
+    if (activeHistoryView === "stats" && statsTab.hidden) activeHistoryView = "tracking";
     $$('[data-history-view]', tabs).forEach((tab) => {
       const selected = tab.dataset.historyView === activeHistoryView;
       tab.setAttribute("aria-selected", String(selected));
       tab.tabIndex = selected ? 0 : -1;
     });
-    $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
-    $("#historyWorkspaceDescription").textContent = activeHistoryView === "tracking"
-      ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
-      : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
+    $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "stats" ? "historyViewStatsTab" : activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
+    $("#historyWorkspaceDescription").textContent = activeHistoryView === "stats"
+      ? "Consultez les indicateurs mensuels de conversion issus des devis envoyés."
+      : activeHistoryView === "tracking"
+        ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
+        : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
     const counts = trackingCounts(items);
     const dueBadge = $("#trackingDueCount");
     dueBadge.textContent = String(counts["follow-up"] || "");
     dueBadge.hidden = counts["follow-up"] === 0;
-    filters.hidden = !enabled || activeHistoryView !== "tracking";
-    summary.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowCounters !== true;
+    filters.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowFilters !== true;
+    historyTools.hidden = activeHistoryView === "stats";
+    $("#historySearch").value = historyQuery;
+    $("#historySort").value = historySort;
     if (!filters.hidden) {
       $$('[data-tracking-filter]', filters).forEach((button) => {
         const filter = button.dataset.trackingFilter;
@@ -2933,11 +2983,6 @@
         if (count) count.textContent = counts[filter] || 0;
       });
     }
-    if (!summary.hidden) {
-      const acceptedThisMonth = countAcceptedInMonth(items, todayISO().slice(0, 7));
-      const awaitingInvoices = countAwaitingInvoices(items);
-      summary.innerHTML = `<div><strong>${counts.ready}</strong><span>À envoyer</span></div><div><strong>${counts["follow-up"]}</strong><span>À relancer</span></div><div><strong>${items.filter((item) => isFollowUpLate(item)).length}</strong><span>En retard</span></div><div><strong>${acceptedThisMonth}</strong><span>Convertis ce mois</span></div><button type="button" data-summary-filter="accepted" aria-label="Afficher les devis acceptés à facturer"><strong>${awaitingInvoices}</strong><span>À facturer</span></button>`;
-    }
   }
 
   function renderHistory() {
@@ -2946,15 +2991,35 @@
     const enabled = trackingEnabled();
     let quotes = Object.values(db.quotes);
     renderTrackingNavigation(quotes);
+    list.classList.toggle("tracking-stats", enabled && activeHistoryView === "stats");
+    if (enabled && activeHistoryView === "stats") {
+      const startDate = `${todayISO().slice(0, 7)}-01`;
+      const stats = summarizeConversion(quotes, { startDate, endDate: todayISO(), amountOf: quoteAmount });
+      const percent = stats.conversionRate === null ? "—" : new Intl.NumberFormat("fr-CH", { style: "percent", maximumFractionDigits: 0 }).format(stats.conversionRate);
+      const median = stats.medianAcceptanceDays === null ? "—" : `${Math.round(stats.medianAcceptanceDays)} j`;
+      list.innerHTML = `<section class="tracking-stats-panel" aria-label="Statistiques du mois en cours"><header><h3>Ce mois</h3><p>Les devis sont regroupés par chaîne de versions et comptés selon leur date d’envoi.</p></header><div class="tracking-stats-grid"><div><strong>${percent}</strong><span>Conversion</span></div><div><strong>${stats.sent}</strong><span>Envoyés</span></div><div><strong>${stats.converted}</strong><span>Acceptés ou facturés</span></div><div><strong>${stats.pending}</strong><span>En attente</span></div><div><strong>${stats.refused + stats.expired}</strong><span>Refusés ou expirés</span></div><div><strong>${median}</strong><span>Délai médian</span></div><div><strong>${money(stats.sentValue)}</strong><span>Valeur envoyée</span></div><div><strong>${money(stats.acceptedValue)}</strong><span>Valeur acceptée</span></div></div></section>`;
+      return;
+    }
+    quotes = quotes.filter((item) => historySearchMatches(item));
+    list.classList.toggle("tracking-today-queue", enabled && activeHistoryView === "tracking" && activeTrackingFilter === "today");
     if (enabled && activeHistoryView === "tracking") {
+      if (activeTrackingFilter === "today") {
+        const sections = trackingTodaySections(quotes).filter((section) => section.items.length);
+        if (!sections.length) {
+          list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>Aucune action de suivi aujourd’hui</strong><p>Les relances, devis acceptés, envois et brouillons à terminer apparaîtront ici.</p></div>`;
+          return;
+        }
+        list.innerHTML = sections.map((section) => `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><strong>${section.items.length}</strong></header><div class="tracking-today-items">${section.items.map((item) => renderHistoryItem(item, true, true, true)).join("")}</div></section>`).join("");
+        return;
+      }
       quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter));
-      quotes.sort((left, right) => {
+      if (activeTrackingFilter !== "today") quotes.sort((left, right) => {
         const leftDue = isFollowUpDue(left) ? left.tracking.nextFollowUpAt : "9999-12-31";
         const rightDue = isFollowUpDue(right) ? right.tracking.nextFollowUpAt : "9999-12-31";
         return leftDue.localeCompare(rightDue) || String(right.updatedAt).localeCompare(String(left.updatedAt));
       });
     } else {
-      quotes.sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+      quotes = sortHistoryQuotes(quotes);
     }
     if (!quotes.length) {
       const filtered = enabled && activeHistoryView === "tracking" && activeTrackingFilter !== "all";
@@ -3469,7 +3534,7 @@
     if (form.elements.quoteDateEditable) form.elements.quoteDateEditable.checked = db.settings.quoteDateEditable === true;
     if (form.elements.quoteTrackingEnabled) form.elements.quoteTrackingEnabled.checked = db.settings.quoteTrackingEnabled === true;
     if (form.elements.trackingRemindersOnStartup) form.elements.trackingRemindersOnStartup.checked = db.settings.trackingRemindersOnStartup !== false;
-    if (form.elements.trackingShowCounters) form.elements.trackingShowCounters.checked = db.settings.trackingShowCounters !== false;
+    if (form.elements.trackingShowFilters) form.elements.trackingShowFilters.checked = db.settings.trackingShowFilters === true;
     if (form.elements.centralUniqueQuoteNumbers) form.elements.centralUniqueQuoteNumbers.checked = db.settings.centralUniqueQuoteNumbers === true;
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
@@ -4633,7 +4698,7 @@
   $("#historyTabs").addEventListener("click", (event) => {
     const tab = event.target.closest("[data-history-view]");
     if (!tab) return;
-    activeHistoryView = tab.dataset.historyView === "tracking" ? "tracking" : "history";
+    activeHistoryView = ["history", "tracking", "stats"].includes(tab.dataset.historyView) ? tab.dataset.historyView : "history";
     renderHistory();
     $(`[data-history-view="${activeHistoryView}"]`, $("#historyTabs"))?.focus();
   });
@@ -4654,13 +4719,15 @@
     renderHistory();
     $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
   });
-  $("#trackingSummary").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-summary-filter]");
-    if (!button || !TRACKING_FILTERS.includes(button.dataset.summaryFilter)) return;
-    activeTrackingFilter = button.dataset.summaryFilter;
+  $("#historySearch").addEventListener("input", (event) => {
+    historyQuery = event.target.value;
     expandedTrackingQuotes.clear();
     renderHistory();
-    $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
+  });
+  $("#historySort").addEventListener("change", (event) => {
+    historySort = ["updated", "date", "client", "amount"].includes(event.target.value) ? event.target.value : "updated";
+    expandedTrackingQuotes.clear();
+    renderHistory();
   });
   $("#historyList").addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-tracking-toggle]");
@@ -5036,7 +5103,7 @@
       quoteTrackingEnabled: data.has("quoteTrackingEnabled"),
       trackingDefaultFollowUpDays: boundedInteger(data.get("trackingDefaultFollowUpDays") ?? db.settings.trackingDefaultFollowUpDays, 1, 90, 7),
       trackingRemindersOnStartup: data.has("trackingRemindersOnStartup"),
-      trackingShowCounters: data.has("trackingShowCounters"),
+      trackingShowFilters: data.has("trackingShowFilters"),
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),

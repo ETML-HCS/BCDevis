@@ -734,7 +734,8 @@ async function run() {
       settings.elements.validityDays.value = "45";
       settings.elements.trackingDefaultFollowUpDays.value = "7";
       settings.elements.trackingRemindersOnStartup.checked = true;
-      settings.elements.trackingShowCounters.checked = true;
+      if (settings.elements.trackingShowFilters.checked) throw new Error("Les filtres avancés doivent rester facultatifs par défaut");
+      settings.elements.trackingShowFilters.checked = true;
       settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
       const central = JSON.parse(localStorage.getItem("bcdevis-central-v1"));
@@ -745,6 +746,7 @@ async function run() {
         enabled: stored.settings.quoteTrackingEnabled,
         validityDays: stored.settings.validityDays,
         followUpDays: stored.settings.trackingDefaultFollowUpDays,
+        advancedFilters: stored.settings.trackingShowFilters,
         settingsClosed: document.querySelector("#settingsLayer").hidden,
         central: { enabled: central.enabled, endpoint: central.endpoint, email: central.email, deviceName: central.deviceName, hasPassword: Object.hasOwn(central, "password") },
         centralPasswordCleared: document.querySelector("#centralPassword").value === ""
@@ -757,6 +759,7 @@ async function run() {
       enabled: true,
       validityDays: 45,
       followUpDays: 7,
+      advancedFilters: true,
       settingsClosed: true,
       central: { enabled: true, endpoint: "http://127.0.0.1:8787/", email: "accueil@bellecour.test", deviceName: "Accueil test", hasPassword: false },
       centralPasswordCleared: true
@@ -857,9 +860,24 @@ async function run() {
       const archiveCard = document.querySelector(".history-item--archive");
       if (historyTabs.hidden || !archiveCard || archiveCard.querySelector(".history-status")?.textContent !== "Envoyé" || !archiveCard.querySelector(".history-status--commercial")) throw new Error("L’Historique n’affiche pas la liste compacte avec son tag de statut");
       if (document.querySelector("[data-tracking-toggle]") || document.querySelector("[data-tracking-form]")) throw new Error("L’Historique ne doit pas dupliquer les outils du suivi commercial");
+      const historySearch = document.querySelector("#historySearch");
+      const quoteReference = archiveCard.querySelector(".history-item-head strong")?.textContent.trim();
+      historySearch.value = quoteReference;
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (document.querySelectorAll(".history-item--archive").length !== 1) throw new Error("La recherche par référence ne retrouve pas le devis attendu");
+      historySearch.value = "introuvable";
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (!document.querySelector(".history-empty")) throw new Error("La recherche sans résultat ne signale pas l’absence de devis");
+      historySearch.value = "";
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
       const trackingTab = historyTabs.querySelector('[data-history-view="tracking"]');
       trackingTab.click();
       if (trackingTab.getAttribute("aria-selected") !== "true" || document.querySelector("#trackingFilters").hidden) throw new Error("L’onglet Suivi ne commute pas la vue");
+      const statsTab = historyTabs.querySelector('[data-history-view="stats"]');
+      if (statsTab.hidden) throw new Error("L’onglet Statistiques doit apparaître après son activation");
+      statsTab.click();
+      if (statsTab.getAttribute("aria-selected") !== "true" || !document.querySelector(".tracking-stats-panel") || document.querySelectorAll(".tracking-stats-grid > div").length !== 8) throw new Error("L’onglet Statistiques ne rend pas les indicateurs mensuels");
+      trackingTab.click();
       const sentCard = document.querySelector(".history-item--sent");
       if (!sentCard || sentCard.querySelector(".history-status")?.textContent !== "Envoyé") throw new Error("Le statut coloré n’apparaît pas dans le suivi commercial");
       sentCard.querySelector(".history-item-open").dispatchEvent(new PointerEvent("click", { bubbles: true, pointerType: "touch" }));

@@ -13,7 +13,7 @@
     "companyName", "companySubtitle", "companyAddress", "companyPhone", "companyEmail", "companyUid",
     "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
     "studentDiscount", "taxRate", "taxMode", "showTaxInformation", "visibleFamilies", "quoteDateEditable",
-    "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowCounters",
+    "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowFilters",
     "conditions", "studentConditions", "footerNote", "showSignatures", "pdfLanguage", "centralUniqueQuoteNumbers"
   ];
 
