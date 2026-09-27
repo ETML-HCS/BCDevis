@@ -1249,9 +1249,9 @@
   .quote-head-actions .action-menu{
     position:absolute;
     z-index:99999;
-    top:calc(100% + 8px);
-    right:0;
-    left:auto;
+    top:calc(100% + 7px);
+    left:0;
+    right:auto;
     display:grid;
     width:min(252px,calc(100vw - 32px));
     max-height:calc(100vh - 120px);
@@ -1260,11 +1260,12 @@
     overflow-y:auto;
     border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));
     border-radius:14px;
-    color:var(--ink);
-    background:var(--surface-raised);
-    box-shadow:0 18px 45px rgba(0,0,0,.22),0 4px 14px rgba(0,0,0,.08);
+    color:var(--ink, #191714);
+    background:var(--surface-raised, #ffffff) !important;
+    opacity:1 !important;
+    box-shadow:0 18px 45px rgba(0,0,0,.26),0 6px 18px rgba(0,0,0,.12);
     scrollbar-width:thin;
-    animation:menuEntrance .16s cubic-bezier(.2,.8,.25,1);
+    animation:menuEntrance .16s cubic-bezier(.2,.8,.25,1) forwards;
     gap:2px;
   }
   .quote-head-actions .action-menu button{
@@ -1383,8 +1384,88 @@
   html.bcdevis-context-menu-open .quote-head-actions{z-index:1500!important}
   html.bcdevis-context-menu-open .quote-head-actions .action-menu{z-index:99999!important}
   html.bcdevis-context-menu-open .checkout-transmission-menu{z-index:99999!important}
-  html.bcdevis-context-menu-open .window-controls{z-index:50!important;pointer-events:none!important}
+  html.bcdevis-context-menu-open .window-controls{z-index:2500!important;pointer-events:auto!important}
+  html.bcdevis-context-menu-open #moreQuoteButton[aria-expanded="true"]{position:relative;z-index:100000!important;color:var(--ink)!important;border-color:var(--taupe-dark)!important;background:var(--taupe-light)!important}
   html.bcdevis-context-menu-open .quote-icon-button::after{visibility:hidden!important;opacity:0!important;display:none!important}
+
+  /* === Séparateur réglable ergonomique entre caisse et soins === */
+  :root{
+    --checkout-panel-width: 440px;
+  }
+  .workspace-splitter{
+    display:none;
+  }
+  @media screen and (min-width:1181px){
+    .checkout-panel.is-full-height{
+      position:fixed;
+      z-index:80;
+      top:0;
+      right:0;
+      bottom:0;
+      display:flex;
+      width:var(--checkout-panel-width, 440px);
+      min-width:340px;
+      max-width:min(680px, calc(100vw - 360px));
+    }
+    body.checkout-focus .family-panel{
+      padding-right:calc(var(--checkout-panel-width, 440px) + 20px);
+    }
+    .checkout-panel.is-full-height .workspace-splitter{
+      position:absolute;
+      top:0;
+      bottom:0;
+      left:-8px;
+      width:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:col-resize;
+      z-index:110;
+      user-select:none;
+      touch-action:none;
+      outline:none;
+    }
+    .checkout-panel.is-full-height .workspace-splitter::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      left:7px;
+      width:2px;
+      background:transparent;
+      transition:background-color .15s ease;
+    }
+    .checkout-panel.is-full-height .workspace-splitter:hover::before,
+    body.is-resizing-splitter .workspace-splitter::before{
+      background:color-mix(in srgb,var(--accent, #111) 30%,transparent);
+    }
+    .workspace-splitter-handle{
+      position:relative;
+      z-index:1;
+      width:5px;
+      height:56px;
+      border-radius:99px;
+      background:color-mix(in srgb,var(--accent, #111) 35%,var(--line, #ccc));
+      box-shadow:0 1px 4px rgba(0,0,0,.14);
+      transition:width .15s ease,height .15s ease,background-color .15s ease,box-shadow .15s ease;
+    }
+    .workspace-splitter:hover .workspace-splitter-handle,
+    .workspace-splitter:focus-visible .workspace-splitter-handle,
+    body.is-resizing-splitter .workspace-splitter-handle{
+      width:7px;
+      height:76px;
+      background:var(--accent, #111);
+      box-shadow:0 0 12px color-mix(in srgb,var(--accent, #111) 50%,transparent);
+    }
+    body.is-resizing-splitter{
+      cursor:col-resize!important;
+      user-select:none!important;
+    }
+    body.is-resizing-splitter *{
+      cursor:col-resize!important;
+      user-select:none!important;
+    }
+  }
 
   /* Prestations : Cartes corporelles luxueuses, gradients lumineux et contrastes anatomiques */
   .service-zone-icon{
@@ -2531,6 +2612,9 @@
       </aside>
 
       <aside class="checkout-panel" id="checkoutPanel" aria-labelledby="checkoutTitle">
+        <div class="workspace-splitter" id="workspaceSplitter" role="separator" aria-orientation="vertical" aria-label="Ajuster la largeur de la caisse et des soins" title="Glisser pour redimensionner (Double-clic pour réinitialiser)" tabindex="0">
+          <span class="workspace-splitter-handle" aria-hidden="true"></span>
+        </div>
         <div class="checkout-card">
           <div class="receipt-head">
             <div class="quote-title-row"><h2 class="visually-hidden" id="checkoutTitle">Devis</h2></div>

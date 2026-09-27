@@ -105,6 +105,8 @@ html.bcdevis-window-overlay .topbar{
   position:relative;
   z-index:auto;
   -webkit-app-region:drag;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
 }
 html.bcdevis-window-mac .topbar{
   position:relative;
@@ -132,7 +134,7 @@ html.bcdevis-window-mac .topbar [role="radiogroup"]{
 .window-controls{display:none}
 html.bcdevis-window-overlay .window-controls{
   position:fixed;
-  z-index:120;
+  z-index:2500;
   top:10px;
   right:8px;
   display:flex;
@@ -142,25 +144,26 @@ html.bcdevis-window-overlay .window-controls{
   justify-content:flex-end;
   border:1px solid color-mix(in srgb,var(--line,rgba(0,0,0,.18)) 80%,transparent);
   border-radius:8px;
-  background:rgba(255,255,255,.08);
-  opacity:.72;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  opacity:1;
   pointer-events:auto;
   cursor:pointer;
   isolation:isolate;
   transition:width .16s ease,opacity .16s ease,background-color .16s ease,box-shadow .16s ease,border-color .16s ease;
   -webkit-app-region:no-drag;
-  backdrop-filter:blur(8px);
 }
 html.bcdevis-window-overlay .window-controls::before{
   position:absolute;
   inset:0;
   display:grid;
-  content:"•••";
+  content:"□";
   place-items:center;
-  color:currentColor;
-  font-size:10px;
-  letter-spacing:2px;
+  color:#1a1918;
+  font-family:"Segoe UI Symbol",system-ui,-apple-system,sans-serif;
+  font-size:16px;
   line-height:1;
+  font-weight:700;
   pointer-events:none;
   transition:opacity .1s ease;
 }
@@ -210,6 +213,7 @@ html.bcdevis-window-overlay .window-controls svg{width:16px;height:16px;stroke-w
 .window-icon-restore{display:none}
 .window-controls[data-maximized="true"] .window-icon-maximize{display:none}
 .window-controls[data-maximized="true"] .window-icon-restore{display:block}
+html.bcdevis-window-overlay .window-controls[data-maximized="true"]::before{content:"⤡"}
 @media screen and (max-width:1180px){
   html.bcdevis-window-overlay .topbar{
     padding-right:52px;
@@ -729,16 +733,16 @@ html[data-ipad-layout="optimized"] .cart-line-main{padding-block:14px}
 
 /* V4.16 — caisse plein écran permanente sur ordinateur */
 .quote-number{white-space:nowrap}
-.checkout-panel.is-full-height{position:fixed;z-index:80;top:0;right:0;bottom:0;display:flex;width:min(460px,100vw);height:100dvh;min-height:0;padding:6px;box-shadow:-18px 0 42px rgba(0,0,0,.16)}
+.checkout-panel.is-full-height{position:fixed;z-index:80;top:0;right:0;bottom:0;display:flex;width:var(--checkout-panel-width,min(460px,100vw));height:100dvh;min-height:0;padding:6px;box-shadow:-18px 0 42px rgba(0,0,0,.16)}
 .checkout-panel.is-full-height .checkout-card{height:100%;min-height:0}
 .checkout-panel.is-full-height .cart-section{min-height:150px;max-height:none;flex:1 1 auto}
 .checkout-panel.is-full-height .cart-lines{max-height:none;flex:1 1 auto}
 .checkout-panel.is-full-height .cart-empty{height:100%;min-height:150px}
 html.checkout-focus,body.checkout-focus{overflow:hidden}
 body.checkout-focus .workspace{grid-template-columns:minmax(0,1fr)}
-body.checkout-focus .family-panel{padding-right:calc(min(460px,100vw) + 20px)}
-@media screen and (min-width:1181px) and (max-width:1450px){.checkout-panel.is-full-height{width:430px}}
-@media screen and (min-width:1181px) and (max-width:1450px){body.checkout-focus .family-panel{padding-right:450px}}
+body.checkout-focus .family-panel{padding-right:calc(var(--checkout-panel-width,min(460px,100vw)) + 20px)}
+@media screen and (min-width:1181px) and (max-width:1450px){.checkout-panel.is-full-height{width:var(--checkout-panel-width,430px)}}
+@media screen and (min-width:1181px) and (max-width:1450px){body.checkout-focus .family-panel{padding-right:calc(var(--checkout-panel-width,430px) + 20px)}}
 
 /* V4.17 — identité visuelle personnalisable */
 .brand-assets-editor{display:grid;gap:10px;margin-top:3px}
@@ -1683,8 +1687,9 @@ html[data-theme].bcdevis-window-overlay .window-controls button{
 }
 html[data-theme].bcdevis-window-overlay .window-controls{
   color:var(--topbar-fg);
-  border-color:color-mix(in srgb,var(--panel-border) 80%,transparent);
-  background:color-mix(in srgb,var(--surface-raised) 65%,transparent);
+  border-color:color-mix(in srgb,var(--topbar-fg) 28%,var(--panel-border));
+  background:var(--surface-raised,#fff);
+  box-shadow:0 2px 8px rgba(0,0,0,.12);
 }
 html[data-theme].bcdevis-window-overlay .window-controls:hover,
 html[data-theme].bcdevis-window-overlay .window-controls:focus-within{
@@ -2128,7 +2133,8 @@ html.bcdevis-context-menu-open .receipt-head{z-index:1500!important}
 html.bcdevis-context-menu-open .quote-head-actions{z-index:1500!important}
 html.bcdevis-context-menu-open .quote-head-actions .action-menu{z-index:99999!important}
 html.bcdevis-context-menu-open .checkout-transmission-menu{z-index:99999!important}
-html.bcdevis-context-menu-open .window-controls{z-index:50!important;pointer-events:none!important}
+html.bcdevis-context-menu-open .window-controls{z-index:2500!important;pointer-events:auto!important}
+html.bcdevis-context-menu-open #moreQuoteButton[aria-expanded="true"]{position:relative;z-index:100000!important;color:var(--ink)!important;border-color:var(--taupe-dark)!important;background:var(--taupe-light)!important}
 html.bcdevis-context-menu-open .quote-icon-button::after{visibility:hidden!important;opacity:0!important;display:none!important}
 
 /* Prestations : densité adaptative et aperçu complet des libellés longs. */

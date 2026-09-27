@@ -538,6 +538,7 @@
     applyDisplayMode();
     syncViewportMetrics();
     syncPermanentCheckoutLayout();
+    initWorkspaceSplitter();
     syncToastPlacement();
     expireTrackedQuotes();
     const versionBadge = $("#appVersionBadge");
@@ -4068,6 +4069,101 @@
     document.body.classList.toggle("checkout-focus", permanent);
   }
 
+  function initWorkspaceSplitter() {
+    const splitter = $("#workspaceSplitter");
+    if (!splitter) return;
+
+    const MIN_WIDTH = 340;
+    const MAX_WIDTH = 700;
+    const DEFAULT_WIDTH = 440;
+
+    const clampWidth = (val) => {
+      const maxAllowed = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, window.innerWidth - 380));
+      return Math.round(Math.max(MIN_WIDTH, Math.min(maxAllowed, val)));
+    };
+
+    const applyWidth = (width, persist = false) => {
+      const clamped = clampWidth(width);
+      document.documentElement.style.setProperty("--checkout-panel-width", `${clamped}px`);
+      splitter.setAttribute("aria-valuenow", String(clamped));
+      if (persist) {
+        try {
+          localStorage.setItem("bcdevis-checkout-panel-width", String(clamped));
+        } catch (_) {}
+        if (db && db.settings) db.settings.checkoutPanelWidth = clamped;
+      }
+      return clamped;
+    };
+
+    try {
+      const stored = localStorage.getItem("bcdevis-checkout-panel-width") || db?.settings?.checkoutPanelWidth;
+      if (stored) {
+        const parsed = Number.parseInt(stored, 10);
+        if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) {
+          applyWidth(parsed, false);
+        }
+      }
+    } catch (_) {}
+
+    let isDragging = false;
+
+    splitter.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      if (window.innerWidth < 1181) return;
+      isDragging = true;
+      splitter.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-resizing-splitter");
+      event.preventDefault();
+    });
+
+    splitter.addEventListener("pointermove", (event) => {
+      if (!isDragging) return;
+      const targetWidth = window.innerWidth - event.clientX;
+      applyWidth(targetWidth, false);
+    });
+
+    const finishDrag = (event) => {
+      if (!isDragging) return;
+      isDragging = false;
+      document.body.classList.remove("is-resizing-splitter");
+      try {
+        splitter.releasePointerCapture(event.pointerId);
+      } catch (_) {}
+      const targetWidth = window.innerWidth - event.clientX;
+      applyWidth(targetWidth, true);
+    };
+
+    splitter.addEventListener("pointerup", finishDrag);
+    splitter.addEventListener("pointercancel", finishDrag);
+
+    splitter.addEventListener("dblclick", () => {
+      applyWidth(DEFAULT_WIDTH, true);
+      toast("Largeur de la caisse réinitialisée");
+    });
+
+    splitter.addEventListener("keydown", (event) => {
+      const current = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--checkout-panel-width"), 10) || DEFAULT_WIDTH;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        applyWidth(current + 20, true);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        applyWidth(current - 20, true);
+      } else if (event.key === "Home" || event.key === "Escape") {
+        event.preventDefault();
+        applyWidth(DEFAULT_WIDTH, true);
+        toast("Largeur de la caisse réinitialisée");
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 1181) {
+        const current = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--checkout-panel-width"), 10);
+        if (current) applyWidth(current, false);
+      }
+    });
+  }
+
   function appMenuItems() {
     return $$('[role="menuitem"]:not([disabled]), [role="menuitemcheckbox"]:not([disabled]), [role="menuitemradio"]:not([disabled])', $("#appActionsMenu"));
   }
@@ -5486,6 +5582,11 @@
     $("#windowMinimizeButton").addEventListener("click", () => desktopWindow.minimizeWindow());
     $("#windowMaximizeButton").addEventListener("click", async () => syncWindowControlState(await desktopWindow.toggleMaximizeWindow()));
     $("#windowCloseButton").addEventListener("click", () => desktopWindow.closeWindow());
+    windowControls.addEventListener("click", async (event) => {
+      if (event.target === windowControls || (!event.target.closest("#windowMinimizeButton, #windowCloseButton") && windowControls.clientWidth <= 42)) {
+        syncWindowControlState(await desktopWindow.toggleMaximizeWindow());
+      }
+    });
     desktopWindow.onWindowMaximized?.(syncWindowControlState);
     desktopWindow.isWindowMaximized?.().then(syncWindowControlState);
   }
