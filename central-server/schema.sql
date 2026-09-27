@@ -1,3 +1,9 @@
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  applied_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -71,6 +77,14 @@ CREATE TABLE IF NOT EXISTS catalog_overrides (
   PRIMARY KEY (organization_id, service_id)
 );
 
+CREATE TABLE IF NOT EXISTS contacts (
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  id TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (organization_id, id)
+);
+
 CREATE TABLE IF NOT EXISTS quotes (
   organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   id TEXT NOT NULL,
@@ -133,6 +147,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 
 CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS audit_org_idx ON audit_log(organization_id, id DESC);
+CREATE INDEX IF NOT EXISTS contacts_updated_idx ON contacts(organization_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS quotes_updated_idx ON quotes(organization_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS quote_number_reservations_org_idx ON quote_number_reservations(organization_id, id DESC);
 CREATE INDEX IF NOT EXISTS documents_org_created_idx ON documents(organization_id, created_at DESC);

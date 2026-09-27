@@ -75,6 +75,26 @@ function normalizedOrigins(value) {
   return new Set(values.map((item) => item.trim()).filter(Boolean));
 }
 
+const MAX_LOGIN_ATTEMPTS_KEYS = 5000;
+const LOGIN_ATTEMPT_WINDOW_MS = 5 * 60 * 1000;
+
+function pruneLoginAttempts(map) {
+  const cutoff = Date.now() - LOGIN_ATTEMPT_WINDOW_MS;
+  for (const [key, timestamps] of map.entries()) {
+    const valid = timestamps.filter((t) => t > cutoff);
+    if (!valid.length) {
+      map.delete(key);
+    } else {
+      map.set(key, valid);
+    }
+  }
+  if (map.size > MAX_LOGIN_ATTEMPTS_KEYS) {
+    const overflow = map.size - MAX_LOGIN_ATTEMPTS_KEYS;
+    const keysToDelete = [...map.keys()].slice(0, overflow);
+    for (const key of keysToDelete) map.delete(key);
+  }
+}
+
 function startCentralServer(options = {}) {
   const host = options.host || process.env.BCDEVIS_CENTRAL_HOST || "127.0.0.1";
   const port = options.port ?? Number(process.env.BCDEVIS_CENTRAL_PORT || 8787);
@@ -95,6 +115,12 @@ function startCentralServer(options = {}) {
     });
   })();
   const loginAttempts = new Map();
+
+  const cleanupInterval = setInterval(() => {
+    database.cleanupExpiredSessions().catch(() => {});
+    pruneLoginAttempts(loginAttempts);
+  }, 60 * 60 * 1000);
+  if (typeof cleanupInterval.unref === "function") cleanupInterval.unref();
 
   const server = http.createServer(async (request, response) => {
     const requestOrigin = String(request.headers.origin || "");
@@ -190,6 +216,49 @@ function startCentralServer(options = {}) {
           return;
         }
         json(response, 200, { events: await database.audit(session.organization_id, url.searchParams.get("limit")) }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === `${API_PREFIX}/admin/users`) {
+        if (session.role !== "admin") {
+          json(response, 403, { code: "ROLE_FORBIDDEN", message: "Cette action est réservée aux administrateurs." }, corsHeaders);
+          return;
+        }
+        json(response, 200, { users: await database.listUsers(session.organization_id) }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === `${API_PREFIX}/admin/devices`) {
+        if (session.role !== "admin") {
+          json(response, 403, { code: "ROLE_FORBIDDEN", message: "Cette action est réservée aux administrateurs." }, corsHeaders);
+          return;
+        }
+        json(response, 200, { devices: await database.listDevices(session.organization_id) }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === `${API_PREFIX}/admin/devices/revoke`) {
+        if (session.role !== "admin") {
+          json(response, 403, { code: "ROLE_FORBIDDEN", message: "Cette action est réservée aux administrateurs." }, corsHeaders);
+          return;
+        }
+        const body = await readJson(request);
+        const deviceId = String(body.deviceId || "");
+        if (!DEVICE_ID_PATTERN.test(deviceId)) {
+          json(response, 400, { code: "DEVICE_ID_INVALID", message: "L’identifiant d’appareil est invalide." }, corsHeaders);
+          return;
+        }
+        const revoked = await database.revokeDevice({ deviceId });
+        json(response, 200, { ok: true, device: revoked }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === `${API_PREFIX}/admin/migrations`) {
+        if (session.role !== "admin") {
+          json(response, 403, { code: "ROLE_FORBIDDEN", message: "Cette action est réservée aux administrateurs." }, corsHeaders);
+          return;
+        }
+        json(response, 200, { migrations: await database.getMigrationStatus() }, corsHeaders);
         return;
       }
 
@@ -326,7 +395,10 @@ function startCentralServer(options = {}) {
     }
   });
 
-  server.on("close", () => void database.close());
+  server.on("close", () => {
+    clearInterval(cleanupInterval);
+    void database.close();
+  });
   return new Promise((resolve, reject) => {
     ready.then((bootstrapped) => server.listen(port, host, () => {
       const address = server.address();

@@ -84,7 +84,7 @@ assert.match(centralReadme, /BCDEVIS_DATABASE_URL/);
 assert.match(centralReadme, /HTTPS/);
 assert.match(centralReadme, /pg_dump/);
 assert.match(centralCompose, /postgres:17-alpine/);
-for (const tableName of ["organizations", "users", "devices", "sessions", "workspace_state", "shared_settings", "quote_counters", "custom_services", "catalog_overrides", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {
+for (const tableName of ["schema_migrations", "organizations", "users", "devices", "sessions", "workspace_state", "shared_settings", "quote_counters", "custom_services", "catalog_overrides", "contacts", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {
   assert.match(centralSchema, new RegExp(`CREATE TABLE IF NOT EXISTS ${tableName}\\b`));
 }
 for (const document of [readme, manual, quick, clientReadme]) {

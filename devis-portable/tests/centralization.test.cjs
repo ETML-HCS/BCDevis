@@ -125,12 +125,15 @@ async function main() {
     assert.deepEqual(reservedB.payload.numbers, ["DEV-20260805C000004", "DEV-20260805C000005"]);
 
     const original = snapshot({ q1: quote("q1", "DEV-20260805P01001", 100, "2026-08-05T08:00:00.000Z") });
+    original.contacts = { c1: { id: "c1", name: "Alice Dupont", email: "alice@example.ch", updatedAt: "2026-08-05T08:00:00.000Z" } };
     const firstSync = await api(started.url, "sync", { method: "POST", token: loginA.payload.token, body: { snapshot: original } });
     assert.equal(firstSync.status, 200);
     assert.equal(firstSync.payload.revision, 1);
     const secondDevicePull = await api(started.url, "sync", { method: "POST", token: loginB.payload.token, body: { snapshot: snapshot() } });
     assert.equal(secondDevicePull.status, 200);
     assert.ok(secondDevicePull.payload.snapshot.quotes.q1);
+    assert.ok(secondDevicePull.payload.snapshot.contacts.c1);
+    assert.equal(secondDevicePull.payload.snapshot.contacts.c1.name, "Alice Dupont");
 
     const changedA = snapshot({ q1: quote("q1", "DEV-20260805P01001", 120, "2026-08-05T09:00:00.000Z") });
     const pushA = await api(started.url, "sync", { method: "POST", token: loginA.payload.token, body: { snapshot: changedA } });
@@ -200,6 +203,19 @@ async function main() {
     const audit = await api(started.url, "audit?limit=20", { token: loginA.payload.token });
     assert.equal(audit.status, 200);
     assert.ok(audit.payload.events.some((event) => event.action === "sync.merge"));
+
+    const adminUsers = await controller.listAdminUsers();
+    assert.ok(Array.isArray(adminUsers.users));
+    assert.equal(adminUsers.users[0].email, "admin@bellecour.test");
+
+    const adminDevices = await controller.listAdminDevices();
+    assert.ok(Array.isArray(adminDevices.devices));
+    assert.ok(adminDevices.devices.length >= 2);
+
+    const adminMigrations = await controller.getAdminMigrations();
+    assert.ok(Array.isArray(adminMigrations.migrations));
+    assert.equal(adminMigrations.migrations.length, 3);
+
     controller.schedule(60000);
     assert.equal(controller.getState().status, "pending");
     await controller.logout();
@@ -234,7 +250,7 @@ async function main() {
   assert.match(html, /id="pdfLibraryPrintButton"/);
   assert.match(app, /centralController\.initialize\(\)/);
   assert.match(serviceWorker, /\.\/central-sync\.js/);
-  for (const table of ["users", "devices", "sessions", "shared_settings", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {
+  for (const table of ["users", "devices", "sessions", "shared_settings", "contacts", "quotes", "quote_number_sequences", "quote_number_reservations", "documents", "audit_log"]) {
     assert.match(schema, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`));
   }
   assert.equal(packageJson.scripts["test:central:postgres"], "node devis-portable/tests/central-postgres.integration.test.cjs");

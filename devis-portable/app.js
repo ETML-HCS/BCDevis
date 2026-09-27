@@ -180,7 +180,8 @@
     footerNote: DEFAULT_FOOTER_NOTE,
     showSignatures: true,
     pdfLanguage: "fr",
-    centralUniqueQuoteNumbers: false
+    centralUniqueQuoteNumbers: false,
+    historyCompactMode: false
   };
 
   function packDefaults() {
@@ -539,6 +540,8 @@
     syncPermanentCheckoutLayout();
     syncToastPlacement();
     expireTrackedQuotes();
+    const versionBadge = $("#appVersionBadge");
+    if (versionBadge) versionBadge.textContent = `v${RELEASE_VERSION}`;
     saveLocal(false);
     renderAll();
     window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
@@ -2969,6 +2972,15 @@
     const dueBadge = $("#trackingDueCount");
     dueBadge.textContent = String(counts["follow-up"] || "");
     dueBadge.hidden = counts["follow-up"] === 0;
+    const countBadge = $("#historyQuoteCountBadge");
+    if (countBadge) countBadge.textContent = plural(items.length, "devis");
+    const compactOpt = $("#historyCompactOption");
+    if (compactOpt) compactOpt.checked = db.settings.historyCompactMode === true;
+    const filtersOpt = $("#historyShowFiltersOption");
+    if (filtersOpt) filtersOpt.checked = db.settings.trackingShowFilters === true;
+    const trackingOpt = $("#historyTrackingOption");
+    if (trackingOpt) trackingOpt.checked = db.settings.quoteTrackingEnabled === true;
+    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
     filters.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowFilters !== true;
     historyTools.hidden = activeHistoryView === "stats";
     $("#historySearch").value = historyQuery;
@@ -5334,6 +5346,24 @@
     renderCentralizationState();
     return config.enabled === true;
   }
+
+  $("#historyCompactOption")?.addEventListener("change", (event) => {
+    db.settings.historyCompactMode = event.target.checked === true;
+    saveLocal(false);
+    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
+    renderHistory();
+  });
+  $("#historyShowFiltersOption")?.addEventListener("change", (event) => {
+    db.settings.trackingShowFilters = event.target.checked === true;
+    saveLocal(false);
+    renderTrackingNavigation(Object.values(db.quotes));
+  });
+  $("#historyTrackingOption")?.addEventListener("change", (event) => {
+    db.settings.quoteTrackingEnabled = event.target.checked === true;
+    saveLocal(false);
+    syncTrackingSettingsState();
+    renderHistory();
+  });
 
   $("#exportBackupButton").addEventListener("click", exportBackup);
   $("#importBackupButton").addEventListener("click", () => $("#backupImportInput").click());
