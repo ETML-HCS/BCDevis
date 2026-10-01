@@ -106,8 +106,8 @@ for (const [id, label, shortcut] of [
   assert.match(html, new RegExp(`class="round-button quote-icon-button" id="${id}"[^>]*aria-label="${label}"[^>]*aria-keyshortcuts="${shortcut}"[^>]*data-tooltip="[^"]+"`), `${id} doit être une action SVG documentée de la caisse`);
   assert.match(html, new RegExp(`id="${id}"[^>]*>\\s*<svg[^>]*>[\\s\\S]*?<\\/svg>\\s*<\\/button>`), `${id} ne doit contenir que son SVG`);
 }
-assert.match(html, /<symbol id="icon-new-quote"[^>]*>[\s\S]*?<\/symbol>[\s\S]*?id="newQuoteButton"[^>]*>[\s\S]*?<use href="#icon-new-quote">/, "Nouveau devis doit utiliser le monogramme SVG D+");
-assert.match(html, /<path class="icon-new-quote-plus" d="M19\.5 3\.5v5M17 6h5" stroke-width="1\.75"><\/path>/, "Le + de Nouveau devis doit rester petit et placé en exposant du D");
+assert.match(html, /<symbol id="icon-new-quote"[^>]*>[\s\S]*?<\/symbol>[\s\S]*?id="newQuoteButton"[^>]*>[\s\S]*?<use href="#icon-new-quote">/, "Nouveau devis doit utiliser un SVG dédié");
+assert.match(html, /<symbol id="icon-new-quote"[^>]*data-design="file-plus-v1">[\s\S]*?M12 11\.5v5M9\.5 14h5[\s\S]*?<\/symbol>/, "Nouveau devis doit être une feuille avec un plus");
 assert.match(html, /<symbol id="icon-save" viewBox="0 0 24 24" data-design="save-v2">(?:<path[^>]+><\/path>){3}<\/symbol>/, "Enregistrer doit utiliser le SVG net en trois tracés");
 assert.match(html, /#saveButton svg\{width:19px;height:19px;stroke-width:2\.15;shape-rendering:geometricPrecision\}/, "L’icône Enregistrer doit garder une taille et une épaisseur nettes dans la caisse");
 assert.match(app, /\$\("#newQuoteButton"\)\.addEventListener\("click", createNewQuote\)/, "Le bouton Nouveau devis de la caisse doit fonctionner");
