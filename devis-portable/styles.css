@@ -2216,6 +2216,16 @@ html.bcdevis-catalog-menu-open .topbar{z-index:auto}
 html.bcdevis-catalog-menu-open .app-actions{z-index:410}
 html.bcdevis-catalog-menu-open .app-actions-menu{z-index:420}
 
+/* En mode mobile / smartphone, l’en-tête et le menu passent au-dessus des tuiles de soins. */
+@media screen and (max-width:1180px){
+  html.bcdevis-catalog-menu-open .topbar{z-index:1000!important}
+  html.bcdevis-catalog-menu-open .app-actions{position:relative!important;z-index:1010!important}
+  html.bcdevis-catalog-menu-open .app-actions-menu{position:absolute!important;z-index:1020!important}
+}
+html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .topbar{z-index:1000!important}
+html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .app-actions{position:relative!important;z-index:1010!important}
+html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .app-actions-menu{position:absolute!important;z-index:1020!important}
+
 /* Menus contextuels : toujours au premier plan absolu sans interférence des contrôles de fenêtre. */
 html.bcdevis-context-menu-open .checkout-panel{z-index:1500!important}
 html.bcdevis-context-menu-open .checkout-card{z-index:1500!important}

@@ -1401,18 +1401,26 @@
 
   /* Menus contextuels & contrôles de fenêtre : priorité absolue d’affichage */
   html.bcdevis-catalog-menu-open .topbar{
-    z-index:auto!important;
+    z-index:auto;
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
   }
   html.bcdevis-catalog-menu-open .app-actions{
     position:relative!important;
-    z-index:410!important;
+    z-index:410;
   }
   html.bcdevis-catalog-menu-open .app-actions-menu{
     position:absolute!important;
-    z-index:420!important;
+    z-index:420;
   }
+  @media screen and (max-width:1180px){
+    html.bcdevis-catalog-menu-open .topbar{z-index:1000!important}
+    html.bcdevis-catalog-menu-open .app-actions{position:relative!important;z-index:1010!important}
+    html.bcdevis-catalog-menu-open .app-actions-menu{position:absolute!important;z-index:1020!important}
+  }
+  html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .topbar{z-index:1000!important}
+  html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .app-actions{position:relative!important;z-index:1010!important}
+  html[data-display-mode="smartphone"].bcdevis-catalog-menu-open .app-actions-menu{position:absolute!important;z-index:1020!important}
   html.bcdevis-context-menu-open .checkout-panel{z-index:1500!important}
   html.bcdevis-context-menu-open .checkout-card{z-index:1500!important}
   html.bcdevis-context-menu-open .receipt-head{z-index:1500!important}
