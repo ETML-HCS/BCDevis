@@ -55,7 +55,7 @@ Ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’
 
 <div class="callout"><strong>Option pratique :</strong> dans Réglages > Interface, activez Lancer au démarrage si BCDevis doit s'ouvrir automatiquement avec la session Windows ou Linux.</div>
 
-<div class="callout"><strong>Fonctions récentes :</strong><br><strong>Suivi commercial</strong> : activez Réglages > Devis > Suivi des devis pour retrouver les statuts, les notes, les prochaines relances, les compteurs et les rappels au démarrage. Les états terminaux sont verrouillés et l’action Créer une V2 protège l’ancienne version.<br><strong>Factures</strong> : depuis un devis accepté, importez la facture envoyée pour la sortir du suivi actif et la retrouver dans la bibliothèque Factures.<br><strong>Affichage</strong> : dans Catalogue > Vue, choisissez Auto, Mobile ou Bureau ; le choix reste propre à ce poste.<br><strong>Mode centralisé V7</strong> : si plusieurs postes doivent partager les mêmes devis, renseignez dans Réglages > Données l’adresse HTTPS et le compte fournis par l’administrateur. Le mode local reste disponible sans serveur.</div>
+<div class="callout"><strong>Fonctions récentes :</strong><br><strong>Rabais personnalisé</strong> : double-cliquez sur une ligne pour appliquer un pourcentage ou un montant CHF, avec tags rapides 2 %, 3 %, 5 % ou 10 %.<br><strong>Corps interactif</strong> : silhouette anatomique découpée en 21 sous-zones précises et pastilles tactiles sous le mannequin.<br><strong>Suivi commercial</strong> : activez Réglages > Devis & suivi pour retrouver les statuts, les notes, les prochaines relances, les compteurs et les rappels au démarrage. Les états terminaux sont verrouillés et l’action Créer une V2 protège l’ancienne version.<br><strong>Factures</strong> : depuis un devis accepté, importez la facture envoyée pour la sortir du suivi actif et la retrouver dans la bibliothèque Factures.<br><strong>Affichage</strong> : dans Catalogue > Vue, choisissez Auto, Mobile ou Bureau ; le choix reste propre à ce poste.<br><strong>Mode centralisé V7</strong> : si plusieurs postes doivent partager les mêmes devis, renseignez dans Réglages > Données l’adresse HTTPS et le compte fournis par l’administrateur. Le mode local reste disponible sans serveur.</div>
 
 ## 2. Créer un devis en 8 gestes
 
@@ -70,7 +70,7 @@ Pour corriger le nom, le temps, le prix ou le pictogramme d’un soin, utilisez 
 3. Si vous utilisez le **Corps interactif**, choisissez Femme/Homme et Face/Dos, puis cliquez sur une zone.
 4. Cliquez sur un soin pour l'ajouter au **Devis**.
 5. Cliquez sur le pictogramme client, choisissez un contact du répertoire ou créez-en un, puis complétez au minimum son nom.
-6. Vérifiez la date, les quantités, le prix, la TVA et le total.
+6. Vérifiez la date, les quantités, le prix, la TVA et le total. Double-cliquez sur une ligne pour appliquer un rabais personnalisé si besoin.
 7. Cliquez sur **Enregistrer** pour placer le devis dans l'historique ; l’indicateur d’archivage passe de **Non archivé** à **Enregistré**.
 8. Choisissez **Imprimer**, **PDF**, **E-mail** ou **À joindre**.
 
@@ -78,6 +78,7 @@ Pour corriger le nom, le temps, le prix ou le pictogramme d’un soin, utilisez 
 
 - Bouton **−** : diminuer la quantité.
 - Bouton **+** : augmenter la quantité.
+- Double-clic sur la ligne : ouvrir la modale concise de rabais personnalisé (% ou CHF, avec tags rapides 2 %, 3 %, 5 % et 10 % et calcul en direct du prix net).
 - Les mêmes boutons règlent séparément les séances payées et offertes d’un pack.
 - Avec une souris : allez au bord droit de la ligne pour révéler la corbeille.
 - En mode iPad ou Smartphone : la première utilisation rappelle le geste ; balayez vers la gauche, touchez la corbeille, puis utilisez **Annuler** si nécessaire.

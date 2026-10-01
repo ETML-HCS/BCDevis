@@ -23,6 +23,13 @@ Principes à préserver :
 - continuité Windows, Linux, macOS, ChromeOS et iPadOS ;
 - validation humaine avant tout envoi à un client.
 
+## Livraisons récentes (v8.5.0)
+
+- **Rabais personnalisé par ligne et tags rapides** : modale concise et discrète par prestation (% ou CHF) avec tags prédéfinis (2 %, 3 %, 5 %, 10 %) pour une application en un clic, prévisualisation du net et report sur le devis et le PDF.
+- **Corps interactif détaillé (21 sous-zones)** : sélection anatomique ciblée (bras, avant-bras, mains, bas du dos, genoux, pieds...) avec pastilles tactiles sous le mannequin et coloration des zones actives dans le devis.
+- **Sécurisation des données locales** : téléchargement automatique d’un instantané préventif avant toute restauration de sauvegarde JSON.
+- **Portail d'accès souple** : suspension de l'authentification web en l'absence de serveur central actif, avec bascule de test via paramètre URL (`?authGate=1`).
+
 ## État des propositions précédentes
 
 | Référence | Fonction | État en 7.1.0 | Manque principal |

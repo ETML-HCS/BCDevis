@@ -7,8 +7,10 @@ NOUVEAUTES 8.5.0
   dos... pour ne voir que les soins de cette zone. Des pastilles sous le
   mannequin offrent le même accès, plus facile au doigt.
 - Les zones déjà présentes dans le devis restent colorées sur le mannequin.
-- Rabais personnalisé : double-cliquez sur une ligne du devis pour saisir un
-  rabais en % ou en CHF. Il apparaît sur la ligne, dans le total et sur le PDF.
+- Rabais personnalisé : double-cliquez sur une ligne du devis pour ouvrir la
+  modale concise et discrète. Choisissez un rabais en % ou en CHF, ou cliquez
+  sur un tag rapide (2 %, 3 %, 5 %, 10 %). Il apparaît sur la ligne, dans le
+  total et sur le PDF.
 - Avant de restaurer une sauvegarde, BCDevis télécharge un instantané de vos
   données actuelles.
 - Le raccourci Ctrl+L bascule la langue du PDF (FR / EN) en un instant.

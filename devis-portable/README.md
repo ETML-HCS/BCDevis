@@ -7,7 +7,7 @@ Application de création de devis pour Clinique Bellecour. Les applications Wind
 - Le mode Corps interactif découpe chaque région en sous-zones précises (poitrine, abdomen, épaules, bras, avant-bras, mains, cuisses, genoux, bas de jambe, pieds, nuque, haut et bas du dos, fesses). Un clic filtre uniquement les soins concernés ; des pastilles tactiles offrent le même accès.
 - Les zones dont un soin figure déjà dans le devis restent teintées sur la silhouette et marquées dans les pastilles.
 - Les boutons du mode Corps (Femme/Homme, Face/Dos, sous-zones, retour au corps complet) reçoivent des icônes SVG.
-- Un double-clic sur une ligne du devis ouvre un rabais personnalisé en % ou en CHF. Le rabais porte sur les séances payées, s’applique avant le coupon global, n’accepte que le CHF avec le tarif Étudiant, et figure sur la ligne, dans le total et sur le PDF.
+- Un double-clic sur une ligne du devis ouvre une modale concise et discrète de rabais personnalisé (% ou CHF). Des tags rapides (2 %, 3 %, 5 %, 10 %) permettent une saisie instantanée en un clic avec prévisualisation du prix net. Le rabais porte sur les séances payées, s’applique avant le coupon global, n’accepte que le CHF avec le tarif Étudiant, et figure sur la ligne, dans le total et sur le PDF.
 - **Provisoire :** le login de la version web est suspendu (constante `ACCESS_GATE_SUSPENDED` dans `app.js`) ; `?authGate=1` permet de tester l’écran de connexion.
 - Avant une restauration ou un import de transfert, un instantané des données actuelles est téléchargé et le contenu de la sauvegarde est annoncé dans la confirmation.
 

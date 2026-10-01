@@ -251,7 +251,9 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 
 ### Fonctions récentes à connaître
 
-- **Suivi commercial des devis** : activez-le dans **Réglages > Devis > Suivi des devis** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
+- **Rabais personnalisé par ligne** : double-cliquez sur n’importe quelle prestation du devis pour ouvrir la modale concise et discrète. Choisissez un pourcentage (%) ou un montant fixe (CHF), ou cliquez sur les tags rapides **2 %**, **3 %**, **5 %** ou **10 %** pour un réglage instantané avec prévisualisation directe du prix net.
+- **Corps interactif et 21 sous-zones anatomiques** : la navigation corporelle découpe chaque région en zones précises (avant-bras, mains, genoux, pieds, haut et bas du dos, etc.) avec pastilles tactiles sous la silhouette. Les zones contenant déjà des soins dans le devis restent teintées sur le mannequin.
+- **Suivi commercial des devis** : activez-le dans **Réglages > Devis & suivi** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
 - **Workflow contrôlé et V2** : les statuts suivent un ordre précis ; un devis accepté, refusé, expiré ou facturé est verrouillé et peut être repris dans une nouvelle version liée.
 - **Affichage Auto, Mobile ou Bureau** : ouvrez le menu **Catalogue**, puis choisissez la vue adaptée à votre écran. Le choix reste mémorisé uniquement sur ce poste.
 - **Confort iPad et Smartphone** : les actions tactiles sont agrandies ; un balayage vers la gauche révèle la suppression et **Annuler** restaure immédiatement la dernière ligne retirée.
@@ -348,7 +350,7 @@ Le bouton **Corps interactif** active le mannequin anatomique :
 3. cliquez sur une zone du mannequin ;
 4. sélectionnez le soin proposé à droite pour l’ajouter au devis.
 
-La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse, aux bras, au maillot et aux jambes. Sur la vue arrière, il donne accès au cuir chevelu, au dos, aux bras, aux fesses et jambes ainsi qu’au **SIF**.
+La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse/poitrine, à l'abdomen, aux épaules, aux bras, aux avant-bras, aux mains, aux cuisses, aux genoux, aux bas de jambe/mollets et aux pieds. Sur la vue arrière, il donne accès au cuir chevelu, à la nuque, au haut du dos, au bas du dos, aux fesses et jambes ainsi qu’au **SIF**. Des pastilles tactiles disposées sous la silhouette offrent un accès direct équivalent, idéal sur tablette ou écran tactile. Les zones dont au moins un soin figure déjà dans le devis restent teintées visuellement sur le mannequin.
 
 ![Navigation avec le mannequin féminin, vue de face](captures/04-corps-interactif.png)
 
@@ -400,6 +402,17 @@ Chaque ligne affiche le nom, la catégorie, la quantité et le prix. La suppress
 - Appuyez sur `Échap` ou touchez de nouveau la ligne pour refermer l’action sans supprimer.
 
 En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **+1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes ne sont jamais facturées.
+
+### Rabais personnalisé par prestation (tags 2, 3, 5, 10 % ou CHF)
+
+Double-cliquez sur n’importe quelle ligne de soin dans la caisse (ou cliquez sur son indicateur de rabais) pour ouvrir la modale concise et discrète :
+
+- **Tags rapides** : cliquez sur les tags **2 %**, **3 %**, **5 %** ou **10 %** pour appliquer instantanément une réduction courante en un seul geste. Le champ se renseigne automatiquement et le tag sélectionné est mis en valeur.
+- **Saisie libre en % ou CHF** : saisissez un pourcentage ou un montant fixe personnalisé selon vos besoins de négociation.
+- **Prévisualisation directe** : la modale affiche en temps réel le calcul transparent (montant brut, déduction calculée et prix net résultant).
+- **Retirer le rabais** : le bouton dédié permet de réinitialiser la ligne à son tarif de base en un clic.
+- **Règles d'application** : le rabais porte sur les séances payées (les séances offertes d’un pack restent gratuites), s'applique avant tout coupon global éventuel, et n'autorise que le montant en CHF avec le tarif Étudiant pour éviter le cumul de deux pourcentages.
+- **Visibilité complète** : le rabais apparaît directement sous le libellé de la ligne, dans la décomposition du total et sur le PDF officiel remis au patient.
 
 ### Coupon
 
