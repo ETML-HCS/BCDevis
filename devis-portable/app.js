@@ -50,7 +50,7 @@
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
-  const { summarizeConversion } = window.BCDevisTracking;
+  const { summarizeConversion } = window.BCDevisTracking || {};
   const ContactCore = window.BCDevisContacts;
   const {
     DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
