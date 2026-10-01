@@ -1594,9 +1594,13 @@
     .settings-panel-grid--interface{grid-template-columns:minmax(0,1.08fr) minmax(330px,.92fr)}
     .settings-panel-grid--company{grid-template-columns:minmax(0,1fr) minmax(380px,1fr)}
     .settings-panel-grid--pricing{grid-template-columns:minmax(250px,.65fr) minmax(0,1.35fr)}
-    .settings-panel-grid--document{grid-template-columns:minmax(0,1fr)}
+    .settings-panel-grid--document{grid-template-columns:repeat(2,minmax(0,1fr))}
     .settings-panel-stack{display:grid;min-width:0;align-content:start;gap:22px}
     .settings-panel-grid--interface>.settings-section--catalog{grid-column:1/-1}
+    .site-migration-target{display:grid;gap:6px}
+    .site-migration-target>span{color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+    .site-migration-target input{width:100%;height:46px;padding:0 13px;border:1px solid var(--line);border-radius:9px;outline:0;background:#fff;color:#222;font-size:14px}
+    .site-migration-target input:focus{border-color:#111;box-shadow:0 0 0 2px rgba(0,0,0,.05)}
     .settings-layout section+section{padding-left:0;border-left:0}
     .settings-panel .settings-section{
       min-width:0;
@@ -2854,9 +2858,9 @@
         <div class="settings-workspace">
           <div class="settings-tabs" id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation">
             <button id="settingsTabInterface" type="button" role="tab" aria-selected="true" aria-controls="settingsPanelInterface" data-settings-tab="interface"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-settings"></use></svg></span><span class="settings-tab-copy"><strong>Interface</strong><small>Thème, navigation, catalogue</small></span></button>
-            <button id="settingsTabCompany" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelCompany" data-settings-tab="company" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-user"></use></svg></span><span class="settings-tab-copy"><strong>Entreprise</strong><small>Coordonnées, logos, numéros</small></span></button>
+            <button id="settingsTabCompany" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelCompany" data-settings-tab="company" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-user"></use></svg></span><span class="settings-tab-copy"><strong>Entreprise</strong><small>Coordonnées et logos</small></span></button>
             <button id="settingsTabPricing" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelPricing" data-settings-tab="pricing" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-percent"></use></svg></span><span class="settings-tab-copy"><strong>Tarifs</strong><small>TVA, packs, tarif étudiant</small></span></button>
-            <button id="settingsTabDocument" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelDocument" data-settings-tab="document" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-pdf"></use></svg></span><span class="settings-tab-copy"><strong>Devis &amp; suivi</strong><small>Date, relances, mentions</small></span></button>
+            <button id="settingsTabDocument" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelDocument" data-settings-tab="document" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-pdf"></use></svg></span><span class="settings-tab-copy"><strong>Devis &amp; suivi</strong><small>Numéros, PDF, relances</small></span></button>
             <button id="settingsTabData" type="button" role="tab" aria-selected="false" aria-controls="settingsPanelData" data-settings-tab="data" tabindex="-1"><span class="settings-tab-icon" aria-hidden="true"><svg><use href="#icon-database"></use></svg></span><span class="settings-tab-copy"><strong>Données</strong><small>Centralisation, synchronisation</small></span></button>
           </div>
           <div class="settings-panels">
@@ -2949,21 +2953,6 @@
                     <p class="brand-asset-hint">PNG, JPG ou WebP · 4 Mo max · stockage local.</p>
                   </div>
                 </section>
-                <section class="settings-section">
-                  <div class="settings-section-head"><h3>Numérotation</h3></div>
-                  <div class="form-grid">
-                    <label><span>Préfixe devis</span><input name="quotePrefix" type="text" maxlength="8" placeholder="DEV"></label><label><span>Préfixe facture</span><input name="invoicePrefix" type="text" maxlength="8" placeholder="FAC"></label>
-                    <label class="full-field"><span>Poste commun aux deux documents</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"><small class="field-help">Le code du poste reste identique dans le devis et la facture associée.</small></label>
-                    <div class="hint-box full-field document-number-previews" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span>Devis : <code id="settingsQuotePreview">DEV-20260718A001</code><br>Facture : <code id="settingsInvoicePreview">FAC-20260718A001</code></span></div>
-                  </div>
-                </section>
-                <section class="settings-section">
-                  <div class="settings-section-head"><h3>Fichiers PDF</h3><button class="context-help-link" type="button" data-help-topic="pdf"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide PDF</button></div>
-                  <div class="pdf-directory-setting">
-                    <div class="pdf-directory-copy"><strong>Dossier des devis téléchargés</strong><code id="pdfDirectoryPath">Téléchargements</code><small id="pdfDirectoryStatus">Vérification du dossier de ce poste…</small></div>
-                    <div class="pdf-directory-actions"><button class="button secondary" id="choosePdfDirectoryButton" type="button"><svg aria-hidden="true"><use href="#icon-download"></use></svg>Choisir un dossier</button><button class="button ghost" id="resetPdfDirectoryButton" type="button">Par défaut</button></div>
-                  </div>
-                </section>
               </div>
             </div>
           </section>
@@ -2989,6 +2978,24 @@
 
           <section class="settings-panel settings-panel--document" id="settingsPanelDocument" role="tabpanel" aria-labelledby="settingsTabDocument" data-settings-panel="document" tabindex="0" hidden>
             <div class="settings-panel-grid settings-panel-grid--document">
+              <div class="settings-panel-stack">
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Numérotation</h3></div>
+                  <div class="form-grid">
+                    <label><span>Préfixe devis</span><input name="quotePrefix" type="text" maxlength="8" placeholder="DEV"></label><label><span>Préfixe facture</span><input name="invoicePrefix" type="text" maxlength="8" placeholder="FAC"></label>
+                    <label class="full-field"><span>Poste commun aux deux documents</span><input name="machineName" type="text" maxlength="16" placeholder="Ex. A"><small class="field-help">Le code du poste reste identique dans le devis et la facture associée.</small></label>
+                    <div class="hint-box full-field document-number-previews" data-hint="quotePreview" aria-live="polite"><svg><use href="#icon-copy"></use></svg><span>Devis : <code id="settingsQuotePreview">DEV-20260718A001</code><br>Facture : <code id="settingsInvoicePreview">FAC-20260718A001</code></span></div>
+                  </div>
+                </section>
+                <section class="settings-section">
+                  <div class="settings-section-head"><h3>Fichiers PDF</h3><button class="context-help-link" type="button" data-help-topic="pdf"><svg aria-hidden="true"><use href="#icon-help"></use></svg>Aide PDF</button></div>
+                  <div class="pdf-directory-setting">
+                    <div class="pdf-directory-copy"><strong>Dossier des devis téléchargés</strong><code id="pdfDirectoryPath">Téléchargements</code><small id="pdfDirectoryStatus">Vérification du dossier de ce poste…</small></div>
+                    <div class="pdf-directory-actions"><button class="button secondary" id="choosePdfDirectoryButton" type="button"><svg aria-hidden="true"><use href="#icon-download"></use></svg>Choisir un dossier</button><button class="button ghost" id="resetPdfDirectoryButton" type="button">Par défaut</button></div>
+                  </div>
+                </section>
+              </div>
+              <div class="settings-panel-stack">
               <section class="settings-section settings-section--quote-date">
                 <div class="settings-section-head"><h3>Date du devis</h3></div>
                 <div class="form-grid">
@@ -3013,6 +3020,7 @@
                   </div>
                 </div>
               </section>
+              </div>
               <section class="settings-section settings-section--mentions">
                 <div class="settings-section-head"><h3>Mentions</h3></div>
                 <div class="form-grid">
@@ -3020,6 +3028,7 @@
                   <label class="settings-toggle-card full-field"><input class="settings-toggle-input" name="showSignatures" type="checkbox"><span class="settings-toggle-icon" aria-hidden="true"><svg><use href="#icon-signature"></use></svg></span><span class="settings-toggle-copy"><strong>Zones de signature</strong><small>Ajoute « Date et lieu » et « Signature du client » à la fin du devis.</small></span><span class="settings-toggle-action" aria-hidden="true"><span class="settings-toggle-status"></span><span class="settings-toggle-control"></span></span></label>
                 </div>
               </section>
+
             </div>
           </section>
 

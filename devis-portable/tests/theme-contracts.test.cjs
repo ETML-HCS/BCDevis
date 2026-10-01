@@ -172,7 +172,7 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3>(?:<button[^>]*>[\s\S]*?<\/button>)?<\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "Fichiers PDF", "TVA", "Offres", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "TVA", "Offres", "Numérotation", "Fichiers PDF", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
@@ -235,7 +235,7 @@ assert.match(html, /class="settings-workspace">[\s\S]*?id="settingsTabs"[\s\S]*?
 assert.match(html, /\.settings-workspace\{[\s\S]*?grid-template-columns:210px minmax\(0,1fr\)/, "Le bureau doit utiliser un rail latéral compact");
 assert.match(html, /@media screen and \(max-width:900px\)\{[\s\S]*?\.settings-workspace\{display:flex;flex-direction:column\}/, "Le rail doit redevenir horizontal sur une fenêtre étroite");
 assert.match(html, /--settings-space-xs:6px;[\s\S]*?--settings-radius-card:11px;[\s\S]*?--settings-line-soft:/, "Les groupes doivent partager les mêmes tokens d’espacement, de rayon et de bordure");
-assert.match(html, /Thème, navigation, catalogue[\s\S]*?Coordonnées, logos, numéros[\s\S]*?TVA, packs, tarif étudiant[\s\S]*?Date, relances, mentions[\s\S]*?Centralisation, synchronisation/, "Le rail doit conserver des résumés courts et homogènes");
+assert.match(html, /Thème, navigation, catalogue[\s\S]*?Coordonnées et logos[\s\S]*?TVA, packs, tarif étudiant[\s\S]*?Numéros, PDF, relances[\s\S]*?Centralisation, synchronisation/, "Le rail doit conserver des résumés courts et homogènes");
 assert.match(
   html,
   /\.settings-panel\[hidden\]\{display:none!important\}/,
