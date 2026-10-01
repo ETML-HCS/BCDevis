@@ -2443,7 +2443,7 @@
     const draft = lineDiscountDraft();
     if (!draft) return;
     $("#lineDiscountResult").textContent = money(draft.result);
-    $("#lineDiscountSaving").textContent = draft.amount > 0 ? `Économie de ${money(draft.amount)}` : "";
+    $("#lineDiscountSaving").textContent = draft.amount > 0 ? `(-${money(draft.amount)})` : "";
     $("#lineDiscountSuffix").textContent = lineDiscountType === "percent" ? "%" : "CHF";
     $$("[data-line-discount-type]").forEach((button) => {
       const active = button.dataset.lineDiscountType === lineDiscountType;
@@ -2470,7 +2470,7 @@
     lineDiscountType = student ? "fixed" : line.customDiscount?.type || "percent";
     if (student && line.customDiscount?.type === "percent") lineDiscountType = "fixed";
     $("#lineDiscountTitle").textContent = line.name;
-    $("#lineDiscountBase").textContent = `Montant de la ligne : ${money(lineDiscountBase(line, studentRate))}${line.quantity > 1 ? ` (${line.quantity} séances)` : ""}`;
+    $("#lineDiscountBase").textContent = `Base : ${money(lineDiscountBase(line, studentRate))}${line.quantity > 1 ? ` (${line.quantity} séances)` : ""}`;
     const percentButton = $('[data-line-discount-type="percent"]');
     percentButton.disabled = student;
     percentButton.title = student ? "Le rabais en % n’est pas cumulable avec le tarif étudiant" : "";
