@@ -15,7 +15,7 @@
     <header class="help-header">
       <a class="help-brand" href="#overview" aria-label="Accueil du centre d’aide BCDevis">
         <img src="assets/clinique-bellecour-logo-officiel.png" alt="">
-        <span><small>BCDevis 8.0.0</small><strong>Centre d’aide</strong></span>
+        <span><small>BCDevis 8.6.1</small><strong>Centre d’aide</strong></span>
       </a>
       <button class="print-help" id="printHelpButton" type="button" aria-label="Imprimer le centre d’aide">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"></path></svg>
@@ -63,18 +63,18 @@
         <div class="callout"><strong>Statut Envoyé</strong><p>Enregistrer, imprimer ou télécharger ne change pas le statut commercial. Après E-mail, Outlook Web ou WhatsApp, confirmez le passage à Envoyé.</p></div>
       </article>
 
-      <article class="help-topic" id="quotes" data-help-topic data-search-terms="devis caisse client soin enregistrer sauvegarder archiver statut prêt envoyer impression">
+      <article class="help-topic" id="quotes" data-help-topic data-search-terms="devis caisse client soin enregistrer sauvegarder archiver statut prêt envoyer impression rabais remise pourcentage chf coupon mannequin corps tags">
         <p class="topic-kicker">Devis</p>
         <h2>Créer et enregistrer un devis</h2>
         <ol class="steps">
-          <li><span>1</span><div><strong>Choisissez les soins</strong><p>Utilisez les familles, la recherche et le tarif Séance ou Pack. Les quantités et remises se règlent dans la caisse.</p></div></li>
-          <li><span>2</span><div><strong>Ajoutez le client</strong><p>Le nom est recommandé pour retrouver le devis ; l’e-mail est repris lors de la préparation d’un message.</p></div></li>
-          <li><span>3</span><div><strong>Enregistrez</strong><p>Le bouton Enregistrer archive le devis dans Mes devis. L’indicateur discret affiche Non archivé, À enregistrer ou Enregistré.</p></div></li>
-          <li><span>4</span><div><strong>Partagez quand il est prêt</strong><p>E-mail, Outlook Web et WhatsApp préparent le PDF et le message. BCDevis propose ensuite de passer le statut à Envoyé.</p></div></li>
+          <li><span>1</span><div><strong>Choisissez les soins</strong><p>Utilisez les familles (Tuiles) ou le Corps interactif (silhouette et sous-zones), la recherche rapide et le tarif Séance, Pack ou Étudiant.</p></div></li>
+          <li><span>2</span><div><strong>Ajustez quantités et rabais de ligne</strong><p>Réglez les quantités avec − et +. Double-cliquez sur une ligne pour ouvrir le rabais personnalisé : choisissez % ou CHF, ou cliquez sur les tags rapides 2 %, 3 %, 5 % ou 10 %.</p></div></li>
+          <li><span>3</span><div><strong>Ajoutez le client</strong><p>Le nom est recommandé pour retrouver le devis ; l’e-mail est repris lors de la préparation d’un message.</p></div></li>
+          <li><span>4</span><div><strong>Enregistrez et partagez</strong><p>Le bouton Enregistrer archive le devis dans Mes devis. E-mail, Outlook Web et WhatsApp préparent le PDF et le message avec confirmation du statut Envoyé.</p></div></li>
         </ol>
         <div class="two-columns">
-          <section><h3>Ce qui change le suivi</h3><ul><li>La confirmation proposée après une préparation d’envoi.</li><li>Une action volontaire dans Mes devis → Suivi.</li><li>L’expiration automatique lorsque la validité est dépassée.</li></ul></section>
-          <section><h3>Ce qui ne le change pas</h3><ul><li>Enregistrer le devis.</li><li>Télécharger son PDF.</li><li>Ouvrir la fenêtre d’impression.</li><li>Exporter le fichier JSON.</li></ul></section>
+          <section><h3>Rabais personnalisés par ligne</h3><ul><li>Double-cliquez sur une prestation dans la caisse pour ouvrir la modale discrète.</li><li>Tags rapides <b>2 %</b>, <b>3 %</b>, <b>5 %</b> et <b>10 %</b> pour un réglage instantané.</li><li>Choix <b>%</b> ou montant fixe <b>CHF</b> avec prévisualisation en temps réel du total net.</li><li>Bouton <b>Retirer le rabais</b> pour effacer la réduction en un clic.</li><li>Le rabais s'affiche sur la ligne, dans le calcul du devis et sur le PDF imprimé/téléchargé.</li></ul></section>
+          <section><h3>Suivi commercial &amp; verrouillage</h3><ul><li>La confirmation après envoi propose le passage automatique à Envoyé.</li><li>Les états terminaux (Accepté, Refusé, Expiré, Facturé) verrouillent le devis.</li><li>Utilisez <b>Créer une V2</b> pour faire évoluer un devis verrouillé sans altérer la trace commerciale.</li><li>Le téléchargement ou l'impression d'un devis ne modifie pas son statut de suivi.</li></ul></section>
         </div>
         <div class="callout callout--warning"><strong>Devis verrouillé</strong><p>Un devis Accepté, Refusé, Expiré ou déjà lié à une facture envoyée ne peut plus être modifié. Utilisez <b>Créer une V2</b> pour poursuivre sans altérer la trace commerciale.</p></div>
       </article>
@@ -145,7 +145,7 @@
         <p class="topic-kicker">PDF</p>
         <h2>Télécharger, imprimer et joindre un devis</h2>
         <div class="platform-grid">
-          <section><span>Electron</span><h3>Dossier configurable</h3><p>Dans <b>Réglages → Entreprise → Fichiers PDF</b>, choisissez le dossier des devis téléchargés. Ce chemin appartient au poste et n’est pas synchronisé.</p></section>
+          <section><span>Electron</span><h3>Dossier configurable</h3><p>Dans <b>Réglages → Devis &amp; suivi → Fichiers PDF</b>, choisissez le dossier des devis téléchargés. Ce chemin appartient au poste et n’est pas synchronisé.</p></section>
           <section><span>PWA / navigateur</span><h3>Destination contrôlée par le navigateur</h3><p>Le navigateur applique son propre réglage de téléchargement. BCDevis ne peut pas imposer un chemin local depuis une page web.</p></section>
         </div>
         <ul class="check-list"><li>Télécharger crée le PDF sans changer le statut commercial.</li><li>Imprimer ouvre la boîte de dialogue du système.</li><li>E-mail joint automatiquement le PDF dans Electron lorsque le client e-mail le permet.</li><li>WhatsApp et Outlook Web indiquent quel PDF joindre manuellement.</li><li>Les fichiers existants ne sont pas écrasés silencieusement.</li></ul>
@@ -164,7 +164,7 @@
         </div>
       </article>
 
-      <footer class="help-footer"><strong>BCDevis 8.0.0</strong><span>Aide embarquée · utilisable hors ligne · imprimable</span></footer>
+      <footer class="help-footer"><strong>BCDevis 8.6.1</strong><span>Aide embarquée · utilisable hors ligne · imprimable</span></footer>
     </main>
   </div>
 </body>

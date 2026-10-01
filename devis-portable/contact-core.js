@@ -245,5 +245,18 @@
     return parseCsv(text);
   }
 
-  return { CONTACT_FIELDS, sanitizeContact, matchKey, mergeContacts, parseCsv, toCsv, parseVCard, toVCard, parseJson, toJson, parseContactFile };
+  // Numéro au format international sans « + » pour les liens WhatsApp (indicatif suisse par défaut).
+  function whatsAppNumber(phone, defaultCountry = "41") {
+    const text = String(phone || "").replace(/\(0\)/g, "").trim();
+    if (!text) return "";
+    let digits = text.replace(/\D/g, "");
+    if (/^00/.test(digits) && /^(\+|00)/.test(text)) digits = digits.slice(2);
+    else if (!text.startsWith("+")) {
+      if (digits.startsWith("0")) digits = `${defaultCountry}${digits.slice(1)}`;
+      else if (!(digits.startsWith(defaultCountry) && digits.length >= 11)) digits = digits.length === 9 ? `${defaultCountry}${digits}` : "";
+    }
+    return /^\d{8,15}$/.test(digits) ? digits : "";
+  }
+
+  return { CONTACT_FIELDS, whatsAppNumber, sanitizeContact, matchKey, mergeContacts, parseCsv, toCsv, parseVCard, toVCard, parseJson, toJson, parseContactFile };
 }));

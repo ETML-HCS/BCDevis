@@ -33,14 +33,14 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "8\.0\.0";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "8\.0\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "8\.6\.1";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8\.6\.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 8\.0\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Mise à jour 8\.6\.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit présenter les trois familles de fonctions livrées");
-assert.match(html, /<strong>Connexion obligatoire sur le web<\/strong>[\s\S]*?<strong>Session vérifiée<\/strong>[\s\S]*?<strong>Postes partagés<\/strong>/, "Les nouveautés doivent résumer le login, la validation de session et la déconnexion");
+assert.match(html, /<strong>Envoi WhatsApp plus direct<\/strong>[\s\S]*?<strong>Icônes plus lisibles<\/strong>[\s\S]*?<strong>Paramètres mieux rangés<\/strong>/, "Les nouveautés doivent résumer WhatsApp, les icônes et les paramètres");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -172,7 +172,7 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3>(?:<button[^>]*>[\s\S]*?<\/button>)?<\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "Numérotation", "Fichiers PDF", "TVA", "Offres", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "TVA", "Offres", "Numérotation", "Fichiers PDF", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
@@ -235,7 +235,7 @@ assert.match(html, /class="settings-workspace">[\s\S]*?id="settingsTabs"[\s\S]*?
 assert.match(html, /\.settings-workspace\{[\s\S]*?grid-template-columns:210px minmax\(0,1fr\)/, "Le bureau doit utiliser un rail latéral compact");
 assert.match(html, /@media screen and \(max-width:900px\)\{[\s\S]*?\.settings-workspace\{display:flex;flex-direction:column\}/, "Le rail doit redevenir horizontal sur une fenêtre étroite");
 assert.match(html, /--settings-space-xs:6px;[\s\S]*?--settings-radius-card:11px;[\s\S]*?--settings-line-soft:/, "Les groupes doivent partager les mêmes tokens d’espacement, de rayon et de bordure");
-assert.match(html, /Thème, navigation, catalogue[\s\S]*?Coordonnées, logos, numéros[\s\S]*?TVA, packs, tarif étudiant[\s\S]*?Date, relances, mentions[\s\S]*?Centralisation, synchronisation/, "Le rail doit conserver des résumés courts et homogènes");
+assert.match(html, /Thème, navigation, catalogue[\s\S]*?Coordonnées et logos[\s\S]*?TVA, packs, tarif étudiant[\s\S]*?Numéros, PDF, relances[\s\S]*?Centralisation, synchronisation/, "Le rail doit conserver des résumés courts et homogènes");
 assert.match(
   html,
   /\.settings-panel\[hidden\]\{display:none!important\}/,

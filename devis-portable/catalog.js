@@ -171,6 +171,31 @@ window.QUOTE_BODY_REGIONS = [
   { id: "back-sif", side: "back", familyId: "maillot", title: "Sillon interfessier (SIF)", description: "Sillon interfessier uniquement.", includeServiceIds: [49] }
 ];
 
+// Sous-zones cliquables du mannequin : chaque segment anatomique renvoie aux soins qui le couvrent.
+window.QUOTE_BODY_ZONES = [
+  { id: "front-torse-poitrine", regionId: "front-torse", title: "Poitrine", segments: ["trapezius", "chest"], serviceIds: [31, 32] },
+  { id: "front-torse-abdomen", regionId: "front-torse", title: "Abdomen", segments: ["abs", "obliques"], serviceIds: [33, 34] },
+  { id: "front-bras-epaules", regionId: "front-bras", title: "Épaules & aisselles", segments: ["deltoids"], serviceIds: [41, 42] },
+  { id: "front-bras-bras", regionId: "front-bras", title: "Bras", segments: ["biceps", "triceps"], serviceIds: [44] },
+  { id: "front-bras-avant-bras", regionId: "front-bras", title: "Avant-bras", segments: ["forearm"], serviceIds: [43, 44] },
+  { id: "front-bras-mains", regionId: "front-bras", title: "Mains & doigts", segments: ["hands"], serviceIds: [40, 39] },
+  { id: "front-jambes-cuisses", regionId: "front-jambes", title: "Cuisses", segments: ["quadriceps"], serviceIds: [54, 53, 57] },
+  { id: "front-jambes-genoux", regionId: "front-jambes", title: "Genoux", segments: ["knees"], serviceIds: [52, 56, 57] },
+  { id: "front-jambes-bas", regionId: "front-jambes", title: "Bas de jambe", segments: ["tibialis", "calves"], serviceIds: [56, 57] },
+  { id: "front-jambes-pieds", regionId: "front-jambes", title: "Pieds & orteils", segments: ["ankles", "feet"], serviceIds: [51, 50] },
+  { id: "back-dos-nuque", regionId: "back-dos", title: "Nuque", segments: ["neck"], serviceIds: [35] },
+  { id: "back-dos-haut", regionId: "back-dos", title: "Haut du dos", segments: ["trapezius", "upper-back"], serviceIds: [36, 38] },
+  { id: "back-dos-bas", regionId: "back-dos", title: "Bas du dos", segments: ["lower-back"], serviceIds: [37, 38] },
+  { id: "back-bras-epaules", regionId: "back-bras", title: "Épaules & aisselles", segments: ["deltoids"], serviceIds: [41, 42] },
+  { id: "back-bras-bras", regionId: "back-bras", title: "Bras", segments: ["triceps"], serviceIds: [44] },
+  { id: "back-bras-avant-bras", regionId: "back-bras", title: "Avant-bras", segments: ["forearm"], serviceIds: [43, 44] },
+  { id: "back-bras-mains", regionId: "back-bras", title: "Mains & doigts", segments: ["hands"], serviceIds: [40, 39] },
+  { id: "back-jambes-fesses", regionId: "back-jambes", title: "Fesses", segments: ["gluteal"], serviceIds: [55] },
+  { id: "back-jambes-cuisses", regionId: "back-jambes", title: "Arrière des cuisses", segments: ["adductors", "hamstring"], serviceIds: [54, 53, 57] },
+  { id: "back-jambes-mollets", regionId: "back-jambes", title: "Genoux & mollets", segments: ["calves"], serviceIds: [56, 52, 57] },
+  { id: "back-jambes-pieds", regionId: "back-jambes", title: "Pieds & orteils", segments: ["ankles", "feet"], serviceIds: [51, 50] }
+];
+
 window.QUOTE_SERVICES = [
   service(102, "Consultation offerte sans engagement", 0, 30, 13),
   service(110, "Retouche", 0, 15, 13),

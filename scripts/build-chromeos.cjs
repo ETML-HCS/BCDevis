@@ -31,7 +31,8 @@ const APP_FILES = [
   "quote-core.js",
   "service-worker.js",
   "site-migration.js",
-  "styles.css"
+  "styles.css",
+  "tracking-core.js"
 ];
 
 function assertSafeOutput(targetPath) {
@@ -89,19 +90,20 @@ async function copyApp() {
 async function verifyAssembledSite() {
   const { server, url } = await startPwaServer({ port: 0, root: SITE_ROOT });
   try {
-    const [page, manifest, serviceWorker, icon, bodyAnatomy, contactCore, siteMigration, helpPage, helpStyles, helpScript] = await Promise.all([
+    const [page, manifest, serviceWorker, icon, bodyAnatomy, contactCore, trackingCore, siteMigration, helpPage, helpStyles, helpScript] = await Promise.all([
       fetch(url),
       fetch(new URL("manifest.webmanifest", url)),
       fetch(new URL("service-worker.js", url)),
       fetch(new URL("assets/pwa-icon-512.png", url)),
       fetch(new URL("body-anatomy.js", url)),
       fetch(new URL("contact-core.js", url)),
+      fetch(new URL("tracking-core.js", url)),
       fetch(new URL("site-migration.js", url)),
       fetch(new URL("help.html", url)),
       fetch(new URL("help.css", url)),
       fetch(new URL("help.js", url))
     ]);
-    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok || !bodyAnatomy.ok || !contactCore.ok || !siteMigration.ok || !helpPage.ok || !helpStyles.ok || !helpScript.ok) {
+    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok || !bodyAnatomy.ok || !contactCore.ok || !trackingCore.ok || !siteMigration.ok || !helpPage.ok || !helpStyles.ok || !helpScript.ok) {
       throw new Error("Le dossier ChromeOS assemblé contient une ressource inaccessible.");
     }
     if (!String(page.headers.get("content-type")).startsWith("text/html")) {

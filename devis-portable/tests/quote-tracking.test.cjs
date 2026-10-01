@@ -18,25 +18,36 @@ assert.match(app, /status: "draft"[\s\S]*?tracking: freshTracking/, "Le statut d
 assert.match(app, /tracking: sanitizeTracking\(source\.tracking/, "Les suivis importés doivent être nettoyés");
 assert.match(app, /MAX_TRACKING_EVENTS = 300/, "La chronologie locale doit rester bornée");
 assert.match(html, /<script src="tracking-core\.js"><\/script>[\s\S]*?<script src="app\.js"><\/script>/, "Le moteur de conversion doit être chargé avant l’application");
-assert.match(app, /countAcceptedInMonth\(items, todayISO\(\)\.slice\(0, 7\)\)/, "Les conversions mensuelles doivent inclure les devis déjà facturés");
-assert.match(app, /data-summary-filter="accepted"[\s\S]*?>À facturer</, "Le résumé doit donner accès aux devis acceptés qui attendent leur facture");
 
 for (const setting of [
   "quoteTrackingEnabled",
   "validityDays",
   "trackingDefaultFollowUpDays",
   "trackingRemindersOnStartup",
-  "trackingShowCounters"
+  "trackingShowFilters"
 ]) {
   assert.match(html, new RegExp(`name="${setting}"`), `Réglage de suivi absent : ${setting}`);
   assert.match(app, new RegExp(setting), `Persistance du réglage absente : ${setting}`);
 }
 
-assert.match(html, /id="historyTabs" role="tablist"[\s\S]*?data-history-view="history"[\s\S]*?data-history-view="tracking"/, "Historique et Suivi doivent être deux vues accessibles");
+assert.match(html, /id="historyTabs" role="tablist"[\s\S]*?data-history-view="history"[\s\S]*?data-history-view="tracking"[\s\S]*?data-history-view="stats"/, "Historique, Suivi et Statistiques doivent être des vues accessibles");
 assert.match(html, /class="drawer history-workspace"[\s\S]*?id="historyWorkspaceDescription"/, "Le suivi doit disposer d’un espace de travail autonome dans l’interface");
-for (const filter of ["all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"]) {
+assert.match(html, /id="historySearch"[\s\S]*?N° devis, client, téléphone ou e-mail/, "L’historique doit pouvoir rechercher les coordonnées et la référence du devis");
+assert.match(html, /id="historySort"[\s\S]*?value="updated"[\s\S]*?value="date"[\s\S]*?value="client"[\s\S]*?value="amount"/, "L’historique doit proposer les tris métier");
+assert.match(app, /function historySearchMatches\(item[\s\S]*?item\.client\?\.phone[\s\S]*?item\.client\?\.email/, "La recherche d’historique doit couvrir numéro, client, téléphone et e-mail");
+assert.match(app, /function sortHistoryQuotes\(items\)[\s\S]*?historySort === "date"[\s\S]*?historySort === "client"[\s\S]*?historySort === "amount"/, "Les tris d’historique doivent être calculés dans le renderer");
+assert.match(app, /summarizeConversion\(quotes, \{ startDate, endDate: todayISO\(\), amountOf: quoteAmount \}\)/, "Les statistiques doivent réutiliser le calcul de conversion testé");
+assert.match(app, /filters\.hidden = !enabled \|\| activeHistoryView !== "tracking" \|\| db\.settings\.trackingShowFilters !== true/, "Les filtres avancés doivent être facultatifs");
+assert.match(app, /statsTab\.hidden = !enabled;/, "L’onglet Statistiques doit être disponible avec le suivi");
+assert.doesNotMatch(html, /id="trackingSummary"|name="trackingShowCounters"|name="trackingShowStats"/, "Le suivi ne doit pas afficher ni configurer de statistiques");
+for (const filter of ["today", "all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"]) {
   assert.match(html, new RegExp(`data-tracking-filter="${filter}"`), `Filtre de suivi absent : ${filter}`);
 }
+assert.match(app, /function trackingTodaySections\(items\)[\s\S]*?À relancer[\s\S]*?Acceptés à facturer[\s\S]*?Prêts à envoyer[\s\S]*?Brouillons à terminer/, "La vue Aujourd’hui doit prioriser les quatre files d’action");
+assert.match(app, /activeTrackingFilter === "today"[\s\S]*?tracking-today-section/, "Le filtre Aujourd’hui doit afficher des sections d’action dédiées");
+assert.match(app, /let activeTrackingFilter = "today"/, "La file Aujourd’hui doit ouvrir le suivi par défaut");
+assert.match(app, /tracking-today-action[\s\S]*?data-tracking-toggle/, "Chaque élément de la file Aujourd’hui doit proposer une action directe de traitement");
+assert.match(styles, /history-list\.tracking-today-queue[\s\S]*?flex-direction:column/, "La file Aujourd’hui doit garder ses sections verticalement lisibles");
 assert.match(app, /data-tracking-toggle[\s\S]*?aria-expanded/, "Le triangle doit exposer son état aux technologies d’assistance");
 assert.match(app, /function isTouchTrackingActivation\(event\)[\s\S]*?event\?\.pointerType === "touch"[\s\S]*?hover: none/, "Un toucher sur la fiche doit être distingué du clic avec une souris");
 assert.match(app, /touchCard && isTouchTrackingActivation\(event\)[\s\S]*?toggleTrackingDetails\(touchCard\.dataset\.quoteId\)/, "La fiche tactile doit ouvrir ou refermer son suivi");
@@ -69,6 +80,5 @@ assert.match(styles, /@media \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\.his
 assert.match(styles, /@media \(hover:none\),\(pointer:coarse\)\{[\s\S]*?\.history-item-summary\{grid-template-columns:1fr\}[\s\S]*?\.history-disclosure\{display:none\}/, "La fiche complète doit devenir la cible sur écran tactile");
 assert.match(styles, /#historyLayer\.tracking-enabled \.history-workspace\{[\s\S]*?width:min\(1180px,calc\(100vw - 48px\)\)[\s\S]*?height:min\(900px,calc\(100vh - 48px\)\)/, "Le suivi doit utiliser un véritable espace de travail large");
 assert.match(styles, /\.history-item--tracked\.is-expanded[\s\S]*?grid-column:1\/-1[\s\S]*?grid-template-columns:minmax\(270px,\.7fr\) minmax\(0,2fr\)/, "La fiche ouverte doit séparer son résumé de sa zone de travail");
-assert.match(styles, /\.tracking-summary>div,\.tracking-summary>button/, "Le compteur À facturer doit conserver le rendu des indicateurs de suivi");
 
 console.log("QUOTE_TRACKING_TESTS_OK");

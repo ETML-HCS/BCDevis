@@ -33,6 +33,37 @@ Invoke-RestMethod http://127.0.0.1:8787/api/v1/health
 
 Le premier démarrage crée le compte défini par `BCDEVIS_ADMIN_EMAIL` et `BCDEVIS_ADMIN_PASSWORD`. Un redémarrage ultérieur ne remplace ni le compte ni son mot de passe.
 
+## Administration des utilisateurs et appareils
+
+Une interface en ligne de commande (CLI) permet d’administrer les utilisateurs, les rôles et les postes autorisés en toute sécurité sans intervention manuelle en base SQL :
+
+```powershell
+# Lister les utilisateurs
+npm run central:admin user:list
+
+# Créer un nouveau collaborateur (rôles: admin, editor, reader)
+npm run central:admin user:create docteur@cliniquebellecour.ch MotDePasseSecurise123 editor
+
+# Mettre à jour le rôle
+npm run central:admin user:role docteur@cliniquebellecour.ch admin
+
+# Réinitialiser le mot de passe (invalide immédiatement les sessions ouvertes)
+npm run central:admin user:password docteur@cliniquebellecour.ch NouveauMotDePasse456
+
+# Désactiver ou réactiver un compte
+npm run central:admin user:disable docteur@cliniquebellecour.ch
+npm run central:admin user:enable docteur@cliniquebellecour.ch
+
+# Lister les appareils enregistrés et leur code poste (P01, P02...)
+npm run central:admin device:list
+
+# Révoquer les sessions d'un appareil (poste partagé, appareil perdu)
+npm run central:admin device:revoke P02
+
+# Consulter le journal d’activité
+npm run central:admin audit 30
+```
+
 PostgreSQL reste uniquement sur le réseau Docker privé. Le port `8787` de l’API écoute seulement sur la boucle locale afin d’être publié derrière un proxy HTTPS tel que Caddy, Nginx ou Cloudflare Tunnel.
 
 ## Test d’intégration PostgreSQL

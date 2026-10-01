@@ -13,7 +13,7 @@
     "companyName", "companySubtitle", "companyAddress", "companyPhone", "companyEmail", "companyUid",
     "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
     "studentDiscount", "taxRate", "taxMode", "showTaxInformation", "visibleFamilies", "quoteDateEditable",
-    "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowCounters",
+    "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowFilters",
     "conditions", "studentConditions", "footerNote", "showSignatures", "pdfLanguage", "centralUniqueQuoteNumbers"
   ];
 
@@ -459,6 +459,31 @@
       return requestBinary(`documents/${documentId}/content`);
     }
 
+    async function listAdminUsers() {
+      if (!config.enabled || !config.token) throw new Error("Connectez ce poste en tant qu’administrateur.");
+      return request("admin/users");
+    }
+
+    async function createAdminUser(userData) {
+      if (!config.enabled || !config.token) throw new Error("Connectez ce poste en tant qu’administrateur.");
+      return request("admin/users", { method: "POST", body: userData });
+    }
+
+    async function listAdminDevices() {
+      if (!config.enabled || !config.token) throw new Error("Connectez ce poste en tant qu’administrateur.");
+      return request("admin/devices");
+    }
+
+    async function revokeAdminDevice(deviceId) {
+      if (!config.enabled || !config.token) throw new Error("Connectez ce poste en tant qu’administrateur.");
+      return request("admin/devices/revoke", { method: "POST", body: { deviceId } });
+    }
+
+    async function getAdminMigrations() {
+      if (!config.enabled || !config.token) throw new Error("Connectez ce poste en tant qu’administrateur.");
+      return request("admin/migrations");
+    }
+
     return {
       configure,
       connect,
@@ -478,7 +503,12 @@
       takeReservedQuoteNumber,
       testConnection,
       validateSession,
-      uploadDocument
+      uploadDocument,
+      listAdminUsers,
+      createAdminUser,
+      listAdminDevices,
+      revokeAdminDevice,
+      getAdminMigrations
     };
   }
 

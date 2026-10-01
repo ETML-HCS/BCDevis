@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 8.0.0 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "8.0.0") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 8.6.1 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "8.6.1") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -734,7 +734,8 @@ async function run() {
       settings.elements.validityDays.value = "45";
       settings.elements.trackingDefaultFollowUpDays.value = "7";
       settings.elements.trackingRemindersOnStartup.checked = true;
-      settings.elements.trackingShowCounters.checked = true;
+      if (settings.elements.trackingShowFilters.checked) throw new Error("Les filtres avancés doivent rester facultatifs par défaut");
+      settings.elements.trackingShowFilters.checked = true;
       settings.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
       const stored = JSON.parse(localStorage.getItem("bcdevis-v1"));
       const central = JSON.parse(localStorage.getItem("bcdevis-central-v1"));
@@ -745,6 +746,7 @@ async function run() {
         enabled: stored.settings.quoteTrackingEnabled,
         validityDays: stored.settings.validityDays,
         followUpDays: stored.settings.trackingDefaultFollowUpDays,
+        advancedFilters: stored.settings.trackingShowFilters,
         settingsClosed: document.querySelector("#settingsLayer").hidden,
         central: { enabled: central.enabled, endpoint: central.endpoint, email: central.email, deviceName: central.deviceName, hasPassword: Object.hasOwn(central, "password") },
         centralPasswordCleared: document.querySelector("#centralPassword").value === ""
@@ -757,6 +759,7 @@ async function run() {
       enabled: true,
       validityDays: 45,
       followUpDays: 7,
+      advancedFilters: true,
       settingsClosed: true,
       central: { enabled: true, endpoint: "http://127.0.0.1:8787/", email: "accueil@bellecour.test", deviceName: "Accueil test", hasPassword: false },
       centralPasswordCleared: true
@@ -857,9 +860,24 @@ async function run() {
       const archiveCard = document.querySelector(".history-item--archive");
       if (historyTabs.hidden || !archiveCard || archiveCard.querySelector(".history-status")?.textContent !== "Envoyé" || !archiveCard.querySelector(".history-status--commercial")) throw new Error("L’Historique n’affiche pas la liste compacte avec son tag de statut");
       if (document.querySelector("[data-tracking-toggle]") || document.querySelector("[data-tracking-form]")) throw new Error("L’Historique ne doit pas dupliquer les outils du suivi commercial");
+      const historySearch = document.querySelector("#historySearch");
+      const quoteReference = archiveCard.querySelector(".history-item-head strong")?.textContent.trim();
+      historySearch.value = quoteReference;
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (document.querySelectorAll(".history-item--archive").length !== 1) throw new Error("La recherche par référence ne retrouve pas le devis attendu");
+      historySearch.value = "introuvable";
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
+      if (!document.querySelector(".history-empty")) throw new Error("La recherche sans résultat ne signale pas l’absence de devis");
+      historySearch.value = "";
+      historySearch.dispatchEvent(new Event("input", { bubbles: true }));
       const trackingTab = historyTabs.querySelector('[data-history-view="tracking"]');
       trackingTab.click();
       if (trackingTab.getAttribute("aria-selected") !== "true" || document.querySelector("#trackingFilters").hidden) throw new Error("L’onglet Suivi ne commute pas la vue");
+      const statsTab = historyTabs.querySelector('[data-history-view="stats"]');
+      if (statsTab.hidden) throw new Error("L’onglet Statistiques doit apparaître après son activation");
+      statsTab.click();
+      if (statsTab.getAttribute("aria-selected") !== "true" || !document.querySelector(".tracking-stats-panel") || document.querySelectorAll(".tracking-stats-grid > div").length !== 8) throw new Error("L’onglet Statistiques ne rend pas les indicateurs mensuels");
+      trackingTab.click();
       const sentCard = document.querySelector(".history-item--sent");
       if (!sentCard || sentCard.querySelector(".history-status")?.textContent !== "Envoyé") throw new Error("Le statut coloré n’apparaît pas dans le suivi commercial");
       sentCard.querySelector(".history-item-open").dispatchEvent(new PointerEvent("click", { bubbles: true, pointerType: "touch" }));
@@ -985,6 +1003,8 @@ async function run() {
       const file = new File([JSON.stringify(payload)], "backup.json", { type: "application/json" });
       Object.defineProperty(input, "files", { configurable: true, value: [file] });
       window.confirm = () => true;
+      const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (this.download) return; return nativeAnchorClick.call(this); };
       return new Promise((resolve, reject) => {
         let attempts = 0;
         const verify = () => {
@@ -1144,14 +1164,18 @@ async function run() {
       const input = document.querySelector("#backupImportInput");
       const file = new File([JSON.stringify(payload)], "demo.json", { type: "application/json" });
       Object.defineProperty(input, "files", { configurable: true, value: [file] });
-      window.confirm = () => true;
+      const downloads = [];
+      const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (this.download) { downloads.push(this.download); return; } return nativeAnchorClick.call(this); };
+      let confirmation = "";
+      window.confirm = (message) => { confirmation = message; return true; };
       return new Promise((resolve, reject) => {
         let attempts = 0;
         const verify = () => {
           if (document.querySelector("#quoteSaveStateLabel")?.textContent === "Enregistré") {
             document.querySelector("#historyButton").click();
             const card = [...document.querySelectorAll("#historyList [data-quote-id]")].find((el) => el.textContent.includes("16.08.2026") && el.textContent.includes("5 soins"));
-            return resolve({ state: document.querySelector("#quoteSaveStateLabel").textContent, meta: card ? (card.querySelector(".history-item-meta")?.textContent || "") : "", savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length });
+            return resolve({ state: document.querySelector("#quoteSaveStateLabel").textContent, meta: card ? (card.querySelector(".history-item-meta")?.textContent || "") : "", savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length, downloads, confirmation });
           }
           if (++attempts >= 40) return reject(new Error("Le devis démo n’est pas Enregistré dans le centre"));
           setTimeout(verify, 50);
@@ -1163,6 +1187,9 @@ async function run() {
     assert.equal(demoCentre.state, "Enregistré", "Le devis démo 16.08.2026 doit être Enregistré");
     assert.match(demoCentre.meta, /16\.08\.2026 · 5 soins/, "Le centre doit afficher la date et les cinq soins du devis démo");
     assert.equal(demoCentre.savedQuotes, 1, "Le centre doit contenir le devis démo");
+    assert.equal(demoCentre.downloads.length, 1, "Un instantané doit être téléchargé avant la restauration");
+    assert.match(demoCentre.downloads[0], /^sauvegarde-avant-restauration-\d{4}-\d{2}-\d{2}\.json$/);
+    assert.match(demoCentre.confirmation, /1 devis/, "La confirmation doit résumer le contenu de la sauvegarde");
 
     console.log("DESKTOP_PERSISTENCE_SMOKE_OK");
   } finally {

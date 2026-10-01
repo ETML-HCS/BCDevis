@@ -14,6 +14,11 @@ contextBridge.exposeInMainWorld("bcdevisDesktop", {
     body: String(payload?.body || ""),
     attachmentPath: String(payload?.attachmentPath || "")
   }),
+  prepareWhatsAppShare: (payload) => ipcRenderer.invoke("bcdevis:whatsapp-prepare", {
+    phone: String(payload?.phone || ""),
+    text: String(payload?.text || ""),
+    filePath: String(payload?.filePath || "")
+  }),
   openExternal: (url) => ipcRenderer.invoke("bcdevis:open-external", String(url || "")),
   getLaunchAtLogin: () => ipcRenderer.invoke("bcdevis:startup-get"),
   setLaunchAtLogin: (enabled) => ipcRenderer.invoke("bcdevis:startup-set", Boolean(enabled)),

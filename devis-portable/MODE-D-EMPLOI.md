@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
-  <p class="cover-version">Version 8.0.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 8.6.1 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-8.0.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-8.0.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-8.0.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-8.6.1.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-8.6.1-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-8.6.1-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -251,7 +251,9 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 
 ### Fonctions récentes à connaître
 
-- **Suivi commercial des devis** : activez-le dans **Réglages > Devis > Suivi des devis** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
+- **Rabais personnalisé par ligne** : double-cliquez sur n’importe quelle prestation du devis pour ouvrir la modale concise et discrète. Choisissez un pourcentage (%) ou un montant fixe (CHF), ou cliquez sur les tags rapides **2 %**, **3 %**, **5 %** ou **10 %** pour un réglage instantané avec prévisualisation directe du prix net.
+- **Corps interactif et 21 sous-zones anatomiques** : la navigation corporelle découpe chaque région en zones précises (avant-bras, mains, genoux, pieds, haut et bas du dos, etc.) avec pastilles tactiles sous la silhouette. Les zones contenant déjà des soins dans le devis restent teintées sur le mannequin.
+- **Suivi commercial des devis** : activez-le dans **Réglages > Devis & suivi** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
 - **Workflow contrôlé et V2** : les statuts suivent un ordre précis ; un devis accepté, refusé, expiré ou facturé est verrouillé et peut être repris dans une nouvelle version liée.
 - **Affichage Auto, Mobile ou Bureau** : ouvrez le menu **Catalogue**, puis choisissez la vue adaptée à votre écran. Le choix reste mémorisé uniquement sur ce poste.
 - **Confort iPad et Smartphone** : les actions tactiles sont agrandies ; un balayage vers la gauche révèle la suppression et **Annuler** restaure immédiatement la dernière ligne retirée.
@@ -348,7 +350,7 @@ Le bouton **Corps interactif** active le mannequin anatomique :
 3. cliquez sur une zone du mannequin ;
 4. sélectionnez le soin proposé à droite pour l’ajouter au devis.
 
-La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse, aux bras, au maillot et aux jambes. Sur la vue arrière, il donne accès au cuir chevelu, au dos, aux bras, aux fesses et jambes ainsi qu’au **SIF**.
+La zone sélectionnée est mise en évidence. Sur la face avant, le mannequin donne accès au visage, au torse/poitrine, à l'abdomen, aux épaules, aux bras, aux avant-bras, aux mains, aux cuisses, aux genoux, aux bas de jambe/mollets et aux pieds. Sur la vue arrière, il donne accès au cuir chevelu, à la nuque, au haut du dos, au bas du dos, aux fesses et jambes ainsi qu’au **SIF**. Des pastilles tactiles disposées sous la silhouette offrent un accès direct équivalent, idéal sur tablette ou écran tactile. Les zones dont au moins un soin figure déjà dans le devis restent teintées visuellement sur le mannequin.
 
 ![Navigation avec le mannequin féminin, vue de face](captures/04-corps-interactif.png)
 
@@ -401,6 +403,17 @@ Chaque ligne affiche le nom, la catégorie, la quantité et le prix. La suppress
 
 En mode Séance, lorsque la quantité atteint le seuil du pack configuré, le bouton **+1 offerte** apparaît. Cliquez dessus pour transformer la ligne en pack ; les séances offertes ne sont jamais facturées.
 
+### Rabais personnalisé par prestation (tags 2, 3, 5, 10 % ou CHF)
+
+Double-cliquez sur n’importe quelle ligne de soin dans la caisse (ou cliquez sur son indicateur de rabais) pour ouvrir la modale concise et discrète :
+
+- **Tags rapides** : cliquez sur les tags **2 %**, **3 %**, **5 %** ou **10 %** pour appliquer instantanément une réduction courante en un seul geste. Le champ se renseigne automatiquement et le tag sélectionné est mis en valeur.
+- **Saisie libre en % ou CHF** : saisissez un pourcentage ou un montant fixe personnalisé selon vos besoins de négociation.
+- **Prévisualisation directe** : la modale affiche en temps réel le calcul transparent (montant brut, déduction calculée et prix net résultant).
+- **Retirer le rabais** : le bouton dédié permet de réinitialiser la ligne à son tarif de base en un clic.
+- **Règles d'application** : le rabais porte sur les séances payées (les séances offertes d’un pack restent gratuites), s'applique avant tout coupon global éventuel, et n'autorise que le montant en CHF avec le tarif Étudiant pour éviter le cumul de deux pourcentages.
+- **Visibilité complète** : le rabais apparaît directement sous le libellé de la ligne, dans la décomposition du total et sur le PDF officiel remis au patient.
+
 ### Coupon
 
 Cliquez sur **Coupon**, puis saisissez le code et la valeur de la réduction.
@@ -429,7 +442,7 @@ Quatre sorties restent visibles au bas du devis sous forme d’icônes : imprima
 - **Télécharger le PDF** : sous Windows, Linux et macOS, enregistre directement un PDF A4 dans le dossier choisi dans **Réglages > Entreprise > Fichiers PDF** ; **Téléchargements** reste le dossier par défaut. Sous ChromeOS et dans la PWA, le navigateur choisit l’emplacement via **Enregistrer au format PDF**. Le document reste sur fond blanc, quel que soit le thème utilisé dans l’application.
 - **E-mail** ouvre directement dans l’application de bureau un nouveau message avec l’objet, le texte et le PDF déjà joint. L’adresse du client est utilisée lorsqu’elle existe.
 - **À joindre** regroupe les deux choix manuels :
-  - **WhatsApp** prépare le PDF dans le dossier configuré, puis ouvre WhatsApp avec le message prérempli ;
+  - **WhatsApp** prépare le PDF dans le dossier configuré, puis ouvre la conversation du client (numéro et message préremplis) dans WhatsApp Desktop ou Web. Sur l’application de bureau, le PDF est déjà copié dans le presse-papiers : collez-le avec Ctrl+V, puis envoyez ;
   - **Outlook** crée le PDF dans le dossier configuré, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Joignez ensuite le PDF téléchargé.
 
 Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, un brouillon `.eml` contenant déjà le message et le PDF est créé dans **Téléchargements**, puis ouvert avec la messagerie par défaut. Le PDF joint peut se trouver dans le dossier configuré. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement ce PDF dans le dossier configuré. Aucun message `mailto:` sans pièce jointe n’est ouvert. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez-le depuis votre messagerie.
@@ -569,7 +582,7 @@ Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce pos
 | `?` | Ouvrir le centre d’aide sur les raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 8.0.0.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 8.6.1.
 
 ## 9. Utiliser le modèle de devis
 

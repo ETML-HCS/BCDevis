@@ -5,6 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { Pool } = require("pg");
 const { normalizeSnapshot, same } = require("./sync-merge.cjs");
+const { MIGRATIONS } = require("./migrations.cjs");
 
 const now = () => new Date().toISOString();
 const identifier = () => crypto.randomUUID();
@@ -52,8 +53,67 @@ class CentralDatabase {
     this.schemaPath = options.schemaPath || path.join(__dirname, "schema.sql");
   }
 
+  async ensureMigrationTable(client = this.pool) {
+    let exists = false;
+    try {
+      await client.query("SELECT 1 FROM schema_migrations LIMIT 1");
+      exists = true;
+    } catch {
+      exists = false;
+    }
+    if (!exists && fs.existsSync(this.schemaPath)) {
+      await client.query(fs.readFileSync(this.schemaPath, "utf8"));
+    }
+  }
+
+  async getAppliedMigrations(client = this.pool) {
+    await this.ensureMigrationTable(client);
+    const result = await client.query("SELECT version_id, name, applied_at FROM schema_migrations ORDER BY version_id ASC");
+    return result.rows.map((row) => ({
+      version: isNaN(Number(row.version_id)) ? row.version_id : Number(row.version_id),
+      name: row.name,
+      applied_at: row.applied_at
+    }));
+  }
+
   async migrate() {
-    await this.pool.query(fs.readFileSync(this.schemaPath, "utf8"));
+    await this.ensureMigrationTable();
+    const appliedRows = await this.getAppliedMigrations();
+    const appliedVersions = new Set(appliedRows.map((r) => String(r.version)));
+    const newlyApplied = [];
+
+    for (const migration of MIGRATIONS) {
+      if (!appliedVersions.has(String(migration.version))) {
+        await this.withTransaction(async (client) => {
+          await client.query(
+            "INSERT INTO schema_migrations (version_id, name, applied_at) VALUES ($1, $2, $3) ON CONFLICT (version_id) DO NOTHING",
+            [String(migration.version), migration.name, now()]
+          );
+        });
+        newlyApplied.push(migration.version);
+      }
+    }
+    return { applied: newlyApplied, total: MIGRATIONS.length };
+  }
+
+  async getMigrationStatus() {
+    const appliedRows = await this.getAppliedMigrations();
+    const appliedMap = new Map(appliedRows.map((r) => [String(r.version), r]));
+    return MIGRATIONS.map((m) => {
+      const record = appliedMap.get(String(m.version));
+      return {
+        version: m.version,
+        name: m.name,
+        applied: Boolean(record),
+        applied_at: record ? new Date(record.applied_at).toISOString() : null
+      };
+    });
+  }
+
+  async cleanupExpiredSessions() {
+    const expiredAt = now();
+    const result = await this.pool.query("DELETE FROM sessions WHERE expires_at <= $1 RETURNING token_hash", [expiredAt]);
+    return result.rowCount;
   }
 
   async withTransaction(work) {
@@ -160,12 +220,13 @@ class CentralDatabase {
   }
 
   async workspace(organizationId, executor = this.pool) {
-    const [stateResult, settingsResult, countersResult, servicesResult, overridesResult, quotesResult] = await Promise.all([
+    const [stateResult, settingsResult, countersResult, servicesResult, overridesResult, contactsResult, quotesResult] = await Promise.all([
       executor.query("SELECT revision, updated_at FROM workspace_state WHERE organization_id = $1", [organizationId]),
       executor.query("SELECT key, value FROM shared_settings WHERE organization_id = $1", [organizationId]),
       executor.query("SELECT key, value FROM quote_counters WHERE organization_id = $1", [organizationId]),
       executor.query("SELECT id, payload FROM custom_services WHERE organization_id = $1 ORDER BY position, id", [organizationId]),
       executor.query("SELECT service_id, payload FROM catalog_overrides WHERE organization_id = $1", [organizationId]),
+      executor.query("SELECT id, payload FROM contacts WHERE organization_id = $1", [organizationId]),
       executor.query("SELECT id, payload FROM quotes WHERE organization_id = $1", [organizationId])
     ]);
     const state = stateResult.rows[0];
@@ -177,6 +238,7 @@ class CentralDatabase {
         quoteCounters: Object.fromEntries(countersResult.rows.map((row) => [row.key, Number(row.value)])),
         customServices: servicesResult.rows.map((row) => row.payload),
         catalogOverrides: Object.fromEntries(overridesResult.rows.map((row) => [row.service_id, row.payload])),
+        contacts: Object.fromEntries(contactsResult.rows.map((row) => [row.id, row.payload])),
         quotes: Object.fromEntries(quotesResult.rows.map((row) => [row.id, row.payload]))
       })
     };
@@ -193,7 +255,7 @@ class CentralDatabase {
   }
 
   async replaceSharedRows(client, organizationId, snapshot) {
-    for (const table of ["shared_settings", "quote_counters", "custom_services", "catalog_overrides", "quotes"]) {
+    for (const table of ["shared_settings", "quote_counters", "custom_services", "catalog_overrides", "contacts", "quotes"]) {
       await client.query(`DELETE FROM ${table} WHERE organization_id = $1`, [organizationId]);
     }
     for (const [key, value] of Object.entries(snapshot.settings)) {
@@ -207,6 +269,9 @@ class CentralDatabase {
     }
     for (const [serviceId, payload] of Object.entries(snapshot.catalogOverrides)) {
       await client.query("INSERT INTO catalog_overrides (organization_id, service_id, payload) VALUES ($1, $2, $3::jsonb)", [organizationId, serviceId, JSON.stringify(payload)]);
+    }
+    for (const [contactId, payload] of Object.entries(snapshot.contacts)) {
+      await client.query("INSERT INTO contacts (organization_id, id, payload, updated_at) VALUES ($1, $2, $3::jsonb, $4)", [organizationId, contactId, JSON.stringify(payload), payload.updatedAt || now()]);
     }
     for (const [quoteId, payload] of Object.entries(snapshot.quotes)) {
       await client.query("INSERT INTO quotes (organization_id, id, number, payload, updated_at) VALUES ($1, $2, $3, $4::jsonb, $5)", [organizationId, quoteId, String(payload.number || ""), JSON.stringify(payload), payload.updatedAt || now()]);
@@ -331,6 +396,120 @@ class CentralDatabase {
     `, [organizationId, documentId])).rows[0];
     if (!row) return null;
     return { id: row.id, filename: row.filename, mimeType: row.mime_type, byteSize: Number(row.byte_size), sha256: row.sha256, content: Buffer.from(row.content) };
+  }
+
+  async getPrimaryOrganization() {
+    const row = (await this.pool.query("SELECT id, name FROM organizations ORDER BY created_at ASC LIMIT 1")).rows[0];
+    return row || null;
+  }
+
+  async createUser({ organizationId, email, password, role = "editor" }) {
+    const normalized = normalizeEmail(email);
+    if (!normalized || !normalized.includes("@")) throw new Error("Adresse e-mail invalide.");
+    if (String(password || "").length < 12) throw new Error("Le mot de passe doit comporter au moins 12 caractères.");
+    if (!["admin", "editor", "reader"].includes(role)) throw new Error("Rôle invalide (doit être admin, editor ou reader).");
+    const id = identifier();
+    const createdAt = now();
+    const hash = passwordHash(password);
+    return this.withTransaction(async (client) => {
+      await client.query(
+        "INSERT INTO users (id, organization_id, email, password_hash, role, created_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        [id, organizationId, normalized, hash, role, createdAt]
+      );
+      await client.query(
+        "INSERT INTO audit_log (organization_id, user_id, action, details, created_at) VALUES ($1, $2, 'user.create', $3::jsonb, $4)",
+        [organizationId, id, JSON.stringify({ email: normalized, role }), createdAt]
+      );
+      return { id, organization_id: organizationId, email: normalized, role, active: true, created_at: createdAt };
+    });
+  }
+
+  async listUsers(organizationId) {
+    const result = await this.pool.query(
+      "SELECT id, email, role, active, created_at FROM users WHERE organization_id = $1 ORDER BY created_at ASC",
+      [organizationId]
+    );
+    return result.rows;
+  }
+
+  async findUserByEmail(email) {
+    const result = await this.pool.query(
+      "SELECT id, organization_id, email, role, active, created_at FROM users WHERE email = $1",
+      [normalizeEmail(email)]
+    );
+    return result.rows[0] || null;
+  }
+
+  async setUserActive({ userId, active }) {
+    const isActive = Boolean(active);
+    return this.withTransaction(async (client) => {
+      const user = (await client.query("SELECT id, organization_id, email FROM users WHERE id = $1 FOR UPDATE", [userId])).rows[0];
+      if (!user) throw new Error("Utilisateur introuvable.");
+      await client.query("UPDATE users SET active = $1 WHERE id = $2", [isActive, userId]);
+      if (!isActive) {
+        await client.query("DELETE FROM sessions WHERE user_id = $1", [userId]);
+      }
+      await client.query(
+        "INSERT INTO audit_log (organization_id, user_id, action, details, created_at) VALUES ($1, $2, 'user.status', $3::jsonb, $4)",
+        [user.organization_id, userId, JSON.stringify({ active: isActive, email: user.email }), now()]
+      );
+      return { ...user, active: isActive };
+    });
+  }
+
+  async setUserRole({ userId, role }) {
+    if (!["admin", "editor", "reader"].includes(role)) throw new Error("Rôle invalide (doit être admin, editor ou reader).");
+    return this.withTransaction(async (client) => {
+      const user = (await client.query("SELECT id, organization_id, email FROM users WHERE id = $1 FOR UPDATE", [userId])).rows[0];
+      if (!user) throw new Error("Utilisateur introuvable.");
+      await client.query("UPDATE users SET role = $1 WHERE id = $2", [role, userId]);
+      await client.query(
+        "INSERT INTO audit_log (organization_id, user_id, action, details, created_at) VALUES ($1, $2, 'user.role', $3::jsonb, $4)",
+        [user.organization_id, userId, JSON.stringify({ role, email: user.email }), now()]
+      );
+      return { ...user, role };
+    });
+  }
+
+  async setUserPassword({ userId, newPassword }) {
+    if (String(newPassword || "").length < 12) throw new Error("Le mot de passe doit comporter au moins 12 caractères.");
+    const hash = passwordHash(newPassword);
+    return this.withTransaction(async (client) => {
+      const user = (await client.query("SELECT id, organization_id, email FROM users WHERE id = $1 FOR UPDATE", [userId])).rows[0];
+      if (!user) throw new Error("Utilisateur introuvable.");
+      await client.query("UPDATE users SET password_hash = $1 WHERE id = $2", [hash, userId]);
+      await client.query("DELETE FROM sessions WHERE user_id = $1", [userId]);
+      await client.query(
+        "INSERT INTO audit_log (organization_id, user_id, action, details, created_at) VALUES ($1, $2, 'user.password_reset', $3::jsonb, $4)",
+        [user.organization_id, userId, JSON.stringify({ email: user.email }), now()]
+      );
+      return { ...user };
+    });
+  }
+
+  async listDevices(organizationId) {
+    const result = await this.pool.query(`
+      SELECT devices.id, devices.name, devices.code, devices.last_seen_at, devices.last_revision,
+             users.email AS user_email
+      FROM devices
+      LEFT JOIN users ON users.id = devices.user_id
+      WHERE devices.organization_id = $1
+      ORDER BY devices.code ASC
+    `, [organizationId]);
+    return result.rows;
+  }
+
+  async revokeDevice({ deviceId }) {
+    return this.withTransaction(async (client) => {
+      const device = (await client.query("SELECT id, organization_id, name, code FROM devices WHERE id = $1 FOR UPDATE", [deviceId])).rows[0];
+      if (!device) throw new Error("Appareil introuvable.");
+      const deletedSessions = (await client.query("DELETE FROM sessions WHERE device_id = $1 RETURNING token_hash", [deviceId])).rowCount;
+      await client.query(
+        "INSERT INTO audit_log (organization_id, device_id, action, details, created_at) VALUES ($1, $2, 'device.revoke_sessions', $3::jsonb, $4)",
+        [device.organization_id, deviceId, JSON.stringify({ code: device.code, name: device.name, revokedSessionsCount: deletedSessions }), now()]
+      );
+      return { ...device, revokedSessionsCount: deletedSessions };
+    });
   }
 
   async close() {

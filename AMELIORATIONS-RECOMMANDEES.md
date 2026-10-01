@@ -124,8 +124,8 @@ Chaque synchronisation envoie un instantané complet. Lorsqu’il change, le ser
 
 ### A4. Sécuriser les restaurations locales et centrales
 
-- Télécharger automatiquement un instantané local avant chaque restauration.
-- Présenter avant confirmation la version, la date et le nombre d’éléments importés.
+- ~~Télécharger automatiquement un instantané local avant chaque restauration.~~ **Livré** : `sauvegarde-avant-restauration-AAAA-MM-JJ.json` est téléchargé avant toute restauration si des données locales existent.
+- Présenter avant confirmation la version, la date et le nombre d’éléments importés. **Partiel** : la confirmation indique déjà la date d’export, le nombre de devis et de contacts.
 - Valider l’ensemble de la sauvegarde avant toute mutation.
 - Ajouter une restauration sélective lorsque le besoin sera confirmé.
 - Pour PostgreSQL, définir rotation, chiffrement, stockage hors serveur, rétention et test périodique de restauration.
@@ -232,7 +232,7 @@ Le découpage doit conserver JavaScript natif et rester couvert à chaque étape
 ### A9. Séparer validation continue et publication
 
 - Faire réussir la nouvelle CI de contrôle sur les pull requests et `main`, sans déployer Pages.
-- Conserver les workflows de livrables sur les tags. La publication Pages est désormais **manuelle** et l’environnement `github-pages` n’autorise que le tag stable `v7.1.7` : `main` porte la V8 et ne doit plus remplacer le site web tout seul.
+- Conserver les workflows de livrables sur les tags. La publication Pages est désormais **manuelle** et l’environnement `github-pages` n’autorise que le tag stable `v7.1.7`. Le développement V8+ se fait sur la branche par défaut `newFeatures` : elle ne doit jamais remplacer le site web tout seule.
 - Compléter le test PostgreSQL réel par des budgets de taille et de performance.
 - Produire des diagnostics par scénario plutôt qu’une longue chaîne de scripts uniquement séquentielle.
 

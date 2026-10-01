@@ -30,7 +30,7 @@ assert.match(app, /Mannequin \$\{modelLabel\} vu de face/, "La vue avant doit an
 assert.match(app, /Mannequin \$\{modelLabel\} vu de dos/, "La vue arrière doit annoncer le modèle affiché");
 assert.match(app, /interactive-body-map[^"]*"[^>]+role="group"/, "La carte doit exposer ses zones interactives aux technologies d’assistance");
 assert.match(app, /let activeBodyModel = "male"/, "Le corps masculin doit être le modèle initial");
-assert.match(app, /class="body-model-toggle"[\s\S]*?data-body-model-choice="female"[^>]*>Femme<\/button>[\s\S]*?data-body-model-choice="male"[^>]*>Homme<\/button>/, "Le titre doit être remplacé par un sélecteur Femme/Homme explicite");
+assert.match(app, /class="body-model-toggle"[\s\S]*?data-body-model-choice="female"[^>]*>(?:<svg[\s\S]*?<\/svg>)?Femme<\/button>[\s\S]*?data-body-model-choice="male"[^>]*>(?:<svg[\s\S]*?<\/svg>)?Homme<\/button>/, "Le titre doit être remplacé par un sélecteur Femme/Homme explicite");
 assert.match(app, /function setBodyModel\(model, focusSelector\)/, "Le sélecteur explicite doit choisir directement la morphologie demandée");
 assert.doesNotMatch(app, /toggleBodyModel|data-body-model-toggle|bodyModelToggleArea/, "L’espace autour du corps ne doit plus changer implicitement de morphologie");
 assert.match(app, /function faceMapMarkup\(\)/, "Le visage doit disposer d’une carte anatomique dédiée");
@@ -40,7 +40,7 @@ assert.match(app, /activeBodyModel === "female" \? "féminin" : "masculin"/, "L�
 assert.match(app, /data-body-detail="body"/, "Le détail du visage doit permettre de revenir au corps complet");
 assert.match(
   app,
-  /class="body-map-head-actions"[\s\S]*?aria-label="Orientation du corps"[\s\S]*?data-body-side="front"[^>]*>Face<\/button>[\s\S]*?data-body-side="back"[^>]*>Dos<\/button>/,
+  /class="body-map-head-actions"[\s\S]*?aria-label="Orientation du corps"[\s\S]*?data-body-side="front"[^>]*>(?:<svg[\s\S]*?<\/svg>)?Face<\/button>[\s\S]*?data-body-side="back"[^>]*>(?:<svg[\s\S]*?<\/svg>)?Dos<\/button>/,
   "Le sélecteur Face/Dos doit se trouver dans la ligne de titre de la carte"
 );
 assert.match(
@@ -121,6 +121,32 @@ assert.deepEqual(coveredBodyServiceIds, expectedBodyServiceIds, "Chaque prestati
 assert.deepEqual(Array.from(servicesForRegion(regions.find((region) => region.id === "back-scalp")), (service) => service.id), [96], "Le cuir chevelu ne doit afficher que la mésothérapie capillaire");
 assert.deepEqual(Array.from(servicesForRegion(regions.find((region) => region.id === "back-sif")), (service) => service.id), [49], "Le SIF ne doit afficher que le sillon interfessier");
 
+const bodyZones = catalogContext.window.QUOTE_BODY_ZONES;
+assert.equal(bodyZones.length, 21, "Le mannequin doit exposer vingt et une sous-zones précises");
+assert.equal(new Set(bodyZones.map((zone) => zone.id)).size, bodyZones.length, "Chaque sous-zone doit avoir un identifiant unique");
+for (const zone of bodyZones) {
+  const region = regions.find((candidate) => candidate.id === zone.regionId);
+  assert.ok(region, `Région inconnue pour ${zone.id}`);
+  assert.equal(zone.id.startsWith(`${zone.regionId}-`), true, `La sous-zone ${zone.id} doit être rattachée à sa région`);
+  const regionServiceIds = new Set(servicesForRegion(region).map((service) => Number(service.id)));
+  assert.ok(zone.serviceIds.length > 0, `La sous-zone ${zone.id} doit proposer au moins un soin`);
+  for (const serviceId of zone.serviceIds) {
+    assert.ok(regionServiceIds.has(serviceId), `Le soin ${serviceId} de ${zone.id} doit appartenir à ${region.id}`);
+  }
+}
+for (const regionId of new Set(bodyZones.map((zone) => zone.regionId))) {
+  const region = regions.find((candidate) => candidate.id === regionId);
+  const zoneServiceIds = new Set(bodyZones.filter((zone) => zone.regionId === regionId).flatMap((zone) => zone.serviceIds));
+  const uncovered = servicesForRegion(region).filter((service) => !zoneServiceIds.has(Number(service.id)) && !/Zone spéciale|Zones définies/.test(service.name));
+  assert.deepEqual(Array.from(uncovered, (service) => service.name), [], `Chaque soin précis de ${regionId} doit être atteignable par une sous-zone`);
+}
+assert.match(app, /data-body-zone="\$\{zone\.id\}" role="button" tabindex="0"/, "Les sous-zones doivent être des cibles accessibles au clavier");
+assert.match(app, /class="body-zone-trail" role="group"/, "Les sous-zones doivent aussi être proposées en pastilles tactiles");
+assert.match(app, /data-body-zone-clear/, "Il doit être possible de revenir à l’ensemble de la région");
+assert.match(app, /function quotedServiceIds\(\)/, "Les zones déjà au devis doivent être repérées sur la silhouette");
+assert.match(styles, /\.body-region \.body-zone\.active \.body-region-shape\{fill:var\(--taupe\);stroke:#fff/, "La sous-zone active doit être nettement mise en évidence");
+assert.match(styles, /\.body-region:not\(\.has-zones\):hover \.body-region-shape/, "Le survol d’une région découpée ne doit éclairer que la sous-zone pointée");
+
 const auxiliaryFamilyIds = new Set(["electrolyse", "medecine", "combinees", "consultations"]);
 const auxiliaryServiceIds = services
   .filter((service) => families.some((family) => auxiliaryFamilyIds.has(family.id) && family.categoryIds.includes(Number(service.categoryId))))
@@ -146,8 +172,8 @@ assert.match(
 );
 assert.match(
   app,
-  /event\.target\.closest\("svg \[data-body-region\], svg \[data-face-region\]"\)[\s\S]*\["Enter", " "\]/,
-  "Chaque région corporelle ou faciale doit être activable avec Entrée ou Espace"
+  /event\.target\.closest\("svg \[data-body-region\], svg \[data-body-zone\], svg \[data-face-region\]"\)[\s\S]*\["Enter", " "\]/,
+  "Chaque région, sous-zone corporelle ou zone faciale doit être activable avec Entrée ou Espace"
 );
 assert.match(
   app,
@@ -211,7 +237,20 @@ for (const model of ["male", "female"]) {
   for (const side of ["front", "back"]) {
     const figure = anatomy[model][side];
     assert.ok(figure.outline.length > 8000, `Le contour ${model}/${side} ne doit pas être une approximation simplifiée`);
-    assert.ok(Object.values(figure.regions).flat().length >= 60, `Les zones ${model}/${side} doivent rester anatomiquement détaillées`);
+    const segmentPaths = Object.values(figure.regions).flatMap((segments) => Object.values(segments).flat());
+    assert.ok(segmentPaths.length >= 60, `Les zones ${model}/${side} doivent rester anatomiquement détaillées`);
+    for (const zone of bodyZones.filter((candidate) => candidate.regionId.startsWith(`${side}-`))) {
+      const segments = figure.regions[zone.regionId.slice(side.length + 1)];
+      assert.ok(zone.segments.some((segment) => segments?.[segment]?.length), `La sous-zone ${zone.id} doit être dessinée sur le modèle ${model}`);
+    }
+    for (const [regionKey, segments] of Object.entries(figure.regions)) {
+      const zones = bodyZones.filter((zone) => zone.regionId === `${side}-${regionKey}`);
+      if (!zones.length) continue;
+      const covered = new Set(zones.flatMap((zone) => zone.segments));
+      for (const segment of Object.keys(segments)) {
+        assert.ok(covered.has(segment), `Le segment ${model}/${side}/${segment} doit appartenir à une sous-zone cliquable`);
+      }
+    }
     assert.ok(Number.isFinite(figure.head.cx), `Le centre de tête ${model}/${side} doit rester défini`);
   }
 }

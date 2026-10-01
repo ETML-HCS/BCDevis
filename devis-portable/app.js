@@ -2,12 +2,16 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "8.0.0";
-  const RELEASE_NOTES_REVISION = "8.0.0";
+  const RELEASE_VERSION = "8.6.1";
+  const RELEASE_NOTES_REVISION = "8.6.1";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";
-  const ACCESS_GATE_REQUIRED = ACCESS_GATE_FORCED || (/^https?:$/.test(window.location.protocol) && !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
+  // TEMPORAIRE (8.5.0) : aucun serveur BCDevis Central n’est en service et les utilisatrices ne sont pas encore
+  // formées à la connexion ; la PWA web s’ouvre donc sans login, comme avant la V8. Passer cette constante à
+  // false rétablit le verrou ; l’adresse ?authGate=1 permet de tester l’écran de connexion dès maintenant.
+  const ACCESS_GATE_SUSPENDED = true;
+  const ACCESS_GATE_REQUIRED = ACCESS_GATE_FORCED || (!ACCESS_GATE_SUSPENDED && /^https?:$/.test(window.location.protocol) && !["localhost", "127.0.0.1", "::1"].includes(window.location.hostname));
   // Keep the former names here so an update retains every existing quote.
   const LEGACY_STORAGE_KEYS = ["bellecour-atelier-devis-v3", "bellecour-atelier-devis-v2", "bellecour-atelier-devis-v1"];
   const APP_VERSION = 25;
@@ -45,8 +49,8 @@
     document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
-  const { countAcceptedInMonth, countAwaitingInvoices } = window.BCDevisTracking;
+  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
+  const { summarizeConversion } = window.BCDevisTracking || {};
   const ContactCore = window.BCDevisContacts;
   const {
     DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
@@ -127,7 +131,7 @@
     expired: { label: "Expiré", eventLabel: "Devis expiré" },
     invoiced: { label: "Facture envoyée", eventLabel: "Facture envoyée" }
   };
-  const TRACKING_FILTERS = ["all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
+  const TRACKING_FILTERS = ["today", "all", "draft", "ready", "sent", "follow-up", "accepted", "refused", "expired"];
   const TRACKING_TERMINAL_STATUSES = ["accepted", "refused", "expired", "invoiced"];
   const TRACKING_TRANSITIONS = {
     draft: ["ready"],
@@ -174,13 +178,14 @@
     quoteTrackingEnabled: false,
     trackingDefaultFollowUpDays: 7,
     trackingRemindersOnStartup: true,
-    trackingShowCounters: true,
+    trackingShowFilters: false,
     conditions: DEFAULT_PAYMENT_CONDITIONS,
     studentConditions: DEFAULT_STUDENT_CONDITIONS,
     footerNote: DEFAULT_FOOTER_NOTE,
     showSignatures: true,
     pdfLanguage: "fr",
-    centralUniqueQuoteNumbers: false
+    centralUniqueQuoteNumbers: false,
+    historyCompactMode: false
   };
 
   function packDefaults() {
@@ -537,8 +542,11 @@
     applyDisplayMode();
     syncViewportMetrics();
     syncPermanentCheckoutLayout();
+    initWorkspaceSplitter();
     syncToastPlacement();
     expireTrackedQuotes();
+    const versionBadge = $("#appVersionBadge");
+    if (versionBadge) versionBadge.textContent = `v${RELEASE_VERSION}`;
     saveLocal(false);
     renderAll();
     window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
@@ -577,6 +585,7 @@
   let activeBodyRegion = "front-visage";
   let activeBodyDetail = "body";
   let activeFaceRegion = "";
+  let activeBodyZone = "";
   let selectedOfferMode = "single";
   let searchQuery = "";
   let couponOpen = false;
@@ -595,7 +604,9 @@
   let preparedSiteMigrationTarget = "";
   let activeSettingsTab = "interface";
   let activeHistoryView = "history";
-  let activeTrackingFilter = "all";
+  let activeTrackingFilter = "today";
+  let historyQuery = "";
+  let historySort = "updated";
   let selectedContactId = "";
   let contactQuery = "";
   const expandedTrackingQuotes = new Set();
@@ -783,7 +794,8 @@
           studentDiscount: clamp(line.studentDiscount ?? db.settings.studentDiscount, 0, 100),
           price: offerType === "student" ? basePrice : price,
           quantity: boundedInteger(line.quantity, 1, MAX_LINE_QUANTITY, 1),
-          freeQuantity: offerType === "pack" ? boundedInteger(line.freeQuantity, 0, MAX_LINE_QUANTITY, 0) : 0
+          freeQuantity: offerType === "pack" ? boundedInteger(line.freeQuantity, 0, MAX_LINE_QUANTITY, 0) : 0,
+          ...sanitizeLineDiscount(line.customDiscount)
         };
       }),
       conditions: String(source.conditions ?? base.conditions).trim().slice(0, 5000),
@@ -1681,6 +1693,7 @@
   const BODY_AUXILIARY_FAMILY_IDS = ["electrolyse", "medecine", "combinees", "consultations"];
   const BODY_DEFAULT_REGION_IDS = { front: "front-visage", back: "back-dos" };
   const BODY_REGION_DEFINITIONS = new Map(window.QUOTE_BODY_REGIONS.map((region) => [region.id, region]));
+  const BODY_ZONE_DEFINITIONS = new Map((window.QUOTE_BODY_ZONES || []).map((zone) => [zone.id, zone]));
   const FACE_REGION_DEFINITIONS = new Map([
     { id: "face-full", title: "Visage complet", description: "Ensemble du visage.", serviceIds: [29] },
     { id: "face-temples", title: "Tempes", description: "Tempes gauche et droite.", serviceIds: [23] },
@@ -1732,17 +1745,106 @@
     });
   }
 
-  function bodyRegionMarkup(regionId, shapes, visibleIds) {
+  function bodyZoneDefinition(zoneId = activeBodyZone) {
+    return BODY_ZONE_DEFINITIONS.get(zoneId) || null;
+  }
+
+  function bodyZonesForRegion(regionId) {
+    return [...BODY_ZONE_DEFINITIONS.values()].filter((zone) => zone.regionId === regionId);
+  }
+
+  function servicesForBodyZone(zone) {
+    const order = (zone?.serviceIds || []).map(Number);
+    return allServices()
+      .filter((service) => order.includes(Number(service.id)))
+      .sort((left, right) => order.indexOf(Number(left.id)) - order.indexOf(Number(right.id)));
+  }
+
+  function quotedServiceIds() {
+    return new Set(quote.lines.map((line) => Number(line.serviceId)));
+  }
+
+  function bodyRegionIsQuoted(region, quotedIds) {
+    if (!quotedIds.size) return false;
+    const family = window.QUOTE_FAMILIES.find((candidate) => candidate.id === region.familyId);
+    return servicesForBodyRegion(region, family).some((service) => quotedIds.has(Number(service.id)));
+  }
+
+  function bodyZoneMarkup(zone, segments, enabled, quotedIds) {
+    const paths = zone.segments.flatMap((segment) => segments?.[segment] || []);
+    if (!paths.length) return "";
+    const active = activeBodyZone === zone.id;
+    const quoted = zone.serviceIds.some((serviceId) => quotedIds.has(Number(serviceId)));
+    const label = escapeHTML(zone.title);
+    const interactive = enabled ? `data-body-zone="${zone.id}" role="button" tabindex="0" aria-label="${label}${quoted ? " · déjà au devis" : ""}" aria-pressed="${active}"` : "";
+    return `<g class="body-zone${active ? " active" : ""}${quoted ? " in-quote" : ""}" ${interactive}><title>${label}</title>${bodyAnatomyPaths(paths)}</g>`;
+  }
+
+  function bodyRegionMarkup(regionId, shapes, visibleIds, quotedIds = new Set()) {
     const region = bodyRegionDefinition(regionId);
     if (!region) return "";
     const enabled = visibleIds.has(region.familyId);
     const active = activeBodyRegion === region.id && activeFamily === region.familyId;
     const label = escapeHTML(region.title);
-    return `<g class="body-region${active ? " active" : ""}${enabled ? "" : " disabled"}" ${enabled ? `data-body-region="${region.id}" data-body-family="${region.familyId}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${active}"` : 'aria-hidden="true"'}><title>${label}</title>${shapes}</g>`;
+    const quoted = bodyRegionIsQuoted(region, quotedIds);
+    const zones = typeof shapes === "string" ? [] : bodyZonesForRegion(region.id);
+    const stateClasses = `${active ? " active" : ""}${enabled ? "" : " disabled"}${quoted ? " in-quote" : ""}`;
+    if (zones.length) {
+      const zoneSelected = active && bodyZoneDefinition()?.regionId === region.id;
+      const zoneMarkup = zones.map((zone) => bodyZoneMarkup(zone, shapes, enabled, quotedIds)).join("");
+      return `<g class="body-region has-zones${stateClasses}${zoneSelected ? " zone-selected" : ""}" ${enabled ? `data-body-region="${region.id}" role="group" aria-label="${label}"` : 'aria-hidden="true"'}>${zoneMarkup}</g>`;
+    }
+    const markup = typeof shapes === "string" ? shapes : bodyAnatomyPaths(shapes);
+    return `<g class="body-region${stateClasses}" ${enabled ? `data-body-region="${region.id}" data-body-family="${region.familyId}" role="button" tabindex="0" aria-label="${label}${quoted ? " · déjà au devis" : ""}" aria-pressed="${active}"` : 'aria-hidden="true"'}><title>${label}</title>${markup}</g>`;
   }
 
   function bodyAnatomyPaths(paths) {
-    return (paths || []).map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
+    const list = Array.isArray(paths) ? paths : Object.values(paths || {}).flat();
+    return list.map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
+  }
+
+  // Icône « localisateur » : silhouette du mannequin courant avec la zone surlignée, tracée depuis les mêmes
+  // données anatomiques que la carte (cohérente entre toutes les zones, et Femme/Homme).
+  function bodyZoneLocatorIcon(side, regionKey, segments) {
+    const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
+    const region = geometry?.regions?.[regionKey];
+    if (!region) return "";
+    const paths = segments ? segments.flatMap((segment) => region[segment] || []) : Object.values(region).flat();
+    if (!paths.length) return "";
+    return `<svg class="body-zone-chip-icon" viewBox="${geometry.viewBox}" aria-hidden="true" focusable="false"><use href="#zoneLocatorOutline-${side}" class="zone-locator-body"></use><path class="zone-locator-zone" d="${paths.join(" ")}"></path></svg>`;
+  }
+
+  // Cadre chaque icône sur sa zone : l’outil de mesure du navigateur n’est disponible qu’une fois le SVG affiché.
+  function fitZoneLocatorIcons() {
+    $$(".body-zone-chip-icon").forEach((svg) => {
+      const zone = svg.querySelector(".zone-locator-zone");
+      if (!zone) return;
+      try {
+        const box = zone.getBBox();
+        if (!box.width || !box.height) return;
+        const size = Math.max(Math.max(box.width, box.height) * 1.7, 260);
+        const x = box.x + box.width / 2 - size / 2;
+        const y = box.y + box.height / 2 - size / 2;
+        svg.setAttribute("viewBox", [x, y, size, size].map((value) => Math.round(value)).join(" "));
+      } catch {
+        // Mesure indisponible : l’icône garde le cadrage de la silhouette entière.
+      }
+    });
+  }
+
+  function bodyZoneTrailMarkup(region) {
+    const zones = region ? bodyZonesForRegion(region.id) : [];
+    if (!zones.length) return "";
+    const quotedIds = quotedServiceIds();
+    const side = region.side;
+    const regionKey = region.id.slice(side.length + 1);
+    const outline = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side]?.outline || "";
+    const chip = (attributes, label, icon, active, quoted) => `<button type="button" ${attributes} class="${active ? "active" : ""}${quoted ? " in-quote" : ""}" aria-pressed="${active}"${quoted ? ' title="Déjà au devis"' : ""}>${icon}${escapeHTML(label)}${quoted ? '<span class="body-zone-quoted-dot" aria-hidden="true"></span>' : ""}</button>`;
+    return `<div class="body-zone-trail" role="group" aria-label="Préciser la zone ${escapeHTML(region.title)}">
+      <svg class="body-zone-icon-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><path id="zoneLocatorOutline-${side}" d="${outline}"></path></defs></svg>
+      ${chip("data-body-zone-clear", "Toute la zone", bodyZoneLocatorIcon(side, regionKey, null), !activeBodyZone, false)}
+      ${zones.map((zone) => chip(`data-body-zone="${zone.id}"`, zone.title, bodyZoneLocatorIcon(side, regionKey, zone.segments), activeBodyZone === zone.id, zone.serviceIds.some((serviceId) => quotedIds.has(Number(serviceId))))).join("")}
+    </div>`;
   }
 
   function anonymousBodyHeadMarkup(side, headGeometry) {
@@ -1776,7 +1878,8 @@
   }
 
   function bodyMapMarkup(side, visibleIds) {
-    const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds);
+    const quotedIds = quotedServiceIds();
+    const region = (regionId, shapes) => bodyRegionMarkup(regionId, shapes, visibleIds, quotedIds);
     const geometry = bodyModelGeometry(side);
     const [viewX, viewY, viewWidth, viewHeight] = geometry.viewBox.split(" ").map(Number);
     const headCx = geometry.head.cx;
@@ -1791,9 +1894,9 @@
         ${headMask}
         <g class="body-figure">${outline}
           ${region("back-scalp", anonymousBodyHeadMarkup("back", geometry.head))}
-          ${region("back-dos", bodyAnatomyPaths(geometry.regions.dos))}
-          ${region("back-bras", bodyAnatomyPaths(geometry.regions.bras))}
-          ${region("back-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
+          ${region("back-dos", geometry.regions.dos)}
+          ${region("back-bras", geometry.regions.bras)}
+          ${region("back-jambes", geometry.regions.jambes)}
           ${region("back-sif", geometry.focusMarkup)}
         </g>
       </svg>`;
@@ -1804,10 +1907,10 @@
       ${headMask}
       <g class="body-figure">${outline}
         ${region("front-visage", anonymousBodyHeadMarkup("front", geometry.head))}
-        ${region("front-torse", bodyAnatomyPaths(geometry.regions.torse))}
-        ${region("front-bras", bodyAnatomyPaths(geometry.regions.bras))}
+        ${region("front-torse", geometry.regions.torse)}
+        ${region("front-bras", geometry.regions.bras)}
         ${region("front-maillot", `${bodyAnatomyPaths(geometry.regions.maillot)}${geometry.focusMarkup}`)}
-        ${region("front-jambes", bodyAnatomyPaths(geometry.regions.jambes))}
+        ${region("front-jambes", geometry.regions.jambes)}
       </g>
     </svg>`;
   }
@@ -1911,21 +2014,25 @@
       activeFaceRegion = "";
     }
     const selectedFaceRegion = faceDetailActive ? faceRegionDefinition() : null;
+    if (activeBodyZone && (faceDetailActive || bodyZoneDefinition()?.regionId !== activeBodyRegion)) activeBodyZone = "";
+    const selectedZone = bodyZoneDefinition();
     const needle = normalize(searchQuery);
     const visibleCategoryIds = new Set(visible.flatMap((family) => family.categoryIds.map(Number)));
     const services = needle
       ? allServices().filter((item) => visibleCategoryIds.has(Number(item.categoryId)) && serviceMatchesSearch(item, needle))
       : selectedFaceRegion
         ? servicesForFaceRegion(selectedFaceRegion)
+      : selectedZone
+        ? servicesForBodyZone(selectedZone)
       : selectedRegion
         ? servicesForBodyRegion(selectedRegion, selectedFamily)
         : allServices().filter((item) => selectedFamily && serviceInFamily(item, selectedFamily));
-    const resultTitle = needle ? "Résultats" : selectedFaceRegion?.title || selectedRegion?.title || selectedFamily?.name || "Soins";
+    const resultTitle = needle ? "Résultats" : selectedFaceRegion?.title || selectedZone?.title || selectedRegion?.title || selectedFamily?.name || "Soins";
     const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
-    const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}">Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}">Homme</button></div>`;
+    const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}"><svg aria-hidden="true"><use href="#icon-venus"></use></svg>Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}"><svg aria-hidden="true"><use href="#icon-mars"></use></svg>Homme</button></div>`;
     const mapHint = faceDetailActive
       ? '<p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Sélectionnez une zone précise du visage ou revenez au corps complet.</p>'
-      : "";
+      : bodyZoneTrailMarkup(selectedRegion);
     const options = services.length
       ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
       : `<div class="body-results-empty"><svg aria-hidden="true"><use href="#icon-search"></use></svg><strong>Aucun soin dans cette zone</strong><small>${needle ? "Essayez un autre terme." : "Cette famille est vide ou masquée dans les réglages."}</small></div>`;
@@ -1934,9 +2041,9 @@
       <div class="body-selector-layout">
         <section class="body-map-card" aria-label="Sélecteur des zones corporelles">
           <div class="body-map-card-head">
-            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><span aria-hidden="true">←</span> Corps complet</button>' : modelToggle}
+            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg>Corps complet</button>' : modelToggle}
             <div class="body-map-head-actions">
-              <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Orientation du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}">Face</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}">Dos</button></div></div>
+              <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Orientation du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}"><svg aria-hidden="true"><use href="#icon-body-front"></use></svg>Face</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}"><svg aria-hidden="true"><use href="#icon-body-back"></use></svg>Dos</button></div></div>
             </div>
           </div>
           <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
@@ -1949,6 +2056,7 @@
     </div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
     renderFamilyPriceToggle();
+    fitZoneLocatorIcons();
   }
 
   function renderFamilyPriceToggle() {
@@ -2055,6 +2163,7 @@
       <span><strong>Suppression tactile</strong><small>Balayez une ligne vers la gauche, puis touchez la corbeille.</small></span>
       <button type="button" data-cart-swipe-hint-dismiss>Compris</button>
     </aside>`;
+    const cartStudentRate = calculateQuote(quote).studentRate;
     container.innerHTML = swipeHint + quote.lines.map((line) => {
       const category = categoryFor(line.categoryId);
       const isPack = line.offerType === "pack";
@@ -2078,11 +2187,13 @@
         minimum: 0
       }) : "";
       const packOfferAction = canAddPackOffer ? `<button class="pack-offer-action" type="button" data-line-action="add-pack-free" aria-label="Ajouter ${pack.free} séance${pack.free > 1 ? "s" : ""} offerte${pack.free > 1 ? "s" : ""}">+${pack.free} offerte${pack.free > 1 ? "s" : ""}</button>` : "";
-      return `<article class="cart-line offer-${line.offerType}" data-line-id="${line.id}">
+      const discountLabel = lineDiscountLabel(line, cartStudentRate);
+      const discountButton = `<button class="cart-line-discount${discountLabel ? " active" : ""}" type="button" data-line-action="discount" aria-label="${discountLabel ? `Rabais ${escapeHTML(discountLabel)} sur ${escapeHTML(line.name)}, modifier` : `Appliquer un rabais sur ${escapeHTML(line.name)}`}" title="Rabais personnalisé (double-clic sur la ligne)">${discountLabel ? `<span>${escapeHTML(discountLabel)}</span>` : '<svg aria-hidden="true"><use href="#icon-percent"></use></svg>'}</button>`;
+      return `<article class="cart-line offer-${line.offerType}${discountLabel ? " has-custom-discount" : ""}" data-line-id="${line.id}">
         <div class="cart-line-delete-zone"><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer ${escapeHTML(line.name)}" title="Supprimer ${escapeHTML(line.name)}"><svg><use href="#icon-trash"></use></svg></button></div>
         <div class="cart-line-main">
           <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom du soin : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
-          <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong></div>
+          <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}${discountButton}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong></div>
         </div>
       </article>`;
     }).join("");
@@ -2330,6 +2441,83 @@
   function renderAll() {
     renderCatalog();
     renderCheckout();
+  }
+
+  function sanitizeLineDiscount(source) {
+    const type = source?.type === "fixed" ? "fixed" : "percent";
+    const value = type === "percent" ? boundedNumber(source?.value, 0, 100, 0) : boundedNumber(source?.value, 0, MAX_LINE_PRICE * MAX_LINE_QUANTITY, 0);
+    return value > 0 ? { customDiscount: { type, value: roundMoney(value) } } : {};
+  }
+
+  function lineDiscountLabel(line, studentRate = 0) {
+    const amount = customLineDiscount(line, studentRate);
+    if (amount <= 0) return "";
+    return line.customDiscount.type === "percent"
+      ? `−${Number(line.customDiscount.value).toLocaleString("fr-CH", { maximumFractionDigits: 2 })} %`
+      : `− ${money(amount)}`;
+  }
+
+  let lineDiscountLineId = "";
+  let lineDiscountType = "percent";
+
+  function lineDiscountDraft() {
+    const line = quote.lines.find((item) => item.id === lineDiscountLineId);
+    if (!line) return null;
+    const studentRate = calculateQuote(quote).studentRate;
+    const base = lineDiscountBase(line, studentRate);
+    const rawValue = Math.max(0, Number($("#lineDiscountValue").value) || 0);
+    const value = lineDiscountType === "percent" ? Math.min(100, rawValue) : Math.min(base, rawValue);
+    const draft = { ...line, customDiscount: { type: lineDiscountType, value } };
+    const amount = customLineDiscount(draft, studentRate);
+    return { line, base, value, amount, result: roundMoney(Math.max(0, base - amount)), clamped: value !== rawValue };
+  }
+
+  function renderLineDiscountPreview() {
+    const draft = lineDiscountDraft();
+    if (!draft) return;
+    $("#lineDiscountResult").textContent = moneyValue(draft.result);
+    $("#lineDiscountSaving").textContent = draft.amount > 0 ? `(-${moneyValue(draft.amount)})` : "";
+    $("#lineDiscountSuffix").textContent = lineDiscountType === "percent" ? "%" : "CHF";
+    $$("[data-line-discount-type]").forEach((button) => {
+      const active = button.dataset.lineDiscountType === lineDiscountType;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    const presets = $("#lineDiscountPresets");
+    if (presets) {
+      presets.hidden = lineDiscountType !== "percent";
+      const currentVal = lineDiscountType === "percent" && draft.value > 0 ? String(draft.value) : "";
+      $$("[data-discount-preset]").forEach((btn) => {
+        const isSelected = btn.dataset.discountPreset === currentVal;
+        btn.classList.toggle("active", isSelected);
+        btn.setAttribute("aria-pressed", String(isSelected));
+      });
+    }
+  }
+
+  function openLineDiscountLayer(line) {
+    if (!line || !ensureQuoteEditable()) return;
+    const studentRate = calculateQuote(quote).studentRate;
+    const student = line.offerType === "student";
+    lineDiscountLineId = line.id;
+    lineDiscountType = student ? "fixed" : line.customDiscount?.type || "percent";
+    if (student && line.customDiscount?.type === "percent") lineDiscountType = "fixed";
+    const baseValue = moneyValue(lineDiscountBase(line, studentRate));
+    const qtySuffix = line.quantity > 1 ? ` × ${line.quantity}` : "";
+    $("#lineDiscountTitle").textContent = `${line.name}${qtySuffix} (${baseValue})`;
+    $("#lineDiscountBase").textContent = "";
+    const percentButton = $('[data-line-discount-type="percent"]');
+    percentButton.disabled = student;
+    percentButton.title = student ? "Le rabais en % n’est pas cumulable avec le tarif étudiant" : "";
+    const rule = $("#lineDiscountRule");
+    rule.hidden = !student;
+    rule.textContent = student ? "Avec le tarif Étudiant, seul un rabais en CHF est cumulable." : "";
+    const current = line.customDiscount?.type === lineDiscountType ? Number(line.customDiscount.value) || 0 : 0;
+    $("#lineDiscountValue").value = current || "";
+    $("#lineDiscountRemove").hidden = !line.customDiscount;
+    renderLineDiscountPreview();
+    openLayer("lineDiscountLayer");
+    window.setTimeout(() => $("#lineDiscountValue")?.select(), 60);
   }
 
   function lineFromElement(element) {
@@ -2728,6 +2916,7 @@
     activeBodyRegion = "front-visage";
     activeBodyDetail = "body";
     activeFaceRegion = "";
+    activeBodyZone = "";
     selectedOfferMode = "single";
     searchQuery = "";
     $("#catalogSearch").value = "";
@@ -2785,8 +2974,29 @@
   function trackingFilterMatches(item, filter) {
     if (item.tracking?.status === "invoiced") return false;
     if (filter === "all") return true;
+    if (filter === "today") return trackingTodaySections([item]).some((section) => section.items.length);
     if (filter === "follow-up") return isFollowUpDue(item);
     return item.tracking?.status === filter;
+  }
+
+  function quoteAmount(item) {
+    return calculateQuote(item).total;
+  }
+
+  function trackingTodaySections(items) {
+    const staleDraftBefore = addDaysISO(todayISO(), -7);
+    const sortByAmount = (left, right) => quoteAmount(right) - quoteAmount(left);
+    const oldestFirst = (field) => (left, right) => String(left.tracking?.[field] || left.updatedAt || "").localeCompare(String(right.tracking?.[field] || right.updatedAt || "")) || sortByAmount(left, right);
+    const followUps = items.filter((item) => isFollowUpDue(item)).sort((left, right) => {
+      const lateness = Number(isFollowUpLate(right)) - Number(isFollowUpLate(left));
+      return lateness || String(left.tracking.nextFollowUpAt).localeCompare(String(right.tracking.nextFollowUpAt)) || sortByAmount(left, right);
+    });
+    return [
+      { key: "follow-up", title: "À relancer", description: "Relances prévues aujourd’hui ou en retard", items: followUps },
+      { key: "accepted", title: "Acceptés à facturer", description: "Facture envoyée à importer", items: items.filter((item) => item.tracking?.status === "accepted").sort(oldestFirst("acceptedAt")) },
+      { key: "ready", title: "Prêts à envoyer", description: "Devis finalisés en attente d’envoi", items: items.filter((item) => item.tracking?.status === "ready").sort(oldestFirst("updatedAt")) },
+      { key: "draft", title: "Brouillons à terminer", description: "Sans modification depuis au moins 7 jours", items: items.filter((item) => item.tracking?.status === "draft" && String(item.updatedAt || item.createdAt || "").slice(0, 10) <= staleDraftBefore).sort(oldestFirst("updatedAt")) }
+    ];
   }
 
   function trackingCounts(items) {
@@ -2797,7 +3007,23 @@
       if (Object.hasOwn(counts, status)) counts[status] += 1;
       if (isFollowUpDue(item)) counts["follow-up"] += 1;
     });
+    counts.today = trackingTodaySections(items).reduce((total, section) => total + section.items.length, 0);
     return counts;
+  }
+
+  function historySearchMatches(item, needle = normalize(historyQuery)) {
+    if (!needle) return true;
+    return normalize([item.number, item.client?.name, item.client?.phone, item.client?.email].join(" ")).includes(needle);
+  }
+
+  function sortHistoryQuotes(items) {
+    const sorted = [...items];
+    const text = (value) => String(value || "");
+    const amount = (item) => quoteAmount(item);
+    if (historySort === "date") return sorted.sort((left, right) => text(right.date).localeCompare(text(left.date)) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    if (historySort === "client") return sorted.sort((left, right) => text(left.client?.name).localeCompare(text(right.client?.name), "fr", { sensitivity: "base" }) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    if (historySort === "amount") return sorted.sort((left, right) => amount(right) - amount(left) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    return sorted.sort((left, right) => text(right.updatedAt).localeCompare(text(left.updatedAt)));
   }
 
   function trackingEventCopy(event) {
@@ -2871,7 +3097,7 @@
     return persistTrackedQuote(item);
   }
 
-  function renderHistoryItem(item, trackingView, trackingActive = false) {
+  function renderHistoryItem(item, trackingView, trackingActive = false, todayAction = false) {
     const totals = calculateQuote(item);
     const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
     const visual = trackingVisualStatus(item);
@@ -2886,6 +3112,9 @@
     const followUpCopy = item.tracking.nextFollowUpAt
       ? `${isFollowUpLate(item) ? "Relance en retard" : "Relance"} · ${formatDate(item.tracking.nextFollowUpAt)}`
       : `Valable jusqu’au ${formatDate(item.validUntil)}`;
+    const action = todayAction
+      ? `<button class="tracking-today-action button secondary" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}">Traiter</button>`
+      : "";
     return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${escapeHTML(item.id)}">
       <div class="history-item-summary">
         <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
@@ -2895,6 +3124,7 @@
           <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
           <span class="history-follow-up">${escapeHTML(followUpCopy)}</span>
         </button>
+        ${action}
       </div>
       <div class="tracking-detail" id="tracking-detail-${escapeHTML(item.id)}" ${expanded ? "" : "hidden"}>${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div>
     </article>`;
@@ -2904,25 +3134,41 @@
     const enabled = trackingEnabled();
     const tabs = $("#historyTabs");
     const filters = $("#trackingFilters");
-    const summary = $("#trackingSummary");
+    const statsTab = $("#historyViewStatsTab");
+    const historyTools = $(".history-tools");
     $("#historyLayer").classList.toggle("tracking-enabled", enabled);
     tabs.hidden = !enabled;
+    statsTab.hidden = !enabled;
     if (!enabled) activeHistoryView = "history";
+    if (activeHistoryView === "stats" && statsTab.hidden) activeHistoryView = "tracking";
     $$('[data-history-view]', tabs).forEach((tab) => {
       const selected = tab.dataset.historyView === activeHistoryView;
       tab.setAttribute("aria-selected", String(selected));
       tab.tabIndex = selected ? 0 : -1;
     });
-    $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
-    $("#historyWorkspaceDescription").textContent = activeHistoryView === "tracking"
-      ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
-      : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
+    $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "stats" ? "historyViewStatsTab" : activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
+    $("#historyWorkspaceDescription").textContent = activeHistoryView === "stats"
+      ? "Consultez les indicateurs mensuels de conversion issus des devis envoyés."
+      : activeHistoryView === "tracking"
+        ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
+        : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
     const counts = trackingCounts(items);
     const dueBadge = $("#trackingDueCount");
     dueBadge.textContent = String(counts["follow-up"] || "");
     dueBadge.hidden = counts["follow-up"] === 0;
-    filters.hidden = !enabled || activeHistoryView !== "tracking";
-    summary.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowCounters !== true;
+    const countBadge = $("#historyQuoteCountBadge");
+    if (countBadge) countBadge.textContent = plural(items.length, "devis");
+    const compactOpt = $("#historyCompactOption");
+    if (compactOpt) compactOpt.checked = db.settings.historyCompactMode === true;
+    const filtersOpt = $("#historyShowFiltersOption");
+    if (filtersOpt) filtersOpt.checked = db.settings.trackingShowFilters === true;
+    const trackingOpt = $("#historyTrackingOption");
+    if (trackingOpt) trackingOpt.checked = db.settings.quoteTrackingEnabled === true;
+    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
+    filters.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowFilters !== true;
+    historyTools.hidden = activeHistoryView === "stats";
+    $("#historySearch").value = historyQuery;
+    $("#historySort").value = historySort;
     if (!filters.hidden) {
       $$('[data-tracking-filter]', filters).forEach((button) => {
         const filter = button.dataset.trackingFilter;
@@ -2933,11 +3179,6 @@
         if (count) count.textContent = counts[filter] || 0;
       });
     }
-    if (!summary.hidden) {
-      const acceptedThisMonth = countAcceptedInMonth(items, todayISO().slice(0, 7));
-      const awaitingInvoices = countAwaitingInvoices(items);
-      summary.innerHTML = `<div><strong>${counts.ready}</strong><span>À envoyer</span></div><div><strong>${counts["follow-up"]}</strong><span>À relancer</span></div><div><strong>${items.filter((item) => isFollowUpLate(item)).length}</strong><span>En retard</span></div><div><strong>${acceptedThisMonth}</strong><span>Convertis ce mois</span></div><button type="button" data-summary-filter="accepted" aria-label="Afficher les devis acceptés à facturer"><strong>${awaitingInvoices}</strong><span>À facturer</span></button>`;
-    }
   }
 
   function renderHistory() {
@@ -2946,15 +3187,35 @@
     const enabled = trackingEnabled();
     let quotes = Object.values(db.quotes);
     renderTrackingNavigation(quotes);
+    list.classList.toggle("tracking-stats", enabled && activeHistoryView === "stats");
+    if (enabled && activeHistoryView === "stats") {
+      const startDate = `${todayISO().slice(0, 7)}-01`;
+      const stats = summarizeConversion(quotes, { startDate, endDate: todayISO(), amountOf: quoteAmount });
+      const percent = stats.conversionRate === null ? "—" : new Intl.NumberFormat("fr-CH", { style: "percent", maximumFractionDigits: 0 }).format(stats.conversionRate);
+      const median = stats.medianAcceptanceDays === null ? "—" : `${Math.round(stats.medianAcceptanceDays)} j`;
+      list.innerHTML = `<section class="tracking-stats-panel" aria-label="Statistiques du mois en cours"><header><h3>Ce mois</h3><p>Les devis sont regroupés par chaîne de versions et comptés selon leur date d’envoi.</p></header><div class="tracking-stats-grid"><div><strong>${percent}</strong><span>Conversion</span></div><div><strong>${stats.sent}</strong><span>Envoyés</span></div><div><strong>${stats.converted}</strong><span>Acceptés ou facturés</span></div><div><strong>${stats.pending}</strong><span>En attente</span></div><div><strong>${stats.refused + stats.expired}</strong><span>Refusés ou expirés</span></div><div><strong>${median}</strong><span>Délai médian</span></div><div><strong>${money(stats.sentValue)}</strong><span>Valeur envoyée</span></div><div><strong>${money(stats.acceptedValue)}</strong><span>Valeur acceptée</span></div></div></section>`;
+      return;
+    }
+    quotes = quotes.filter((item) => historySearchMatches(item));
+    list.classList.toggle("tracking-today-queue", enabled && activeHistoryView === "tracking" && activeTrackingFilter === "today");
     if (enabled && activeHistoryView === "tracking") {
+      if (activeTrackingFilter === "today") {
+        const sections = trackingTodaySections(quotes).filter((section) => section.items.length);
+        if (!sections.length) {
+          list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>Aucune action de suivi aujourd’hui</strong><p>Les relances, devis acceptés, envois et brouillons à terminer apparaîtront ici.</p></div>`;
+          return;
+        }
+        list.innerHTML = sections.map((section) => `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><strong>${section.items.length}</strong></header><div class="tracking-today-items">${section.items.map((item) => renderHistoryItem(item, true, true, true)).join("")}</div></section>`).join("");
+        return;
+      }
       quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter));
-      quotes.sort((left, right) => {
+      if (activeTrackingFilter !== "today") quotes.sort((left, right) => {
         const leftDue = isFollowUpDue(left) ? left.tracking.nextFollowUpAt : "9999-12-31";
         const rightDue = isFollowUpDue(right) ? right.tracking.nextFollowUpAt : "9999-12-31";
         return leftDue.localeCompare(rightDue) || String(right.updatedAt).localeCompare(String(left.updatedAt));
       });
     } else {
-      quotes.sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+      quotes = sortHistoryQuotes(quotes);
     }
     if (!quotes.length) {
       const filtered = enabled && activeHistoryView === "tracking" && activeTrackingFilter !== "all";
@@ -3030,6 +3291,21 @@
   function exportQuote() {
     downloadJSON(`${quote.number}.json`, { type: "atelier-devis-quote", version: APP_VERSION, exportedAt: new Date().toISOString(), quote });
     toast("Devis exporté");
+  }
+
+  function describeBackupContent(payload) {
+    const source = payload.database || {};
+    const count = (value) => Object.keys(isRecord(value) || Array.isArray(value) ? value : {}).length;
+    const exportedAt = new Date(payload.exportedAt);
+    const parts = [`${count(source.quotes)} devis`, `${count(source.contacts)} contact(s)`];
+    if (!Number.isNaN(exportedAt.getTime())) parts.unshift(`exportée le ${exportedAt.toLocaleDateString("fr-CH")}`);
+    return parts.join(" · ");
+  }
+
+  function downloadSnapshotBeforeRestore() {
+    if (!Object.keys(db.quotes || {}).length && !Object.keys(db.contacts || {}).length) return;
+    saveLocal(false);
+    downloadJSON(`sauvegarde-avant-restauration-${todayISO()}.json`, { type: "atelier-devis-backup", version: APP_VERSION, exportedAt: new Date().toISOString(), database: db });
   }
 
   function exportBackup() {
@@ -3469,7 +3745,7 @@
     if (form.elements.quoteDateEditable) form.elements.quoteDateEditable.checked = db.settings.quoteDateEditable === true;
     if (form.elements.quoteTrackingEnabled) form.elements.quoteTrackingEnabled.checked = db.settings.quoteTrackingEnabled === true;
     if (form.elements.trackingRemindersOnStartup) form.elements.trackingRemindersOnStartup.checked = db.settings.trackingRemindersOnStartup !== false;
-    if (form.elements.trackingShowCounters) form.elements.trackingShowCounters.checked = db.settings.trackingShowCounters !== false;
+    if (form.elements.trackingShowFilters) form.elements.trackingShowFilters.checked = db.settings.trackingShowFilters === true;
     if (form.elements.centralUniqueQuoteNumbers) form.elements.centralUniqueQuoteNumbers.checked = db.settings.centralUniqueQuoteNumbers === true;
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
@@ -3713,7 +3989,11 @@
         ? (en ? `${line.quantity} paid + ${line.freeQuantity} free` : `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}`)
         : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
-      const meta = `${escapeHTML(printOfferLabel(line))} · ${escapeHTML(printCategoryName(categoryFor(line.categoryId)))}`;
+      const lineDiscountAmount = customLineDiscount(line, totals.studentRate);
+      const discountMeta = lineDiscountAmount > 0
+        ? ` · ${en ? "Discount" : "Rabais"} ${line.customDiscount.type === "percent" ? `${Number(line.customDiscount.value).toLocaleString(en ? "en-GB" : "fr-CH", { maximumFractionDigits: 2 })} %` : ""}${line.customDiscount.type === "percent" ? " " : ""}(− ${pdfMoney(lineDiscountAmount)})`
+        : "";
+      const meta = `${escapeHTML(printOfferLabel(line))} · ${escapeHTML(printCategoryName(categoryFor(line.categoryId)))}${discountMeta}`;
       return `<tr><td><span class="print-item-name">${escapeHTML(printServiceName(line))}</span><span class="print-item-meta">${meta}</span></td><td>${quantityLabel}</td><td>${pdfMoney(unitPrice)}</td><td>${pdfMoney(referenceLineTotal(line))}</td></tr>`;
     }).join("");
     const studentConditionsSource = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
@@ -3825,6 +4105,8 @@
     const clientName = String(quote.client?.name || "").trim();
     const lines = quote.lines.map((line) => {
       const name = String(line.name || "Soin").trim().replace(/[\s—–-]+$/u, "").trim() || "Soin";
+      const emailLineDiscount = customLineDiscount(line, calculateQuote(quote).studentRate);
+      const lineDiscountSuffix = emailLineDiscount > 0 ? ` (rabais ${money(emailLineDiscount)})` : "";
       const quantity = Math.max(0, Number(line.quantity) || 0);
       const unitPrice = line.offerType === "student"
         ? Math.max(0, Number(line.basePrice ?? line.price) || 0)
@@ -3833,9 +4115,9 @@
         const paid = `${quantity} payée${quantity > 1 ? "s" : ""}`;
         const offeredQuantity = Math.max(0, Number(line.freeQuantity) || 0);
         const offered = offeredQuantity ? ` et ${offeredQuantity} offerte${offeredQuantity > 1 ? "s" : ""}` : "";
-        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(referenceLineTotal(line))} avant offre`;
+        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(referenceLineTotal(line))} avant offre${lineDiscountSuffix}`;
       }
-      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(referenceLineTotal(line))}`;
+      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(referenceLineTotal(line))}${lineDiscountSuffix}`;
     });
     const summary = [`Total avant offres : ${money(totals.subtotal)}`];
     if (totals.totalDiscount > 0) summary.push(`Rabais total : − ${money(totals.totalDiscount)}`);
@@ -3900,11 +4182,20 @@
     setTransmissionMenuOpen(false);
     setTransmissionBusy(true);
     const message = transmissionMessage();
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const phone = window.BCDevisContacts.whatsAppNumber(quote.client?.phone);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     try {
       const result = await prepareTransmissionPdf();
-      await openExternalUrl(url);
-      toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
+      if (result?.saved && typeof window.bcdevisDesktop?.prepareWhatsAppShare === "function") {
+        // Application de bureau : conversation ouverte sur le bon numéro, PDF déjà dans le presse-papiers.
+        const whatsapp = await window.bcdevisDesktop.prepareWhatsAppShare({ phone, text: message, filePath: result.filePath });
+        toast(whatsapp.clipboard
+          ? `WhatsApp ${whatsapp.client === "desktop" ? "" : "Web "}ouvert${phone ? " sur le numéro du client" : ""} — collez le PDF avec Ctrl+V, puis envoyez.`
+          : `WhatsApp ouvert — PDF créé dans ${result.directory || "Téléchargements"} : glissez-le dans la conversation.`);
+      } else {
+        await openExternalUrl(url);
+        toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — enregistrez le PDF (Imprimer > PDF) puis joignez-le avant l’envoi.");
+      }
       promptMarkCurrentQuoteAsSent("WhatsApp");
     } catch (error) {
       console.error(error);
@@ -3989,6 +4280,101 @@
     panel.classList.toggle("is-full-height", permanent);
     document.documentElement.classList.toggle("checkout-focus", permanent);
     document.body.classList.toggle("checkout-focus", permanent);
+  }
+
+  function initWorkspaceSplitter() {
+    const splitter = $("#workspaceSplitter");
+    if (!splitter) return;
+
+    const MIN_WIDTH = 340;
+    const MAX_WIDTH = 700;
+    const DEFAULT_WIDTH = 440;
+
+    const clampWidth = (val) => {
+      const maxAllowed = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, window.innerWidth - 380));
+      return Math.round(Math.max(MIN_WIDTH, Math.min(maxAllowed, val)));
+    };
+
+    const applyWidth = (width, persist = false) => {
+      const clamped = clampWidth(width);
+      document.documentElement.style.setProperty("--checkout-panel-width", `${clamped}px`);
+      splitter.setAttribute("aria-valuenow", String(clamped));
+      if (persist) {
+        try {
+          localStorage.setItem("bcdevis-checkout-panel-width", String(clamped));
+        } catch (_) {}
+        if (db && db.settings) db.settings.checkoutPanelWidth = clamped;
+      }
+      return clamped;
+    };
+
+    try {
+      const stored = localStorage.getItem("bcdevis-checkout-panel-width") || db?.settings?.checkoutPanelWidth;
+      if (stored) {
+        const parsed = Number.parseInt(stored, 10);
+        if (!Number.isNaN(parsed) && parsed >= MIN_WIDTH) {
+          applyWidth(parsed, false);
+        }
+      }
+    } catch (_) {}
+
+    let isDragging = false;
+
+    splitter.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      if (window.innerWidth < 1181) return;
+      isDragging = true;
+      splitter.setPointerCapture(event.pointerId);
+      document.body.classList.add("is-resizing-splitter");
+      event.preventDefault();
+    });
+
+    splitter.addEventListener("pointermove", (event) => {
+      if (!isDragging) return;
+      const targetWidth = window.innerWidth - event.clientX;
+      applyWidth(targetWidth, false);
+    });
+
+    const finishDrag = (event) => {
+      if (!isDragging) return;
+      isDragging = false;
+      document.body.classList.remove("is-resizing-splitter");
+      try {
+        splitter.releasePointerCapture(event.pointerId);
+      } catch (_) {}
+      const targetWidth = window.innerWidth - event.clientX;
+      applyWidth(targetWidth, true);
+    };
+
+    splitter.addEventListener("pointerup", finishDrag);
+    splitter.addEventListener("pointercancel", finishDrag);
+
+    splitter.addEventListener("dblclick", () => {
+      applyWidth(DEFAULT_WIDTH, true);
+      toast("Largeur de la caisse réinitialisée");
+    });
+
+    splitter.addEventListener("keydown", (event) => {
+      const current = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--checkout-panel-width"), 10) || DEFAULT_WIDTH;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        applyWidth(current + 20, true);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        applyWidth(current - 20, true);
+      } else if (event.key === "Home" || event.key === "Escape") {
+        event.preventDefault();
+        applyWidth(DEFAULT_WIDTH, true);
+        toast("Largeur de la caisse réinitialisée");
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth >= 1181) {
+        const current = Number.parseInt(getComputedStyle(document.documentElement).getPropertyValue("--checkout-panel-width"), 10);
+        if (current) applyWidth(current, false);
+      }
+    });
   }
 
   function appMenuItems() {
@@ -4225,6 +4611,7 @@
       activeBodySide = nextSide;
       activeBodyDetail = "body";
       activeFaceRegion = "";
+      activeBodyZone = "";
       renderCatalog();
       window.setTimeout(() => $(`[data-body-side="${activeBodySide}"]`)?.focus(), 0);
       return;
@@ -4241,11 +4628,33 @@
       window.setTimeout(() => $(`[data-face-region="${nextFaceRegion.id}"]`)?.focus(), 0);
       return;
     }
+    const bodyZone = event.target.closest("[data-body-zone], [data-body-zone-clear]");
+    if (bodyZone) {
+      const nextZone = bodyZone.hasAttribute("data-body-zone-clear") ? null : bodyZoneDefinition(bodyZone.dataset.bodyZone);
+      const nextRegion = bodyRegionDefinition(nextZone?.regionId || activeBodyRegion);
+      if (!nextRegion || !visibleFamilyIds().includes(nextRegion.familyId)) return;
+      selectBodyRegion(nextRegion.id);
+      // Un second clic sur la sous-zone active revient à l’ensemble de la région.
+      activeBodyZone = nextZone && activeBodyZone !== nextZone.id ? nextZone.id : "";
+      activeBodyDetail = "body";
+      activeFaceRegion = "";
+      searchQuery = "";
+      $("#catalogSearch").value = "";
+      setCatalogSearchOpen(false, { clear: false });
+      const fromMap = Boolean(bodyZone.closest("svg"));
+      renderCatalog();
+      const focusSelector = fromMap
+        ? `svg [data-body-zone="${nextZone?.id}"]`
+        : nextZone ? `.body-zone-trail [data-body-zone="${nextZone.id}"]` : ".body-zone-trail [data-body-zone-clear]";
+      window.setTimeout(() => $(focusSelector)?.focus(), 0);
+      return;
+    }
     const bodyRegion = event.target.closest("[data-body-region]");
     if (bodyRegion) {
       const nextRegion = bodyRegionDefinition(bodyRegion.dataset.bodyRegion);
       if (!nextRegion || !visibleFamilyIds().includes(nextRegion.familyId)) return;
       selectBodyRegion(nextRegion.id);
+      activeBodyZone = "";
       searchQuery = "";
       $("#catalogSearch").value = "";
       setCatalogSearchOpen(false, { clear: false });
@@ -4262,6 +4671,7 @@
       activeBodyRegion = null;
       activeBodyDetail = "body";
       activeFaceRegion = "";
+      activeBodyZone = "";
       activeFamily = nextFamily;
       expandedFamily = nextFamily;
       searchQuery = "";
@@ -4285,7 +4695,7 @@
     renderCatalog();
   });
   $("#familyList").addEventListener("keydown", (event) => {
-    const interactiveRegion = event.target.closest("svg [data-body-region], svg [data-face-region]");
+    const interactiveRegion = event.target.closest("svg [data-body-region], svg [data-body-zone], svg [data-face-region]");
     if (!interactiveRegion || !["Enter", " "].includes(event.key)) return;
     event.preventDefault();
     interactiveRegion.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -4451,6 +4861,10 @@
     const line = lineFromElement(actionButton);
     if (!line) return;
     const action = actionButton.dataset.lineAction;
+    if (action === "discount") {
+      openLineDiscountLayer(line);
+      return;
+    }
     if (action === "add-pack-free") {
       const pack = packDefaults();
       if (line.offerType !== "single" || pack.free <= 0 || line.quantity < pack.paid) return;
@@ -4501,6 +4915,49 @@
       }
       if (restoredControl) window.setTimeout(() => restoredControl.focus(), 0);
     }
+  });
+  $("#cartLines").addEventListener("dblclick", (event) => {
+    if (event.target.closest("button, .quantity-stepper, .cart-line-delete-zone")) return;
+    const line = event.target.closest(".cart-line") && lineFromElement(event.target);
+    if (!line) return;
+    event.preventDefault();
+    window.getSelection()?.removeAllRanges();
+    openLineDiscountLayer(line);
+  });
+  $$("[data-line-discount-type]").forEach((button) => button.addEventListener("click", () => {
+    if (button.disabled) return;
+    lineDiscountType = button.dataset.lineDiscountType === "fixed" ? "fixed" : "percent";
+    $("#lineDiscountValue").value = "";
+    renderLineDiscountPreview();
+    $("#lineDiscountValue").focus();
+  }));
+  $$("[data-discount-preset]").forEach((button) => button.addEventListener("click", () => {
+    lineDiscountType = "percent";
+    $("#lineDiscountValue").value = button.dataset.discountPreset;
+    renderLineDiscountPreview();
+    $("#lineDiscountValue").focus();
+  }));
+  $("#lineDiscountValue")?.addEventListener("input", renderLineDiscountPreview);
+  $("#lineDiscountRemove")?.addEventListener("click", () => {
+    const line = quote.lines.find((item) => item.id === lineDiscountLineId);
+    if (!line || !ensureQuoteEditable()) return;
+    delete line.customDiscount;
+    saveLocal(); renderCheckout();
+    closeLayer("lineDiscountLayer");
+    toast(`${line.name} · rabais retiré`);
+  });
+  $("#lineDiscountForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const draft = lineDiscountDraft();
+    if (!draft || !ensureQuoteEditable()) return;
+    if (draft.value <= 0) {
+      delete draft.line.customDiscount;
+    } else {
+      draft.line.customDiscount = { type: lineDiscountType, value: roundMoney(draft.value) };
+    }
+    saveLocal(); renderCheckout();
+    closeLayer("lineDiscountLayer");
+    toast(draft.value > 0 ? `${draft.line.name} · rabais de ${money(draft.amount)} appliqué` : `${draft.line.name} · rabais retiré`);
   });
   $("#cartLines").addEventListener("change", (event) => { if (event.target.matches("[data-line-field]")) updateLineInput(event.target); });
   $("#cartLines").addEventListener("keydown", (event) => {
@@ -4633,7 +5090,7 @@
   $("#historyTabs").addEventListener("click", (event) => {
     const tab = event.target.closest("[data-history-view]");
     if (!tab) return;
-    activeHistoryView = tab.dataset.historyView === "tracking" ? "tracking" : "history";
+    activeHistoryView = ["history", "tracking", "stats"].includes(tab.dataset.historyView) ? tab.dataset.historyView : "history";
     renderHistory();
     $(`[data-history-view="${activeHistoryView}"]`, $("#historyTabs"))?.focus();
   });
@@ -4654,13 +5111,15 @@
     renderHistory();
     $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
   });
-  $("#trackingSummary").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-summary-filter]");
-    if (!button || !TRACKING_FILTERS.includes(button.dataset.summaryFilter)) return;
-    activeTrackingFilter = button.dataset.summaryFilter;
+  $("#historySearch").addEventListener("input", (event) => {
+    historyQuery = event.target.value;
     expandedTrackingQuotes.clear();
     renderHistory();
-    $(`[data-tracking-filter="${activeTrackingFilter}"]`, $("#trackingFilters"))?.focus();
+  });
+  $("#historySort").addEventListener("change", (event) => {
+    historySort = ["updated", "date", "client", "amount"].includes(event.target.value) ? event.target.value : "updated";
+    expandedTrackingQuotes.clear();
+    renderHistory();
   });
   $("#historyList").addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-tracking-toggle]");
@@ -5036,7 +5495,7 @@
       quoteTrackingEnabled: data.has("quoteTrackingEnabled"),
       trackingDefaultFollowUpDays: boundedInteger(data.get("trackingDefaultFollowUpDays") ?? db.settings.trackingDefaultFollowUpDays, 1, 90, 7),
       trackingRemindersOnStartup: data.has("trackingRemindersOnStartup"),
-      trackingShowCounters: data.has("trackingShowCounters"),
+      trackingShowFilters: data.has("trackingShowFilters"),
       packPaidDefault: boundedInteger(data.get("packPaidDefault"), 1, 24, 6), packFreeDefault: boundedInteger(data.get("packFreeDefault"), 0, 12, 0),
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
@@ -5268,6 +5727,24 @@
     return config.enabled === true;
   }
 
+  $("#historyCompactOption")?.addEventListener("change", (event) => {
+    db.settings.historyCompactMode = event.target.checked === true;
+    saveLocal(false);
+    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
+    renderHistory();
+  });
+  $("#historyShowFiltersOption")?.addEventListener("change", (event) => {
+    db.settings.trackingShowFilters = event.target.checked === true;
+    saveLocal(false);
+    renderTrackingNavigation(Object.values(db.quotes));
+  });
+  $("#historyTrackingOption")?.addEventListener("change", (event) => {
+    db.settings.quoteTrackingEnabled = event.target.checked === true;
+    saveLocal(false);
+    syncTrackingSettingsState();
+    renderHistory();
+  });
+
   $("#exportBackupButton").addEventListener("click", exportBackup);
   $("#importBackupButton").addEventListener("click", () => $("#backupImportInput").click());
   $("#backupImportInput").addEventListener("change", async (event) => {
@@ -5281,10 +5758,13 @@
         const expected = payload.target?.origin || payload.target?.url || "une autre adresse";
         if (!window.confirm(`Ce transfert a été préparé pour ${expected}, mais vous consultez ${currentSiteLabel()}. L’importer quand même ?`)) return;
       }
+      const content = describeBackupContent(payload);
       const confirmation = isSiteTransfer
-        ? "Importer ce transfert remplacera les données locales de cette adresse. Continuer ?"
-        : "Restaurer cette sauvegarde remplacera les données locales actuelles. Continuer ?";
-      if (!window.confirm(confirmation) || !restoreLocalDatabase(payload)) return;
+        ? `Importer ce transfert (${content}) remplacera les données locales de cette adresse. Un instantané des données actuelles sera téléchargé avant l’import. Continuer ?`
+        : `Restaurer cette sauvegarde (${content}) remplacera les données locales actuelles. Un instantané des données actuelles sera téléchargé avant la restauration. Continuer ?`;
+      if (!window.confirm(confirmation)) return;
+      downloadSnapshotBeforeRestore();
+      if (!restoreLocalDatabase(payload)) return;
       const reconnectRequired = isSiteTransfer && restoreTransferredCentralConfig(payload.central);
       if (!$("#settingsLayer")?.hidden) fillSettingsForm();
       toast(isSiteTransfer
@@ -5389,6 +5869,11 @@
     $("#windowMinimizeButton").addEventListener("click", () => desktopWindow.minimizeWindow());
     $("#windowMaximizeButton").addEventListener("click", async () => syncWindowControlState(await desktopWindow.toggleMaximizeWindow()));
     $("#windowCloseButton").addEventListener("click", () => desktopWindow.closeWindow());
+    windowControls.addEventListener("click", async (event) => {
+      if (event.target === windowControls || (!event.target.closest("#windowMinimizeButton, #windowCloseButton") && windowControls.clientWidth <= 42)) {
+        syncWindowControlState(await desktopWindow.toggleMaximizeWindow());
+      }
+    });
     desktopWindow.onWindowMaximized?.(syncWindowControlState);
     desktopWindow.isWindowMaximized?.().then(syncWindowControlState);
   }
