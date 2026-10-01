@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "8.6.1";
-  const RELEASE_NOTES_REVISION = "8.6.1";
+  const RELEASE_VERSION = "8.6.2";
+  const RELEASE_NOTES_REVISION = "8.6.2";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";

@@ -1,8 +1,13 @@
-BCDevis 8.6.1 - Livrable pour Aleksandra
+BCDevis 8.6.2 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 8.6.1
+NOUVEAUTES 8.6.2
 
+- Le choix du tarif est plus compact : sur telephone, les trois choix
+  n'affichent plus que leur icone, et seul le tarif actif garde son
+  sous-titre. Les libelles restent lus par les lecteurs d'ecran.
+- Les icones Nouveau devis, panier vide / onglet Devis et Entreprise sont
+  redessinees.
 - WhatsApp : le bouton ouvre la conversation du client avec son numero et
   le message. Le PDF est deja copie : faites Ctrl+V dans la conversation,
   puis envoyez (WhatsApp ne permet pas de joindre un fichier tout seul).
@@ -33,18 +38,18 @@ NOUVEAUTES 8.6.1
   disponible hors ligne sans Internet ni PostgreSQL.
 - Provisoire : la version web s'ouvre sans connexion tant que le serveur
   central n'est pas en service. Les devis restent sur l'appareil.
-- Cet écran de nouveautés apparaît une seule fois pour la version 8.6.1.
+- Cet ecran de nouveautes apparait une seule fois pour la version 8.6.2.
 
 CONTENU
 
 1-Windows
-  BCDevis-8.6.1.exe
+  BCDevis-8.6.2.exe
 
 2-Linux
-  BCDevis-8.6.1-linux-x86_64.AppImage
+  BCDevis-8.6.2-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-8.6.1-chromeos.zip
+  BCDevis-8.6.2-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -58,7 +63,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-8.6.1.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-8.6.2.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -72,14 +77,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-8.6.1-linux-x86_64.AppImage
-  ./BCDevis-8.6.1-linux-x86_64.AppImage
+  chmod +x BCDevis-8.6.2-linux-x86_64.AppImage
+  ./BCDevis-8.6.2-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-8.6.1-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-8.6.2-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
