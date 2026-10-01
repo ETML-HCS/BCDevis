@@ -3,7 +3,7 @@
 ## Statut du document
 
 - **Dernière mise à jour :** 11 septembre 2026
-- **Version de référence :** BCDevis 8.6.0
+- **Version de référence :** BCDevis 8.6.1
 - **État :** portefeuille complété par un axe prioritaire de conversion et de suivi, du brouillon à la facture envoyée
 - **Documents associés :** [Plan conversion et suivi commercial](PLAN-CONVERSION-ET-SUIVI-COMMERCIAL.md), [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md) et [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md)
 
