@@ -4895,8 +4895,8 @@
     renderLineDiscountPreview();
     $("#lineDiscountValue").focus();
   }));
-  $("#lineDiscountValue").addEventListener("input", renderLineDiscountPreview);
-  $("#lineDiscountRemove").addEventListener("click", () => {
+  $("#lineDiscountValue")?.addEventListener("input", renderLineDiscountPreview);
+  $("#lineDiscountRemove")?.addEventListener("click", () => {
     const line = quote.lines.find((item) => item.id === lineDiscountLineId);
     if (!line || !ensureQuoteEditable()) return;
     delete line.customDiscount;
@@ -4904,7 +4904,7 @@
     closeLayer("lineDiscountLayer");
     toast(`${line.name} · rabais retiré`);
   });
-  $("#lineDiscountForm").addEventListener("submit", (event) => {
+  $("#lineDiscountForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const draft = lineDiscountDraft();
     if (!draft || !ensureQuoteEditable()) return;

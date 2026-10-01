@@ -1282,8 +1282,16 @@ html[data-theme] .family-visibility-icon svg{
     max-height:calc(100dvh - 84px);
   }
 }
-@media screen and (max-width:400px){
-  .brand-block{display:none}
+@media screen and (max-width:760px){
+  .brand-block{display:none!important}
+  .topbar-context{display:flex;min-width:0;padding-left:0;border-left:0;flex:1}
+  .topbar-context>span{display:none}
+  .topbar-context .offer-mode-selector{width:100%;padding:2px;gap:3px;border-radius:10px}
+  .topbar-context .offer-mode-selector button{min-height:40px;padding:5px 8px;gap:5px;border-radius:7px;justify-content:center}
+  .topbar-context .offer-mode-selector button .offer-mode-symbol{width:18px;height:18px;flex-basis:18px;border-radius:5px;font-size:8px}
+  .topbar-context .offer-mode-selector button .offer-mode-symbol svg{width:11px;height:11px}
+  .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:11px;font-weight:700}
+  .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
 }
 
 /* Devis : quatre actions SVG restent visibles, la liste prend le reste. */
@@ -2606,14 +2614,14 @@ html[data-display-mode="smartphone"] .topbar{
   justify-content:space-between;
   gap:6px;
 }
-html[data-display-mode="smartphone"] .brand-block,
+html[data-display-mode="smartphone"] .brand-block{display:none!important}
 html[data-display-mode="smartphone"] .topbar-context{display:flex;min-width:0;padding-left:0;border-left:0;flex:1}
 html[data-display-mode="smartphone"] .topbar-context>span{display:none}
 html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector{width:100%;padding:2px;gap:3px;border-radius:10px}
-html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button{min-height:40px;padding:5px 17px 5px 5px;gap:4px;border-radius:7px}
-html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-symbol{width:17px;height:17px;flex-basis:17px;border-radius:5px;font-size:8px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button{min-height:40px;padding:5px 8px;gap:5px;border-radius:7px;justify-content:center}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-symbol{width:18px;height:18px;flex-basis:18px;border-radius:5px;font-size:8px}
 html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-symbol svg{width:11px;height:11px}
-html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:10px}
+html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-copy{font-size:11px;font-weight:700}
 html[data-display-mode="smartphone"] .topbar-context .offer-mode-selector button .offer-mode-copy small{display:none!important}
 html[data-display-mode="smartphone"] .topbar-utilities{flex:0 0 auto}
 html[data-display-mode="smartphone"] .topbar-utility-button,
