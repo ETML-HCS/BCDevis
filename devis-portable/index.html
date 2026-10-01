@@ -712,23 +712,21 @@
     }
 
     /* Rabais personnalisé : modale concise, discrète et tags rapides */
-    .modal-card.line-discount-modal{width:min(420px,calc(100vw - 24px))!important;padding:14px 16px!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,.1)!important}
-    .line-discount-modal .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
-    .line-discount-header-text{display:flex;align-items:baseline;gap:8px;min-width:0;flex-wrap:wrap}
-    .line-discount-modal .modal-head h2{margin:0;font-size:15px!important;font-weight:700;letter-spacing:-.01em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .line-discount-base{margin:0;color:var(--muted);font-size:11px;font-weight:600;white-space:nowrap}
+    .modal-card.line-discount-modal{width:min(390px,calc(100vw - 24px))!important;padding:12px 14px!important;border-radius:12px!important;box-shadow:0 8px 24px rgba(0,0,0,.1)!important}
+    .line-discount-modal .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px}
+    .line-discount-modal .modal-head h2{margin:0;font-size:14px!important;font-weight:700;letter-spacing:-.01em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .line-discount-modal .round-button{width:26px;height:26px;border-radius:6px;flex:0 0 auto}
     .line-discount-modal .round-button svg{width:11px;height:11px}
     .line-discount-form{display:grid;gap:8px}
     .line-discount-row{display:flex;align-items:center;gap:6px}
-    .line-discount-row .segmented-control{min-width:68px;height:32px;padding:2px;border-radius:6px;flex:0 0 auto}
-    .line-discount-row .segmented-control button{min-width:32px;border-radius:4px;font-size:11px;font-weight:700}
-    .line-discount-row .discount-input{display:flex;align-items:center;height:32px;min-width:68px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);flex:1 1 auto}
+    .line-discount-row .segmented-control{min-width:66px;height:32px;padding:2px;border-radius:6px;flex:0 0 auto}
+    .line-discount-row .segmented-control button{min-width:30px;border-radius:4px;font-size:11px;font-weight:700}
+    .line-discount-row .discount-input{display:flex;align-items:center;height:32px;min-width:60px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);flex:1 1 auto}
     .line-discount-row .discount-input input{width:100%;height:100%;padding:0;text-align:right;border:0;outline:0;background:transparent;font-size:14px;font-weight:700;color:var(--ink)}
     .line-discount-row .discount-input span{margin-left:3px;color:var(--muted);font-size:11px;font-weight:700}
     .line-discount-presets{display:flex;align-items:center;gap:4px;flex:0 0 auto}
     .line-discount-presets[hidden]{display:none!important}
-    .discount-preset-tag{display:inline-flex;height:32px;min-width:34px;padding:0 7px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--surface-soft,var(--soft));font-size:11px;font-weight:600;cursor:pointer;transition:border-color .1s,background-color .1s}
+    .discount-preset-tag{display:inline-flex;height:32px;min-width:28px;padding:0 6px;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--surface-soft,var(--soft));font-size:11px;font-weight:600;cursor:pointer;transition:border-color .1s,background-color .1s}
     .discount-preset-tag:hover{border-color:var(--taupe);background:var(--taupe-light)}
     .discount-preset-tag.active{border-color:var(--taupe-dark);background:var(--taupe-dark);color:#fff!important;font-weight:700}
     html[data-theme="white"] .discount-preset-tag.active,
@@ -2862,10 +2860,8 @@
     <button class="layer-backdrop" type="button" data-close="lineDiscountLayer" aria-label="Fermer" tabindex="-1"></button>
     <section class="modal-card compact-modal line-discount-modal" role="dialog" aria-modal="true" aria-labelledby="lineDiscountTitle" aria-describedby="lineDiscountBase">
       <div class="modal-head">
-        <div class="line-discount-header-text">
-          <h2 id="lineDiscountTitle">Prestation</h2>
-          <span class="line-discount-base" id="lineDiscountBase"></span>
-        </div>
+        <h2 id="lineDiscountTitle">Prestation</h2>
+        <span class="line-discount-base" id="lineDiscountBase" hidden></span>
         <button class="round-button" type="button" data-close="lineDiscountLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button>
       </div>
       <form id="lineDiscountForm" class="line-discount-form">
@@ -2879,17 +2875,17 @@
             <span id="lineDiscountSuffix">%</span>
           </label>
           <div class="line-discount-presets" id="lineDiscountPresets" role="group" aria-label="Rabais">
-            <button type="button" class="discount-preset-tag" data-discount-preset="2">2%</button>
-            <button type="button" class="discount-preset-tag" data-discount-preset="3">3%</button>
-            <button type="button" class="discount-preset-tag" data-discount-preset="5">5%</button>
-            <button type="button" class="discount-preset-tag" data-discount-preset="10">10%</button>
+            <button type="button" class="discount-preset-tag" data-discount-preset="2">2</button>
+            <button type="button" class="discount-preset-tag" data-discount-preset="3">3</button>
+            <button type="button" class="discount-preset-tag" data-discount-preset="5">5</button>
+            <button type="button" class="discount-preset-tag" data-discount-preset="10">10</button>
           </div>
         </div>
         <p class="line-discount-rule" id="lineDiscountRule" hidden></p>
         <div class="line-discount-footer">
           <div class="line-discount-preview" aria-live="polite">
             <span class="line-discount-preview-label">Net</span>
-            <strong id="lineDiscountResult">CHF 0.00</strong>
+            <strong id="lineDiscountResult">0.00</strong>
             <small id="lineDiscountSaving"></small>
           </div>
           <div class="form-actions">
