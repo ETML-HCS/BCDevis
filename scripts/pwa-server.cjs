@@ -59,7 +59,7 @@ async function requestHandler(request, response, root = PWA_ROOT) {
     const extension = path.extname(filePath).toLowerCase();
     const cacheControl = path.basename(filePath) === "service-worker.js"
       ? "no-cache, no-store, must-revalidate"
-      : extension === ".html" || extension === ".webmanifest"
+      : extension === ".html" || extension === ".webmanifest" || extension === ".js" || extension === ".css"
         ? "no-cache"
         : "public, max-age=3600";
     response.writeHead(200, {

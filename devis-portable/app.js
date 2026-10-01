@@ -2450,6 +2450,16 @@
       button.classList.toggle("active", active);
       button.setAttribute("aria-pressed", String(active));
     });
+    const presets = $("#lineDiscountPresets");
+    if (presets) {
+      presets.hidden = lineDiscountType !== "percent";
+      const currentVal = lineDiscountType === "percent" && draft.value > 0 ? String(draft.value) : "";
+      $$("[data-discount-preset]").forEach((btn) => {
+        const isSelected = btn.dataset.discountPreset === currentVal;
+        btn.classList.toggle("active", isSelected);
+        btn.setAttribute("aria-pressed", String(isSelected));
+      });
+    }
   }
 
   function openLineDiscountLayer(line) {
@@ -4874,6 +4884,12 @@
     if (button.disabled) return;
     lineDiscountType = button.dataset.lineDiscountType === "fixed" ? "fixed" : "percent";
     $("#lineDiscountValue").value = "";
+    renderLineDiscountPreview();
+    $("#lineDiscountValue").focus();
+  }));
+  $$("[data-discount-preset]").forEach((button) => button.addEventListener("click", () => {
+    lineDiscountType = "percent";
+    $("#lineDiscountValue").value = button.dataset.discountPreset;
     renderLineDiscountPreview();
     $("#lineDiscountValue").focus();
   }));
