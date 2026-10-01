@@ -92,9 +92,9 @@ function buildView(model, side, definition) {
   const parts = parseParts(path.join(sourceAssets, definition.asset));
   const modelGroups = { ...groups[side], ...definition.groups };
   const regions = Object.fromEntries(Object.entries(modelGroups).map(([region, slugs]) => {
-    const paths = slugs.flatMap((slug) => parts[slug] || []);
-    if (!paths.length) throw new Error(`Aucun tracé pour ${model}/${side}/${region}`);
-    return [region, paths];
+    const segments = Object.fromEntries(slugs.filter((slug) => parts[slug]?.length).map((slug) => [slug, parts[slug]]));
+    if (!Object.keys(segments).length) throw new Error(`Aucun tracé pour ${model}/${side}/${region}`);
+    return [region, segments];
   }));
   return {
     viewBox: definition.viewBox,

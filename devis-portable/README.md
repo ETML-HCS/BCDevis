@@ -1,14 +1,15 @@
-# BCDevis - version 8.0.0
+# BCDevis - version 8.5.0
 
-Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La PWA ChromeOS et iPadOS de la V8 exige désormais un compte BCDevis Central avant d’afficher les devis.
+Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.5.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
 
-## Nouveautés 8.0.0
+## Nouveautés 8.5.0
 
-- La PWA affiche un écran de connexion bloquant avant de charger l’interface et les données métier.
-- Une session mémorisée est revalidée par l’API à chaque ouverture ; une session expirée ou révoquée reverrouille l’application.
-- Le mot de passe est envoyé uniquement au serveur lors du login et n’est jamais enregistré dans la configuration locale.
-- Une commande de déconnexion permet de reverrouiller immédiatement un poste partagé sans supprimer ses données.
-- Le serveur conserve les rôles `admin`, `editor` et `reader` et protège toutes les routes de données par un jeton de session.
+- Le mode Corps interactif découpe chaque région en sous-zones précises (poitrine, abdomen, épaules, bras, avant-bras, mains, cuisses, genoux, bas de jambe, pieds, nuque, haut et bas du dos, fesses). Un clic filtre uniquement les soins concernés ; des pastilles tactiles offrent le même accès.
+- Les zones dont un soin figure déjà dans le devis restent teintées sur la silhouette et marquées dans les pastilles.
+- Les boutons du mode Corps (Femme/Homme, Face/Dos, sous-zones, retour au corps complet) reçoivent des icônes SVG.
+- Un double-clic sur une ligne du devis ouvre un rabais personnalisé en % ou en CHF. Le rabais porte sur les séances payées, s’applique avant le coupon global, n’accepte que le CHF avec le tarif Étudiant, et figure sur la ligne, dans le total et sur le PDF.
+- **Provisoire :** le login de la version web est suspendu (constante `ACCESS_GATE_SUSPENDED` dans `app.js`) ; `?authGate=1` permet de tester l’écran de connexion.
+- Avant une restauration ou un import de transfert, un instantané des données actuelles est téléchargé et le contenu de la sauvegarde est annoncé dans la confirmation.
 
 ## Nouveautés 7.1.7
 
@@ -70,7 +71,7 @@ Aide et livrables de la version 7 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-8.0.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-8.5.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -177,7 +178,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-8.0.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-8.5.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -227,7 +228,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-8.0.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-8.5.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -237,7 +238,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.0.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.5.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -245,7 +246,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.0.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.5.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

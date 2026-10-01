@@ -3,7 +3,7 @@
 ## Statut du document
 
 - **Date de l’analyse :** 11 septembre 2026
-- **Version de référence :** BCDevis 8.0.0
+- **Version de référence :** BCDevis 8.5.0
 - **Portée :** brouillons, devis prêts, envois, relances, décisions, versions et factures envoyées
 - **Objectif produit :** augmenter la part des devis envoyés qui aboutissent, tout en réduisant les oublis et le temps administratif
 - **Documents associés :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md) et [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md)

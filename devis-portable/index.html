@@ -2519,6 +2519,11 @@
     <symbol id="icon-zap" viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path></symbol>
     <symbol id="icon-body" viewBox="0 0 24 24"><circle cx="12" cy="4.2" r="2"></circle><path d="M9.2 7.2c-1.7 1.3-2.5 3.4-2.6 6.2L6.2 20M14.8 7.2c1.7 1.3 2.5 3.4 2.6 6.2l.4 6.6M9.2 7.2c1.8 1.2 3.8 1.2 5.6 0M12 8.1V20"></path></symbol>
     <symbol id="icon-student" viewBox="0 0 24 24" data-design="graduation-v1"><path d="m3 8.5 9-4.5 9 4.5-9 4.5-9-4.5Z"></path><path d="M7 10.5v4.2c1.4 1.1 3.1 1.7 5 1.7s3.6-.6 5-1.7v-4.2M21 8.5v6"></path><circle cx="21" cy="16.6" r="1" fill="currentColor" stroke="none"></circle></symbol>
+    <symbol id="icon-venus" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"></circle><path d="M12 14v7M8.8 18h6.4"></path></symbol>
+    <symbol id="icon-mars" viewBox="0 0 24 24"><circle cx="10" cy="14" r="5"></circle><path d="m13.6 10.4 6-6M15 4.4h5.2v5.2"></path></symbol>
+    <symbol id="icon-body-front" viewBox="0 0 24 24"><circle cx="12" cy="4.1" r="2"></circle><path d="M9 8.2h6c1 0 1.7.8 1.8 1.8l.5 4.2M9 8.2c-1 0-1.7.8-1.8 1.8l-.5 4.2M9.2 9v5.2M14.8 9v5.2M10 14.2V21M14 14.2V21M10 14.2h4"></path></symbol>
+    <symbol id="icon-body-back" viewBox="0 0 24 24"><circle cx="12" cy="4.1" r="2"></circle><path d="M9 8.2h6c1 0 1.7.8 1.8 1.8l.5 4.2M9 8.2c-1 0-1.7.8-1.8 1.8l-.5 4.2M10 14.2V21M14 14.2V21M10 14.2h4"></path><path d="M12 8.6V14M9.4 10.2c.9 1 1.8 1.4 2.6 1.4s1.7-.4 2.6-1.4"></path></symbol>
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5m0 0 6-6m-6 6 6 6"></path></symbol>
     <symbol id="icon-empty" viewBox="0 0 24 24"><path d="M5 7h14l1 13H4L5 7Z"></path><path d="M9 10V6a3 3 0 0 1 6 0v4"></path></symbol>
   </svg>
 
@@ -2552,7 +2557,7 @@
           <p class="eyebrow">Clinique Bellecour</p>
           <div class="brand-title-row">
             <h1>BCDevis</h1>
-            <span class="app-version-badge" id="appVersionBadge">v8.0.0</span>
+            <span class="app-version-badge" id="appVersionBadge">v8.5.0</span>
           </div>
         </div>
       </div>
@@ -2808,6 +2813,23 @@
         <label class="full-field"><span>Catégorie</span><select name="category" id="customCategorySelect"></select></label>
         <label class="checkbox-field full-field"><input name="saveToCatalog" type="checkbox" checked><span><strong>Conserver</strong><small>Disponible pour les prochains devis.</small></span></label>
         <div class="form-actions full-field"><button class="button ghost" type="button" data-close="customItemLayer">Annuler</button><button class="button primary" type="submit" aria-label="Ajouter le soin au devis">Ajouter</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="lineDiscountLayer" hidden>
+    <button class="layer-backdrop" type="button" data-close="lineDiscountLayer" aria-label="Fermer" tabindex="-1"></button>
+    <section class="modal-card compact-modal line-discount-modal" role="dialog" aria-modal="true" aria-labelledby="lineDiscountTitle" aria-describedby="lineDiscountBase">
+      <div class="modal-head"><div><p class="section-kicker">Rabais personnalisé</p><h2 id="lineDiscountTitle">Prestation</h2></div><button class="round-button" type="button" data-close="lineDiscountLayer" aria-label="Fermer"><svg><use href="#icon-x"></use></svg></button></div>
+      <form id="lineDiscountForm" class="line-discount-form">
+        <p class="line-discount-base" id="lineDiscountBase"></p>
+        <div class="line-discount-controls">
+          <div class="segmented-control" role="group" aria-label="Type de rabais"><button class="active" type="button" data-line-discount-type="percent" aria-pressed="true">%</button><button type="button" data-line-discount-type="fixed" aria-pressed="false">CHF</button></div>
+          <label class="discount-input" for="lineDiscountValue"><input id="lineDiscountValue" type="number" min="0" step="0.01" value="0" inputmode="decimal" aria-label="Valeur du rabais" autofocus><span id="lineDiscountSuffix">%</span></label>
+        </div>
+        <p class="line-discount-rule" id="lineDiscountRule" hidden></p>
+        <div class="line-discount-preview" aria-live="polite"><span>Nouveau montant</span><strong id="lineDiscountResult">CHF 0.00</strong><small id="lineDiscountSaving"></small></div>
+        <div class="form-actions"><button class="button ghost" type="button" id="lineDiscountRemove" hidden>Retirer le rabais</button><button class="button ghost" type="button" data-close="lineDiscountLayer">Annuler</button><button class="button primary" type="submit">Appliquer</button></div>
       </form>
     </section>
   </div>
@@ -3162,14 +3184,14 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true">
-        <p class="release-notes-version">Mise à jour 8.0.0</p>
+        <p class="release-notes-version">Mise à jour 8.5.0</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
-        <p id="releaseNotesIntro">La version web protège désormais l’accès aux devis avec un compte individuel validé par le serveur.</p>
+        <p id="releaseNotesIntro">Le mode Corps devient plus précis et la caisse accepte un rabais personnalisé sur chaque prestation.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-user"></use></svg></span><div><strong>Connexion obligatoire sur le web</strong><p>La PWA reste verrouillée tant que le serveur n’a pas validé l’adresse e-mail, le mot de passe et l’appareil.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-check"></use></svg></span><div><strong>Session vérifiée</strong><p>Un jeton mémorisé est revalidé à l’ouverture. Une session expirée ou révoquée ferme immédiatement l’accès.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-settings"></use></svg></span><div><strong>Postes partagés</strong><p>Le bouton de déconnexion reverrouille BCDevis sans enregistrer le mot de passe ni supprimer les données locales.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-map-torso"></use></svg></span><div><strong>Corps interactif plus précis</strong><p>Chaque zone du mannequin (avant-bras, genoux, bas du dos…) affiche directement les soins concernés, avec des icônes plus claires et un repère sur les zones déjà au devis.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-percent"></use></svg></span><div><strong>Rabais personnalisé par prestation</strong><p>Double-cliquez sur une ligne du devis pour saisir un rabais en % ou en CHF. Il apparaît sur la ligne, dans le total et sur le PDF.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-database"></use></svg></span><div><strong>Restauration plus sûre</strong><p>Avant de restaurer une sauvegarde ou d’importer un transfert, BCDevis annonce son contenu et télécharge un instantané de vos données actuelles.</p></div></li>
       </ul>
       <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis</button></div>
     </section>

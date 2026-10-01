@@ -19,7 +19,9 @@ assert.match(html, /id="accessPassword"[^>]*type="password"[^>]*autocomplete="cu
 assert.doesNotMatch(html, /id="accessPassword"[^>]*value=/, "Aucun mot de passe ne doit être inscrit dans le document");
 assert.match(html, /id="sessionLogoutButton"[^>]*aria-label="Se déconnecter"/, "Un poste partagé doit pouvoir être reverrouillé");
 
-assert.match(app, /ACCESS_GATE_REQUIRED = ACCESS_GATE_FORCED \|\| \(\/\^https\?:\$\//, "La version web publiée doit exiger une authentification");
+assert.match(app, /ACCESS_GATE_REQUIRED = ACCESS_GATE_FORCED \|\| \(!ACCESS_GATE_SUSPENDED && \/\^https\?:\$\//, "La version web doit exiger une authentification dès que la suspension provisoire est levée");
+assert.match(app, /const ACCESS_GATE_SUSPENDED = true;/, "La suspension provisoire du login web doit rester explicite et réversible");
+assert.match(app, /ACCESS_GATE_FORCED = new URLSearchParams\(window\.location\.search\)\.get\("authGate"\) === "1"/, "L’écran de connexion doit rester testable pendant la suspension");
 assert.match(app, /centralController\.initialize\(\{ requireAuthentication: true \}\)/, "Une session mémorisée doit être validée avant le démarrage");
 assert.match(app, /if \(!applicationStarted\) return;/, "Les raccourcis doivent rester inactifs derrière le verrou");
 assert.match(app, /await centralController\.logout\(\);[\s\S]*?showAccessGate\("Vous êtes déconnecté\."\)/, "La déconnexion doit reverrouiller l’application");

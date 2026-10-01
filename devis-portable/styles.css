@@ -573,6 +573,26 @@ html.bcdevis-window-overlay .window-controls[data-maximized="true"]::before{cont
 /* V4.9 — catégorie intégrée au nom de la prestation */
 .cart-line-name-row{display:block;width:100%;min-width:0;overflow:hidden}
 .cart-line-name-row .cart-line-name{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+.cart-line-discount{display:inline-flex;height:24px;min-width:24px;padding:0 6px;flex:0 0 auto;align-items:center;justify-content:center;gap:4px;border:1px solid transparent;border-radius:999px;color:#8a857b;background:transparent;font-size:10px;font-weight:800;opacity:0;transition:opacity .15s,background .15s,color .15s}
+.cart-line-discount svg{width:13px;height:13px;flex:0 0 auto}
+.cart-line:hover .cart-line-discount,.cart-line:focus-within .cart-line-discount,.cart-line-discount:focus-visible{opacity:1}
+.cart-line-discount:hover{color:#111;background:var(--taupe-light)}
+.cart-line-discount.active{color:#111;border-color:var(--taupe);background:var(--taupe-light);opacity:1}
+@media (hover:none),(pointer:coarse){.cart-line-discount{height:30px;min-width:30px;opacity:1}}
+.line-discount-form{display:grid;gap:14px}
+.line-discount-base{margin:0;color:var(--muted);font-size:13px;font-weight:650}
+.line-discount-controls{display:flex;align-items:stretch;gap:10px}
+.line-discount-controls .segmented-control{min-width:112px;height:48px}
+.line-discount-controls .discount-input{flex:1 1 auto;height:48px}
+.line-discount-controls .discount-input input{font-size:18px;font-weight:800}
+.line-discount-controls .segmented-control button:disabled{opacity:.4;cursor:not-allowed}
+.line-discount-rule{margin:-4px 0 0;color:var(--taupe-dark);font-size:12px;font-weight:650}
+.line-discount-preview{display:grid;padding:14px 16px;align-items:baseline;border:1px solid var(--line);border-radius:14px;background:var(--paper);grid-template-columns:1fr auto;gap:2px 12px}
+.line-discount-preview span{color:var(--muted);font-size:12px;font-weight:700}
+.line-discount-preview strong{font-size:24px;font-weight:850}
+.line-discount-preview small{grid-column:1/-1;color:var(--success);font-size:12px;font-weight:700}
+.line-discount-preview small:empty{display:none}
+.line-discount-form .form-actions{flex-wrap:wrap}
 .cart-line-category{display:block;min-width:0;max-width:14ch;overflow:hidden;flex:0 1 14ch;color:#888;font-size:11px;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
 
 /* V4.10 — contrôles compacts sur la ligne de prestation */
@@ -1562,11 +1582,12 @@ html[data-theme] .family-visibility-icon svg{
 .body-model-toggle{display:grid;min-width:148px;padding:3px;border:1px solid #3b3b3b;border-radius:10px;background:#171717;grid-template-columns:1fr 1fr}
 .body-side-toggle{display:grid;min-width:176px;padding:3px;border:1px solid #3b3b3b;border-radius:10px;background:#171717;grid-template-columns:1fr 1fr}
 .body-model-toggle button,.body-side-toggle button{min-width:0;min-height:30px;padding:0 7px;border:0;border-radius:7px;color:#888;background:transparent;font-size:10px;font-weight:800}
+.body-model-toggle button,.body-side-toggle button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.body-model-toggle button svg,.body-side-toggle button svg,.body-detail-back svg{width:15px;height:15px;flex:0 0 auto}
 .body-model-toggle button:hover,.body-side-toggle button:hover{color:#fff}
 .body-model-toggle button[aria-pressed="true"],.body-side-toggle button[aria-pressed="true"]{color:#111;background:var(--taupe)}
 .body-detail-back{display:flex;min-height:34px;padding:0 10px;align-items:center;justify-content:center;gap:7px;border:1px solid #474747;border-radius:9px;color:#c9c3b9;background:#292929;font-size:10px;font-weight:800}
 .body-detail-back:hover,.body-detail-back:focus-visible{color:#111;border-color:var(--taupe);background:var(--taupe)}
-.body-detail-back span{font-size:15px;line-height:1}
 .body-map-stage{display:grid;min-height:550px;padding:4px 0;place-items:center}
 .interactive-body-map{width:auto;max-width:100%;height:clamp(540px,65vh,620px);overflow:visible;filter:drop-shadow(0 10px 18px rgba(0,0,0,.2));shape-rendering:geometricPrecision;animation:body-model-swap .18s ease-out}
 @keyframes body-model-swap{from{opacity:.35;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
@@ -1585,8 +1606,8 @@ html[data-theme] .family-visibility-icon svg{
 .body-region-focus{fill:none;stroke:#77746e;stroke-width:3;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
 .body-region-maillot{fill:rgba(133,129,122,.08);stroke-width:1.5;stroke-linejoin:round}
 .body-region-target{fill:rgba(133,129,122,.08);stroke:#77746e;stroke-width:1.6;vector-effect:non-scaling-stroke;pointer-events:none}
-.body-region:hover .body-region-shape,.body-region:focus-visible .body-region-shape{fill:#49453e;stroke:var(--taupe);filter:drop-shadow(0 3px 7px rgba(0,0,0,.28))}
-.body-region:hover .body-anatomy-segment,.body-region:focus-visible .body-anatomy-segment{opacity:.82;filter:none}
+.body-region:not(.has-zones):hover .body-region-shape,.body-region:focus-visible .body-region-shape{fill:#49453e;stroke:var(--taupe);filter:drop-shadow(0 3px 7px rgba(0,0,0,.28))}
+.body-region:not(.has-zones):hover .body-anatomy-segment,.body-region:focus-visible .body-anatomy-segment{opacity:.82;filter:none}
 .body-region:hover .body-region-focus,.body-region:focus-visible .body-region-focus{stroke:var(--taupe)}
 .body-region:hover .body-region-target,.body-region:focus-visible .body-region-target{fill:rgba(180,169,150,.2);stroke:var(--taupe);filter:drop-shadow(0 3px 7px rgba(0,0,0,.28))}
 .body-region:focus-visible .body-region-shape{stroke-width:4}
@@ -1600,6 +1621,22 @@ html[data-theme] .family-visibility-icon svg{
 .body-region.active .body-region-sif{fill:none}
 .body-region.active .body-region-target{fill:rgba(255,255,255,.2);stroke:#fff}
 .body-region.disabled{cursor:default;opacity:.3}
+.body-region.has-zones{cursor:default}
+.body-zone{cursor:pointer;outline:none}
+.body-zone .body-anatomy-segment{transition:fill .15s,stroke .15s,opacity .15s}
+.body-region .body-zone:hover .body-region-shape,.body-region .body-zone:focus-visible .body-region-shape{fill:#5a544a;stroke:var(--taupe);opacity:1}
+.body-region .body-zone:focus-visible .body-region-shape{stroke:#fff;stroke-width:1.8}
+.body-region.zone-selected .body-zone:not(.active) .body-region-shape{fill:#45413a;stroke:#8d857a;opacity:.8}
+.body-region .body-zone.in-quote:not(.active) .body-region-shape,.body-region.in-quote:not(.has-zones):not(.active) .body-region-shape{fill:color-mix(in srgb,var(--taupe) 42%,#353431);stroke:var(--taupe);opacity:1}
+.body-region .body-zone.active .body-region-shape{fill:var(--taupe);stroke:#fff;stroke-width:.9;opacity:1}
+.body-zone-trail{display:flex;margin:6px 0 0;flex-wrap:wrap;justify-content:center;gap:6px}
+.body-zone-trail button{display:inline-flex;min-height:30px;padding:0 11px;align-items:center;gap:6px;border:1px solid #3b3b3b;border-radius:999px;color:#a9a397;background:#1d1d1d;font-size:10px;font-weight:800}
+.body-zone-trail button:hover,.body-zone-trail button:focus-visible{color:#fff;border-color:var(--taupe)}
+.body-zone-trail button[aria-pressed="true"]{color:#111;border-color:var(--taupe);background:var(--taupe)}
+.body-zone-chip-icon{width:16px;height:16px;flex:0 0 auto;opacity:.85}
+.body-zone-trail button[aria-pressed="true"] .body-zone-chip-icon{opacity:1}
+.body-zone-quoted-dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:var(--taupe);box-shadow:0 0 0 2px rgba(180,169,150,.25)}
+.body-zone-trail button[aria-pressed="true"] .body-zone-quoted-dot{background:#111;box-shadow:none}
 .body-map-stage.face-detail-active{padding:8px 0}
 .interactive-face-map{display:block;width:auto;max-width:100%;height:clamp(410px,52vh,510px);overflow:visible;filter:drop-shadow(0 8px 14px rgba(0,0,0,.2));shape-rendering:geometricPrecision}
 .face-anatomy-base{fill:#302f2c;stroke:#9a958c;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}
@@ -1887,8 +1924,10 @@ html[data-theme] .body-region-maillot,
 html[data-theme] .body-region-target{
   fill:color-mix(in srgb,var(--topbar-fg) 7%,transparent);
 }
-html[data-theme] .body-region:hover .body-region-shape,
-html[data-theme] .body-region:focus-visible .body-region-shape{
+html[data-theme] .body-region:not(.has-zones):hover .body-region-shape,
+html[data-theme] .body-region:focus-visible .body-region-shape,
+html[data-theme] .body-region .body-zone:hover .body-region-shape,
+html[data-theme] .body-region .body-zone:focus-visible .body-region-shape{
   fill:color-mix(in srgb,var(--accent) 22%,var(--black-3));
   stroke:var(--accent);
 }
@@ -1909,6 +1948,38 @@ html[data-theme] .body-region.active .body-region-target{
   fill:color-mix(in srgb,var(--topbar-fg) 18%,transparent);
   stroke:var(--topbar-fg);
 }
+
+html[data-theme] .body-region.zone-selected .body-zone:not(.active) .body-region-shape{
+  fill:color-mix(in srgb,var(--accent) 14%,var(--panel-bg));
+  stroke:color-mix(in srgb,var(--accent) 45%,var(--panel-bg));
+}
+html[data-theme] .body-region .body-zone.in-quote:not(.active) .body-region-shape,
+html[data-theme] .body-region.in-quote:not(.has-zones):not(.active) .body-region-shape{
+  fill:color-mix(in srgb,var(--accent) 55%,var(--panel-bg));
+  stroke:color-mix(in srgb,var(--accent) 70%,var(--topbar-fg));
+  stroke-width:1.1;
+}
+html[data-theme] .body-region .body-zone.active .body-region-shape{
+  fill:var(--accent);
+  stroke:var(--topbar-fg);
+}
+html[data-theme] .body-zone-trail button{
+  color:color-mix(in srgb,var(--topbar-fg) 70%,var(--panel-bg));
+  border-color:var(--panel-border);
+  background:color-mix(in srgb,var(--panel-bg) 80%,var(--topbar-bg));
+}
+html[data-theme] .body-zone-trail button:hover,
+html[data-theme] .body-zone-trail button:focus-visible{
+  color:var(--topbar-fg);
+  border-color:var(--accent);
+}
+html[data-theme] .body-zone-trail button[aria-pressed="true"]{
+  color:var(--accent-ink);
+  border-color:var(--accent);
+  background:var(--accent);
+}
+html[data-theme] .body-zone-quoted-dot{background:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+html[data-theme] .body-zone-trail button[aria-pressed="true"] .body-zone-quoted-dot{background:var(--accent-ink)}
 
 html[data-theme] .face-anatomy-base{
   fill:color-mix(in srgb,var(--topbar-fg) 9%,var(--panel-bg));

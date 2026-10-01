@@ -58,8 +58,8 @@ async function run() {
       noTransitions.textContent = "*{transition:none!important}";
       document.head.append(noTransitions);
       const releaseLayer = document.querySelector("#releaseNotesLayer");
-      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 8.0.0 ne s’ouvre pas au premier lancement");
-      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "8.0.0") throw new Error("La version des nouveautés n’est pas mémorisée");
+      if (!releaseLayer || releaseLayer.hidden) throw new Error("L’écran des nouveautés 8.5.0 ne s’ouvre pas au premier lancement");
+      if (localStorage.getItem("bcdevis-release-notes-last-seen") !== "8.5.0") throw new Error("La version des nouveautés n’est pas mémorisée");
       if (!document.querySelector("#appShell").inert) throw new Error("L’application reste interactive derrière l’écran des nouveautés");
       const releaseRect = releaseLayer.querySelector(".release-notes-modal").getBoundingClientRect();
       if (releaseRect.left < 0 || releaseRect.right > innerWidth + 1 || releaseRect.top < 0 || releaseRect.bottom > innerHeight + 1) throw new Error("L’écran des nouveautés déborde de la fenêtre");
@@ -1003,6 +1003,8 @@ async function run() {
       const file = new File([JSON.stringify(payload)], "backup.json", { type: "application/json" });
       Object.defineProperty(input, "files", { configurable: true, value: [file] });
       window.confirm = () => true;
+      const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (this.download) return; return nativeAnchorClick.call(this); };
       return new Promise((resolve, reject) => {
         let attempts = 0;
         const verify = () => {
@@ -1162,14 +1164,18 @@ async function run() {
       const input = document.querySelector("#backupImportInput");
       const file = new File([JSON.stringify(payload)], "demo.json", { type: "application/json" });
       Object.defineProperty(input, "files", { configurable: true, value: [file] });
-      window.confirm = () => true;
+      const downloads = [];
+      const nativeAnchorClick = HTMLAnchorElement.prototype.click;
+      HTMLAnchorElement.prototype.click = function () { if (this.download) { downloads.push(this.download); return; } return nativeAnchorClick.call(this); };
+      let confirmation = "";
+      window.confirm = (message) => { confirmation = message; return true; };
       return new Promise((resolve, reject) => {
         let attempts = 0;
         const verify = () => {
           if (document.querySelector("#quoteSaveStateLabel")?.textContent === "Enregistré") {
             document.querySelector("#historyButton").click();
             const card = [...document.querySelectorAll("#historyList [data-quote-id]")].find((el) => el.textContent.includes("16.08.2026") && el.textContent.includes("5 soins"));
-            return resolve({ state: document.querySelector("#quoteSaveStateLabel").textContent, meta: card ? (card.querySelector(".history-item-meta")?.textContent || "") : "", savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length });
+            return resolve({ state: document.querySelector("#quoteSaveStateLabel").textContent, meta: card ? (card.querySelector(".history-item-meta")?.textContent || "") : "", savedQuotes: document.querySelectorAll("#historyList [data-quote-id]").length, downloads, confirmation });
           }
           if (++attempts >= 40) return reject(new Error("Le devis démo n’est pas Enregistré dans le centre"));
           setTimeout(verify, 50);
@@ -1181,6 +1187,9 @@ async function run() {
     assert.equal(demoCentre.state, "Enregistré", "Le devis démo 16.08.2026 doit être Enregistré");
     assert.match(demoCentre.meta, /16\.08\.2026 · 5 soins/, "Le centre doit afficher la date et les cinq soins du devis démo");
     assert.equal(demoCentre.savedQuotes, 1, "Le centre doit contenir le devis démo");
+    assert.equal(demoCentre.downloads.length, 1, "Un instantané doit être téléchargé avant la restauration");
+    assert.match(demoCentre.downloads[0], /^sauvegarde-avant-restauration-\d{4}-\d{2}-\d{2}\.json$/);
+    assert.match(demoCentre.confirmation, /1 devis/, "La confirmation doit résumer le contenu de la sauvegarde");
 
     console.log("DESKTOP_PERSISTENCE_SMOKE_OK");
   } finally {

@@ -1,17 +1,17 @@
-BCDevis 8.0.0 - Livrable pour Aleksandra
+BCDevis 8.5.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 8.0.0
+NOUVEAUTES 8.5.0
 
-- La version web demande un compte BCDevis Central avant d'afficher les devis.
-- Une session mémorisée est vérifiée auprès du serveur à chaque ouverture.
-- Se déconnecter reverrouille le poste sans supprimer ses données locales.
-- Le mot de passe n'est jamais enregistré par BCDevis.
+- Corps interactif plus précis : cliquez sur l'avant-bras, le genou, le bas du
+  dos... pour ne voir que les soins de cette zone. Des pastilles sous le
+  mannequin offrent le même accès, plus facile au doigt.
+- Les zones déjà présentes dans le devis restent colorées sur le mannequin.
+- Rabais personnalisé : double-cliquez sur une ligne du devis pour saisir un
+  rabais en % ou en CHF. Il apparaît sur la ligne, dans le total et sur le PDF.
+- Avant de restaurer une sauvegarde, BCDevis télécharge un instantané de vos
+  données actuelles.
 - Le raccourci Ctrl+L bascule la langue du PDF (FR / EN) en un instant.
-- La caisse est plus lisible : état, nombre de soins et date sont réunis
-  sur une seule ligne, et les boutons du haut sont alignés à gauche.
-- Un devis enregistré (Historique) réimporté revient dans le centre avec
-  son statut et sa date.
 - Réglages > Devis et suivi permet toujours de générer le PDF du devis en
   anglais, sans changer l'interface de BCDevis.
 - Réglages > Données conserve l'assistant de migration vers
@@ -23,18 +23,20 @@ NOUVEAUTES 8.0.0
   mémorisé sur le poste sans modifier l'affichage des autres appareils.
 - Le bouton Aide ouvre un centre HTML recherchable, responsive et imprimable,
   disponible hors ligne sans Internet ni PostgreSQL.
-- Cet écran de nouveautés apparaît une seule fois pour la version 8.0.0.
+- Provisoire : la version web s'ouvre sans connexion tant que le serveur
+  central n'est pas en service. Les devis restent sur l'appareil.
+- Cet écran de nouveautés apparaît une seule fois pour la version 8.5.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-8.0.0.exe
+  BCDevis-8.5.0.exe
 
 2-Linux
-  BCDevis-8.0.0-linux-x86_64.AppImage
+  BCDevis-8.5.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-8.0.0-chromeos.zip
+  BCDevis-8.5.0-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -48,7 +50,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-8.0.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-8.5.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -62,14 +64,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-8.0.0-linux-x86_64.AppImage
-  ./BCDevis-8.0.0-linux-x86_64.AppImage
+  chmod +x BCDevis-8.5.0-linux-x86_64.AppImage
+  ./BCDevis-8.5.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-8.0.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-8.5.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

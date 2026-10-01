@@ -124,8 +124,8 @@ Chaque synchronisation envoie un instantané complet. Lorsqu’il change, le ser
 
 ### A4. Sécuriser les restaurations locales et centrales
 
-- Télécharger automatiquement un instantané local avant chaque restauration.
-- Présenter avant confirmation la version, la date et le nombre d’éléments importés.
+- ~~Télécharger automatiquement un instantané local avant chaque restauration.~~ **Livré** : `sauvegarde-avant-restauration-AAAA-MM-JJ.json` est téléchargé avant toute restauration si des données locales existent.
+- Présenter avant confirmation la version, la date et le nombre d’éléments importés. **Partiel** : la confirmation indique déjà la date d’export, le nombre de devis et de contacts.
 - Valider l’ensemble de la sauvegarde avant toute mutation.
 - Ajouter une restauration sélective lorsque le besoin sera confirmé.
 - Pour PostgreSQL, définir rotation, chiffrement, stockage hors serveur, rétention et test périodique de restauration.
