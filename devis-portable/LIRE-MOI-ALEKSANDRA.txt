@@ -1,8 +1,14 @@
-BCDevis 8.5.0 - Livrable pour Aleksandra
+BCDevis 8.6.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 8.5.0
+NOUVEAUTES 8.6.0
 
+- WhatsApp : le bouton ouvre la conversation du client avec son numero et
+  le message. Le PDF est deja copie : faites Ctrl+V dans la conversation,
+  puis envoyez (WhatsApp ne permet pas de joindre un fichier tout seul).
+- Les zones du corps affichent un repere sur la silhouette et plusieurs
+  icones ont ete redessinees pour un style homogene.
+- Parametres : Numerotation et dossier des PDF sont dans Devis & suivi.
 - Corps interactif plus précis : cliquez sur l'avant-bras, le genou, le bas du
   dos... pour ne voir que les soins de cette zone. Des pastilles sous le
   mannequin offrent le même accès, plus facile au doigt.
@@ -27,18 +33,18 @@ NOUVEAUTES 8.5.0
   disponible hors ligne sans Internet ni PostgreSQL.
 - Provisoire : la version web s'ouvre sans connexion tant que le serveur
   central n'est pas en service. Les devis restent sur l'appareil.
-- Cet écran de nouveautés apparaît une seule fois pour la version 8.5.0.
+- Cet écran de nouveautés apparaît une seule fois pour la version 8.6.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-8.5.0.exe
+  BCDevis-8.6.0.exe
 
 2-Linux
-  BCDevis-8.5.0-linux-x86_64.AppImage
+  BCDevis-8.6.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-8.5.0-chromeos.zip
+  BCDevis-8.6.0-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -52,7 +58,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-8.5.0.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-8.6.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -66,14 +72,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-8.5.0-linux-x86_64.AppImage
-  ./BCDevis-8.5.0-linux-x86_64.AppImage
+  chmod +x BCDevis-8.6.0-linux-x86_64.AppImage
+  ./BCDevis-8.6.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-8.5.0-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-8.6.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

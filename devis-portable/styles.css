@@ -1656,12 +1656,15 @@ html[data-theme] .family-visibility-icon svg{
 .body-region.zone-selected .body-zone:not(.active) .body-region-shape{fill:#45413a;stroke:#8d857a;opacity:.8}
 .body-region .body-zone.in-quote:not(.active) .body-region-shape,.body-region.in-quote:not(.has-zones):not(.active) .body-region-shape{fill:color-mix(in srgb,var(--taupe) 42%,#353431);stroke:var(--taupe);opacity:1}
 .body-region .body-zone.active .body-region-shape{fill:var(--taupe);stroke:#fff;stroke-width:.9;opacity:1}
-.body-zone-trail{display:flex;margin:6px 0 0;flex-wrap:wrap;justify-content:center;gap:6px}
-.body-zone-trail button{display:inline-flex;min-height:30px;padding:0 11px;align-items:center;gap:6px;border:1px solid #3b3b3b;border-radius:999px;color:#a9a397;background:#1d1d1d;font-size:10px;font-weight:800}
+.body-zone-trail{display:flex;margin:6px 0 0;flex-wrap:wrap;justify-content:center;gap:5px}
+.body-zone-trail button{display:inline-flex;min-height:32px;padding:0 11px 0 7px;align-items:center;gap:5px;border:1px solid #3b3b3b;border-radius:999px;color:#a9a397;background:#1d1d1d;font-size:10px;font-weight:800}
 .body-zone-trail button:hover,.body-zone-trail button:focus-visible{color:#fff;border-color:var(--taupe)}
 .body-zone-trail button[aria-pressed="true"]{color:#111;border-color:var(--taupe);background:var(--taupe)}
-.body-zone-chip-icon{width:16px;height:16px;flex:0 0 auto;opacity:.85}
-.body-zone-trail button[aria-pressed="true"] .body-zone-chip-icon{opacity:1}
+.body-zone-icon-defs{position:absolute;width:0;height:0;overflow:hidden}
+.body-zone-chip-icon{width:22px;height:22px;margin:1px 0;flex:0 0 auto;overflow:hidden;fill:currentColor;stroke:none}
+.zone-locator-body{fill:currentColor;opacity:.28}
+.zone-locator-zone{fill:currentColor;stroke:none}
+.body-zone-trail button[aria-pressed="true"] .zone-locator-body{opacity:.4}
 .body-zone-quoted-dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:var(--taupe);box-shadow:0 0 0 2px rgba(180,169,150,.25)}
 .body-zone-trail button[aria-pressed="true"] .body-zone-quoted-dot{background:#111;box-shadow:none}
 .body-map-stage.face-detail-active{padding:8px 0}

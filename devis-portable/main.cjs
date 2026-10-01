@@ -364,6 +364,62 @@ ipcMain.handle("bcdevis:compose-email", async (_event, payload) => {
   }
 });
 
+// WhatsApp : aucune URL ni API ne permet de joindre un fichier. On copie donc le PDF dans le presse-papiers
+// comme un vrai fichier, puis on ouvre la conversation (WhatsApp Desktop si présent, sinon WhatsApp Web) :
+// il ne reste qu'à coller (Ctrl+V) et envoyer.
+async function copyFileToClipboard(filePath) {
+  if (process.platform === "win32") {
+    const powershell = path.join(String(process.env.SystemRoot || "C:\\Windows"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+    await runExecutable(
+      powershell,
+      ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", "Set-Clipboard -LiteralPath $env:BCDEVIS_CLIPBOARD_FILE"],
+      { windowsHide: true, timeout: 15000, env: { ...process.env, BCDEVIS_CLIPBOARD_FILE: filePath } }
+    );
+    return true;
+  }
+  if (process.platform === "darwin") {
+    await runExecutable("osascript", ["-e", "set the clipboard to (POSIX file (system attribute \"BCDEVIS_CLIPBOARD_FILE\"))"], {
+      timeout: 15000,
+      env: { ...process.env, BCDEVIS_CLIPBOARD_FILE: filePath }
+    });
+    return true;
+  }
+  return false;
+}
+
+async function whatsappDesktopAvailable() {
+  if (process.platform === "win32") {
+    try {
+      await runExecutable(path.join(String(process.env.SystemRoot || "C:\\Windows"), "System32", "reg.exe"), ["query", "HKCR\\whatsapp", "/ve"], { windowsHide: true, timeout: 5000 });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return process.platform === "darwin";
+}
+
+ipcMain.handle("bcdevis:whatsapp-prepare", async (_event, payload) => {
+  const phone = /^\d{8,15}$/.test(String(payload?.phone || "")) ? String(payload.phone) : "";
+  const text = String(payload?.text || "").slice(0, 4000);
+  const filePath = String(payload?.filePath || "");
+  let clipboard = false;
+  if (filePath && path.extname(filePath).toLowerCase() === ".pdf") {
+    try {
+      if ((await fs.stat(filePath)).isFile()) clipboard = await copyFileToClipboard(filePath);
+    } catch (error) {
+      console.warn("PDF non copié dans le presse-papiers.", error?.message || error);
+    }
+  }
+  const query = text ? `text=${encodeURIComponent(text)}` : "";
+  const desktop = await whatsappDesktopAvailable();
+  const target = desktop
+    ? `whatsapp://send?${phone ? `phone=${phone}&` : ""}${query}`
+    : `https://wa.me/${phone}${query ? `?${query}` : ""}`;
+  await shell.openExternal(target);
+  return { clipboard, client: desktop ? "desktop" : "web" };
+});
+
 ipcMain.handle("bcdevis:open-external", async (_event, url) => {
   const target = allowedExternalUrl(url);
   await shell.openExternal(target);

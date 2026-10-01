@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 8.5.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
+  <p class="version">Version 8.6.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -28,7 +28,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-8.5.0.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-8.6.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -37,15 +37,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-8.5.0-linux-x86_64.AppImage
-./BCDevis-8.5.0-linux-x86_64.AppImage
+chmod +x BCDevis-8.6.0-linux-x86_64.AppImage
+./BCDevis-8.6.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-8.5.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-8.6.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -123,7 +123,7 @@ En cas de coupure, continuez à travailler normalement. Les changements restent 
 - **PDF** crée le devis A4 dans le dossier choisi sous **Réglages > Entreprise > Fichiers PDF** ; **Téléchargements** est utilisé par défaut. Sous ChromeOS ou dans la PWA, le navigateur choisit l’emplacement via **Enregistrer au format PDF**.
 - **Imprimer** ouvre l'impression du système.
 - **E-mail** prépare directement un message avec le PDF joint.
-- **À joindre > WhatsApp** prépare le PDF et ouvre le message ; ajoutez ensuite manuellement le fichier.
+- **À joindre > WhatsApp** ouvre la conversation du client avec le message ; le PDF est déjà copié, collez-le avec Ctrl+V puis envoyez.
 - **À joindre > Outlook** ouvre un message prérempli ; joignez le PDF créé dans le dossier configuré.
 
 Un PDF existant n'est jamais écrasé : BCDevis ajoute un numéro au nouveau fichier. Les préfixes sont configurables séparément ; `DEV-20260806A001` et `FAC-20260806A001` conservent le même poste `A`. Une facture n’est classée et le devis n’est clôturé qu’après import réussi du PDF, jamais par un simple changement de statut.

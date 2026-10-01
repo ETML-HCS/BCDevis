@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "8.5.0";
-  const RELEASE_NOTES_REVISION = "8.5.0";
+  const RELEASE_VERSION = "8.6.0";
+  const RELEASE_NOTES_REVISION = "8.6.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";
@@ -1803,15 +1803,47 @@
     return list.map((path) => `<path class="body-region-shape body-anatomy-segment" d="${path}"/>`).join("");
   }
 
+  // Icône « localisateur » : silhouette du mannequin courant avec la zone surlignée, tracée depuis les mêmes
+  // données anatomiques que la carte (cohérente entre toutes les zones, et Femme/Homme).
+  function bodyZoneLocatorIcon(side, regionKey, segments) {
+    const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
+    const region = geometry?.regions?.[regionKey];
+    if (!region) return "";
+    const paths = segments ? segments.flatMap((segment) => region[segment] || []) : Object.values(region).flat();
+    if (!paths.length) return "";
+    return `<svg class="body-zone-chip-icon" viewBox="${geometry.viewBox}" aria-hidden="true" focusable="false"><use href="#zoneLocatorOutline-${side}" class="zone-locator-body"></use><path class="zone-locator-zone" d="${paths.join(" ")}"></path></svg>`;
+  }
+
+  // Cadre chaque icône sur sa zone : l’outil de mesure du navigateur n’est disponible qu’une fois le SVG affiché.
+  function fitZoneLocatorIcons() {
+    $$(".body-zone-chip-icon").forEach((svg) => {
+      const zone = svg.querySelector(".zone-locator-zone");
+      if (!zone) return;
+      try {
+        const box = zone.getBBox();
+        if (!box.width || !box.height) return;
+        const size = Math.max(Math.max(box.width, box.height) * 1.7, 260);
+        const x = box.x + box.width / 2 - size / 2;
+        const y = box.y + box.height / 2 - size / 2;
+        svg.setAttribute("viewBox", [x, y, size, size].map((value) => Math.round(value)).join(" "));
+      } catch {
+        // Mesure indisponible : l’icône garde le cadrage de la silhouette entière.
+      }
+    });
+  }
+
   function bodyZoneTrailMarkup(region) {
     const zones = region ? bodyZonesForRegion(region.id) : [];
     if (!zones.length) return "";
     const quotedIds = quotedServiceIds();
-    const chip = (attributes, label, icon, active, quoted) => `<button type="button" ${attributes} class="${active ? "active" : ""}${quoted ? " in-quote" : ""}" aria-pressed="${active}"${quoted ? ' title="Déjà au devis"' : ""}><svg class="body-zone-chip-icon" aria-hidden="true"><use href="#icon-${icon}"></use></svg>${escapeHTML(label)}${quoted ? '<span class="body-zone-quoted-dot" aria-hidden="true"></span>' : ""}</button>`;
-    const familyIcon = window.QUOTE_FAMILIES.find((family) => family.id === region.familyId)?.icon || "zones";
+    const side = region.side;
+    const regionKey = region.id.slice(side.length + 1);
+    const outline = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side]?.outline || "";
+    const chip = (attributes, label, icon, active, quoted) => `<button type="button" ${attributes} class="${active ? "active" : ""}${quoted ? " in-quote" : ""}" aria-pressed="${active}"${quoted ? ' title="Déjà au devis"' : ""}>${icon}${escapeHTML(label)}${quoted ? '<span class="body-zone-quoted-dot" aria-hidden="true"></span>' : ""}</button>`;
     return `<div class="body-zone-trail" role="group" aria-label="Préciser la zone ${escapeHTML(region.title)}">
-      ${chip("data-body-zone-clear", "Toute la zone", familyIcon, !activeBodyZone, false)}
-      ${zones.map((zone) => chip(`data-body-zone="${zone.id}"`, zone.title, zone.icon, activeBodyZone === zone.id, zone.serviceIds.some((serviceId) => quotedIds.has(Number(serviceId))))).join("")}
+      <svg class="body-zone-icon-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs><path id="zoneLocatorOutline-${side}" d="${outline}"></path></defs></svg>
+      ${chip("data-body-zone-clear", "Toute la zone", bodyZoneLocatorIcon(side, regionKey, null), !activeBodyZone, false)}
+      ${zones.map((zone) => chip(`data-body-zone="${zone.id}"`, zone.title, bodyZoneLocatorIcon(side, regionKey, zone.segments), activeBodyZone === zone.id, zone.serviceIds.some((serviceId) => quotedIds.has(Number(serviceId))))).join("")}
     </div>`;
   }
 
@@ -2024,6 +2056,7 @@
     </div>`;
     $("#customCategorySelect").innerHTML = window.QUOTE_CATEGORIES.filter((category) => category.id !== 36).map((category) => `<option value="${category.id}">${escapeHTML(category.name)}</option>`).join("");
     renderFamilyPriceToggle();
+    fitZoneLocatorIcons();
   }
 
   function renderFamilyPriceToggle() {
@@ -4149,11 +4182,20 @@
     setTransmissionMenuOpen(false);
     setTransmissionBusy(true);
     const message = transmissionMessage();
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const phone = window.BCDevisContacts.whatsAppNumber(quote.client?.phone);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     try {
       const result = await prepareTransmissionPdf();
-      await openExternalUrl(url);
-      toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — créez puis joignez le PDF avant l’envoi.");
+      if (result?.saved && typeof window.bcdevisDesktop?.prepareWhatsAppShare === "function") {
+        // Application de bureau : conversation ouverte sur le bon numéro, PDF déjà dans le presse-papiers.
+        const whatsapp = await window.bcdevisDesktop.prepareWhatsAppShare({ phone, text: message, filePath: result.filePath });
+        toast(whatsapp.clipboard
+          ? `WhatsApp ${whatsapp.client === "desktop" ? "" : "Web "}ouvert${phone ? " sur le numéro du client" : ""} — collez le PDF avec Ctrl+V, puis envoyez.`
+          : `WhatsApp ouvert — PDF créé dans ${result.directory || "Téléchargements"} : glissez-le dans la conversation.`);
+      } else {
+        await openExternalUrl(url);
+        toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — enregistrez le PDF (Imprimer > PDF) puis joignez-le avant l’envoi.");
+      }
       promptMarkCurrentQuoteAsSent("WhatsApp");
     } catch (error) {
       console.error(error);

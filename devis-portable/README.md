@@ -1,6 +1,12 @@
-# BCDevis - version 8.5.0
+# BCDevis - version 8.6.0
 
-Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.5.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
+Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.6.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
+
+## Nouveautés 8.6.0
+
+- **WhatsApp (application de bureau) :** le bouton ouvre la conversation du client sur son numéro (indicatif suisse par défaut), avec le message du devis, dans WhatsApp Desktop s’il est installé, sinon WhatsApp Web. Le PDF est copié dans le presse-papiers comme un vrai fichier : il suffit de le coller (Ctrl+V) et d’envoyer. WhatsApp n’offre aucun moyen de joindre un fichier automatiquement.
+- Les pastilles de sous-zones du mode Corps affichent un repère généré depuis la silhouette du mannequin (Femme ou Homme), et plusieurs icônes d’interface sont redessinées (corps, électrolyse, plus d’actions).
+- Paramètres : Numérotation et Fichiers PDF passent dans Devis & suivi ; Entreprise ne garde que Coordonnées et Logos.
 
 ## Nouveautés 8.5.0
 
@@ -71,7 +77,7 @@ Aide et livrables de la version 7 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-8.5.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-8.6.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -178,7 +184,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-8.5.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-8.6.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -209,7 +215,7 @@ Le bouton **Aide** ou la touche `?` ouvre le thème **Raccourcis** du centre d�
 Quatre icônes restent visibles au bas du devis : **Imprimer**, **PDF**, **E-mail** et **À joindre**.
 
 - **E-mail** ouvre directement un nouveau message avec l’objet, le texte et le PDF déjà joint. Si le client possède une adresse e-mail, elle est utilisée automatiquement ;
-- **À joindre > WhatsApp** prépare le PDF dans le dossier configuré, puis ouvre WhatsApp avec le message du devis prérempli ;
+- **À joindre > WhatsApp** prépare le PDF dans le dossier configuré, puis ouvre la conversation du client (WhatsApp Desktop ou Web) avec le message prérempli. Sur l’application de bureau, le PDF est déjà copié dans le presse-papiers : collez-le avec Ctrl+V ;
 - **À joindre > Outlook** crée le PDF dans le dossier configuré, puis ouvre Outlook Web avec le destinataire, l’objet et le texte préremplis. Il reste uniquement à joindre le PDF téléchargé.
 
 Sous Windows, le choix **Application e-mail** utilise Outlook classique lorsqu’il est disponible. Sinon, comme sur macOS et Linux, il crée dans **Téléchargements** un brouillon `.eml` contenant déjà le message et le PDF du dossier configuré, puis l’ouvre avec la messagerie par défaut. **Outlook Web** ouvre directement la composition Microsoft 365, mais le navigateur impose de sélectionner manuellement le PDF dans le dossier configuré. Il n’ouvre plus de message `mailto:` sans pièce jointe. WhatsApp exige également l’ajout manuel du PDF. Sous ChromeOS, créez d’abord le PDF avec la commande **PDF**, puis joignez le fichier enregistré.
@@ -228,7 +234,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-8.5.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-8.6.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -238,7 +244,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.5.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.6.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -246,7 +252,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.5.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.6.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 
