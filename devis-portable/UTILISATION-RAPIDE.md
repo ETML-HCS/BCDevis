@@ -55,7 +55,7 @@ Ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’
 
 <div class="callout"><strong>Option pratique :</strong> dans Réglages > Interface, activez Lancer au démarrage si BCDevis doit s'ouvrir automatiquement avec la session Windows ou Linux.</div>
 
-<div class="callout"><strong>Fonctions récentes :</strong><br><strong>Rabais personnalisé</strong> : double-cliquez sur une ligne pour appliquer un pourcentage ou un montant CHF, avec tags rapides 2 %, 3 %, 5 % ou 10 %.<br><strong>Corps interactif</strong> : silhouette anatomique découpée en 21 sous-zones précises et pastilles tactiles sous le mannequin.<br><strong>Suivi commercial</strong> : activez Réglages > Devis & suivi pour retrouver les statuts, les notes, les prochaines relances, les compteurs et les rappels au démarrage. Les états terminaux sont verrouillés et l’action Créer une V2 protège l’ancienne version.<br><strong>Factures</strong> : depuis un devis accepté, importez la facture envoyée pour la sortir du suivi actif et la retrouver dans la bibliothèque Factures.<br><strong>Affichage</strong> : dans Catalogue > Vue, choisissez Auto, Mobile ou Bureau ; le choix reste propre à ce poste.<br><strong>Mode centralisé V7</strong> : si plusieurs postes doivent partager les mêmes devis, renseignez dans Réglages > Données l’adresse HTTPS et le compte fournis par l’administrateur. Le mode local reste disponible sans serveur.</div>
+<div class="callout"><strong>Fonctions récentes :</strong><br><strong>Rabais personnalisé</strong> : double-cliquez sur une ligne pour appliquer un pourcentage ou un montant CHF, avec tags rapides 2 %, 3 %, 5 % ou 10 %.<br><strong>Sélecteur de tarif épuré</strong> : boutons rapides 1x, Nx et Étudiant, compacts et épurés avec icônes directes sur smartphone.<br><strong>Corps interactif</strong> : silhouette anatomique découpée en 21 sous-zones précises et pastilles tactiles sous le mannequin.<br><strong>Suivi commercial</strong> : activez Réglages > Devis & suivi pour retrouver les statuts, les notes, les prochaines relances, les compteurs et les rappels au démarrage. Les états terminaux sont verrouillés et l’action Créer une V2 protège l’ancienne version.<br><strong>Factures</strong> : depuis un devis accepté, importez la facture envoyée pour la sortir du suivi actif et la retrouver dans la bibliothèque Factures.<br><strong>Affichage</strong> : dans Catalogue > Vue, choisissez Auto, Mobile ou Bureau ; le choix reste propre à ce poste.<br><strong>Mode centralisé</strong> : si plusieurs postes doivent partager les mêmes devis, renseignez dans Réglages > Données l’adresse HTTPS et le compte fournis par l’administrateur. Le mode local reste disponible sans serveur.</div>
 
 ## 2. Créer un devis en 8 gestes
 
@@ -65,7 +65,7 @@ L’optimisation iPad utilise **Automatique** par défaut sur les nouveaux profi
 
 Pour corriger le nom, le temps, le prix ou le pictogramme d’un soin, utilisez **Réglages > Interface > Catalogue > Éditeur des tuiles**. L’aperçu se met à jour pendant la saisie et le filtre **Modifiées** permet de retrouver rapidement les personnalisations. Cliquez sur **Enregistrer** pour les appliquer ; les changements restent locaux et réversibles.
 
-1. Choisissez le tarif en haut : **Séance**, **Pack** ou **Étudiant -50 %**.
+1. Choisissez le tarif en haut : **Séance (1x)**, **Pack (Nx)** ou **Étudiant** (présentation compacte sur smartphone).
 2. Recherchez un soin avec `Ctrl + K`, ou ouvrez une famille.
 3. Si vous utilisez le **Corps interactif**, choisissez Femme/Homme et Face/Dos, puis cliquez sur une zone.
 4. Cliquez sur un soin pour l'ajouter au **Devis**.
@@ -99,7 +99,7 @@ L’indicateur discret de la caisse affiche seulement **Non archivé**, **À enr
 
 Pour suivre les réponses des clients, activez **Réglages > Devis & suivi > Suivi des devis**. L’onglet **Historique** reste une liste compacte de tous les devis enregistrés avec leur tag de statut. L’onglet **Suivi** permet de filtrer les devis ; le triangle ouvre le parcours contrôlé **Brouillon > Prêt à envoyer > Envoyé > Accepté / Refusé / Expiré**, les notes et la prochaine relance. Un état terminal verrouille le devis ; **Créer une V2** permet de poursuivre sans l’écraser. Depuis **Accepté**, **Importer la facture envoyée** archive le PDF, retire le devis du suivi actif et place le fichier dans **Factures**.
 
-Le fichier `MODELE-DEVIS-V7.json` fourni avec le livrable peut être importé depuis `...` > **Importer**. Il crée un nouveau devis vierge avec la date, la numérotation et les réglages actuels.
+Le fichier `MODELE-DEVIS-V8.json` fourni avec le livrable peut être importé depuis `...` > **Importer**. Il crée un nouveau devis vierge avec la date, la numérotation et les réglages actuels.
 
 ## 5. Connecter ce poste à la base centrale
 

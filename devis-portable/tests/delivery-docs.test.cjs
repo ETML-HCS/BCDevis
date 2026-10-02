@@ -13,10 +13,10 @@ const workflow = read(".github/workflows/livrables.yml").replace(/\r\n?/g, "\n")
 const readme = read("devis-portable/README.md");
 const manual = read("devis-portable/MODE-D-EMPLOI.md");
 const quick = read("devis-portable/UTILISATION-RAPIDE.md");
-const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V7.md");
-const templateGuide = read("devis-portable/MODELE-DEVIS-V7.md");
+const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V8.md");
+const templateGuide = read("devis-portable/MODELE-DEVIS-V8.md");
 const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
-const template = readJSON("devis-portable/MODELE-DEVIS-V7.json");
+const template = readJSON("devis-portable/MODELE-DEVIS-V8.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 const centralReadme = read("central-server/README.md");
 const centralSchema = read("central-server/schema.sql");
@@ -131,7 +131,7 @@ for (const label of expectedShortcutLabels) assert.match(shortcuts, new RegExp(l
 assert.equal(expectedShortcutLabels.length, 16);
 
 assert.equal(template.type, "atelier-devis-quote");
-assert.equal(template.version, 24);
+assert.equal(template.version, 25);
 assert.ok(Array.isArray(template.quote.lines));
 assert.equal(template.quote.lines.length, 0);
 for (const generatedField of ["id", "number", "date", "validUntil"]) {
@@ -141,8 +141,8 @@ for (const generatedField of ["id", "number", "date", "validUntil"]) {
 for (const pdfName of [
   "MODE-D-EMPLOI.pdf",
   "UTILISATION-RAPIDE.pdf",
-  "RACCOURCIS-CLAVIER-V7.pdf",
-  "MODELE-DEVIS-V7.pdf"
+  "RACCOURCIS-CLAVIER-V8.pdf",
+  "MODELE-DEVIS-V8.pdf"
 ]) {
   const pdfPath = path.join(projectRoot, "devis-portable", pdfName);
   assert.ok(fs.existsSync(pdfPath), `${pdfName} doit être livré`);

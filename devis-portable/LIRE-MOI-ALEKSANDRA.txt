@@ -53,13 +53,13 @@ CONTENU
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
-  BCDevis-V7-Utilisation-rapide.pdf
-  BCDevis-V7-Raccourcis-clavier.pdf
-  BCDevis-V7-Mode-d-emploi.pdf
+  BCDevis-V8-Utilisation-rapide.pdf
+  BCDevis-V8-Raccourcis-clavier.pdf
+  BCDevis-V8-Mode-d-emploi.pdf
 
 5-Modele-devis
-  MODELE-DEVIS-V7.json
-  BCDevis-V7-Modele-devis.pdf
+  MODELE-DEVIS-V8.json
+  BCDevis-V8-Modele-devis.pdf
 
 INSTALLATION WINDOWS
 
@@ -134,7 +134,7 @@ configuré afin de pouvoir l'ajouter manuellement au message.
 MODELE DE DEVIS
 
 Dans BCDevis, ouvrir le menu ... en haut du devis, choisir Importer, puis
-sélectionner MODELE-DEVIS-V7.json. La date et le prochain
+sélectionner MODELE-DEVIS-V8.json. La date et le prochain
 numéro sont attribués automatiquement.
 
 SAUVEGARDE

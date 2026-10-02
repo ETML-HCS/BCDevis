@@ -247,7 +247,7 @@ BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet 
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
-Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V7** et un **modèle de devis** importable.
+Le livrable client contient également une fiche **Utilisation rapide**, la fiche **Raccourcis clavier V8** et un **modèle de devis** importable.
 
 ### Fonctions récentes à connaître
 
@@ -274,9 +274,10 @@ L’écran est organisé en deux zones :
 
 Dans la barre supérieure :
 
-- **Séance** : tarif à l’unité ;
-- **Pack** : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
-- **Étudiant** : réduction configurée à `50 %` par défaut ;
+- **1x** (Séance) : tarif à l’unité ;
+- **Nx** (Pack) : offre configurée dans les réglages, `6 + 1 offerte` par défaut ;
+- **Étudiant** (🎓) : réduction configurée à `50 %` par défaut ;
+- Sur smartphone et écrans étroits, ces boutons adoptent automatiquement une disposition compacte affichant uniquement leurs icônes directes `1x`, `Nx` et `🎓` pour maximiser la surface utile ;
 - **Réglages** et **Raccourcis** : toujours disponibles après les tarifs ; **Documents partagés** et **Factures partagées** s’ajoutent uniquement lorsque le poste est connecté au serveur central ;
 - **Catalogue** : **Sur mesure**, affichage des prix et choix de la vue **Auto / Mobile / Bureau**.
 
@@ -561,7 +562,7 @@ Si deux postes modifient le même devis avant de se synchroniser, BCDevis ne cho
 
 Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce poste** puis désactivez l’option. Les données déjà présentes sur l’appareil restent disponibles.
 
-## 8. Raccourcis clavier V7
+## 8. Raccourcis clavier V8
 
 | Raccourci | Action |
 | --- | --- |
@@ -586,11 +587,11 @@ Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les ta
 
 ## 9. Utiliser le modèle de devis
 
-Le livrable contient `MODELE-DEVIS-V7.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
+Le livrable contient `MODELE-DEVIS-V8.json`. Ce fichier ne contient ni date fixe ni numéro imposé.
 
 1. Ouvrez le menu `...` dans l’en-tête du devis.
 2. Cliquez sur **Importer**.
-3. Sélectionnez `MODELE-DEVIS-V7.json`.
+3. Sélectionnez `MODELE-DEVIS-V8.json`.
 4. BCDevis crée un devis vierge avec la date, la numérotation et les réglages actuels.
 5. Ajoutez le client et les soins, puis enregistrez.
 
@@ -604,7 +605,7 @@ Cliquez sur **Enregistrer**. Le brouillon en cours est conservé localement sans
 
 **Le PDF n’est pas visible.**
 
-Sous Windows, Linux et macOS, vérifiez le chemin affiché dans **Réglages > Entreprise > Fichiers PDF** ; utilisez **Par défaut** pour revenir à **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
+Sous Windows, Linux et macOS, vérifiez le chemin affiché dans **Réglages > Devis & suivi > Fichiers PDF** ; utilisez **Par défaut** pour revenir à **Téléchargements**. Sous ChromeOS, recommencez puis choisissez **Enregistrer au format PDF** dans l’impression. Un fichier existant n’est pas écrasé dans l’application de bureau.
 
 **J’ai changé de tarif par erreur.**
 

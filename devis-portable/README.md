@@ -78,11 +78,11 @@ Application de création de devis pour Clinique Bellecour. Les applications Wind
 - Une option réserve dans PostgreSQL des numéros uniques communs à tous les postes, avec une petite réserve utilisable hors connexion.
 - Les vues centrales **Documents partagés** et **Factures partagées** importent, recherchent, affichent, téléchargent et impriment les PDF partagés.
 
-Aide et livrables de la version 7 :
+Aide et livrables de la version 8 :
 
 - [Centre d’aide HTML](help.html) — source d’aide principale, accessible par le bouton **Aide**, recherchable, responsive, imprimable et disponible hors ligne ;
-- [Mode d’emploi](MODE-D-EMPLOI.md), [Utilisation rapide](UTILISATION-RAPIDE.md) et [Raccourcis clavier V7](RACCOURCIS-CLAVIER-V7.md) — livrables PDF de secours de la version ;
-- [Modèle de devis](MODELE-DEVIS-V7.md) et fichier importable [MODELE-DEVIS-V7.json](MODELE-DEVIS-V7.json)
+- [Mode d’emploi](MODE-D-EMPLOI.md), [Utilisation rapide](UTILISATION-RAPIDE.md) et [Raccourcis clavier V8](RACCOURCIS-CLAVIER-V8.md) — livrables PDF de secours de la version ;
+- [Modèle de devis](MODELE-DEVIS-V8.md) et fichier importable [MODELE-DEVIS-V8.json](MODELE-DEVIS-V8.json)
 
 ## Lancer l’application sous Windows
 
@@ -209,7 +209,7 @@ npm run test:ipad:visual
 
 Les deux PDF de référence avec signatures activées et désactivées sont écrits dans `output/pdf`.
 
-## Raccourcis clavier V7
+## Raccourcis clavier V8
 
 - Catalogue : `Alt + M`, `Ctrl + K` ou `/`, `Alt + P`, `Ctrl + Maj + N`.
 - Devis : `Ctrl + N`, `Ctrl + S`, `Ctrl + H`, `Ctrl + D`, `Ctrl + O`, `Ctrl + E`.
