@@ -2,6 +2,7 @@
 "use strict";
 
 const { CentralDatabase } = require("./database.cjs");
+const { SERVER_VERSION } = require("./server.cjs");
 
 async function main() {
   const args = process.argv.slice(2);
@@ -145,6 +146,23 @@ async function main() {
         break;
       }
 
+      case "status": {
+        const status = await database.status(org.id);
+        console.log(`\nBCDevis Central ${SERVER_VERSION} · ${org.name}\n`);
+        console.table({
+          "Schéma PostgreSQL": `${status.schemaVersion} / ${status.latestSchemaVersion}${status.schemaVersion < status.latestSchemaVersion ? " (lancez migrate:run)" : " (à jour)"}`,
+          "Révision partagée": status.revision,
+          "Dernière synchronisation": status.updatedAt ? new Date(status.updatedAt).toLocaleString("fr-CH") : "—",
+          "Utilisateurs actifs": status.users,
+          "Appareils": status.devices,
+          "Devis": status.quotes,
+          "Contacts": status.contacts,
+          "Documents PDF": status.documents,
+          "Factures PDF": status.invoices
+        });
+        break;
+      }
+
       case "migrate:status": {
         const migrations = await database.getMigrationStatus();
         console.log(`\nÉtat des migrations PostgreSQL :\n`);
@@ -176,6 +194,7 @@ async function main() {
 BCDevis Central - Administration CLI
 
 Commandes disponibles :
+  status                               Version, schéma, volumes et dernière synchronisation
   user:list                            Lister tous les utilisateurs
   user:create <email> <pass> [rôle]    Créer un compte (admin, editor, reader)
   user:role <email> <rôle>             Changer le rôle d'un utilisateur

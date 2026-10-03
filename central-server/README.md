@@ -1,6 +1,21 @@
-# BCDevis Central 8.0.0
+# BCDevis Central 8.7.0
 
 BCDevis Central est le service multi-postes de la V7. L’application Electron ou PWA communique avec cette API en HTTPS. Seule l’API possède les identifiants PostgreSQL ; ils ne sont jamais envoyés aux appareils.
+
+## Mise à jour vers la 8.7.0
+
+La 8.7.0 ne change pas le schéma : aucune donnée n’est modifiée et les postes existants restent connectés.
+
+1. Faites une sauvegarde (`pg_dump`, voir plus bas).
+2. Reconstruisez et redémarrez l’API : `docker compose -f compose.yml --env-file .env up -d --build`.
+3. Vérifiez `GET /api/v1/health` : `version` doit valoir `8.7.0` et `schemaVersion` `3`. La commande `npm run central:admin status` affiche en plus les volumes et la dernière synchronisation.
+
+Ce qui change :
+
+- **Migrations réellement exécutées.** Auparavant, une migration ajoutée après la première installation était seulement marquée « appliquée » sans que son SQL s’exécute. Chaque migration en attente s’exécute désormais avec son enregistrement dans une même transaction : un échec n’en marque aucune. Sur une base neuve, `schema.sql` décrit directement le schéma le plus récent.
+- **Synchronisation incrémentale.** Seuls les devis, contacts et réglages modifiés sont réécrits, par lots, au lieu de supprimer et recréer toute la base à chaque synchronisation. Deux devis qui échangent leurs numéros ne heurtent plus la contrainte d’unicité.
+- **Compatibilité des postes.** Un poste refuse de synchroniser avec un serveur antérieur à **7.1.0** (qui ignore les contacts et les factures) et affiche un avis pour un serveur antérieur à 8.7.0. Un serveur plus récent que le poste reste accepté.
+- **Santé du conteneur.** L’image Docker déclare un `HEALTHCHECK` sur `/api/v1/health` : `docker compose ps` indique si l’API est `healthy`, et un outil de supervision ou `restart: unless-stopped` peut s’appuyer dessus.
 
 ## Données PostgreSQL
 

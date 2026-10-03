@@ -33,14 +33,22 @@ const requiredTokens = [
   "--surface-soft"
 ];
 
-assert.match(app, /const RELEASE_VERSION = "8\.6\.2";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "8\.6\.2";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+// Rabais personnalisé : garde-fous visibles, confirmation en deux temps, aucune molette accidentelle.
+assert.match(html, /id="lineDiscountRule" hidden><\/p>\s*<p class="line-discount-guard" id="lineDiscountGuard" role="status" aria-live="polite" hidden>/, "Les avertissements du rabais doivent être annoncés aux lecteurs d’écran");
+assert.match(app, /assessLineDiscount\(quote, line\.id,/, "La fenêtre du rabais doit s’appuyer sur l’évaluation testée du moteur de calcul");
+assert.match(app, /draft\.assessment\.level === "confirm" && !lineDiscountConfirmed[\s\S]*?lineDiscountConfirmed = true;[\s\S]*?return;/, "Un rabais élevé doit être confirmé par une seconde validation");
+assert.match(app, /lineDiscountConfirmed = false;\s*lineDiscountLineId = line\.id/, "La confirmation doit repartir de zéro à chaque ouverture");
+assert.match(app, /Aucun montant à réduire sur cette ligne/, "Une ligne sans montant payé ne doit pas ouvrir la fenêtre du rabais");
+assert.match(app, /"#lineDiscountValue"\)\?\.addEventListener\("wheel"[\s\S]*?preventDefault/, "La molette ne doit pas modifier le rabais par accident");
+assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
+assert.match(app, /const RELEASE_VERSION = "8\.7\.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8\.7\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Mise à jour 8\.6\.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Version 8\.7\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
-assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit présenter les trois familles de fonctions livrées");
-assert.match(html, /<strong>Envoi WhatsApp plus direct<\/strong>[\s\S]*?<strong>Icônes plus lisibles<\/strong>[\s\S]*?<strong>Paramètres mieux rangés<\/strong>/, "Les nouveautés doivent résumer WhatsApp, les icônes et les paramètres");
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 5, "L’écran des nouveautés doit présenter les cinq familles de nouveautés livrées");
+assert.match(html, /<strong>PDF en huit langues<\/strong>[\s\S]*?<strong>Devis en euros<\/strong>[\s\S]*?<strong>Mes devis : À faire et Tous les devis<\/strong>[\s\S]*?<strong>WhatsApp plus fiable<\/strong>[\s\S]*?<strong>Interface épurée, serveur central à jour<\/strong>/, "Les nouveautés doivent résumer le PDF multilingue, Mes devis, WhatsApp et la mise à jour du serveur");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -172,7 +180,7 @@ assert.doesNotMatch(
 );
 assert.deepEqual(
   [...html.matchAll(/<div class="settings-section-head"><h3>([^<]+)<\/h3>(?:<button[^>]*>[\s\S]*?<\/button>)?<\/div>/g)].map((match) => match[1]),
-  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "TVA", "Offres", "Numérotation", "Fichiers PDF", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
+  ["Apparence", "Catalogue", "Navigation", "iPad", "Démarrage", "Coordonnées", "Logos", "TVA", "Paiement en euros", "Offres", "Numérotation", "Fichiers PDF", "Date du devis", "Langue du PDF", "Suivi des devis", "Mentions", "Centralisation", "Changer l’adresse du site", "Serveur et compte", "Numérotation des devis", "Données partagées"],
   "Les sections de Personnalisation doivent garder des titres courts et distincts"
 );
 assert.match(app, /ipadLayoutMode: "auto"/, "L’optimisation iPad doit être automatique par défaut sur un nouveau profil");
@@ -189,14 +197,14 @@ assert.match(
   /name="showTaxInformation" type="checkbox"[\s\S]*?<strong>Afficher et calculer la TVA<\/strong>[\s\S]*?les prix sont conservés tels quels/,
   "Le réglage TVA doit expliquer que sa désactivation conserve les prix existants"
 );
-assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 4, "TVA, date, suivi et signatures doivent partager le même contrôle premium");
+assert.equal((html.match(/class="settings-toggle-card full-field"/g) || []).length, 6, "TVA, euros (activation et mise à jour automatique), date, suivi et signatures doivent partager le même contrôle premium");
 assert.match(html, /name="quoteDateEditable"[\s\S]*?<use href="#icon-clock">/, "Le réglage de date doit utiliser un pictogramme explicite");
 assert.match(html, /name="showTaxInformation"[\s\S]*?<use href="#icon-percent">/, "Le réglage TVA doit utiliser un pictogramme explicite");
 assert.match(html, /name="showSignatures"[\s\S]*?<use href="#icon-signature">/, "Le réglage des signatures doit utiliser un pictogramme explicite");
 assert.match(html, /name="showSignatures" type="checkbox"[\s\S]*?<strong>Zones de signature<\/strong>[\s\S]*?Date et lieu/, "Le réglage des signatures doit expliquer son effet sur le devis");
-assert.match(html, /name="pdfLanguage"[\s\S]*?<option value="fr">Français<\/option>[\s\S]*?<option value="en">English<\/option>/, "Le réglage de langue doit proposer Français et English pour le PDF");
+assert.match(html, /name="pdfLanguage"[\s\S]*?<option value="fr">Français<\/option>[\s\S]*?<option value="en">English · anglais<\/option>[\s\S]*?<option value="ru">Русский · russe<\/option>/, "Le réglage de langue doit proposer les langues du PDF dans leur propre langue");
 assert.match(app, /pdfLanguage: "fr"/, "Le PDF doit rester en français par défaut");
-assert.match(app, /function pdfEnglish\(\)[\s\S]*?db\.settings\.pdfLanguage === "en"/, "Le rendu du PDF doit pouvoir basculer en anglais");
+assert.match(app, /function pdfLanguage\(\)[\s\S]*?PdfI18n\.normalizeLanguage\(db\.settings\.pdfLanguage\)/, "Le rendu du PDF doit suivre la langue choisie");
 assert.doesNotMatch(html, /class="checkbox-field full-field"><input[^>]*name="(?:showTaxInformation|showSignatures)"/, "Les deux réglages ne doivent plus ressembler à des cases à cocher génériques");
 assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:checked\)/, "La carte doit rendre son état actif immédiatement visible");
 assert.match(html, /\.settings-toggle-card:has\(\.settings-toggle-input:focus-visible\)/, "Le nouveau contrôle doit conserver un focus clavier visible");
@@ -213,7 +221,7 @@ assert.match(
 );
 assert.match(
   app,
-  /<tr><td>\$\{en \? "Total before offers" : "Total avant offres"\}<\/td>[\s\S]*?"Total discount" : "Rabais total"[\s\S]*?Total à payer/,
+  /<tr><td>\$\{text\.totalBeforeOffers\}<\/td>[\s\S]*?\$\{text\.totalDiscount\}[\s\S]*?\$\{totalLabel\}/,
   "Le PDF doit reprendre le même récapitulatif commercial que la caisse"
 );
 assert.match(

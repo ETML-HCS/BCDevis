@@ -5,6 +5,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { newDb } = require("pg-mem");
 const { CentralDatabase } = require("../../central-server/database.cjs");
+const { MIGRATIONS } = require("../../central-server/migrations.cjs");
 const { startCentralServer } = require("../../central-server/server.cjs");
 
 async function api(base, route, { token, body, method = "GET" } = {}) {
@@ -125,6 +126,59 @@ async function main() {
     deviceName: "iPad Cabinet 1"
   });
   assert.equal(loginDisabled, null, "Un utilisateur inactif ne doit pas pouvoir se connecter");
+
+  // 8.6.5 — une migration ajoutée plus tard s’exécute vraiment sur une base existante.
+  const probeMigration = { version: 4, name: "004_probe", up: (client) => client.query("CREATE TABLE IF NOT EXISTS migration_probe (id TEXT PRIMARY KEY)") };
+  const upgraded = new CentralDatabase({ pool, migrations: [...MIGRATIONS, probeMigration] });
+  assert.deepEqual((await upgraded.migrate()).applied, [4], "Seule la nouvelle migration doit être appliquée");
+  await pool.query("INSERT INTO migration_probe (id) VALUES ('ok')");
+  assert.equal((await pool.query("SELECT COUNT(*)::int AS count FROM migration_probe")).rows[0].count, 1, "La migration doit avoir créé son schéma, pas seulement être enregistrée");
+  assert.equal(await upgraded.schemaVersion(), 4);
+  const failingMigration = { version: 5, name: "005_failing", up: async () => { throw new Error("échec volontaire"); } };
+  const failing = new CentralDatabase({ pool, migrations: [...MIGRATIONS, probeMigration, failingMigration] });
+  await assert.rejects(failing.migrate(), /échec volontaire/);
+  assert.equal((await failing.getMigrationStatus()).find((migration) => migration.version === 5).applied, false, "Une migration en échec ne doit jamais être marquée appliquée");
+
+  // 8.6.5 — une synchronisation n’écrit que les lignes modifiées.
+  const syncLogin = await database.login({ email: "admin@bellecour.test", password: "mot-de-passe-admin-robuste", deviceId: "device-sync-test-01", deviceName: "Poste test" });
+  const syncSession = await database.authenticate(syncLogin.token);
+  const quoteFor = (index, extra = {}) => ({ id: `q${index}`, number: `DEV-20261003T${String(index).padStart(3, "0")}`, lines: [], client: { name: `Client ${index}` }, tracking: { status: "sent", events: [] }, updatedAt: "2026-10-03T08:00:00.000Z", ...extra });
+  const bigSnapshot = { settings: { companyName: "Clinique Bellecour", pdfLanguage: "de" }, quoteCounters: { "20261003:T": 300 }, customServices: [], catalogOverrides: {}, contacts: {}, quotes: Object.fromEntries(Array.from({ length: 300 }, (_, index) => [`q${index}`, quoteFor(index)])) };
+  const firstCommit = await database.commitSync({ session: syncSession, snapshot: bigSnapshot, previousRevision: 0, action: "sync.merge", details: {} });
+  assert.equal(firstCommit.changed, true);
+  const statements = [];
+  const originalConnect = pool.connect.bind(pool);
+  pool.connect = async (...args) => {
+    const client = await originalConnect(...args);
+    const originalQuery = client.query.bind(client);
+    client.query = (sql, ...rest) => { statements.push(String(sql?.text || sql)); return originalQuery(sql, ...rest); };
+    return client;
+  };
+  const oneChange = structuredClone(bigSnapshot);
+  oneChange.quotes.q42.tracking = { status: "accepted", lossReason: "", events: [{ type: "contact", status: "sent", channel: "WhatsApp" }] };
+  const secondCommit = await database.commitSync({ session: syncSession, snapshot: oneChange, previousRevision: firstCommit.revision, action: "sync.merge", details: {} });
+  pool.connect = originalConnect;
+  const writes = statements.filter((sql) => /^\s*(INSERT INTO|DELETE FROM) (shared_settings|quote_counters|custom_services|catalog_overrides|contacts|quotes)\b/.test(sql));
+  assert.equal(secondCommit.changed, true);
+  assert.deepEqual(writes.map((sql) => sql.trim().split(" (")[0].replace(/ WHERE.*$/, "")), ["DELETE FROM quotes", "INSERT INTO quotes"], "Un seul devis modifié ne doit réécrire qu’une ligne");
+  const stored = await database.workspace(syncSession.organization_id);
+  assert.equal(Object.keys(stored.snapshot.quotes).length, 300);
+  assert.equal(stored.snapshot.quotes.q42.tracking.events[0].type, "contact", "Les relances confirmées doivent être conservées par le serveur");
+  assert.equal(stored.snapshot.settings.pdfLanguage, "de", "La langue du PDF doit être partagée");
+  // Deux devis qui échangent leurs numéros ne doivent pas heurter la contrainte d’unicité.
+  const swapped = structuredClone(oneChange);
+  [swapped.quotes.q1.number, swapped.quotes.q2.number] = [swapped.quotes.q2.number, swapped.quotes.q1.number];
+  delete swapped.quotes.q299;
+  const thirdCommit = await database.commitSync({ session: syncSession, snapshot: swapped, previousRevision: secondCommit.revision, action: "sync.merge", details: {} });
+  const afterSwap = await database.workspace(syncSession.organization_id);
+  assert.equal(afterSwap.revision, thirdCommit.revision);
+  assert.equal(afterSwap.snapshot.quotes.q1.number, bigSnapshot.quotes.q2.number);
+  assert.equal(afterSwap.snapshot.quotes.q299, undefined, "Un devis supprimé doit disparaître du serveur");
+  const status = await database.status(syncSession.organization_id);
+  assert.equal(status.quotes, 299);
+  assert.equal(status.revision, thirdCommit.revision);
+  assert.equal(status.schemaVersion, 4);
+  assert.equal(status.latestSchemaVersion, 3, "La version de schéma attendue vient des migrations livrées");
 
   // 10. Test Server API Admin Endpoints
   const started = await startCentralServer({

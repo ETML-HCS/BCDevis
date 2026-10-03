@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { calculate, customLineDiscount, lineDiscountBase, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = require("../quote-core.js");
+const { calculate, customLineDiscount, assessLineDiscount, DISCOUNT_GUARD, lineDiscountBase, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = require("../quote-core.js");
 
 const base = {
   lines: [{ price: 122, quantity: 7 }, { price: 322, quantity: 7 }, { price: 222, quantity: 7 }],
@@ -47,4 +47,27 @@ assert.equal(cleanDocumentPrefix(" fac ! ", "FAC"), "FAC", "Le préfixe document
 assert.equal(relatedDocumentNumber("DEV-20260806A001", "FAC"), "FAC-20260806A001", "La facture reprend la date, le poste et la séquence du devis");
 assert.equal(relatedDocumentNumber("DEV-CL-20260806P01007", "INV"), "INV-20260806P01007", "Un préfixe de devis composé ne doit pas modifier le poste");
 assert.equal(relatedDocumentNumber("DEV-20260806-A-001", "FAC"), "FAC-20260806-A-001", "Les anciens numéros conservent aussi leur code poste");
+// Garde-fous du rabais personnalisé : plafonnement signalé, avis puis confirmation selon l'ampleur.
+const guardQuote = { lines: [{ id: "a", price: 100, quantity: 2, offerType: "single" }, { id: "b", price: 50, quantity: 1, offerType: "single" }], discount: {}, tax: {} };
+const guard = (type, value, id = "a", quoteSource = guardQuote) => assessLineDiscount(quoteSource, id, { type, value });
+assert.deepEqual([DISCOUNT_GUARD.notice, DISCOUNT_GUARD.confirm, DISCOUNT_GUARD.quoteConfirm], [0.1, 0.3, 0.5], "Les seuils des garde-fous doivent rester explicites");
+assert.equal(guard("percent", 5).level, "", "Un rabais usuel ne doit rien signaler");
+assert.equal(guard("percent", 10).level, "", "Les tags habituels (jusqu'à 10 %) ne déclenchent aucun avis");
+assert.deepEqual([guard("percent", 15).level, guard("percent", 15).reasons], ["warn", ["notice"]], "Au-delà de 10 %, un avis s'affiche sans bloquer");
+assert.deepEqual([guard("percent", 30).level, guard("percent", 30).reasons], ["confirm", ["high"]], "À partir de 30 %, une confirmation est exigée");
+const free = guard("percent", 100);
+assert.deepEqual([free.level, free.reasons.includes("free"), free.amount, free.result], ["confirm", true, 200, 0], "Une ligne offerte exige une confirmation");
+const over = guard("percent", 150);
+assert.deepEqual([over.applied, over.capped, over.reasons.includes("capped-percent"), over.amount], [100, true, true, 200], "Un pourcentage au-delà de 100 est plafonné et signalé");
+const overAmount = guard("fixed", 500);
+assert.deepEqual([overAmount.applied, overAmount.capped, overAmount.reasons.includes("capped-amount")], [200, true, true], "Un montant supérieur à la ligne est plafonné à la ligne et signalé");
+assert.deepEqual([guard("percent", -5).applied, guard("percent", -5).reasons], [0, ["negative"]], "Une valeur négative est ignorée et signalée");
+assert.equal(guard("percent", "").level, "", "Un champ vide retire le rabais sans alerte");
+assert.equal(guard("percent", "abc").applied, 0, "Une saisie illisible n'applique rien");
+assert.equal(guard("percent", 30, "a", { ...guardQuote, discount: { type: "percent", value: 40 } }).reasons.includes("quote-high"), true, "Le cumul avec le coupon est signalé lorsqu'il dépasse la moitié du devis");
+assert.equal(free.reasons.includes("quote-high"), false, "Le cumul n'est pas répété quand aucun autre rabais n'existe");
+const studentQuote = { lines: [{ id: "s", price: 61, quantity: 1, offerType: "student", basePrice: 122, studentDiscount: 50 }], discount: {}, tax: {} };
+assert.equal(guard("percent", 5, "s", studentQuote).level, "", "La remise étudiante automatique ne compte pas comme un rabais au choix");
+assert.equal(assessLineDiscount(guardQuote, "inconnue", { type: "percent", value: 5 }), null, "Une ligne inconnue n'a pas d'évaluation");
+
 console.log("QUOTE_CORE_TESTS_OK");

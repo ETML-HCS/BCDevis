@@ -1,0 +1,21 @@
+# BCDevis (Clinique Bellecour)
+
+> Application médicale et esthétique de devis pour Clinique Bellecour (Genève, Suisse). Supporte Electron (Windows portable, macOS, Linux), PWA Web hors-ligne et serveur central de synchronisation PostgreSQL.
+
+## Architecture
+- `devis-portable/`: Client applicatif desktop et web PWA
+  - `app.js`: Contrôleur d'interface et d'orchestration
+  - `quote-core.js`: Moteur de calcul financier pur (devis, remises, forfaits, taxes)
+  - `contact-core.js`: Normalisation, dédoublonnage et imports/exports de contacts
+  - `tracking-core.js`: Suivi du cycle de vie commercial des devis
+  - `pdf-i18n.js`: Traductions du PDF (huit langues), formats de montants et pluriels
+  - `central-sync.js`: Client de synchronisation REST avec gestion des conflits
+  - `catalog.js`: Catalogue des soins et familles tarifaires
+  - `styles.css`: Feuille de style Vanilla CSS avec design system et variables
+- `central-server/`: Serveur de synchronisation Node.js + PostgreSQL
+  - `server.cjs`: Serveur API Express
+  - `database.cjs`: Requêtes SQL et persistance
+  - `migrations.cjs`: Migrations séquentielles de schéma
+  - `sync-merge.cjs`: Fusion sans écrasement concurrent
+- `types/bcdevis.d.ts`: Schéma de types TypeScript complet pour tous les modèles métier
+- `AGENTS.md`: Guide complet des conventions et index des fonctions

@@ -31,8 +31,8 @@ assert.match(html, /ne transforme pas automatiquement un devis en facture/i, "L�
 assert.match(html, /Brouillon[\s\S]*Prêt à envoyer[\s\S]*Envoyé[\s\S]*Accepté[\s\S]*Refusé[\s\S]*Expiré/, "Le workflow commercial doit être complet");
 assert.match(html, /Non archivé, À enregistrer ou Enregistré/, "L’aide doit reprendre les états d’enregistrement réels");
 assert.match(html, /Réglages → Devis &amp; suivi/, "L’aide doit reprendre le nom réel du réglage de suivi");
-assert.match(html, /Historique[\s\S]*?liste compacte[\s\S]*?dernier statut commercial[\s\S]*?Dans <b>Suivi<\/b>/, "L’aide doit distinguer clairement Historique et Suivi");
-assert.match(html, /survolez une fiche[\s\S]*?sur écran tactile, touchez directement la fiche/i, "L’aide doit expliquer l’ouverture adaptée à la souris et au tactile");
+assert.match(html, /<b>À faire<\/b> est la liste de travail[\s\S]*?<b>Tous les devis<\/b> est un tableau[\s\S]*?<b>Statistiques<\/b>/, "L’aide doit distinguer clairement À faire, Tous les devis et Statistiques");
+assert.match(html, /Tableau ou cartes[\s\S]*?Affichage en cartes[\s\S]*?cinq devis/, "L’aide doit expliquer le tableau, l’option cartes et la limite de cinq devis par section");
 assert.match(html, /sans Internet ni PostgreSQL/i, "L’aide doit expliquer l’autonomie du mode local");
 assert.match(html, /Le navigateur applique son propre réglage de téléchargement/i, "La limite de destination PDF de la PWA doit être exacte");
 assert.equal((html.match(/<dt><kbd>/g) || []).length, 17, "Les dix-sept raccourcis actifs doivent être centralisés dans l’aide HTML");

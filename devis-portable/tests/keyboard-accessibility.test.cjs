@@ -128,7 +128,7 @@ assert.match(html, /name="showTaxInformation" type="checkbox"/, "La visibilité 
 assert.match(html, /\.tax-header-toggle\[hidden\]\{display:none!important\}/, "Le contrôle TVA masqué ne doit conserver aucune place dans la caisse");
 assert.match(html, /<dt>Total avant offres<\/dt>[\s\S]*?id="totalDiscountRow" hidden><dt>Rabais total<\/dt>[\s\S]*?<dt>Total à payer<\/dt>/, "La caisse doit présenter le total catalogue, le rabais global et le montant payé");
 assert.doesNotMatch(html, /studentDiscountTotalRow|discountTotalRow/, "Les rabais ne doivent plus être dispersés sur plusieurs lignes de totaux");
-assert.match(app, /money\(referenceLineTotal\(line\)\)/, "Chaque prestation doit afficher sa valeur complète avant offre");
+assert.match(app, /function cartLinePrice\(line\) \{\s*const total = referenceLineTotal\(line\);[\s\S]*?displayMoney\(total\)[\s\S]*?money\(total\)/, "Chaque prestation doit afficher sa valeur complète avant offre, en CHF ou convertie en euros");
 assert.doesNotMatch(html, /id="quoteNumber"|class="quote-number"/, "Le numéro de devis ne doit plus encombrer l’en-tête de caisse");
 assert.match(styles, /\.visually-hidden\{[\s\S]*?clip-path:inset\(50%\)/, "Les repères masqués doivent rester accessibles");
 assert.match(html, /class="visually-hidden" id="familyNavTitle">Soins<[\s\S]*?class="visually-hidden" id="checkoutTitle">Devis</, "Soins et Devis doivent nommer les zones sans rester visibles");
@@ -147,7 +147,6 @@ assert.match(app, /class="installment-amounts"/, "La seconde ligne doit afficher
 assert.match(html, /id="moreQuoteButton"[^>]*aria-haspopup="menu"[^>]*aria-controls="quoteActionMenu"[^>]*aria-expanded="false"/, "Le bouton des actions du devis doit annoncer son menu");
 assert.match(html, /id="quoteActionMenu" role="menu" aria-label="Actions du devis"/, "Le menu du devis doit être identifié");
 for (const [action, label] of [
-  ["pdf-language", "Basculer la langue du PDF"],
   ["duplicate", "Dupliquer le devis"],
   ["export", "Exporter ce devis"],
   ["import", "Importer un devis"],
@@ -155,7 +154,7 @@ for (const [action, label] of [
 ]) {
   assert.match(html, new RegExp(`role="menuitem" data-action="${action}"[^>]*aria-label="${label}"`), `Action de devis absente : ${label}`);
 }
-for (const [action, shortcut] of [["duplicate", "Control\\+D Meta\\+D"], ["export", "Control\\+E Meta\\+E"], ["import", "Control\\+O Meta\\+O"], ["pdf-language", "Control\\+L Meta\\+L"]]) {
+for (const [action, shortcut] of [["duplicate", "Control\\+D Meta\\+D"], ["export", "Control\\+E Meta\\+E"], ["import", "Control\\+O Meta\\+O"]]) {
   assert.match(html, new RegExp(`data-action="${action}"[^>]*aria-keyshortcuts="${shortcut}"`), `Raccourci non annoncé pour l’action ${action}`);
 }
 assert.doesNotMatch(html, /data-action="clear"[^>]*aria-keyshortcuts=/, "Vider la caisse ne doit pas avoir de raccourci risqué");

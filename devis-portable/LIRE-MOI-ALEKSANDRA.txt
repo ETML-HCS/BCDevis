@@ -1,7 +1,32 @@
-BCDevis 8.6.2 - Livrable pour Aleksandra
+BCDevis 8.7.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 8.6.2
+NOUVEAUTES 8.7.0
+
+Version de production : elle remplace toutes les versions precedentes.
+
+- L'ecran Quoi de neuf ? est redessine pour marquer cette version.
+- Le menu ... du devis ne garde que Dupliquer, Exporter, Importer et Vider :
+  la langue du PDF se choisit avec le bouton de la caisse ou Ctrl+L.
+- Le PDF existe en huit langues : francais, anglais, allemand, italien,
+  espagnol, portugais, ukrainien et russe. Le bouton de langue a gauche
+  d'Imprimer (ou Ctrl+L) ouvre le choix ; les touches 1 a 8 choisissent
+  directement. Les soins et les mentions par defaut sont traduits.
+- Devis en euros : Reglages > Tarifs > Paiement en euros. Indiquez le taux
+  (ou actualisez-le avec le bouton BCE) et la commission de change (2 a 3 %
+  conseilles, pour ne pas perdre d'argent si l'euro baisse avant le change).
+  Un choix CHF / EUR apparait dans la caisse ; le PDF et le message d'envoi
+  sont alors en euros, avec le taux applique. Le taux est fige dans le devis.
+- Mes devis s'ouvre sur A faire : les relances et les factures du jour,
+  avec le bouton de l'action attendue sur chaque ligne. Tous les devis est
+  un tableau que l'on trie en cliquant sur un titre de colonne.
+- WhatsApp : si Ctrl+V ne colle pas le PDF, le bouton Afficher le PDF le
+  montre dans l'Explorateur : glissez-le dans la conversation. Cela marche
+  aussi avec WhatsApp Business et WhatsApp Web.
+- Les petits textes des reglages et de la caisse sont plus grands.
+- Le serveur central 8.7.0 est plus rapide et refuse un serveur trop ancien.
+
+DEJA DISPONIBLE (8.6.2 et avant)
 
 - Le choix du tarif est plus compact : sur telephone, les trois choix
   n'affichent plus que leur icone, et seul le tarif actif garde son
@@ -24,7 +49,7 @@ NOUVEAUTES 8.6.2
   total et sur le PDF.
 - Avant de restaurer une sauvegarde, BCDevis télécharge un instantané de vos
   données actuelles.
-- Le raccourci Ctrl+L bascule la langue du PDF (FR / EN) en un instant.
+- Le raccourci Ctrl+L ouvre le choix de la langue du PDF en un instant.
 - Réglages > Devis et suivi permet toujours de générer le PDF du devis en
   anglais, sans changer l'interface de BCDevis.
 - Réglages > Données conserve l'assistant de migration vers
@@ -38,32 +63,32 @@ NOUVEAUTES 8.6.2
   disponible hors ligne sans Internet ni PostgreSQL.
 - Provisoire : la version web s'ouvre sans connexion tant que le serveur
   central n'est pas en service. Les devis restent sur l'appareil.
-- Cet ecran de nouveautes apparait une seule fois pour la version 8.6.2.
+- Cet ecran de nouveautes apparait une seule fois pour la version 8.7.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-8.6.2.exe
+  BCDevis-8.7.0.exe
 
 2-Linux
-  BCDevis-8.6.2-linux-x86_64.AppImage
+  BCDevis-8.7.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-8.6.2-chromeos.zip
+  BCDevis-8.7.0-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
-  BCDevis-V7-Utilisation-rapide.pdf
-  BCDevis-V7-Raccourcis-clavier.pdf
-  BCDevis-V7-Mode-d-emploi.pdf
+  BCDevis-V8-Utilisation-rapide.pdf
+  BCDevis-V8-Raccourcis-clavier.pdf
+  BCDevis-V8-Mode-d-emploi.pdf
 
 5-Modele-devis
-  MODELE-DEVIS-V7.json
-  BCDevis-V7-Modele-devis.pdf
+  MODELE-DEVIS-V8.json
+  BCDevis-V8-Modele-devis.pdf
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-8.6.2.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-8.7.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -77,14 +102,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-8.6.2-linux-x86_64.AppImage
-  ./BCDevis-8.6.2-linux-x86_64.AppImage
+  chmod +x BCDevis-8.7.0-linux-x86_64.AppImage
+  ./BCDevis-8.7.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-8.6.2-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-8.7.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 
@@ -134,7 +159,7 @@ configuré afin de pouvoir l'ajouter manuellement au message.
 MODELE DE DEVIS
 
 Dans BCDevis, ouvrir le menu ... en haut du devis, choisir Importer, puis
-sélectionner MODELE-DEVIS-V7.json. La date et le prochain
+sélectionner MODELE-DEVIS-V8.json. La date et le prochain
 numéro sont attribués automatiquement.
 
 SAUVEGARDE

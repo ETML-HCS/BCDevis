@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "8.6.2";
-  const RELEASE_NOTES_REVISION = "8.6.2";
+  const RELEASE_VERSION = "8.7.0";
+  const RELEASE_NOTES_REVISION = "8.7.0";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";
@@ -37,9 +37,7 @@
   const DEFAULT_PAYMENT_CONDITIONS = "Le règlement est exigible au fur et à mesure des séances ou lors de l’achat d’un forfait. Les moyens de paiement acceptés sont les cartes de paiement, les espèces, TWINT et le virement bancaire. Toute solution de paiement échelonné est soumise à l’acceptation préalable du partenaire financier.";
   const DEFAULT_STUDENT_CONDITIONS = "Le tarif étudiant est accordé sur présentation d’un justificatif étudiant en cours de validité.";
   const DEFAULT_FOOTER_NOTE = "Prix exprimés en francs suisses. Ce devis ne vaut pas facture.";
-  const DEFAULT_PAYMENT_CONDITIONS_EN = "Payment is due as treatments are provided or upon purchase of a package. Accepted payment methods are payment cards, cash, TWINT and bank transfer. Any installment payment solution is subject to the prior acceptance of the financial partner.";
-  const DEFAULT_STUDENT_CONDITIONS_EN = "The student rate is granted upon presentation of a valid student ID.";
-  const DEFAULT_FOOTER_NOTE_EN = "Prices are expressed in Swiss francs. This quote is not an invoice.";
+
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const windowShell = new URLSearchParams(window.location.search).get("windowShell");
@@ -49,8 +47,20 @@
     document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
-  const { summarizeConversion } = window.BCDevisTracking || {};
+  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, assessLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
+  const {
+    summarizeConversion,
+    monthlyConversion,
+    periodRange,
+    exportConversionCSV,
+    followUpCount,
+    lossReasonKey,
+    lossReasonLabel,
+    LOSS_REASONS: TRACKING_LOSS_REASONS = [],
+    PERIODS: TRACKING_STATS_PERIODS = []
+  } = window.BCDevisTracking || {};
+  const PdfI18n = window.BCDevisPdfI18n;
+  const CurrencyCore = window.BCDevisCurrency;
   const ContactCore = window.BCDevisContacts;
   const {
     DEFAULT_TARGET_URL: DEFAULT_SITE_MIGRATION_TARGET,
@@ -184,8 +194,16 @@
     footerNote: DEFAULT_FOOTER_NOTE,
     showSignatures: true,
     pdfLanguage: "fr",
+    // Devis en euros : taux du marché (CHF pour 1 €), commission de change ajoutée au prix, date et origine du taux.
+    eurEnabled: false,
+    eurRate: 0,
+    eurCommission: 2.5,
+    eurAutoUpdate: true,
+    eurRateDate: "",
+    eurRateSource: "",
     centralUniqueQuoteNumbers: false,
-    historyCompactMode: false
+    historyCardView: false,
+    trackingDetailedView: false
   };
 
   function packDefaults() {
@@ -230,15 +248,16 @@
     };
   }
 
-  function trackingEvent({ id = "", type = "status", status = "draft", at = new Date().toISOString(), note = "", channel = "", followUpAt = "", actor = "", device = "" } = {}) {
+  function trackingEvent({ id = "", type = "status", status = "draft", at = new Date().toISOString(), note = "", channel = "", followUpAt = "", reason = "", actor = "", device = "" } = {}) {
     return {
       id: safeLocalId(id) || uid(),
-      type: ["status", "note", "follow-up"].includes(type) ? type : "status",
+      type: ["status", "note", "follow-up", "contact"].includes(type) ? type : "status",
       status: TRACKING_STATUSES.includes(status) ? status : "draft",
       at: validTimestamp(at),
       note: String(note || "").trim().slice(0, 1000),
       channel: String(channel || "").trim().slice(0, 80),
       followUpAt: followUpAt ? validISODate(followUpAt, "") : "",
+      reason: lossReasonKey(reason),
       actor: String(actor || "").trim().slice(0, 320),
       device: String(device || "").trim().slice(0, 80)
     };
@@ -253,6 +272,7 @@
       acceptedAt: "",
       refusedAt: "",
       invoicedAt: "",
+      lossReason: "",
       events: [trackingEvent({ status: "draft", at: createdAt, ...trackingActorFields() })]
     };
   }
@@ -273,6 +293,7 @@
       acceptedAt: source.acceptedAt ? validTimestamp(source.acceptedAt, "") : "",
       refusedAt: source.refusedAt ? validTimestamp(source.refusedAt, "") : "",
       invoicedAt: source.invoicedAt ? validTimestamp(source.invoicedAt, "") : "",
+      lossReason: ["refused", "expired"].includes(status) ? lossReasonKey(source.lossReason) : "",
       events
     };
   }
@@ -550,6 +571,8 @@
     saveLocal(false);
     renderAll();
     window.setInterval(refreshExpiredTracking, 15 * 60 * 1000);
+    // Une fois par jour, au plus tard quelques secondes après l'ouverture : le taux de l'euro reste à jour sans action.
+    window.setTimeout(() => void autoRefreshEurRate(), 6000);
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshExpiredTracking(); });
     const migrationArrivalOpened = openSiteMigrationArrival();
     const releaseNotesOpened = migrationArrivalOpened ? false : showReleaseNotesOnce();
@@ -605,11 +628,18 @@
   let activeSettingsTab = "interface";
   let activeHistoryView = "history";
   let activeTrackingFilter = "today";
+  let activeStatsPeriod = "year";
+  const expandedTrackingSections = new Set();
+  let pendingRefusalQuoteId = "";
+  let waitingSectionOpen = false;
+  let statsDetailsOpen = false;
   let historyQuery = "";
-  let historySort = "updated";
+  let historySort = "date";
+  let historySortDirection = "desc";
   let selectedContactId = "";
   let contactQuery = "";
   const expandedTrackingQuotes = new Set();
+  const trackingContactChannels = new Map();
   let activeLayerId = "";
   let tileDetailServiceId = "";
   let tileDetailPinned = false;
@@ -804,6 +834,9 @@
       createdAt: validTimestamp(source.createdAt, base.createdAt),
       updatedAt: validTimestamp(source.updatedAt, base.updatedAt)
     };
+    const importedFx = CurrencyCore.sanitizeFx(source.fx);
+    if (importedFx) sanitized.fx = importedFx;
+    else delete sanitized.fx;
     const hasStudentLines = sanitized.lines.some((line) => line.offerType === "student");
     const hasStandardLines = sanitized.lines.some((line) => line.offerType !== "student");
     if (hasStudentLines && hasStandardLines) {
@@ -890,6 +923,29 @@
     const region = $("#toastRegion");
     if (!region) return;
     if (region.parentElement !== document.body) document.body.append(region);
+  }
+
+  // Devis en euros : les prix restent calculés en CHF, seul l'affichage est converti (voir currency-core.js).
+  function quoteFx(item = quote) {
+    return CurrencyCore.sanitizeFx(item?.fx);
+  }
+
+  function displayAmount(value, item = quote) {
+    const fx = quoteFx(item);
+    return fx ? CurrencyCore.convertFromChf(value, fx) : Number(value) || 0;
+  }
+
+  function displayMoney(value, item = quote) {
+    const fx = quoteFx(item);
+    if (!fx) return money(value);
+    return new Intl.NumberFormat("fr-CH", { style: "currency", currency: "EUR", currencyDisplay: "narrowSymbol", minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      .format(CurrencyCore.convertFromChf(value, fx)).replace(/ /g, " ");
+  }
+
+  function refreshCopyFx(copy) {
+    if (!copy.fx) return;
+    const fresh = CurrencyCore.makeFx(db.settings, todayISO());
+    if (fresh) copy.fx = fresh;
   }
 
   function toast(message, type = "success", options = {}) {
@@ -2192,31 +2248,98 @@
       return `<article class="cart-line offer-${line.offerType}${discountLabel ? " has-custom-discount" : ""}" data-line-id="${line.id}">
         <div class="cart-line-delete-zone"><button class="remove-line" type="button" data-line-action="remove" aria-label="Supprimer ${escapeHTML(line.name)}" title="Supprimer ${escapeHTML(line.name)}"><svg><use href="#icon-trash"></use></svg></button></div>
         <div class="cart-line-main">
-          <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom du soin : ${escapeHTML(line.name)}"></span>${packOfferAction}</div>
-          <div class="cart-line-inline-controls"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span>${paidControl}${freeControl}${discountButton}<strong class="cart-line-price" title="Total avant offres">${money(referenceLineTotal(line))}</strong></div>
+          <div class="cart-line-info"><span class="cart-line-name-row"><input class="cart-line-name" data-line-field="name" value="${escapeHTML(line.name)}" title="${escapeHTML(line.name)}" aria-label="Nom du soin : ${escapeHTML(line.name)}"><span class="cart-line-category" title="${escapeHTML(category.name)}">(${escapeHTML(categoryLabel)})</span></span>${packOfferAction}</div>
+          <div class="cart-line-inline-controls">${paidControl}${freeControl}${discountButton}${cartLinePrice(line)}</div>
         </div>
       </article>`;
     }).join("");
     if (quoteIsLocked()) $$('input, button', container).forEach((control) => { control.disabled = true; });
   }
+  // Dans la caisse, un prix en CHF s'affiche sans l'unité ; en euros, le symbole reste pour éviter toute confusion.
+  function cartLinePrice(line) {
+    const total = referenceLineTotal(line);
+    if (quoteFx()) return `<strong class="cart-line-price" title="Total avant offres converti en euros">${escapeHTML(displayMoney(total))}</strong>`;
+    return `<strong class="cart-line-price" title="Total avant offres en CHF">${money(total).replace(/\s*CHF$/u, "")}<span class="visually-hidden"> CHF</span></strong>`;
+  }
+
   function renderTotals() {
     const totals = calculateQuote(quote);
     const taxEnabled = taxInformationEnabled(quote);
-    $("#subtotalValue").textContent = money(totals.subtotal);
+    const fx = quoteFx();
+    $("#subtotalValue").textContent = displayMoney(totals.subtotal);
     $("#totalDiscountRow").hidden = totals.totalDiscount <= 0;
-    $("#totalDiscountValue").textContent = `− ${money(totals.totalDiscount)}`;
+    $("#totalDiscountValue").textContent = `− ${displayMoney(totals.totalDiscount)}`;
     $("#netTotalRow").hidden = !taxEnabled;
-    $("#netTotalValue").textContent = money(totals.net);
+    $("#netTotalValue").textContent = displayMoney(totals.net);
     $("#taxTotalRow").hidden = !taxEnabled;
     $("#taxTotalLabel").textContent = `TVA ${totals.rate}%${quote.tax.mode === "included" ? " incluse" : ""}`;
-    $("#taxTotalValue").textContent = money(totals.tax);
-    $("#grandTotalValue").textContent = money(totals.total);
-    $("#mobileTotal").textContent = money(totals.total);
+    $("#taxTotalValue").textContent = displayMoney(totals.tax);
+    $("#grandTotalValue").textContent = displayMoney(totals.total);
+    $("#mobileTotal").textContent = displayMoney(totals.total);
+    $("#referenceTotalRow").hidden = !fx;
+    $("#referenceTotalValue").textContent = money(totals.total);
     const months = installmentMonths(totals.total);
+    const payable = displayAmount(totals.total);
     $("#installmentTableWrap").hidden = months.length === 0;
     $("#installmentGrid").innerHTML = months.length === 0 ? "" : `
       <tr class="installment-months">${months.map((month) => `<th scope="col">${month} mois</th>`).join("")}</tr>
-      <tr class="installment-amounts">${months.map((month) => `<td>${moneyValue(totals.total / month)}</td>`).join("")}</tr>`;
+      <tr class="installment-amounts">${months.map((month) => `<td>${moneyValue(payable / month)}</td>`).join("")}</tr>`;
+    renderCurrencySwitch();
+  }
+
+  function renderCurrencySwitch() {
+    const root = $("#currencySwitch");
+    if (!root) return;
+    const fx = quoteFx();
+    const locked = quoteIsLocked();
+    root.hidden = db.settings.eurEnabled !== true && !fx;
+    $$("[data-quote-currency]", root).forEach((button) => {
+      const active = (button.dataset.quoteCurrency === "EUR") === Boolean(fx);
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", String(active));
+      button.disabled = locked;
+    });
+    const note = $("#currencyNote");
+    const refresh = $("#currencyRefresh");
+    if (!fx) {
+      note.textContent = "";
+      note.dataset.tone = "";
+      refresh.hidden = true;
+      return;
+    }
+    const today = todayISO();
+    const stale = CurrencyCore.isStale(fx.date, today);
+    note.textContent = `1 € = ${CurrencyCore.effectiveRate(fx).toFixed(4)} CHF · taux du ${formatDate(fx.date)}${stale ? ` · ancien (${CurrencyCore.rateAgeDays(fx.date, today)} j)` : ""}`;
+    note.dataset.tone = stale ? "warn" : "";
+    const latest = CurrencyCore.makeFx(db.settings, today);
+    refresh.hidden = locked || !latest || (latest.rate === fx.rate && latest.commission === fx.commission && latest.date === fx.date);
+  }
+
+  function setQuoteCurrency(code) {
+    if (!ensureQuoteEditable()) return;
+    if (code === "EUR") {
+      const fx = CurrencyCore.makeFx(db.settings, todayISO());
+      if (!fx) {
+        toast("Réglez d’abord le taux de l’euro dans Réglages > Tarifs.", "error");
+        return;
+      }
+      quote.fx = fx;
+      if (CurrencyCore.isStale(fx.date, todayISO())) toast(`Taux du ${formatDate(fx.date)} : pensez à l’actualiser dans Réglages > Tarifs.`, "success", { duration: 5200 });
+    } else {
+      delete quote.fx;
+    }
+    saveLocal();
+    renderCheckout();
+  }
+
+  function refreshQuoteFx() {
+    if (!ensureQuoteEditable()) return;
+    const fx = CurrencyCore.makeFx(db.settings, todayISO());
+    if (!fx) return;
+    quote.fx = fx;
+    saveLocal();
+    renderCheckout();
+    toast(`Taux mis à jour : 1 € = ${CurrencyCore.effectiveRate(fx).toFixed(4)} CHF`);
   }
 
   function renderHeader() {
@@ -2388,6 +2511,7 @@
     if (quote.discount.type !== previousCouponType) saveLocal(false);
     const hasLines = quote.lines.length > 0;
     const locked = quoteIsLocked();
+    syncPdfLanguageMenu();
     $("#checkoutPanel").classList.toggle("is-empty", !hasLines);
     $("#checkoutPanel").classList.toggle("quote-locked", locked);
     ["checkoutPrintButton", "checkoutPdfButton", "checkoutTransmitButton", "checkoutWhatsAppButton", "checkoutOutlookWebButton"].forEach((id) => {
@@ -2459,17 +2583,43 @@
 
   let lineDiscountLineId = "";
   let lineDiscountType = "percent";
+  // Un rabais élevé exige une seconde validation : elle est réinitialisée dès que la valeur ou le type change.
+  let lineDiscountConfirmed = false;
 
   function lineDiscountDraft() {
     const line = quote.lines.find((item) => item.id === lineDiscountLineId);
     if (!line) return null;
-    const studentRate = calculateQuote(quote).studentRate;
-    const base = lineDiscountBase(line, studentRate);
-    const rawValue = Math.max(0, Number($("#lineDiscountValue").value) || 0);
-    const value = lineDiscountType === "percent" ? Math.min(100, rawValue) : Math.min(base, rawValue);
-    const draft = { ...line, customDiscount: { type: lineDiscountType, value } };
-    const amount = customLineDiscount(draft, studentRate);
-    return { line, base, value, amount, result: roundMoney(Math.max(0, base - amount)), clamped: value !== rawValue };
+    const assessment = assessLineDiscount(quote, line.id, { type: lineDiscountType, value: $("#lineDiscountValue").value });
+    return { line, base: assessment.base, value: assessment.applied, amount: assessment.amount, result: assessment.result, clamped: assessment.capped, assessment };
+  }
+
+  function lineDiscountGuardMessages(assessment) {
+    const percent = (share) => Math.round(share * 100);
+    const text = {
+      negative: "Une valeur négative est ignorée.",
+      "capped-percent": "Plafonné à 100 %.",
+      "capped-amount": `Plafonné au montant de la ligne (${money(assessment.base)}).`,
+      free: "Ligne offerte : le rabais couvre tout son montant.",
+      high: `Rabais élevé : ${percent(assessment.share)} % de la ligne.`,
+      notice: `Rabais de ${percent(assessment.share)} % de la ligne, au-delà des tags habituels.`,
+      "quote-high": `Avec les autres rabais, ${percent(assessment.quoteShare)} % du montant du devis est offert.`
+    };
+    return assessment.reasons.map((reason) => text[reason]).filter(Boolean);
+  }
+
+  function renderLineDiscountGuard(draft) {
+    const guard = $("#lineDiscountGuard");
+    const submit = $("#lineDiscountForm button[type=submit]");
+    const value = $("#lineDiscountValue");
+    const messages = lineDiscountGuardMessages(draft.assessment);
+    const awaiting = draft.assessment.level === "confirm" && lineDiscountConfirmed;
+    guard.hidden = !messages.length;
+    guard.dataset.level = draft.assessment.level;
+    guard.textContent = messages.join(" ") + (awaiting ? " Confirmez pour appliquer." : "");
+    value.max = lineDiscountType === "percent" ? "100" : String(draft.base);
+    value.setAttribute("aria-invalid", String(draft.assessment.reasons.some((reason) => reason === "negative" || reason.startsWith("capped"))));
+    submit.textContent = awaiting ? "Confirmer le rabais" : "Appliquer";
+    submit.classList.toggle("is-confirming", awaiting);
   }
 
   function renderLineDiscountPreview() {
@@ -2477,6 +2627,7 @@
     if (!draft) return;
     $("#lineDiscountResult").textContent = moneyValue(draft.result);
     $("#lineDiscountSaving").textContent = draft.amount > 0 ? `(-${moneyValue(draft.amount)})` : "";
+    renderLineDiscountGuard(draft);
     $("#lineDiscountSuffix").textContent = lineDiscountType === "percent" ? "%" : "CHF";
     $$("[data-line-discount-type]").forEach((button) => {
       const active = button.dataset.lineDiscountType === lineDiscountType;
@@ -2498,7 +2649,12 @@
   function openLineDiscountLayer(line) {
     if (!line || !ensureQuoteEditable()) return;
     const studentRate = calculateQuote(quote).studentRate;
+    if (lineDiscountBase(line, studentRate) <= 0) {
+      toast("Aucun montant à réduire sur cette ligne.", "error");
+      return;
+    }
     const student = line.offerType === "student";
+    lineDiscountConfirmed = false;
     lineDiscountLineId = line.id;
     lineDiscountType = student ? "fixed" : line.customDiscount?.type || "percent";
     if (student && line.customDiscount?.type === "percent") lineDiscountType = "fixed";
@@ -2804,15 +2960,19 @@
     return from === to || Boolean(TRACKING_TRANSITIONS[from]?.includes(to));
   }
 
-  function updateQuoteTracking(item, { status, nextFollowUpAt, note = "", channel = "" } = {}) {
+  function updateQuoteTracking(item, { status, nextFollowUpAt, note = "", channel = "", reason } = {}) {
     item.tracking = sanitizeTracking(item.tracking, item.createdAt);
     const tracking = item.tracking;
     const previousStatus = tracking.status;
     const previousFollowUp = tracking.nextFollowUpAt;
+    const previousReason = tracking.lossReason || "";
     const nextStatus = TRACKING_STATUSES.includes(status) ? status : previousStatus;
     if (!trackingTransitionAllowed(previousStatus, nextStatus)) return false;
     const at = new Date().toISOString();
     const cleanNote = String(note || "").trim().slice(0, 1000);
+    const requestedReason = ["refused", "expired"].includes(nextStatus)
+      ? (reason === undefined ? previousReason : lossReasonKey(reason))
+      : "";
     const followUpProvided = nextFollowUpAt !== undefined;
     let requestedFollowUp = followUpProvided ? String(nextFollowUpAt || "") : previousFollowUp;
     requestedFollowUp = requestedFollowUp ? validISODate(requestedFollowUp, "") : "";
@@ -2821,6 +2981,7 @@
 
     tracking.status = nextStatus;
     tracking.nextFollowUpAt = requestedFollowUp;
+    tracking.lossReason = requestedReason;
     if (cleanNote) tracking.note = cleanNote;
     if (nextStatus === "sent" && !tracking.sentAt) tracking.sentAt = at;
     if (nextStatus === "accepted") tracking.acceptedAt = at;
@@ -2828,14 +2989,29 @@
     if (nextStatus === "invoiced") tracking.invoicedAt = at;
 
     if (nextStatus !== previousStatus) {
-      appendTrackingEvent(tracking, { type: "status", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
+      appendTrackingEvent(tracking, { type: "status", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp, reason: requestedReason });
     } else if (requestedFollowUp !== previousFollowUp) {
       appendTrackingEvent(tracking, { type: "follow-up", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
+    } else if (requestedReason !== previousReason) {
+      appendTrackingEvent(tracking, { type: "note", status: nextStatus, at, note: cleanNote, reason: requestedReason });
     } else if (cleanNote) {
       appendTrackingEvent(tracking, { type: "note", status: nextStatus, at, note: cleanNote, channel, followUpAt: requestedFollowUp });
     } else {
       return false;
     }
+    item.updatedAt = at;
+    return true;
+  }
+
+  // Une relance n'est comptée qu'une fois confirmée par la personne : ouvrir WhatsApp ou l'e-mail ne suffit pas.
+  function recordTrackingContact(item, { channel = "", note = "" } = {}) {
+    item.tracking = sanitizeTracking(item.tracking, item.createdAt);
+    if (item.tracking.status !== "sent") return false;
+    const at = new Date().toISOString();
+    let followUpAt = addDaysISO(todayISO(), configuredFollowUpDays(db.settings));
+    if (item.validUntil && item.validUntil >= todayISO() && item.validUntil < followUpAt) followUpAt = item.validUntil;
+    item.tracking.nextFollowUpAt = followUpAt;
+    appendTrackingEvent(item.tracking, { type: "contact", status: "sent", at, note: String(note || "").trim().slice(0, 1000), channel, followUpAt });
     item.updatedAt = at;
     return true;
   }
@@ -2939,6 +3115,7 @@
     copy.previousQuoteId = "";
     copy.revisionNumber = 1;
     copy.tracking = freshTracking(now);
+    refreshCopyFx(copy);
     copy.createdAt = now;
     copy.updatedAt = now;
     quote = copy;
@@ -2961,6 +3138,7 @@
     copy.number = nextQuoteNumber(copy.date);
     copy.validUntil = addDaysISO(copy.date, configuredValidityDays(db.settings));
     copy.tracking = freshTracking(now);
+    refreshCopyFx(copy);
     copy.createdAt = now;
     copy.updatedAt = now;
     quote = copy;
@@ -2974,13 +3152,72 @@
   function trackingFilterMatches(item, filter) {
     if (item.tracking?.status === "invoiced") return false;
     if (filter === "all") return true;
-    if (filter === "today") return trackingTodaySections([item]).some((section) => section.items.length);
+    if (filter === "today") return trackingTodaySections([item]).some((section) => section.actionable && section.items.length);
     if (filter === "follow-up") return isFollowUpDue(item);
     return item.tracking?.status === filter;
   }
 
   function quoteAmount(item) {
     return calculateQuote(item).total;
+  }
+
+  function localDateOf(timestamp) {
+    const time = Date.parse(timestamp || "");
+    if (!Number.isFinite(time)) return "";
+    const date = new Date(time);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 10);
+  }
+
+  // Nombre de jours calendaires écoulés depuis une date ISO ou un horodatage (négatif pour une date future).
+  function daysSince(value) {
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : localDateOf(value);
+    if (!day) return null;
+    return Math.round((Date.parse(`${todayISO()}T12:00:00Z`) - Date.parse(`${day}T12:00:00Z`)) / 86400000);
+  }
+
+  function agoCopy(days) {
+    if (days === null) return "";
+    if (days <= 0) return " aujourd’hui";
+    return days === 1 ? " hier" : ` il y a ${days} j`;
+  }
+
+  function trackingStatusSince(item, status) {
+    const events = (item.tracking?.events || []).filter((event) => event.type === "status" && event.status === status);
+    return events.length ? events[events.length - 1].at : item.updatedAt || item.createdAt;
+  }
+
+  // Le texte court (affichage simple) ne garde que l'échéance ou l'ancienneté utile à l'action.
+  function trackingProgressCopy(item) {
+    const progress = trackingProgressDetails(item);
+    const status = item.tracking?.status;
+    const short = ["refused", "expired"].includes(status)
+      ? `${TRACKING_STATUS_META[status].label}${item.tracking.lossReason ? ` · ${lossReasonLabel(item.tracking.lossReason)}` : ""}`
+      : progress.text.split(" · ")[0];
+    return { ...progress, short };
+  }
+
+  function trackingProgressDetails(item) {
+    const tracking = item.tracking || {};
+    const followUps = followUpCount(item);
+    if (tracking.status === "sent") {
+      const sent = `Envoyé${agoCopy(daysSince(tracking.sentAt))}${followUps ? ` · ${plural(followUps, "relance")}` : ""}`;
+      if (!tracking.nextFollowUpAt) return { text: `${sent} · aucune relance prévue`, tone: "" };
+      const delay = daysSince(tracking.nextFollowUpAt);
+      if (delay > 0) return { text: `Relance en retard de ${delay} j · ${sent}`, tone: "late" };
+      if (delay === 0) return { text: `Relance aujourd’hui · ${sent}`, tone: "due" };
+      return { text: `Relance le ${formatDate(tracking.nextFollowUpAt)} · ${sent}`, tone: "" };
+    }
+    if (tracking.status === "accepted") return { text: `Accepté${agoCopy(daysSince(tracking.acceptedAt))} · facture à envoyer`, tone: "due" };
+    if (tracking.status === "ready") {
+      const days = daysSince(trackingStatusSince(item, "ready"));
+      return { text: `Prêt ${days > 0 ? `depuis ${days} j` : "aujourd’hui"} · valable jusqu’au ${formatDate(item.validUntil)}`, tone: days > 1 ? "due" : "" };
+    }
+    if (tracking.status === "draft") return { text: `Modifié${agoCopy(daysSince(item.updatedAt || item.createdAt))}`, tone: "" };
+    if (["refused", "expired"].includes(tracking.status)) {
+      return { text: [tracking.lossReason ? lossReasonLabel(tracking.lossReason) : "Motif non renseigné", followUps ? plural(followUps, "relance") : "sans relance"].join(" · "), tone: "" };
+    }
+    return { text: `Valable jusqu’au ${formatDate(item.validUntil)}`, tone: "" };
   }
 
   function trackingTodaySections(items) {
@@ -2991,11 +3228,15 @@
       const lateness = Number(isFollowUpLate(right)) - Number(isFollowUpLate(left));
       return lateness || String(left.tracking.nextFollowUpAt).localeCompare(String(right.tracking.nextFollowUpAt)) || sortByAmount(left, right);
     });
+    const waiting = items.filter((item) => item.tracking?.status === "sent" && !isFollowUpDue(item)).sort((left, right) => {
+      return String(left.tracking.nextFollowUpAt || "9999-12-31").localeCompare(String(right.tracking.nextFollowUpAt || "9999-12-31")) || sortByAmount(left, right);
+    });
     return [
-      { key: "follow-up", title: "À relancer", description: "Relances prévues aujourd’hui ou en retard", items: followUps },
-      { key: "accepted", title: "Acceptés à facturer", description: "Facture envoyée à importer", items: items.filter((item) => item.tracking?.status === "accepted").sort(oldestFirst("acceptedAt")) },
-      { key: "ready", title: "Prêts à envoyer", description: "Devis finalisés en attente d’envoi", items: items.filter((item) => item.tracking?.status === "ready").sort(oldestFirst("updatedAt")) },
-      { key: "draft", title: "Brouillons à terminer", description: "Sans modification depuis au moins 7 jours", items: items.filter((item) => item.tracking?.status === "draft" && String(item.updatedAt || item.createdAt || "").slice(0, 10) <= staleDraftBefore).sort(oldestFirst("updatedAt")) }
+      { key: "follow-up", title: "À relancer", description: "Relances prévues aujourd’hui ou en retard", items: followUps, actionable: true },
+      { key: "accepted", title: "Acceptés à facturer", description: "Facture à envoyer au client", items: items.filter((item) => item.tracking?.status === "accepted").sort(oldestFirst("acceptedAt")), actionable: true },
+      { key: "ready", title: "Prêts à envoyer", description: "Devis finalisés en attente d’envoi", items: items.filter((item) => item.tracking?.status === "ready").sort(oldestFirst("updatedAt")), actionable: true },
+      { key: "draft", title: "Brouillons à terminer", description: "Sans modification depuis au moins 7 jours", items: items.filter((item) => item.tracking?.status === "draft" && String(item.updatedAt || item.createdAt || "").slice(0, 10) <= staleDraftBefore).sort(oldestFirst("updatedAt")), actionable: true },
+      { key: "waiting", title: "En attente de réponse", description: "Envoyés, prochaine relance à venir", items: waiting, actionable: false }
     ];
   }
 
@@ -3007,7 +3248,7 @@
       if (Object.hasOwn(counts, status)) counts[status] += 1;
       if (isFollowUpDue(item)) counts["follow-up"] += 1;
     });
-    counts.today = trackingTodaySections(items).reduce((total, section) => total + section.items.length, 0);
+    counts.today = trackingTodaySections(items).filter((section) => section.actionable).reduce((total, section) => total + section.items.length, 0);
     return counts;
   }
 
@@ -3016,18 +3257,41 @@
     return normalize([item.number, item.client?.name, item.client?.phone, item.client?.email].join(" ")).includes(needle);
   }
 
+  const HISTORY_SORT_KEYS = ["updated", "date", "client", "amount", "number", "lines", "status"];
+  const HISTORY_SORT_DEFAULT_DIRECTION = { updated: "desc", date: "desc", amount: "desc", lines: "desc", client: "asc", number: "asc", status: "asc" };
+
+  function setHistorySort(key) {
+    if (!HISTORY_SORT_KEYS.includes(key)) key = "date";
+    // Un second clic sur la même colonne inverse l'ordre ; une nouvelle colonne reprend son sens naturel.
+    historySortDirection = key === historySort ? (historySortDirection === "asc" ? "desc" : "asc") : HISTORY_SORT_DEFAULT_DIRECTION[key];
+    historySort = key;
+  }
+
   function sortHistoryQuotes(items) {
-    const sorted = [...items];
     const text = (value) => String(value || "");
-    const amount = (item) => quoteAmount(item);
-    if (historySort === "date") return sorted.sort((left, right) => text(right.date).localeCompare(text(left.date)) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
-    if (historySort === "client") return sorted.sort((left, right) => text(left.client?.name).localeCompare(text(right.client?.name), "fr", { sensitivity: "base" }) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
-    if (historySort === "amount") return sorted.sort((left, right) => amount(right) - amount(left) || text(right.updatedAt).localeCompare(text(left.updatedAt)));
-    return sorted.sort((left, right) => text(right.updatedAt).localeCompare(text(left.updatedAt)));
+    const compareText = (left, right) => text(left).localeCompare(text(right), "fr", { sensitivity: "base", numeric: true });
+    const compareUpdated = (left, right) => text(right.updatedAt).localeCompare(text(left.updatedAt));
+    let compare = null;
+    if (historySort === "date") compare = (left, right) => compareText(left.date, right.date);
+    else if (historySort === "client") compare = (left, right) => compareText(left.client?.name, right.client?.name);
+    else if (historySort === "amount") compare = (left, right) => quoteAmount(left) - quoteAmount(right);
+    else if (historySort === "number") compare = (left, right) => compareText(left.number, right.number);
+    else if (historySort === "lines") compare = (left, right) => (left.lines?.length || 0) - (right.lines?.length || 0);
+    else if (historySort === "status") compare = (left, right) => TRACKING_STATUSES.indexOf(left.tracking?.status) - TRACKING_STATUSES.indexOf(right.tracking?.status);
+    if (!compare) return [...items].sort(compareUpdated);
+    const direction = historySortDirection === "asc" ? 1 : -1;
+    return [...items].sort((left, right) => direction * compare(left, right) || compareUpdated(left, right));
   }
 
   function trackingEventCopy(event) {
-    if (event.type === "note") return { title: "Note ajoutée", detail: event.note };
+    const reason = event.reason ? `Motif : ${lossReasonLabel(event.reason)}` : "";
+    if (event.type === "contact") {
+      return {
+        title: "Relance effectuée",
+        detail: [event.channel ? `Canal : ${event.channel}` : "", event.followUpAt ? `Prochaine relance le ${formatDate(event.followUpAt)}` : "", event.note].filter(Boolean).join(" · ")
+      };
+    }
+    if (event.type === "note") return { title: reason ? "Motif mis à jour" : "Note ajoutée", detail: [reason, event.note].filter(Boolean).join(" · ") };
     if (event.type === "follow-up") {
       return {
         title: event.followUpAt ? `Relance prévue le ${formatDate(event.followUpAt)}` : "Relance annulée",
@@ -3035,7 +3299,7 @@
       };
     }
     const status = TRACKING_STATUS_META[event.status] || TRACKING_STATUS_META.draft;
-    const details = [event.channel ? `Canal : ${event.channel}` : "", event.note].filter(Boolean).join(" · ");
+    const details = [event.channel ? `Canal : ${event.channel}` : "", reason, event.note].filter(Boolean).join(" · ");
     return { title: status.eventLabel, detail: details };
   }
 
@@ -3048,14 +3312,22 @@
     }).join("")}</ol>`;
   }
 
+  function centralArchiveConnected() {
+    return centralController?.getConfig?.().connected === true;
+  }
+
   function renderTrackingEditor(item) {
     const selectableStatuses = [item.tracking.status, ...(TRACKING_TRANSITIONS[item.tracking.status] || []).filter((status) => status !== "invoiced")];
     const options = selectableStatuses.map((status) => `<option value="${status}" ${item.tracking.status === status ? "selected" : ""}>${escapeHTML(TRACKING_STATUS_META[status].label)}</option>`).join("");
     const canUndo = !quoteIsLocked(item) && (item.tracking.events || []).length > 1;
     const followUpDisabled = item.tracking.status !== "sent";
-    const invoiceAction = item.tracking.status === "accepted"
-      ? `<button class="button primary" type="button" data-tracking-invoice>Importer la facture envoyée</button>`
-      : "";
+    const lossStatus = ["refused", "expired"].includes(item.tracking.status);
+    const reasonOptions = [`<option value="">Non renseigné</option>`, ...TRACKING_LOSS_REASONS.map((reason) => `<option value="${reason.key}" ${item.tracking.lossReason === reason.key ? "selected" : ""}>${escapeHTML(reason.label)}</option>`)].join("");
+    const invoiceAction = item.tracking.status !== "accepted"
+      ? ""
+      : centralArchiveConnected()
+        ? `<button class="button primary" type="button" data-tracking-invoice>Importer la facture envoyée</button>`
+        : `<button class="button primary" type="button" data-tracking-quick="invoiced">Marquer la facture envoyée</button>`;
     const revisionAction = quoteIsLocked(item)
       ? `<button class="button secondary" type="button" data-tracking-revision>Créer une V${Math.max(2, Number(item.revisionNumber || 1) + 1)}</button>`
       : "";
@@ -3063,27 +3335,43 @@
     return `<form class="tracking-editor" data-tracking-form data-tracking-quote-id="${escapeHTML(item.id)}">
       <label><span>Dernier statut</span><select name="trackingStatus">${options}</select></label>
       <label><span>Prochaine relance</span><input name="trackingFollowUpAt" type="date" min="${todayISO()}" value="${escapeHTML(item.tracking.nextFollowUpAt || "")}" ${followUpDisabled ? "disabled" : ""}></label>
-      <label class="tracking-editor-note"><span>Note interne ou motif</span><textarea name="trackingNote" rows="2" maxlength="1000" placeholder="Ajouter une information à la chronologie…"></textarea></label>
+      <label class="tracking-editor-reason" ${lossStatus ? "" : "hidden"}><span>Motif de perte</span><select name="trackingReason">${reasonOptions}</select></label>
+      <label class="tracking-editor-note"><span>Note interne</span><textarea name="trackingNote" rows="2" maxlength="1000" placeholder="Ajouter une information à la chronologie (sans donnée médicale)…"></textarea></label>
       <div class="tracking-editor-workflow-actions">${openAction}${invoiceAction}${revisionAction}</div>
       <div class="tracking-editor-actions"><button class="button ghost" type="button" data-tracking-undo ${canUndo ? "" : "disabled"}>Annuler le dernier changement</button><button class="button primary" type="submit">Enregistrer le suivi</button></div>
     </form>`;
   }
 
+  function syncTrackingEditorFields(form) {
+    const status = form?.elements.trackingStatus?.value;
+    const followUp = form?.elements.trackingFollowUpAt;
+    if (followUp) {
+      followUp.disabled = status !== "sent";
+      if (!followUp.disabled && !followUp.value) followUp.value = addDaysISO(todayISO(), configuredFollowUpDays(db.settings));
+      if (followUp.disabled) followUp.value = "";
+    }
+    const reason = form?.querySelector(".tracking-editor-reason");
+    if (reason) reason.hidden = !["refused", "expired"].includes(status);
+  }
+
   function rebuildTrackingFromEvents(item, sourceEvents) {
     const events = sourceEvents.map((event) => trackingEvent(event));
     const tracking = {
-      status: "draft", nextFollowUpAt: "", note: "", sentAt: "", acceptedAt: "", refusedAt: "", invoicedAt: "", events
+      status: "draft", nextFollowUpAt: "", note: "", sentAt: "", acceptedAt: "", refusedAt: "", invoicedAt: "", lossReason: "", events
     };
     events.forEach((event) => {
       if (event.type === "status") {
         tracking.status = TRACKING_STATUSES.includes(event.status) ? event.status : tracking.status;
         tracking.nextFollowUpAt = tracking.status === "sent" ? event.followUpAt || tracking.nextFollowUpAt : "";
+        tracking.lossReason = ["refused", "expired"].includes(tracking.status) ? event.reason || "" : "";
         if (tracking.status === "sent" && !tracking.sentAt) tracking.sentAt = event.at;
         if (tracking.status === "accepted") tracking.acceptedAt = event.at;
         if (tracking.status === "refused") tracking.refusedAt = event.at;
         if (tracking.status === "invoiced") tracking.invoicedAt = event.at;
       }
       if (event.type === "follow-up") tracking.nextFollowUpAt = event.followUpAt || "";
+      if (event.type === "contact" && event.followUpAt) tracking.nextFollowUpAt = event.followUpAt;
+      if (event.type === "note" && event.reason && ["refused", "expired"].includes(tracking.status)) tracking.lossReason = event.reason;
       if (event.note) tracking.note = event.note;
     });
     item.tracking = tracking;
@@ -3097,7 +3385,86 @@
     return persistTrackedQuote(item);
   }
 
-  function renderHistoryItem(item, trackingView, trackingActive = false, todayAction = false) {
+  function trackingDetailedView() {
+    return db.settings.trackingDetailedView === true;
+  }
+
+  const TRACKING_REFUSAL_CHIPS = [
+    ["price", "Prix"],
+    ["timing", "Délai"],
+    ["no-answer", "Sans réponse"],
+    ["competitor", "Autre solution"],
+    ["other", "Autre"],
+    ["", "Sans motif"]
+  ];
+
+  function renderTrackingContacts(item) {
+    if (item.tracking?.status !== "sent") return "";
+    const clientName = String(item.client?.name || "le client").trim();
+    const phone = String(item.client?.phone || "").trim();
+    const contact = (channel, icon, label) => `<button class="tracking-contact" type="button" data-tracking-contact="${channel}" aria-label="${escapeHTML(label)}" title="${escapeHTML(label)}"><svg aria-hidden="true"><use href="#${icon}"></use></svg></button>`;
+    const contacts = [];
+    if (phone) contacts.push(contact("whatsapp", "icon-whatsapp", `Relancer ${clientName} par WhatsApp`));
+    if (phone) contacts.push(contact("phone", "icon-phone", window.bcdevisDesktop ? `Copier le numéro ${phone}` : `Appeler ${phone}`));
+    contacts.push(contact("copy", "icon-copy", "Copier le message de relance (e-mail, SMS…)"));
+    return `<span class="tracking-contacts">${contacts.join("")}</span>`;
+  }
+
+  // Actions principales : uniquement ce qu'il faut faire maintenant. Le reste vit dans le détail (bouton ⋯).
+  function renderTrackingQuickActions(item, expanded) {
+    const id = escapeHTML(item.id);
+    const status = item.tracking?.status;
+    const detailed = trackingDetailedView();
+    const quick = (action, label, { primary = false, icon = "" } = {}) => `<button class="tracking-quick ${primary ? "tracking-quick--primary" : ""}" type="button" data-tracking-quick="${action}">${icon ? `<svg aria-hidden="true"><use href="#${icon}"></use></svg>` : ""}<span>${escapeHTML(label)}</span></button>`;
+    const toggle = detailed
+      ? `<button class="tracking-today-action tracking-quick tracking-quick--details" type="button" data-tracking-toggle="${id}" aria-expanded="${expanded}" aria-controls="tracking-detail-${id}">${expanded ? "Masquer" : "Détails"}</button>`
+      : `<button class="tracking-today-action tracking-quick tracking-quick--more" type="button" data-tracking-toggle="${id}" aria-expanded="${expanded}" aria-controls="tracking-detail-${id}" aria-label="${expanded ? "Masquer" : "Afficher"} les autres actions et l’historique de ${escapeHTML(item.number)}" title="Autres actions et historique">⋯</button>`;
+    if (pendingRefusalQuoteId === item.id && status === "sent") {
+      const chips = TRACKING_REFUSAL_CHIPS.map(([reason, label]) => `<button class="tracking-quick ${reason ? "" : "tracking-quick--plain"}" type="button" data-tracking-refuse="${reason}">${escapeHTML(label)}</button>`).join("");
+      return `<div class="tracking-quick-actions tracking-quick-actions--refusal" role="group" aria-label="Motif du refus de ${escapeHTML(item.number)}">
+        <span class="tracking-refusal-label">Motif du refus :</span>
+        <span class="tracking-quick-main">${chips}</span>
+        <button class="tracking-quick tracking-quick--details" type="button" data-tracking-refuse-cancel>Annuler</button>
+      </div>`;
+    }
+    const actions = [];
+    if (status === "draft") {
+      actions.push(`<button class="tracking-quick tracking-quick--primary" type="button" data-tracking-open-quote data-quote-id="${id}"><span>Terminer le devis</span></button>`);
+      if (detailed) actions.push(quick("ready", "Marquer prêt"));
+    } else if (status === "ready") {
+      if (detailed) actions.push(`<button class="tracking-quick" type="button" data-tracking-open-quote data-quote-id="${id}"><span>Ouvrir pour envoyer</span></button>`);
+      actions.push(quick("sent", "Marquer envoyé", { primary: true, icon: "icon-send" }));
+    } else if (status === "sent") {
+      const channel = trackingContactChannels.get(item.id);
+      actions.push(
+        quick("contact", channel ? `Relance faite · ${channel}` : "Relance faite", { primary: isFollowUpDue(item) || Boolean(channel), icon: "icon-check" }),
+        quick("accepted", "Accepté"),
+        quick("refused", "Refusé")
+      );
+    } else if (status === "accepted") {
+      actions.push(centralArchiveConnected()
+        ? `<button class="tracking-quick tracking-quick--primary" type="button" data-tracking-invoice><svg aria-hidden="true"><use href="#icon-invoice"></use></svg><span>Importer la facture</span></button>`
+        : quick("invoiced", "Facture envoyée", { primary: true, icon: "icon-invoice" }));
+    } else if (["refused", "expired"].includes(status)) {
+      actions.push(`<button class="tracking-quick" type="button" data-tracking-revision><span>Créer une V${Math.max(2, Number(item.revisionNumber || 1) + 1)}</span></button>`);
+    }
+    return `<div class="tracking-quick-actions" role="group" aria-label="Actions rapides pour ${escapeHTML(item.number)}">
+      ${detailed ? renderTrackingContacts(item) : ""}
+      <span class="tracking-quick-main">${actions.join("")}</span>
+      ${toggle}
+    </div>`;
+  }
+
+  // En affichage simple, le détail réunit les actions secondaires masquées de la fiche.
+  function renderTrackingSecondaryActions(item) {
+    if (trackingDetailedView()) return "";
+    const actions = [renderTrackingContacts(item)];
+    if (item.tracking?.status === "draft") actions.push(`<button class="tracking-quick" type="button" data-tracking-quick="ready"><span>Marquer prêt</span></button>`);
+    const content = actions.join("");
+    return content ? `<div class="tracking-secondary-actions" role="group" aria-label="Autres actions pour ${escapeHTML(item.number)}">${content}</div>` : "";
+  }
+
+  function renderHistoryItem(item, trackingView, trackingActive = false) {
     const totals = calculateQuote(item);
     const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
     const visual = trackingVisualStatus(item);
@@ -3109,24 +3476,26 @@
       </button>`;
     }
     const expanded = expandedTrackingQuotes.has(item.id);
-    const followUpCopy = item.tracking.nextFollowUpAt
-      ? `${isFollowUpLate(item) ? "Relance en retard" : "Relance"} · ${formatDate(item.tracking.nextFollowUpAt)}`
-      : `Valable jusqu’au ${formatDate(item.validUntil)}`;
-    const action = todayAction
-      ? `<button class="tracking-today-action button secondary" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}">Traiter</button>`
-      : "";
-    return `<article class="history-item history-item--tracked history-item--${visual.key} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${escapeHTML(item.id)}">
-      <div class="history-item-summary">
-        <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
-        <button class="history-item-open" type="button" data-quote-id="${escapeHTML(item.id)}">
-          <span class="history-item-head"><strong>${escapeHTML(item.number)}${escapeHTML(revision)}</strong><b>${money(totals.total)}</b></span>
-          <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
-          <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
-          <span class="history-follow-up">${escapeHTML(followUpCopy)}</span>
-        </button>
-        ${action}
+    const progress = trackingProgressCopy(item);
+    const detailed = trackingDetailedView();
+    const summary = detailed
+      ? `<span class="history-item-head"><strong>${escapeHTML(item.number)}${escapeHTML(revision)}</strong><b>${money(totals.total)}</b></span>
+            <span class="history-item-client">${escapeHTML(item.client?.name || "Client à compléter")}</span>
+            <span class="history-item-meta"><span>${formatDate(item.date)} · ${plural(item.lines?.length || 0, "soin")}</span><span class="history-status">${escapeHTML(visual.label)}</span></span>
+            <span class="history-follow-up ${progress.tone ? `history-follow-up--${progress.tone}` : ""}">${escapeHTML(progress.text)}</span>`
+      : `<span class="history-item-head"><strong>${escapeHTML(item.client?.name || item.number)}</strong><b>${money(totals.total)}</b></span>
+            <span class="history-follow-up ${progress.tone ? `history-follow-up--${progress.tone}` : ""}">${escapeHTML(progress.short)}</span>`;
+    return `<article class="history-item history-item--tracked history-item--${visual.key} ${detailed ? "" : "history-item--simple"} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${escapeHTML(item.id)}">
+      <div class="tracking-card-main">
+        <div class="history-item-summary">
+          <button class="history-disclosure" type="button" data-tracking-toggle="${escapeHTML(item.id)}" aria-expanded="${expanded}" aria-controls="tracking-detail-${escapeHTML(item.id)}" aria-label="${expanded ? "Masquer" : "Afficher"} l’historique des statuts de ${escapeHTML(item.number)}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg></button>
+          <button class="history-item-open" type="button" data-quote-id="${escapeHTML(item.id)}">
+            ${summary}
+          </button>
+        </div>
+        ${renderTrackingQuickActions(item, expanded)}
       </div>
-      <div class="tracking-detail" id="tracking-detail-${escapeHTML(item.id)}" ${expanded ? "" : "hidden"}>${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div>
+      <div class="tracking-detail" id="tracking-detail-${escapeHTML(item.id)}" ${expanded ? "" : "hidden"}>${renderTrackingSecondaryActions(item)}${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div>
     </article>`;
   }
 
@@ -3147,28 +3516,32 @@
       tab.tabIndex = selected ? 0 : -1;
     });
     $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "stats" ? "historyViewStatsTab" : activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
-    $("#historyWorkspaceDescription").textContent = activeHistoryView === "stats"
-      ? "Consultez les indicateurs mensuels de conversion issus des devis envoyés."
-      : activeHistoryView === "tracking"
-        ? "Gérez les statuts, les relances et la chronologie des devis commerciaux actifs."
-        : "Retrouvez tous les devis enregistrés et rouvrez celui que vous souhaitez consulter.";
     const counts = trackingCounts(items);
+    $("#historyWorkspaceDescription").textContent = activeHistoryView === "stats"
+      ? "Mesurez la conversion des devis envoyés, comprenez les pertes et exportez la période choisie."
+      : activeHistoryView === "tracking"
+        ? (counts.today ? `${plural(counts.today, "devis", "devis")} à traiter aujourd’hui.` : "Rien à faire aujourd’hui.")
+        : "Retrouvez un devis par client, numéro, téléphone ou e-mail, puis cliquez sur sa ligne pour l’ouvrir.";
     const dueBadge = $("#trackingDueCount");
-    dueBadge.textContent = String(counts["follow-up"] || "");
-    dueBadge.hidden = counts["follow-up"] === 0;
+    dueBadge.textContent = String(counts.today || "");
+    dueBadge.hidden = counts.today === 0;
     const countBadge = $("#historyQuoteCountBadge");
-    if (countBadge) countBadge.textContent = plural(items.length, "devis");
-    const compactOpt = $("#historyCompactOption");
-    if (compactOpt) compactOpt.checked = db.settings.historyCompactMode === true;
+    if (countBadge) countBadge.textContent = plural(items.length, "devis", "devis");
+    const cardsOpt = $("#historyCardsOption");
+    if (cardsOpt) cardsOpt.checked = trackingCardView();
     const filtersOpt = $("#historyShowFiltersOption");
     if (filtersOpt) filtersOpt.checked = db.settings.trackingShowFilters === true;
     const trackingOpt = $("#historyTrackingOption");
     if (trackingOpt) trackingOpt.checked = db.settings.quoteTrackingEnabled === true;
-    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
+    const detailedOpt = $("#historyDetailedTrackingOption");
+    if (detailedOpt) detailedOpt.checked = trackingDetailedView();
+    $("#historyLayer")?.classList.toggle("tracking-detailed", trackingDetailedView());
     filters.hidden = !enabled || activeHistoryView !== "tracking" || db.settings.trackingShowFilters !== true;
     historyTools.hidden = activeHistoryView === "stats";
     $("#historySearch").value = historyQuery;
-    $("#historySort").value = historySort;
+    const sortField = $(".history-sort");
+    if (sortField) sortField.hidden = !(trackingCardView() && (activeHistoryView === "history" || Boolean(historyQuery.trim())));
+    $("#historySort").value = ["updated", "date", "client", "amount"].includes(historySort) ? historySort : "date";
     if (!filters.hidden) {
       $$('[data-tracking-filter]', filters).forEach((button) => {
         const filter = button.dataset.trackingFilter;
@@ -3181,49 +3554,356 @@
     }
   }
 
+  const TRACKING_STATS_PERIOD_LABELS = { month: "Ce mois", "previous-month": "Mois dernier", quarter: "3 mois", year: "12 mois", all: "Depuis le début" };
+  const TRACKING_SIMPLE_STATS_PERIODS = ["month", "previous-month", "year"];
+
+  function renderTrackingStats(quotes) {
+    const detailed = trackingDetailedView();
+    const visiblePeriods = detailed ? TRACKING_STATS_PERIODS : TRACKING_STATS_PERIODS.filter((period) => TRACKING_SIMPLE_STATS_PERIODS.includes(period));
+    if (!visiblePeriods.includes(activeStatsPeriod)) activeStatsPeriod = "month";
+    const { startDate, endDate } = periodRange(activeStatsPeriod, todayISO());
+    const stats = summarizeConversion(quotes, { startDate, endDate, amountOf: quoteAmount });
+    const trend = monthlyConversion(quotes, { endDate: todayISO(), months: 6, amountOf: quoteAmount });
+    const percent = (value) => value === null ? "—" : new Intl.NumberFormat("fr-CH", { style: "percent", maximumFractionDigits: 0 }).format(value);
+    const median = stats.medianAcceptanceDays === null ? "—" : `${Math.round(stats.medianAcceptanceDays)} j`;
+    const monthLabel = (month) => new Intl.DateTimeFormat("fr-CH", { month: "long", year: "numeric" }).format(new Date(`${month}-15T12:00:00`));
+    const periodCopy = startDate ? `du ${formatDate(startDate)} au ${formatDate(endDate)}` : `jusqu’au ${formatDate(endDate)}`;
+    const periods = visiblePeriods.map((period) => `<button type="button" class="${period === activeStatsPeriod ? "active" : ""}" data-stats-period="${period}" aria-pressed="${period === activeStatsPeriod}">${TRACKING_STATS_PERIOD_LABELS[period] || period}</button>`).join("");
+    const lost = stats.refused + stats.expired;
+    const tile = (label, value, detail = "") => `<div class="tracking-stat"><span>${label}</span><strong>${value}</strong>${detail ? `<small>${detail}</small>` : ""}</div>`;
+    const essentialTiles = [
+      tile("Valeur acceptée", money(stats.acceptedValue)),
+      tile("En attente de réponse", String(stats.pending), stats.pending ? money(stats.pendingValue) : ""),
+      tile("Refusés ou expirés", String(lost), lost ? `${stats.refused} refusé${stats.refused > 1 ? "s" : ""} · ${stats.expired} expiré${stats.expired > 1 ? "s" : ""}` : "")
+    ];
+    const extraTiles = [
+      tile("Valeur envoyée", money(stats.sentValue)),
+      tile("Délai médian d’acceptation", median),
+      tile("Acceptés après relance", stats.converted ? `${stats.acceptedAfterFollowUp} / ${stats.converted}` : "—", "relances confirmées")
+    ];
+    const summary = stats.sent
+      ? `<div class="tracking-stats-hero"><strong>${percent(stats.conversionRate)}</strong><p>des devis envoyés ont été acceptés<small>${stats.converted} sur ${plural(stats.sent, "devis", "devis")} · ${periodCopy}</small></p></div>
+        ${stats.sent < 5 ? `<p class="tracking-stats-caution">${plural(stats.sent, "devis envoyé", "devis envoyés")} seulement sur cette période : le taux est à lire avec prudence.</p>` : ""}
+        <div class="tracking-stats-grid">${(detailed ? [extraTiles[0], ...essentialTiles, ...extraTiles.slice(1)] : essentialTiles).join("")}</div>`
+      : `<div class="tracking-stats-empty"><strong>Aucun devis envoyé ${periodCopy}</strong><p>Choisissez une période plus large ou marquez vos devis comme envoyés depuis l’onglet À faire.</p></div>`;
+    const maxReason = Math.max(1, ...stats.lossReasons.map((reason) => reason.count));
+    const reasons = stats.lossReasons.length
+      ? `<ul class="tracking-reasons">${stats.lossReasons.map((reason) => `<li title="${escapeHTML(reason.label)} : ${reason.count}"><span>${escapeHTML(reason.label)}</span><span class="tracking-meter" aria-hidden="true"><span style="width:${Math.round((reason.count / maxReason) * 100)}%"></span></span><b>${reason.count}</b></li>`).join("")}</ul>`
+      : `<p class="tracking-stats-note">Aucun devis refusé ou expiré sur cette période.</p>`;
+    const silentExpiry = stats.expiredWithoutFollowUp
+      ? `<p class="tracking-stats-alert">${plural(stats.expiredWithoutFollowUp, "devis expiré", "devis expirés")} sans aucune relance confirmée.</p>`
+      : "";
+    const trendRows = trend.map((row) => `<tr><th scope="row">${escapeHTML(monthLabel(row.month))}</th><td>${row.sent}</td><td>${row.converted}</td><td><span class="tracking-trend-rate"><span class="tracking-meter" aria-hidden="true"><span style="width:${Math.round((row.conversionRate || 0) * 100)}%"></span></span><b>${percent(row.conversionRate)}</b></span></td></tr>`).join("");
+    const analysis = `<div class="tracking-stats-columns">
+        <section class="tracking-stats-card" aria-labelledby="trackingTrendTitle"><h4 id="trackingTrendTitle">Évolution sur 6 mois</h4><table class="tracking-trend"><thead><tr><th scope="col">Mois d’envoi</th><th scope="col">Envoyés</th><th scope="col">Acceptés</th><th scope="col">Conversion</th></tr></thead><tbody>${trendRows}</tbody></table></section>
+        <section class="tracking-stats-card" aria-labelledby="trackingReasonsTitle"><h4 id="trackingReasonsTitle">Motifs de perte</h4>${reasons}${silentExpiry}</section>
+      </div>
+      <footer class="tracking-stats-footer"><p>Montants en CHF recalculés depuis chaque devis : il ne s’agit pas d’encaissements.</p><button class="button secondary" type="button" data-stats-export ${stats.sent ? "" : "disabled"}><svg aria-hidden="true"><use href="#icon-download"></use></svg>Exporter la période (CSV)</button></footer>`;
+    const more = detailed
+      ? analysis
+      : `<details class="tracking-stats-more" data-stats-more ${statsDetailsOpen ? "open" : ""}><summary>Plus de détails</summary><div class="tracking-stats-more-body">${stats.sent ? `<div class="tracking-stats-grid">${extraTiles.join("")}</div>` : ""}${analysis}</div></details>`;
+    return `<section class="tracking-stats-panel" aria-label="Statistiques de conversion">
+      <header class="tracking-stats-head"><div><h3>Conversion des devis envoyés</h3>${detailed ? "<p>Chaque chaîne de versions compte une seule fois, dans la période de son premier envoi.</p>" : ""}</div><div class="tracking-period" role="group" aria-label="Période analysée">${periods}</div></header>
+      ${summary}
+      ${more}
+    </section>`;
+  }
+
+  const TRACKING_SECTION_LIMIT = 5;
+  const HISTORY_COLUMNS = [
+    { key: "client", label: "Client" },
+    { key: "date", label: "Date" },
+    { key: "number", label: "N° devis" },
+    { key: "lines", label: "Soins", numeric: true },
+    { key: "amount", label: "Montant", numeric: true },
+    { key: "status", label: "Statut", tracking: true }
+  ];
+
+  function trackingCardView() {
+    return db.settings.historyCardView === true;
+  }
+
+  // « Tous les devis » : un tableau triable par colonne, le client en premier (c'est lui que l'on cherche).
+  function renderHistoryTable(items, trackingActive) {
+    const columns = HISTORY_COLUMNS.filter((column) => !column.tracking || trackingActive);
+    const head = columns.map((column) => {
+      const sorted = historySort === column.key;
+      const ascending = historySortDirection === "asc";
+      return `<th scope="col" class="${column.numeric ? "is-numeric" : ""}" aria-sort="${sorted ? (ascending ? "ascending" : "descending") : "none"}"><button class="history-sort-button" type="button" data-history-sort="${column.key}">${column.label}<span aria-hidden="true">${sorted ? (ascending ? "▲" : "▼") : ""}</span></button></th>`;
+    }).join("");
+    const rows = items.map((item) => {
+      const visual = trackingVisualStatus(item);
+      const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
+      const id = escapeHTML(item.id);
+      return `<tr class="history-row ${trackingActive ? `history-item--${visual.key}` : ""} ${item.id === quote.id ? "current" : ""}" data-quote-id="${id}">
+        <th scope="row" class="history-cell-client"><button class="history-row-open" type="button" data-quote-id="${id}">${escapeHTML(item.client?.name || "Client à compléter")}</button></th>
+        <td class="history-cell-date">${formatDate(item.date)}</td>
+        <td class="history-cell-number">${escapeHTML(item.number)}${escapeHTML(revision)}</td>
+        <td class="history-cell-lines is-numeric">${plural(item.lines?.length || 0, "soin")}</td>
+        <td class="history-cell-amount is-numeric">${money(quoteAmount(item))}</td>
+        ${trackingActive ? `<td class="history-cell-status"><span class="history-status history-status--commercial">${escapeHTML(visual.label)}</span></td>` : ""}
+      </tr>`;
+    }).join("");
+    const cols = columns.map((column) => `<col class="col-${column.key}">`).join("");
+    return `<table class="history-table"><caption class="visually-hidden">Tous les devis enregistrés, triables par colonne</caption><colgroup>${cols}</colgroup><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // « À faire » : une ligne par devis avec son échéance et ses actions ; le détail s'ouvre sous la ligne.
+  function renderTrackingTable(items) {
+    const detailed = trackingDetailedView();
+    const columns = detailed
+      ? ["Client", "N° devis", "Montant", "Échéance", "Statut", "Actions"]
+      : ["Client", "Montant", "Échéance", "Actions"];
+    const head = columns.map((label) => label === "Actions" ? `<th scope="col" class="tracking-cell-actions"><span class="visually-hidden">${label}</span></th>` : `<th scope="col" class="${label === "Montant" ? "is-numeric" : ""}">${label}</th>`).join("");
+    const rows = items.map((item) => {
+      const visual = trackingVisualStatus(item);
+      const progress = trackingProgressCopy(item);
+      const expanded = expandedTrackingQuotes.has(item.id);
+      const id = escapeHTML(item.id);
+      const revision = Number(item.revisionNumber) > 1 ? ` · V${Number(item.revisionNumber)}` : "";
+      const color = `history-item--${visual.key}`;
+      return `<tr class="tracking-row ${color} ${item.id === quote.id ? "current" : ""} ${expanded ? "is-expanded" : ""}" data-history-item="${id}">
+        <th scope="row" class="history-cell-client"><button class="history-row-open" type="button" data-quote-id="${id}">${escapeHTML(item.client?.name || item.number)}</button></th>
+        ${detailed ? `<td class="history-cell-number">${escapeHTML(item.number)}${escapeHTML(revision)}</td>` : ""}
+        <td class="history-cell-amount is-numeric">${money(quoteAmount(item))}</td>
+        <td class="tracking-cell-due"><span class="tracking-due ${progress.tone ? `tracking-due--${progress.tone}` : ""}">${escapeHTML(detailed ? progress.text : progress.short)}</span></td>
+        ${detailed ? `<td class="history-cell-status"><span class="history-status history-status--commercial">${escapeHTML(visual.label)}</span></td>` : ""}
+        <td class="tracking-cell-actions">${renderTrackingQuickActions(item, expanded)}</td>
+      </tr>
+      <tr class="tracking-detail-row ${color}" data-detail-for="${id}" ${expanded ? "" : "hidden"}><td colspan="${columns.length}"><div class="tracking-detail" id="tracking-detail-${id}">${renderTrackingSecondaryActions(item)}${renderTrackingTimeline(item)}${renderTrackingEditor(item)}</div></td></tr>`;
+    }).join("");
+    const cols = (detailed ? ["client", "number", "amount", "due", "status", "actions"] : ["client", "amount", "due", "actions"]).map((name) => `<col class="col-${name}">`).join("");
+    return `<table class="tracking-table"><colgroup>${cols}</colgroup><thead class="visually-hidden"><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderTrackingItems(items, cardView) {
+    return cardView
+      ? `<div class="tracking-today-items">${items.map((item) => renderHistoryItem(item, true, true)).join("")}</div>`
+      : renderTrackingTable(items);
+  }
+
+  // Une liste de travail reste courte : au-delà de cinq devis, le reste se déplie à la demande.
+  function renderTrackingSection(section, cardView, detailed) {
+    const showAll = expandedTrackingSections.has(section.key) || Boolean(historyQuery);
+    const visible = showAll ? section.items : section.items.slice(0, TRACKING_SECTION_LIMIT);
+    const hiddenCount = section.items.length - visible.length;
+    const more = hiddenCount > 0
+      ? `<button class="tracking-more-button" type="button" data-tracking-more="${section.key}">Afficher les ${hiddenCount} autres</button>`
+      : (expandedTrackingSections.has(section.key) && section.items.length > TRACKING_SECTION_LIMIT ? `<button class="tracking-more-button" type="button" data-tracking-more="${section.key}">Réduire la liste</button>` : "");
+    if (detailed) {
+      const total = section.items.reduce((sum, item) => sum + quoteAmount(item), 0);
+      return `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><span class="tracking-today-total">${money(total)}</span><strong>${section.items.length}</strong></header>${renderTrackingItems(visible, cardView)}${more}</section>`;
+    }
+    // Affichage simple : les devis en attente de réponse ne demandent rien aujourd'hui, ils restent repliés.
+    const collapsible = !section.actionable;
+    const open = !collapsible || waitingSectionOpen || Boolean(historyQuery);
+    const title = collapsible
+      ? `<button class="tracking-section-toggle" type="button" data-tracking-waiting-toggle aria-expanded="${open}" aria-controls="tracking-today-items-${section.key}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg><span id="tracking-today-${section.key}">${section.title}</span></button>`
+      : `<h3 id="tracking-today-${section.key}">${section.title}</h3>`;
+    return `<section class="tracking-today-section tracking-today-section--${section.key} tracking-today-section--simple" aria-labelledby="tracking-today-${section.key}"><header>${title}<strong>${section.items.length}</strong></header><div id="tracking-today-items-${section.key}" ${open ? "" : "hidden"}>${open ? renderTrackingItems(visible, cardView) + more : ""}</div></section>`;
+  }
+
   function renderHistory() {
     expireTrackedQuotes();
     const list = $("#historyList");
     const enabled = trackingEnabled();
+    const cardView = trackingCardView();
     let quotes = Object.values(db.quotes);
     renderTrackingNavigation(quotes);
     list.classList.toggle("tracking-stats", enabled && activeHistoryView === "stats");
     if (enabled && activeHistoryView === "stats") {
-      const startDate = `${todayISO().slice(0, 7)}-01`;
-      const stats = summarizeConversion(quotes, { startDate, endDate: todayISO(), amountOf: quoteAmount });
-      const percent = stats.conversionRate === null ? "—" : new Intl.NumberFormat("fr-CH", { style: "percent", maximumFractionDigits: 0 }).format(stats.conversionRate);
-      const median = stats.medianAcceptanceDays === null ? "—" : `${Math.round(stats.medianAcceptanceDays)} j`;
-      list.innerHTML = `<section class="tracking-stats-panel" aria-label="Statistiques du mois en cours"><header><h3>Ce mois</h3><p>Les devis sont regroupés par chaîne de versions et comptés selon leur date d’envoi.</p></header><div class="tracking-stats-grid"><div><strong>${percent}</strong><span>Conversion</span></div><div><strong>${stats.sent}</strong><span>Envoyés</span></div><div><strong>${stats.converted}</strong><span>Acceptés ou facturés</span></div><div><strong>${stats.pending}</strong><span>En attente</span></div><div><strong>${stats.refused + stats.expired}</strong><span>Refusés ou expirés</span></div><div><strong>${median}</strong><span>Délai médian</span></div><div><strong>${money(stats.sentValue)}</strong><span>Valeur envoyée</span></div><div><strong>${money(stats.acceptedValue)}</strong><span>Valeur acceptée</span></div></div></section>`;
+      list.classList.remove("tracking-today-queue", "history-list--table");
+      list.innerHTML = renderTrackingStats(quotes);
       return;
     }
     quotes = quotes.filter((item) => historySearchMatches(item));
-    list.classList.toggle("tracking-today-queue", enabled && activeHistoryView === "tracking" && activeTrackingFilter === "today");
-    if (enabled && activeHistoryView === "tracking") {
-      if (activeTrackingFilter === "today") {
-        const sections = trackingTodaySections(quotes).filter((section) => section.items.length);
-        if (!sections.length) {
-          list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>Aucune action de suivi aujourd’hui</strong><p>Les relances, devis acceptés, envois et brouillons à terminer apparaîtront ici.</p></div>`;
-          return;
-        }
-        list.innerHTML = sections.map((section) => `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><strong>${section.items.length}</strong></header><div class="tracking-today-items">${section.items.map((item) => renderHistoryItem(item, true, true, true)).join("")}</div></section>`).join("");
+    // Une recherche porte sur tous les devis : un ancien devis n'apparaît pas dans la liste « À faire ».
+    const searching = Boolean(historyQuery.trim());
+    const queueView = enabled && activeHistoryView === "tracking" && !searching;
+    const todayQueue = queueView && activeTrackingFilter === "today";
+    list.classList.toggle("tracking-today-queue", todayQueue);
+    list.classList.toggle("history-list--table", !cardView && !todayQueue);
+    if (todayQueue) {
+      const sections = trackingTodaySections(quotes).filter((section) => section.items.length);
+      if (!sections.length) {
+        list.innerHTML = `<div class="history-empty"><svg><use href="#icon-check"></use></svg><strong>Rien à faire pour le moment</strong><p>Les relances, factures à envoyer et devis prêts apparaîtront ici.</p></div>`;
         return;
       }
-      quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter));
-      if (activeTrackingFilter !== "today") quotes.sort((left, right) => {
+      const clear = sections.some((section) => section.actionable)
+        ? ""
+        : `<div class="tracking-today-clear" role="status"><svg aria-hidden="true"><use href="#icon-check"></use></svg><div><strong>Rien à faire aujourd’hui</strong><p>Les devis ci-dessous attendent une réponse : ils remonteront dans « À relancer » le jour prévu.</p></div></div>`;
+      const detailed = trackingDetailedView();
+      list.innerHTML = clear + sections.map((section) => renderTrackingSection(section, cardView, detailed)).join("");
+      return;
+    }
+    if (queueView) {
+      quotes = quotes.filter((item) => trackingFilterMatches(item, activeTrackingFilter)).sort((left, right) => {
         const leftDue = isFollowUpDue(left) ? left.tracking.nextFollowUpAt : "9999-12-31";
         const rightDue = isFollowUpDue(right) ? right.tracking.nextFollowUpAt : "9999-12-31";
         return leftDue.localeCompare(rightDue) || String(right.updatedAt).localeCompare(String(left.updatedAt));
       });
-    } else {
-      quotes = sortHistoryQuotes(quotes);
-    }
-    if (!quotes.length) {
-      const filtered = enabled && activeHistoryView === "tracking" && activeTrackingFilter !== "all";
-      list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>${filtered ? "Aucun devis dans ce statut" : "Aucun devis enregistré"}</strong><p>${filtered ? "Choisissez un autre filtre de suivi." : "Le bouton Enregistrer ajoutera le devis en cours à cet historique local."}</p></div>`;
+      if (!quotes.length) {
+        list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>${activeTrackingFilter === "all" ? "Aucun devis en cours" : "Aucun devis dans ce statut"}</strong><p>Choisissez un autre filtre de suivi.</p></div>`;
+        return;
+      }
+      list.innerHTML = renderTrackingItems(quotes, cardView);
       return;
     }
-    const trackingView = enabled && activeHistoryView === "tracking";
-    list.innerHTML = quotes.map((item) => renderHistoryItem(item, trackingView, enabled)).join("");
+    quotes = sortHistoryQuotes(quotes);
+    if (!quotes.length) {
+      list.innerHTML = `<div class="history-empty"><svg><use href="#icon-history"></use></svg><strong>${searching ? "Aucun devis trouvé" : "Aucun devis enregistré"}</strong><p>${searching ? "Essayez un autre nom, numéro, téléphone ou e-mail." : "Le bouton Enregistrer ajoutera le devis en cours à cet historique local."}</p></div>`;
+      return;
+    }
+    const note = searching && activeHistoryView === "tracking" ? `<p class="history-search-note">Résultats de la recherche dans tous les devis.</p>` : "";
+    list.innerHTML = note + (cardView ? quotes.map((item) => renderHistoryItem(item, false, enabled)).join("") : renderHistoryTable(quotes, enabled));
+  }
+
+  function trackedItemFrom(element) {
+    const id = element?.closest("[data-tracking-form]")?.dataset.trackingQuoteId || element?.closest("[data-history-item]")?.dataset.historyItem || element?.closest("[data-detail-for]")?.dataset.detailFor;
+    return id ? db.quotes[id] || null : null;
+  }
+
+  function afterTrackingChange(item) {
+    renderHistory();
+    if (item.id === quote.id) renderCheckout();
+  }
+
+  function restoreTrackedQuote(snapshot) {
+    const restored = clone(snapshot);
+    restored.updatedAt = new Date().toISOString();
+    if (!persistTrackedQuote(restored)) return;
+    afterTrackingChange(restored);
+    toast(`Action annulée · ${restored.number}`);
+  }
+
+  function runTrackingQuickAction(item, action) {
+    if (!item) return;
+    if (action === "refused") {
+      pendingRefusalQuoteId = item.id;
+      renderHistory();
+      $$("[data-tracking-refuse]", $("#historyList"))[0]?.focus();
+      return;
+    }
+    const before = clone(item);
+    const channel = trackingContactChannels.get(item.id) || "";
+    let changed = false;
+    let message = "";
+    let undoable = true;
+    if (action === "ready") {
+      if (!item.lines?.length) { toast("Ajoutez une prestation avant de marquer ce devis prêt.", "error"); return; }
+      changed = updateQuoteTracking(item, { status: "ready" });
+      message = `${item.number} prêt à envoyer`;
+    } else if (action === "sent") {
+      changed = updateQuoteTracking(item, { status: "sent", channel });
+      message = `${item.number} envoyé · relance le ${formatDate(item.tracking.nextFollowUpAt)}`;
+    } else if (action === "contact") {
+      changed = recordTrackingContact(item, { channel });
+      message = `Relance notée · prochaine le ${formatDate(item.tracking.nextFollowUpAt)}`;
+    } else if (action === "accepted") {
+      // Pas de boîte de confirmation : la notification permet d'annuler immédiatement une erreur de clic.
+      changed = updateQuoteTracking(item, { status: "accepted", channel });
+      message = `${item.number} accepté · facture à envoyer`;
+    } else if (action.startsWith("refused:")) {
+      changed = updateQuoteTracking(item, { status: "refused", channel, reason: action.slice(8) });
+      message = `${item.number} refusé${item.tracking.lossReason ? ` · ${lossReasonLabel(item.tracking.lossReason)}` : ""}`;
+    } else if (action === "invoiced") {
+      if (!window.confirm(`Confirmer que la facture du devis ${item.number} a été envoyée ?\nLe devis sortira de la file de suivi.`)) return;
+      changed = updateQuoteTracking(item, { status: "invoiced", note: "Facture envoyée (PDF non archivé dans BCDevis)" });
+      message = `${item.number} facturé · sorti du suivi`;
+      undoable = false;
+    }
+    if (!changed) { toast("Aucun changement de suivi"); return; }
+    if (!persistTrackedQuote(item)) return;
+    trackingContactChannels.delete(item.id);
+    pendingRefusalQuoteId = "";
+    afterTrackingChange(item);
+    toast(message, "success", undoable ? { actionLabel: "Annuler", onAction: () => restoreTrackedQuote(before), duration: 6000 } : {});
+  }
+
+  function followUpMessage(item) {
+    const name = String(item.client?.name || "").trim();
+    const sentDay = localDateOf(item.tracking?.sentAt);
+    const lines = [
+      `Bonjour${name ? ` ${name}` : ""},`,
+      "",
+      `Je me permets de revenir vers vous au sujet du devis ${item.number}${sentDay ? ` que nous vous avons transmis le ${formatDate(sentDay)}` : ""}.`,
+      "Avez-vous pu en prendre connaissance ? Nous restons volontiers à votre disposition pour toute question ou pour convenir d’un rendez-vous."
+    ];
+    if (item.validUntil && item.validUntil >= todayISO()) lines.push(`Ce devis reste valable jusqu’au ${formatDate(item.validUntil)}.`);
+    lines.push("", "Bien cordialement,", String(db.settings.companyName || "Clinique Bellecour").trim());
+    return lines.join("\n");
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      const field = document.createElement("textarea");
+      field.value = text;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.append(field);
+      field.select();
+      const copied = document.execCommand("copy");
+      field.remove();
+      return copied;
+    }
+  }
+
+  async function contactTrackedClient(item, channel) {
+    if (!item) return;
+    const phone = String(item.client?.phone || "").trim();
+    let notice = "";
+    try {
+      if (channel === "whatsapp") {
+        const number = window.BCDevisContacts.whatsAppNumber(phone);
+        const message = followUpMessage(item);
+        if (typeof window.bcdevisDesktop?.prepareWhatsAppShare === "function") await window.bcdevisDesktop.prepareWhatsAppShare({ phone: number, text: message });
+        else await openExternalUrl(`https://wa.me/${number}?text=${encodeURIComponent(message)}`);
+        trackingContactChannels.set(item.id, "WhatsApp");
+        notice = "WhatsApp ouvert avec un message de relance";
+      } else if (channel === "phone") {
+        if (window.bcdevisDesktop) {
+          if (!(await copyText(phone))) throw new Error("Copie impossible");
+          notice = `Numéro copié : ${phone}`;
+        } else {
+          const link = document.createElement("a");
+          link.href = `tel:${phone.replace(/[^\d+]/g, "")}`;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          notice = `Appel de ${phone}`;
+        }
+        trackingContactChannels.set(item.id, "Téléphone");
+      } else if (channel === "copy") {
+        if (!(await copyText(followUpMessage(item)))) throw new Error("Copie impossible");
+        const email = String(item.client?.email || "").trim();
+        if (email) trackingContactChannels.set(item.id, "E-mail");
+        notice = email ? `Message de relance copié · collez-le dans un e-mail à ${email}` : "Message de relance copié";
+      } else {
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast("Le contact n’a pas pu être préparé.", "error");
+      return;
+    }
+    renderHistory();
+    toast(`${notice} · confirmez ensuite avec « Relance faite ».`, "success", { duration: 6000 });
+  }
+
+  function exportTrackingStatsCsv() {
+    const { startDate, endDate } = periodRange(activeStatsPeriod, todayISO());
+    const csv = exportConversionCSV(Object.values(db.quotes), {
+      startDate,
+      endDate,
+      amountOf: quoteAmount,
+      statusLabel: (status) => TRACKING_STATUS_META[status]?.label || status
+    });
+    downloadText(`suivi-devis-${startDate || "debut"}-au-${endDate}.csv`, csv, "text/csv;charset=utf-8");
+    toast("Export nominatif : il contient les noms et coordonnées des clients, à conserver en lieu sûr.", "success", { duration: 6000 });
   }
 
   function loadHistoryQuote(id) {
@@ -3747,6 +4427,10 @@
     if (form.elements.trackingRemindersOnStartup) form.elements.trackingRemindersOnStartup.checked = db.settings.trackingRemindersOnStartup !== false;
     if (form.elements.trackingShowFilters) form.elements.trackingShowFilters.checked = db.settings.trackingShowFilters === true;
     if (form.elements.centralUniqueQuoteNumbers) form.elements.centralUniqueQuoteNumbers.checked = db.settings.centralUniqueQuoteNumbers === true;
+    if (form.elements.eurEnabled) form.elements.eurEnabled.checked = db.settings.eurEnabled === true;
+    if (form.elements.eurAutoUpdate) form.elements.eurAutoUpdate.checked = db.settings.eurAutoUpdate !== false;
+    if (form.elements.eurRate) form.elements.eurRate.value = Number(db.settings.eurRate) > 0 ? String(db.settings.eurRate) : "";
+    if (form.elements.eurCommission) form.elements.eurCommission.value = String(db.settings.eurCommission ?? CurrencyCore.DEFAULT_COMMISSION);
     if (form.elements.launchAtLogin) {
       form.elements.launchAtLogin.checked = db.settings.launchAtLogin === true;
       form.elements.launchAtLogin.disabled = true;
@@ -3761,11 +4445,89 @@
     syncThemePicker(currentTheme());
     syncFontPicker(currentFont());
     syncTrackingSettingsState();
+    syncEurSettingsState();
     renderCentralizationState();
     refreshSiteMigrationPanel();
     if ($("#centralPassword")) $("#centralPassword").value = "";
     void refreshLaunchAtLoginSetting();
     void refreshPdfDirectorySetting();
+  }
+
+  // --- Euro : réglages, aperçu et actualisation du taux -------------------------------------------------------
+  function syncEurSettingsState() {
+    const form = $("#settingsForm");
+    const details = $("#eurSettingsDetails");
+    if (!form || !details) return;
+    const enabled = form.elements.eurEnabled?.checked === true;
+    details.hidden = !enabled;
+    $$("input, button", details).forEach((control) => { if (control.type !== "hidden") control.disabled = !enabled; });
+    renderEurSettingsStatus();
+  }
+
+  function renderEurSettingsStatus() {
+    const form = $("#settingsForm");
+    const status = $("#eurRateStatus");
+    const preview = $("#eurPreview");
+    if (!form || !status || !preview) return;
+    const rate = CurrencyCore.parseRate(form.elements.eurRate.value);
+    const commission = CurrencyCore.parseCommission(form.elements.eurCommission.value);
+    const date = String(form.elements.eurRateDate.value || "");
+    const source = form.elements.eurRateSource.value === "ecb" ? "BCE" : "saisi à la main";
+    const today = todayISO();
+    const advice = CurrencyCore.commissionAdvice(form.elements.eurCommission.value);
+    const age = CurrencyCore.rateAgeDays(date, today);
+    const stale = CurrencyCore.isStale(date, today);
+    status.dataset.tone = stale || rate === null ? "warn" : "";
+    status.textContent = rate === null
+      ? "Indiquez le nombre de francs suisses pour 1 € (entre 0.5 et 2)."
+      : date ? `Taux du ${formatDate(date)} (${source})${stale ? ` · ancien de ${age} jours : actualisez-le` : ""}` : `Taux ${source}`;
+    const messages = [];
+    if (rate !== null && commission !== null) {
+      const fx = { code: "EUR", rate, commission, date: date || today };
+      messages.push(`Exemple : 100 CHF = ${CurrencyCore.convertFromChf(100, fx).toFixed(2)} € · taux appliqué au client : 1 € = ${CurrencyCore.effectiveRate(fx).toFixed(4)} CHF.`);
+    }
+    if (advice === "invalid") messages.push("La commission doit être comprise entre 0 et 10 %.");
+    if (advice === "low") messages.push("Sous 2 %, vous risquez de perdre de l’argent si l’euro baisse avant d’être rechangé en francs.");
+    if (advice === "high") messages.push("Au-delà de 3 %, le prix en euros devient sensiblement plus élevé pour le client.");
+    preview.textContent = messages.join(" ");
+    preview.dataset.tone = advice === "ok" ? "" : "warn";
+  }
+
+  // Un taux saisi à la main n'est plus remplacé par la mise à jour automatique.
+  function markEurRateManual() {
+    const form = $("#settingsForm");
+    form.elements.eurRateDate.value = todayISO();
+    form.elements.eurRateSource.value = "manual";
+    form.elements.eurAutoUpdate.checked = false;
+  }
+
+  let eurRefreshInFlight = false;
+  async function refreshEurRate({ silent = false } = {}) {
+    if (eurRefreshInFlight) return null;
+    eurRefreshInFlight = true;
+    try {
+      return await CurrencyCore.fetchEurChfRate(window.fetch.bind(window), { signal: AbortSignal.timeout(10000) });
+    } catch (error) {
+      if (!silent) throw error;
+      console.warn("Actualisation du taux de l’euro impossible", error);
+      return null;
+    } finally {
+      eurRefreshInFlight = false;
+    }
+  }
+
+  async function autoRefreshEurRate() {
+    if (db.settings.eurEnabled !== true || db.settings.eurAutoUpdate === false) return;
+    if (db.settings.eurRateDate === todayISO() || navigator.onLine === false) return;
+    const result = await refreshEurRate({ silent: true });
+    if (!result) return;
+    const previous = Number(db.settings.eurRate) || 0;
+    db.settings.eurRate = result.rate;
+    db.settings.eurRateDate = result.date || todayISO();
+    db.settings.eurRateSource = "ecb";
+    saveLocal(false);
+    renderCurrencySwitch();
+    if (previous > 0 && Math.abs(result.rate / previous - 1) >= 0.01) toast(`Taux de l’euro mis à jour : 1 € = ${result.rate.toFixed(4)} CHF`);
   }
 
   function syncTrackingSettingsState() {
@@ -3905,7 +4667,7 @@
     const adjustmentRows = 2
       + (totals.totalDiscount > 0 ? 1 : 0)
       + (taxInformationEnabled(quote) ? 2 : 0);
-    const longLineCount = quote.lines.filter((line) => String(pdfEnglish() ? printServiceName(line) : line.name || "").length > 44).length;
+    const longLineCount = quote.lines.filter((line) => String(printServiceName(line) || "").length > 44).length;
     const singlePageEligible = quote.lines.length <= 5
       && longLineCount <= 2
       && conditionsLength <= 620
@@ -3918,127 +4680,120 @@
     return "print-layout-extended";
   }
 
-  function pdfEnglish() {
-    return db.settings.pdfLanguage === "en";
+  function pdfLanguage() {
+    return PdfI18n.normalizeLanguage(db.settings.pdfLanguage);
+  }
+
+  function pdfStrings() {
+    return PdfI18n.strings(pdfLanguage());
   }
 
   function printOfferLabel(line) {
-    if (pdfEnglish()) {
-      if (line.offerType === "pack") return `Pack ${line.quantity} + ${line.freeQuantity} free`;
-      if (line.offerType === "student") return "Student rate";
-      return "Single session";
-    }
-    return offerLabel(line);
+    const text = pdfStrings();
+    if (line.offerType === "pack") return text.packOffer(line.quantity, line.freeQuantity);
+    if (line.offerType === "student") return text.studentRate;
+    return text.singleSession;
   }
 
   function printCategoryName(category) {
-    if (!pdfEnglish()) return category.name;
-    const englishNames = {
-      13: "Laser hair removal",
-      32: "Microneedling · Mesotherapy · Peels",
-      7: "Initial consultation",
-      16: "Injection treatments",
-      17: "Laser treatments",
-      35: "Combined areas",
-      15: "Electrolysis hair removal",
-      9: "Aesthetic medicine with Dr. Poiraud",
-      20: "Face",
-      8: "Permanent hair removal",
-      21: "Chest and abdomen",
-      22: "Back",
-      23: "Arms",
-      24: "Bikini (intimate area)",
-      25: "Legs",
-      36: "Students"
-    };
-    return englishNames[category.id] || category.name;
+    return PdfI18n.categoryName(category.id, category.name, pdfLanguage());
   }
 
   function printServiceName(line) {
     const name = String(line.name || "").trim();
-    if (!pdfEnglish() || !name) return line.name;
-    const englishNames = window.QUOTE_SERVICE_NAMES_EN || {};
-    const translated = englishNames[line.serviceId];
-    if (!translated) return line.name;
+    const language = pdfLanguage();
+    if (language === "fr" || !name) return line.name;
     // Un nom renommé manuellement ou un libellé personnalisé reste tel quel.
     const base = (window.QUOTE_SERVICES || []).find((item) => String(item.id) === String(line.serviceId));
-    if (base && base.name !== name) return line.name;
-    return translated;
+    if (!base || base.name !== name) return line.name;
+    return PdfI18n.serviceName(line.serviceId, line.name, language, window.QUOTE_SERVICE_NAMES_EN || {});
   }
 
   function pdfMoney(value) {
-    const amount = Number(value) || 0;
-    if (!pdfEnglish()) return money(amount);
-    return new Intl.NumberFormat("en-GB", {
-      style: "currency", currency: "CHF", minimumFractionDigits: 2, maximumFractionDigits: 2
-    }).format(amount);
+    const language = pdfLanguage();
+    const fx = quoteFx();
+    if (fx) return PdfI18n.formatMoney(CurrencyCore.convertFromChf(value, fx), language, "EUR");
+    return language === "fr" ? money(value) : PdfI18n.formatMoney(value, language);
+  }
+
+  // Une mensualité en euros se calcule sur le total déjà converti, pour que les échéances restent cohérentes avec lui.
+  function pdfInstallment(totalChf, month) {
+    const fx = quoteFx();
+    if (!fx) return pdfMoney(totalChf / month);
+    return PdfI18n.formatMoney(CurrencyCore.convertFromChf(totalChf, fx) / month, pdfLanguage(), "EUR");
+  }
+
+  // Une mention restée telle que livrée est traduite ; une mention personnalisée reste celle saisie.
+  function pdfDefaultText(kind, source, defaults) {
+    return defaults.includes(source) ? PdfI18n.defaultText(kind, pdfLanguage()) || source : source;
   }
 
   function renderPrint() {
     const totals = calculateQuote(quote);
     const taxEnabled = taxInformationEnabled(quote);
     const settings = db.settings;
-    const en = pdfEnglish();
+    const language = pdfLanguage();
+    const text = PdfI18n.strings(language);
+    const fx = quoteFx();
     const client = quote.client;
     const months = installmentMonths(totals.total);
     const contact = [settings.companyPhone, settings.companyEmail].filter(Boolean).join(" · ");
     const clientContact = [client.phone, client.email].filter(Boolean).join(" · ");
     const clientAddressParts = [client.address, [client.postalCode, client.city].filter(Boolean).join(" "), client.country].filter(Boolean).map(escapeHTML);
     const rows = quote.lines.map((line) => {
-      const quantityLabel = line.offerType === "pack"
-        ? (en ? `${line.quantity} paid + ${line.freeQuantity} free` : `${line.quantity} payées + ${line.freeQuantity} offerte${line.freeQuantity === 1 ? "" : "s"}`)
-        : String(line.quantity);
+      const quantityLabel = line.offerType === "pack" ? text.packQuantity(line.quantity, line.freeQuantity) : String(line.quantity);
       const unitPrice = line.offerType === "student" ? Number(line.basePrice ?? line.price) || 0 : Number(line.price) || 0;
       const lineDiscountAmount = customLineDiscount(line, totals.studentRate);
       const discountMeta = lineDiscountAmount > 0
-        ? ` · ${en ? "Discount" : "Rabais"} ${line.customDiscount.type === "percent" ? `${Number(line.customDiscount.value).toLocaleString(en ? "en-GB" : "fr-CH", { maximumFractionDigits: 2 })} %` : ""}${line.customDiscount.type === "percent" ? " " : ""}(− ${pdfMoney(lineDiscountAmount)})`
+        ? ` · ${text.discount} ${line.customDiscount.type === "percent" ? `${PdfI18n.formatNumber(line.customDiscount.value, language, { maximumFractionDigits: 2 })} %` : ""}${line.customDiscount.type === "percent" ? " " : ""}(− ${pdfMoney(lineDiscountAmount)})`
         : "";
       const meta = `${escapeHTML(printOfferLabel(line))} · ${escapeHTML(printCategoryName(categoryFor(line.categoryId)))}${discountMeta}`;
-      return `<tr><td><span class="print-item-name">${escapeHTML(printServiceName(line))}</span><span class="print-item-meta">${meta}</span></td><td>${quantityLabel}</td><td>${pdfMoney(unitPrice)}</td><td>${pdfMoney(referenceLineTotal(line))}</td></tr>`;
+      return `<tr><td><span class="print-item-name">${escapeHTML(printServiceName(line))}</span><span class="print-item-meta">${meta}</span></td><td>${escapeHTML(quantityLabel)}</td><td>${pdfMoney(unitPrice)}</td><td>${pdfMoney(referenceLineTotal(line))}</td></tr>`;
     }).join("");
     const studentConditionsSource = quote.lines.some((line) => line.offerType === "student") ? String(settings.studentConditions || "").trim() : "";
-    const studentConditions = en && studentConditionsSource === DEFAULT_STUDENT_CONDITIONS ? DEFAULT_STUDENT_CONDITIONS_EN : studentConditionsSource;
-    const conditionsSource = String(quote.conditions || settings.conditions);
-    const conditions = en && (conditionsSource === DEFAULT_PAYMENT_CONDITIONS || conditionsSource === LEGACY_DEFAULT_PAYMENT_CONDITIONS) ? DEFAULT_PAYMENT_CONDITIONS_EN : conditionsSource;
-    const footerNoteSource = String(settings.footerNote || "").trim();
-    const footerNote = en && footerNoteSource === DEFAULT_FOOTER_NOTE ? DEFAULT_FOOTER_NOTE_EN : footerNoteSource;
+    const studentConditions = pdfDefaultText("student", studentConditionsSource, [DEFAULT_STUDENT_CONDITIONS]);
+    const conditions = pdfDefaultText("payment", String(quote.conditions || settings.conditions), [DEFAULT_PAYMENT_CONDITIONS, LEGACY_DEFAULT_PAYMENT_CONDITIONS]);
+    const footerNote = pdfDefaultText("footer", String(settings.footerNote || "").trim(), [DEFAULT_FOOTER_NOTE]);
     const customLogoSource = safeLogoDataUrl(settings.pdfLogoDataUrl) || safeLogoDataUrl(settings.headerLogoDataUrl);
     const logoSource = customLogoSource || DEFAULT_LOGO_PATH;
     const logoClass = customLogoSource ? "print-logo print-logo-custom" : "print-logo print-logo-official";
-    const brandCopy = customLogoSource ? `<div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || (en ? "Establishment" : "Établissement"))}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div>` : "";
+    const brandCopy = customLogoSource ? `<div class="print-brand-copy"><div class="print-company-kicker">${escapeHTML(settings.companySubtitle || text.establishment)}</div><div class="print-company-name">${escapeHTML(settings.companyName)}</div></div>` : "";
     const signatureBlock = settings.showSignatures !== false
-      ? `<div class="print-signature"><div><span>${en ? "Date and place" : "Date et lieu"}</span></div><div><span>${en ? "Client signature and “Approved” mention" : "Signature du client et mention « Bon pour accord »"}</span></div></div>`
+      ? `<div class="print-signature"><div><span>${text.dateAndPlace}</span></div><div><span>${text.signature}</span></div></div>`
       : "";
-    const totalLabel = taxEnabled ? (en ? "Total to pay incl. VAT" : "Total à payer TTC") : (en ? "Total to pay" : "Total à payer");
+    const totalLabel = taxEnabled ? text.totalToPayInclVat : text.totalToPay;
     const printRoot = $("#printQuote");
     const layoutClass = printLayoutClass(totals, months, studentConditions);
     printRoot.className = `print-quote ${layoutClass}`;
     printRoot.dataset.printLayout = layoutClass.replace("print-layout-", "");
+    // La langue guide la césure et les guillemets ; l'écriture choisit une police qui contient le cyrillique.
+    printRoot.lang = PdfI18n.languageInfo(language).locale;
+    printRoot.dataset.pdfScript = PdfI18n.usesCyrillic(language) ? "cyrillic" : "latin";
     printRoot.innerHTML = `
       <header class="print-header">
         <div class="print-brand"><img class="${logoClass}" src="${escapeHTML(logoSource)}" alt="">${brandCopy}</div>
-        <div class="print-company-lines"><span class="print-contact-label">${en ? "Contact details" : "Coordonnées"}</span>${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>${en ? "UID" : "IDE"} : ${escapeHTML(settings.companyUid)}` : ""}</div>
+        <div class="print-company-lines"><span class="print-contact-label">${text.contactLabel}</span>${escapeHTML(settings.companyAddress)}<br>${escapeHTML(contact)}${settings.companyUid ? `<br>${text.uidLabel} : ${escapeHTML(settings.companyUid)}` : ""}</div>
       </header>
-      <section class="print-hero"><div><h1>${en ? "QUOTE" : "DEVIS"}</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
+      <section class="print-hero"><div><h1>${text.title}</h1></div><div class="print-document-meta"><strong>${escapeHTML(quote.number)}</strong></div></section>
       <div class="print-overview">
-        <div class="print-card print-client-card"><div class="print-label">${en ? "Client" : "Destinataire"}</div><div class="print-client-name">${escapeHTML(client.name || (en ? "Client not specified" : "Destinataire non renseigné"))}</div><div class="print-muted">${client.company ? `${escapeHTML(client.company)}<br>` : ""}${escapeHTML(clientContact || (en ? "Contact details not provided" : "Coordonnées non renseignées"))}${clientAddressParts.length ? `<br>${clientAddressParts.join("<br>")}` : ""}</div></div>
-        <div class="print-card"><div class="print-label">${en ? "References" : "Références"}</div><div class="print-reference-grid"><span>${en ? "Quote date" : "Date du devis"}</span><span>${formatDate(quote.date)}</span><span>${en ? "Valid until" : "Valable jusqu’au"}</span><span>${formatDate(quote.validUntil)}</span><span>${en ? "Currency" : "Devise"}</span><span>CHF</span></div></div>
+        <div class="print-card print-client-card"><div class="print-label">${text.clientLabel}</div><div class="print-client-name">${escapeHTML(client.name || text.clientMissing)}</div><div class="print-muted">${client.company ? `${escapeHTML(client.company)}<br>` : ""}${escapeHTML(clientContact || text.contactMissing)}${clientAddressParts.length ? `<br>${clientAddressParts.join("<br>")}` : ""}</div></div>
+        <div class="print-card"><div class="print-label">${text.references}</div><div class="print-reference-grid"><span>${text.quoteDate}</span><span>${formatDate(quote.date)}</span><span>${text.validUntil}</span><span>${formatDate(quote.validUntil)}</span><span>${text.currency}</span><span>${fx ? "EUR" : "CHF"}</span></div></div>
       </div>
       <section class="print-services">
-        <div class="print-section-heading"><div><strong>${en ? "Treatments" : "Soins"}</strong></div></div>
-        <table class="print-table"><thead><tr><th>${en ? "Treatment" : "Soin"}</th><th>${en ? "Quantity" : "Quantité"}</th><th>${en ? "Unit price" : "Prix unitaire"}</th><th>${en ? "Total" : "Total"}</th></tr></thead><tbody>${rows}</tbody></table>
+        <div class="print-section-heading"><div><strong>${text.treatments}</strong></div></div>
+        <table class="print-table"><thead><tr><th>${text.thTreatment}</th><th>${text.thQuantity}</th><th>${text.thUnitPrice}</th><th>${text.thTotal}</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
-        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${en ? "Total before offers" : "Total avant offres"}</td><td>${pdfMoney(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${en ? "Total discount" : "Rabais total"}</td><td>− ${pdfMoney(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${en ? "Net excl. VAT" : "Net HT"}</td><td>${pdfMoney(totals.net)}</td></tr><tr><td>${en ? "VAT" : "TVA"} ${totals.rate} %${quote.tax.mode === "included" ? (en ? " included" : " incluse") : ""}</td><td>${pdfMoney(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${pdfMoney(totals.total)}</td></tr></table></div>
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${text.totalBeforeOffers}</td><td>${pdfMoney(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${text.totalDiscount}</td><td>− ${pdfMoney(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${text.netExclVat}</td><td>${pdfMoney(totals.net)}</td></tr><tr><td>${text.vat} ${totals.rate} %${quote.tax.mode === "included" ? text.vatIncluded : ""}</td><td>${pdfMoney(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${pdfMoney(totals.total)}</td></tr></table>${fx ? `<p class="print-fx-note">${escapeHTML(text.fxNote(language === "fr" ? CurrencyCore.effectiveRate(fx).toFixed(4) : PdfI18n.formatNumber(CurrencyCore.effectiveRate(fx), language, { minimumFractionDigits: 4, maximumFractionDigits: 4 }), formatDate(fx.date), PdfI18n.formatMoney(totals.total, language)))}</p>` : ""}</div>
         <section class="print-followup">
-          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${en ? "Payment terms" : "Modalités de paiement"}</strong></div></div><p class="print-installment-intro">${en ? "The installments shown below are indicative. Any installment plan is subject to prior acceptance by the financial partner." : "Les mensualités présentées ci-dessous sont indicatives. Toute demande d’échelonnement est soumise à l’acceptation préalable du partenaire financier."}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${en ? "months" : "mois"}</b><span>${pdfMoney(totals.total / month)}</span><small>${en ? "indicative installment" : "mensualité indicative"}</small></div>`).join("")}</div>` : ""}
+          ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${text.paymentTerms}</strong></div></div><p class="print-installment-intro">${text.installmentIntro}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${text.months(month)}</b><span>${pdfInstallment(totals.total, month)}</span><small>${text.indicativeInstallment}</small></div>`).join("")}</div>` : ""}
           <div class="print-legal-block">
-            <div class="print-section-heading print-legal-heading"><div><strong>${en ? "Terms and acceptance" : "Conditions et acceptation"}</strong></div></div>
-            <div class="print-conditions print-conditions-single"><div><strong>${en ? "Payment conditions" : "Conditions de règlement"}</strong>${escapeHTML(conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>${en ? "Student rate conditions" : "Conditions du tarif étudiant"}</strong>${escapeHTML(studentConditions)}</div>` : ""}${footerNote ? `<div class="print-legal-note">${escapeHTML(footerNote)}</div>` : ""}</div></div>
+            <div class="print-section-heading print-legal-heading"><div><strong>${text.termsAndAcceptance}</strong></div></div>
+            <div class="print-conditions print-conditions-single"><div><strong>${text.paymentConditions}</strong>${escapeHTML(conditions)}${studentConditions ? `<div class="print-student-conditions"><strong>${text.studentConditionsTitle}</strong>${escapeHTML(studentConditions)}</div>` : ""}${footerNote ? `<div class="print-legal-note">${escapeHTML(footerNote)}</div>` : ""}</div></div>
             ${signatureBlock}
           </div>
         </section>
-        <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>${en ? "Valid until" : "Valable jusqu’au"} ${formatDate(quote.validUntil)}</span></footer>
+        <footer class="print-footer"><span>${escapeHTML(settings.companyName)} · ${escapeHTML(quote.number)}</span><span>${text.validUntil} ${formatDate(quote.validUntil)}</span></footer>
       </div>`;
   }
 
@@ -4046,10 +4801,23 @@
     if (!quote.lines.length) { toast("Ajoutez un soin avant l’impression.", "error"); return; }
     saveQuote();
     renderPrint();
-    window.setTimeout(() => window.print(), 80);
+    void ensurePdfFonts().then(() => window.setTimeout(() => window.print(), 80));
+  }
+
+  // Les polices cyrilliques ne se chargent qu'à la demande : on les attend avant d'imprimer ou de créer le PDF,
+  // sinon le russe et l'ukrainien sortiraient dans la police de secours du système.
+  async function ensurePdfFonts() {
+    if (!PdfI18n.usesCyrillic(pdfLanguage()) || typeof document.fonts?.load !== "function") return;
+    const family = document.documentElement.dataset.font === "roboto-slab" ? "Roboto Slab" : "Roboto";
+    try {
+      await Promise.all([400, 600, 800].map((weight) => document.fonts.load(`${weight} 16px "${family}"`, "ЖжЇїЄєҐґЁё")));
+    } catch (_) {
+      // Le PDF reste lisible avec la police de secours du système.
+    }
   }
 
   async function waitForPdfLayout() {
+    await ensurePdfFonts();
     if (document.fonts?.ready) await document.fonts.ready;
     const images = $$("img", $("#printQuote"));
     await Promise.all(images.map(async (image) => {
@@ -4106,7 +4874,7 @@
     const lines = quote.lines.map((line) => {
       const name = String(line.name || "Soin").trim().replace(/[\s—–-]+$/u, "").trim() || "Soin";
       const emailLineDiscount = customLineDiscount(line, calculateQuote(quote).studentRate);
-      const lineDiscountSuffix = emailLineDiscount > 0 ? ` (rabais ${money(emailLineDiscount)})` : "";
+      const lineDiscountSuffix = emailLineDiscount > 0 ? ` (rabais ${displayMoney(emailLineDiscount)})` : "";
       const quantity = Math.max(0, Number(line.quantity) || 0);
       const unitPrice = line.offerType === "student"
         ? Math.max(0, Number(line.basePrice ?? line.price) || 0)
@@ -4115,16 +4883,18 @@
         const paid = `${quantity} payée${quantity > 1 ? "s" : ""}`;
         const offeredQuantity = Math.max(0, Number(line.freeQuantity) || 0);
         const offered = offeredQuantity ? ` et ${offeredQuantity} offerte${offeredQuantity > 1 ? "s" : ""}` : "";
-        return `• ${name} : ${paid}${offered}, ${money(unitPrice)} par séance, soit ${money(referenceLineTotal(line))} avant offre${lineDiscountSuffix}`;
+        return `• ${name} : ${paid}${offered}, ${displayMoney(unitPrice)} par séance, soit ${displayMoney(referenceLineTotal(line))} avant offre${lineDiscountSuffix}`;
       }
-      return `• ${name} : ${quantity} × ${money(unitPrice)}, soit ${money(referenceLineTotal(line))}${lineDiscountSuffix}`;
+      return `• ${name} : ${quantity} × ${displayMoney(unitPrice)}, soit ${displayMoney(referenceLineTotal(line))}${lineDiscountSuffix}`;
     });
-    const summary = [`Total avant offres : ${money(totals.subtotal)}`];
-    if (totals.totalDiscount > 0) summary.push(`Rabais total : − ${money(totals.totalDiscount)}`);
+    const summary = [`Total avant offres : ${displayMoney(totals.subtotal)}`];
+    if (totals.totalDiscount > 0) summary.push(`Rabais total : − ${displayMoney(totals.totalDiscount)}`);
     if (taxInformationEnabled(quote) && totals.tax > 0) {
-      summary.push(`TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""} : ${money(totals.tax)}`);
+      summary.push(`TVA ${totals.rate} %${quote.tax.mode === "included" ? " incluse" : ""} : ${displayMoney(totals.tax)}`);
     }
-    summary.push(`Total à payer : ${money(totals.total)}`);
+    summary.push(`Total à payer : ${displayMoney(totals.total)}`);
+    const messageFx = quoteFx();
+    if (messageFx) summary.push(`Montants en euros au taux de 1 € = ${CurrencyCore.effectiveRate(messageFx).toFixed(4)} CHF (frais de change inclus). Total de référence : ${money(totals.total)}.`);
     const message = [
       `Bonjour${clientName ? ` ${clientName}` : ""},`,
       "",
@@ -4187,16 +4957,31 @@
     try {
       const result = await prepareTransmissionPdf();
       if (result?.saved && typeof window.bcdevisDesktop?.prepareWhatsAppShare === "function") {
+        // « Marquer comme envoyé ? » est demandé avant d'ouvrir WhatsApp : posée après, la question reprenait
+        // le focus à WhatsApp et le Ctrl+V suivant partait dans BCDevis au lieu de la conversation.
+        promptMarkCurrentQuoteAsSent("WhatsApp");
         // Application de bureau : conversation ouverte sur le bon numéro, PDF déjà dans le presse-papiers.
         const whatsapp = await window.bcdevisDesktop.prepareWhatsAppShare({ phone, text: message, filePath: result.filePath });
-        toast(whatsapp.clipboard
-          ? `WhatsApp ${whatsapp.client === "desktop" ? "" : "Web "}ouvert${phone ? " sur le numéro du client" : ""} — collez le PDF avec Ctrl+V, puis envoyez.`
-          : `WhatsApp ouvert — PDF créé dans ${result.directory || "Téléchargements"} : glissez-le dans la conversation.`);
+        const target = whatsapp.client === "desktop"
+          ? (whatsapp.appName || "WhatsApp")
+          : `WhatsApp Web${whatsapp.appName ? ` (${whatsapp.appName})` : ""}`;
+        const showPdf = () => window.bcdevisDesktop.showPdfInFolder?.(result.filePath).catch((error) => {
+          console.error(error);
+          toast(`Le PDF se trouve dans ${result.directory || "Téléchargements"}.`, "error");
+        });
+        if (whatsapp.clipboard) {
+          toast(`${target} ouvert${phone ? " sur le numéro du client" : ""} — cliquez dans la conversation, puis Ctrl+V pour coller le PDF. Rien ne se colle ? Affichez le PDF et glissez-le dans la conversation.`, "success", { actionLabel: "Afficher le PDF", onAction: showPdf, duration: 15000 });
+        } else {
+          // Copie impossible (sécurité du poste, presse-papiers indisponible) : le glisser-déposer fonctionne partout.
+          showPdf();
+          toast(`${target} ouvert — glissez le PDF affiché dans l’Explorateur vers la conversation.`, "success", { duration: 12000 });
+        }
       } else {
+        // Navigateur : l'onglet WhatsApp doit s'ouvrir tout de suite après le clic, sinon il serait bloqué.
         await openExternalUrl(url);
         toast(result?.saved ? `PDF créé dans ${result.directory || "Téléchargements"} — joignez-le dans WhatsApp.` : "WhatsApp ouvert — enregistrez le PDF (Imprimer > PDF) puis joignez-le avant l’envoi.");
+        promptMarkCurrentQuoteAsSent("WhatsApp");
       }
-      promptMarkCurrentQuoteAsSent("WhatsApp");
     } catch (error) {
       console.error(error);
       toast("WhatsApp n’a pas pu être ouvert.", "error");
@@ -4386,18 +5171,77 @@
   }
 
   function syncPdfLanguageMenu() {
-    const english = db.settings.pdfLanguage === "en";
-    const label = $("#pdfLanguageMenuLabel");
-    if (label) label.textContent = `PDF : ${english ? "EN" : "FR"}`;
-    const action = $("#pdfLanguageMenuAction");
-    if (action) action.setAttribute("aria-label", english ? "PDF en anglais — cliquer pour passer en français" : "PDF en français — cliquer pour passer en anglais");
+    const info = PdfI18n.languageInfo(db.settings.pdfLanguage);
+    const chip = $("#checkoutPdfLanguageButton");
+    if (chip) {
+      $("#checkoutPdfLanguageCode").textContent = info.short;
+      chip.setAttribute("aria-label", `Langue du PDF : ${info.french.toLowerCase()}. Choisir une autre langue`);
+      chip.dataset.tooltip = `PDF en ${info.french.toLowerCase()}`;
+    }
   }
 
-  function togglePdfLanguage() {
-    db.settings.pdfLanguage = db.settings.pdfLanguage === "en" ? "fr" : "en";
-    saveLocal();
+  function setPdfLanguage(code) {
+    const language = PdfI18n.normalizeLanguage(code);
+    if (db.settings.pdfLanguage !== language) {
+      db.settings.pdfLanguage = language;
+      saveLocal();
+    }
     syncPdfLanguageMenu();
-    toast(db.settings.pdfLanguage === "en" ? "PDF du devis en anglais" : "PDF du devis en français");
+    toast(`PDF du devis en ${PdfI18n.languageInfo(language).french.toLowerCase()}`);
+  }
+
+  // Huit langues : un sélecteur remplace l'ancienne bascule FR/EN. Ctrl+L l'ouvre, les touches 1 à 8 choisissent.
+  function renderPdfLanguageOptions() {
+    const current = pdfLanguage();
+    const clientLanguage = PdfI18n.languageFromName(quote.client?.language);
+    $("#pdfLanguageOptions").innerHTML = PdfI18n.LANGUAGES.map((language, index) => {
+      const selected = language.code === current;
+      const hint = language.code === clientLanguage ? `<em>Langue du client</em>` : "";
+      return `<button class="pdf-language-option${selected ? " is-current" : ""}" type="button" data-pdf-language="${language.code}" ${selected ? 'aria-current="true"' : ""} aria-keyshortcuts="${index + 1}">
+        <span class="pdf-language-key" aria-hidden="true">${index + 1}</span>
+        <span class="pdf-language-copy"><strong lang="${language.code}">${escapeHTML(language.label)}</strong><small>${language.code === "fr" ? "Langue par défaut" : escapeHTML(language.french)}</small>${hint}</span>
+        <span class="pdf-language-code" aria-hidden="true">${language.short}</span>
+      </button>`;
+    }).join("");
+  }
+
+  function openPdfLanguagePicker({ returnFocus = null } = {}) {
+    closeContextMenus();
+    renderPdfLanguageOptions();
+    openLayer("pdfLanguageLayer");
+    if (returnFocus) layerReturnFocus.set("pdfLanguageLayer", returnFocus);
+    window.setTimeout(() => $(`[data-pdf-language="${pdfLanguage()}"]`, $("#pdfLanguageOptions"))?.focus(), 60);
+  }
+
+  function choosePdfLanguage(code) {
+    setPdfLanguage(code);
+    closeLayer("pdfLanguageLayer");
+  }
+
+  function handlePdfLanguageKeydown(event) {
+    if (event.repeat) return true;
+    const command = event.ctrlKey || event.metaKey;
+    if (command && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "l") {
+      event.preventDefault();
+      closeLayer("pdfLanguageLayer");
+      return true;
+    }
+    // Ctrl+L puis un chiffre : Ctrl peut rester enfoncé entre les deux touches.
+    if (!event.altKey && !event.shiftKey && /^[1-9]$/.test(event.key)) {
+      const language = PdfI18n.LANGUAGES[Number(event.key) - 1];
+      if (!language) return false;
+      event.preventDefault();
+      choosePdfLanguage(language.code);
+      return true;
+    }
+    const moves = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 2, ArrowUp: -2 };
+    if (!Object.hasOwn(moves, event.key)) return false;
+    const options = $$("[data-pdf-language]", $("#pdfLanguageOptions"));
+    const index = options.indexOf(document.activeElement);
+    if (index < 0) return false;
+    event.preventDefault();
+    options[(index + moves[event.key] + options.length) % options.length].focus();
+    return true;
   }
 
   function transmissionMenuItems() {
@@ -4449,7 +5293,6 @@
     trigger.setAttribute("aria-expanded", String(open));
     trigger.setAttribute("aria-label", open ? "Fermer les actions du devis" : "Ouvrir les actions du devis");
     if (open) {
-      syncPdfLanguageMenu();
       closeTileDetail({ immediate: true });
       setAppMenuOpen(false);
       setTransmissionMenuOpen(false);
@@ -4483,6 +5326,13 @@
   }
 
   function openHistoryLayer() {
+    // L'écran d'ouverture est la liste de travail : c'est la vue que l'on utilise le plus.
+    if (trackingEnabled()) {
+      activeHistoryView = "tracking";
+      activeTrackingFilter = "today";
+    }
+    historyQuery = "";
+    expandedTrackingQuotes.clear();
     renderHistory();
     openLayer("historyLayer");
   }
@@ -4927,17 +5777,21 @@
   $$("[data-line-discount-type]").forEach((button) => button.addEventListener("click", () => {
     if (button.disabled) return;
     lineDiscountType = button.dataset.lineDiscountType === "fixed" ? "fixed" : "percent";
+    lineDiscountConfirmed = false;
     $("#lineDiscountValue").value = "";
     renderLineDiscountPreview();
     $("#lineDiscountValue").focus();
   }));
   $$("[data-discount-preset]").forEach((button) => button.addEventListener("click", () => {
     lineDiscountType = "percent";
+    lineDiscountConfirmed = false;
     $("#lineDiscountValue").value = button.dataset.discountPreset;
     renderLineDiscountPreview();
     $("#lineDiscountValue").focus();
   }));
-  $("#lineDiscountValue")?.addEventListener("input", renderLineDiscountPreview);
+  $("#lineDiscountValue")?.addEventListener("input", () => { lineDiscountConfirmed = false; renderLineDiscountPreview(); });
+  // La molette ne doit jamais modifier un rabais par accident pendant que le champ a le focus.
+  $("#lineDiscountValue")?.addEventListener("wheel", (event) => { if (document.activeElement === event.currentTarget) event.preventDefault(); }, { passive: false });
   $("#lineDiscountRemove")?.addEventListener("click", () => {
     const line = quote.lines.find((item) => item.id === lineDiscountLineId);
     if (!line || !ensureQuoteEditable()) return;
@@ -4950,6 +5804,12 @@
     event.preventDefault();
     const draft = lineDiscountDraft();
     if (!draft || !ensureQuoteEditable()) return;
+    if (draft.value > 0 && draft.assessment.level === "confirm" && !lineDiscountConfirmed) {
+      lineDiscountConfirmed = true;
+      renderLineDiscountPreview();
+      $("#lineDiscountForm button[type=submit]").focus();
+      return;
+    }
     if (draft.value <= 0) {
       delete draft.line.customDiscount;
     } else {
@@ -5117,7 +5977,8 @@
     renderHistory();
   });
   $("#historySort").addEventListener("change", (event) => {
-    historySort = ["updated", "date", "client", "amount"].includes(event.target.value) ? event.target.value : "updated";
+    historySort = ["updated", "date", "client", "amount"].includes(event.target.value) ? event.target.value : "date";
+    historySortDirection = HISTORY_SORT_DEFAULT_DIRECTION[historySort];
     expandedTrackingQuotes.clear();
     renderHistory();
   });
@@ -5132,10 +5993,62 @@
       toggleTrackingDetails(touchCard.dataset.quoteId);
       return;
     }
+    const sortButton = event.target.closest("[data-history-sort]");
+    if (sortButton) {
+      setHistorySort(sortButton.dataset.historySort);
+      renderHistory();
+      $(`[data-history-sort="${historySort}"]`, $("#historyList"))?.focus();
+      return;
+    }
+    const moreButton = event.target.closest("[data-tracking-more]");
+    if (moreButton) {
+      const key = moreButton.dataset.trackingMore;
+      if (expandedTrackingSections.has(key)) expandedTrackingSections.delete(key);
+      else expandedTrackingSections.add(key);
+      renderHistory();
+      $(`[data-tracking-more="${key}"]`, $("#historyList"))?.focus();
+      return;
+    }
+    const period = event.target.closest("[data-stats-period]");
+    if (period) {
+      activeStatsPeriod = TRACKING_STATS_PERIODS.includes(period.dataset.statsPeriod) ? period.dataset.statsPeriod : "month";
+      renderHistory();
+      $(`[data-stats-period="${activeStatsPeriod}"]`, $("#historyList"))?.focus();
+      return;
+    }
+    if (event.target.closest("[data-stats-export]")) {
+      exportTrackingStatsCsv();
+      return;
+    }
+    const refusal = event.target.closest("[data-tracking-refuse]");
+    if (refusal) {
+      runTrackingQuickAction(trackedItemFrom(refusal), `refused:${refusal.dataset.trackingRefuse}`);
+      return;
+    }
+    if (event.target.closest("[data-tracking-refuse-cancel]")) {
+      pendingRefusalQuoteId = "";
+      renderHistory();
+      return;
+    }
+    if (event.target.closest("[data-tracking-waiting-toggle]")) {
+      waitingSectionOpen = !waitingSectionOpen;
+      renderHistory();
+      $("[data-tracking-waiting-toggle]", $("#historyList"))?.focus();
+      return;
+    }
+    const quickAction = event.target.closest("[data-tracking-quick]");
+    if (quickAction) {
+      runTrackingQuickAction(trackedItemFrom(quickAction), quickAction.dataset.trackingQuick);
+      return;
+    }
+    const contact = event.target.closest("[data-tracking-contact]");
+    if (contact) {
+      void contactTrackedClient(trackedItemFrom(contact), contact.dataset.trackingContact);
+      return;
+    }
     const undo = event.target.closest("[data-tracking-undo]");
     if (undo) {
-      const form = undo.closest("[data-tracking-form]");
-      const item = db.quotes[form?.dataset.trackingQuoteId];
+      const item = trackedItemFrom(undo);
       if (!item || !undoLastTrackingChange(item)) return;
       renderHistory();
       if (item.id === quote.id) renderCheckout();
@@ -5144,8 +6057,7 @@
     }
     const invoice = event.target.closest("[data-tracking-invoice]");
     if (invoice) {
-      const form = invoice.closest("[data-tracking-form]");
-      const item = db.quotes[form?.dataset.trackingQuoteId];
+      const item = trackedItemFrom(invoice);
       if (!item || item.tracking?.status !== "accepted") return;
       if (!centralController.getConfig().connected) {
         closeLayer("historyLayer");
@@ -5160,8 +6072,7 @@
     }
     const revision = event.target.closest("[data-tracking-revision]");
     if (revision) {
-      const form = revision.closest("[data-tracking-form]");
-      const item = db.quotes[form?.dataset.trackingQuoteId];
+      const item = trackedItemFrom(revision);
       if (item) createQuoteRevision(item);
       return;
     }
@@ -5170,17 +6081,12 @@
       loadHistoryQuote(openQuote.dataset.quoteId);
       return;
     }
-    const button = event.target.closest(".history-item-open[data-quote-id], .history-item[data-quote-id]");
+    const button = event.target.closest(".history-item-open[data-quote-id], .history-item[data-quote-id], .history-row[data-quote-id], .history-row-open[data-quote-id]");
     if (button) loadHistoryQuote(button.dataset.quoteId);
   });
   $("#historyList").addEventListener("change", (event) => {
     if (!event.target.matches('[name="trackingStatus"]')) return;
-    const form = event.target.closest("[data-tracking-form]");
-    const followUp = form?.elements.trackingFollowUpAt;
-    if (!followUp) return;
-    followUp.disabled = event.target.value !== "sent";
-    if (!followUp.disabled && !followUp.value) followUp.value = addDaysISO(todayISO(), configuredFollowUpDays(db.settings));
-    if (followUp.disabled) followUp.value = "";
+    syncTrackingEditorFields(event.target.closest("[data-tracking-form]"));
   });
   $("#historyList").addEventListener("submit", (event) => {
     const form = event.target.closest("[data-tracking-form]");
@@ -5193,7 +6099,8 @@
     const changed = updateQuoteTracking(item, {
       status: requestedStatus,
       nextFollowUpAt: requestedStatus === "sent" ? data.get("trackingFollowUpAt") ?? undefined : undefined,
-      note: data.get("trackingNote")
+      note: data.get("trackingNote"),
+      reason: ["refused", "expired"].includes(requestedStatus) ? data.get("trackingReason") ?? "" : undefined
     });
     if (!changed) { toast("Aucun changement de suivi"); return; }
     if (!persistTrackedQuote(item)) return;
@@ -5202,6 +6109,11 @@
     toast(`Suivi mis à jour · ${TRACKING_STATUS_META[item.tracking.status].label}`);
   });
   $("#checkoutPrintButton").addEventListener("click", printQuote);
+  $("#checkoutPdfLanguageButton").addEventListener("click", () => openPdfLanguagePicker());
+  $("#pdfLanguageOptions").addEventListener("click", (event) => {
+    const option = event.target.closest("[data-pdf-language]");
+    if (option) choosePdfLanguage(option.dataset.pdfLanguage);
+  });
   $("#checkoutPdfButton").addEventListener("click", downloadPdf);
   $("#checkoutTransmitButton").addEventListener("click", (event) => {
     event.stopPropagation();
@@ -5316,7 +6228,7 @@
   $("#centralSyncButton").addEventListener("click", async (event) => {
     await runCentralAction(event.currentTarget, "Synchronisation…", async () => {
       const result = await centralController.sync();
-      if (!result?.conflict && !result?.authenticationRequired) toast("Synchronisation terminée");
+      if (!result?.conflict && !result?.authenticationRequired && !result?.unsupported) toast("Synchronisation terminée");
     });
   });
   $("#centralDisconnectButton").addEventListener("click", async (event) => {
@@ -5400,7 +6312,32 @@
     if (["quotePrefix", "invoicePrefix", "machineName", "packPaidDefault", "packFreeDefault", "studentDiscount"].includes(name)) refreshSettingsPreview();
     if (name === "visibleFamilies") refreshSettingsPreview();
     if (name === "quoteTrackingEnabled") syncTrackingSettingsState();
+    if (name === "eurRate") markEurRateManual();
+    if (["eurEnabled", "eurRate", "eurCommission", "eurAutoUpdate"].includes(name)) syncEurSettingsState();
   });
+  $("#eurRefreshButton")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    const label = button.textContent;
+    button.disabled = true;
+    button.textContent = "Actualisation…";
+    try {
+      const result = await refreshEurRate();
+      const form = $("#settingsForm");
+      form.elements.eurRate.value = String(result.rate);
+      form.elements.eurRateDate.value = result.date || todayISO();
+      form.elements.eurRateSource.value = "ecb";
+      form.elements.eurAutoUpdate.checked = true;
+      syncEurSettingsState();
+      toast(`Taux actualisé : 1 € = ${result.rate.toFixed(4)} CHF (BCE). Enregistrez les réglages pour l’appliquer.`);
+    } catch (error) {
+      toast(error.message || "Le taux de l’euro n’a pas pu être actualisé.", "error");
+    } finally {
+      button.textContent = label;
+      syncEurSettingsState();
+    }
+  });
+  $$("[data-quote-currency]").forEach((button) => button.addEventListener("click", () => setQuoteCurrency(button.dataset.quoteCurrency)));
+  $("#currencyRefresh")?.addEventListener("click", refreshQuoteFx);
   $$("[data-logo-input]").forEach((input) => input.addEventListener("change", async (event) => {
     const target = event.currentTarget;
     const kind = target.dataset.logoInput;
@@ -5438,6 +6375,16 @@
       }
     }
     const data = new FormData(event.currentTarget);
+    const eurRequested = data.has("eurEnabled");
+    const eurRate = CurrencyCore.parseRate(data.get("eurRate"));
+    const eurCommission = CurrencyCore.parseCommission(data.get("eurCommission"));
+    if (eurRequested && (eurRate === null || eurCommission === null)) {
+      setSettingsTab("pricing", { focus: true });
+      (eurRate === null ? event.currentTarget.elements.eurRate : event.currentTarget.elements.eurCommission).focus();
+      toast(eurRate === null ? "Indiquez le taux de l’euro : le nombre de francs suisses pour 1 € (entre 0.5 et 2)." : "La commission de change doit être comprise entre 0 et 10 %.", "error");
+      return;
+    }
+    const eurDate = /^\d{4}-\d{2}-\d{2}$/.test(String(data.get("eurRateDate"))) ? String(data.get("eurRateDate")) : todayISO();
     const uniqueNumberingRequested = data.has("centralUniqueQuoteNumbers");
     if (uniqueNumberingRequested && !centralController.getConfig().connected) {
       setSettingsTab("data", { focus: true });
@@ -5500,7 +6447,13 @@
       studentDiscount: clamp(data.get("studentDiscount"), 0, 100),
       conditions: String(data.get("conditions") || "").trim(), studentConditions: String(data.get("studentConditions") || "").trim(), footerNote: String(data.get("footerNote") || "").trim(),
       showSignatures: data.has("showSignatures"),
-      pdfLanguage: data.get("pdfLanguage") === "en" ? "en" : "fr",
+      pdfLanguage: PdfI18n.normalizeLanguage(data.get("pdfLanguage")),
+      eurEnabled: eurRequested && eurRate !== null,
+      eurRate: eurRate ?? db.settings.eurRate,
+      eurCommission: eurCommission ?? db.settings.eurCommission ?? CurrencyCore.DEFAULT_COMMISSION,
+      eurAutoUpdate: data.has("eurAutoUpdate"),
+      eurRateDate: eurRate === null ? db.settings.eurRateDate : eurDate,
+      eurRateSource: data.get("eurRateSource") === "ecb" ? "ecb" : "manual",
       centralUniqueQuoteNumbers: uniqueNumberingRequested
     };
     if (!quote.conditions || quote.conditions === oldConditions) quote.conditions = db.settings.conditions;
@@ -5638,7 +6591,6 @@
     if (!button) return;
     const action = button.dataset.action;
     setQuoteMenuOpen(false, { restoreFocus: true });
-    if (action === "pdf-language") togglePdfLanguage();
     if (action === "duplicate") duplicateQuote();
     if (action === "export") exportQuote();
     if (action === "import") $("#quoteImportInput").click();
@@ -5727,10 +6679,21 @@
     return config.enabled === true;
   }
 
-  $("#historyCompactOption")?.addEventListener("change", (event) => {
-    db.settings.historyCompactMode = event.target.checked === true;
+  $("#historyCardsOption")?.addEventListener("change", (event) => {
+    db.settings.historyCardView = event.target.checked === true;
+    if (db.settings.historyCardView && !["updated", "date", "client", "amount"].includes(historySort)) {
+      historySort = "date";
+      historySortDirection = "desc";
+    }
     saveLocal(false);
-    $("#historyLayer")?.classList.toggle("history-compact-mode", db.settings.historyCompactMode === true);
+    renderHistory();
+  });
+  $("#historyList").addEventListener("toggle", (event) => {
+    if (event.target.matches?.("[data-stats-more]")) statsDetailsOpen = event.target.open;
+  }, true);
+  $("#historyDetailedTrackingOption")?.addEventListener("change", (event) => {
+    db.settings.trackingDetailedView = event.target.checked === true;
+    saveLocal(false);
     renderHistory();
   });
   $("#historyShowFiltersOption")?.addEventListener("change", (event) => {
@@ -5802,6 +6765,7 @@
       else $$(".modal-layer:not([hidden]), .drawer-layer:not([hidden])").forEach((layer) => closeLayer(layer.id));
       return;
     }
+    if (layer?.id === "pdfLanguageLayer" && !layer.hidden && handlePdfLanguageKeydown(event)) return;
     if (layer && !layer.hidden) return;
     const command = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -5827,7 +6791,7 @@
     if (command && !event.altKey && !event.shiftKey && key === "o") { event.preventDefault(); closeMenusForShortcut(); $("#quoteImportInput").click(); return; }
     if (command && !event.altKey && !event.shiftKey && key === "e") { event.preventDefault(); closeMenusForShortcut(); exportQuote(); return; }
     if (command && !event.altKey && !event.shiftKey && key === "p") { event.preventDefault(); closeMenusForShortcut(); printQuote(); return; }
-    if (command && !event.altKey && !event.shiftKey && key === "l") { event.preventDefault(); closeMenusForShortcut(); togglePdfLanguage(); return; }
+    if (command && !event.altKey && !event.shiftKey && key === "l") { event.preventDefault(); if (!event.repeat) { closeMenusForShortcut(); openPdfLanguagePicker(); } return; }
     if (command && !event.altKey && event.shiftKey && key === "s") { event.preventDefault(); closeMenusForShortcut(); downloadPdf(); return; }
     if (command && event.altKey && !event.shiftKey && event.code === "KeyW") { event.preventDefault(); closeMenusForShortcut(); shareQuoteViaWhatsApp(); return; }
     if (command && !event.altKey && !event.shiftKey && event.key === ",") { event.preventDefault(); closeMenusForShortcut(); openSettingsLayer(); return; }

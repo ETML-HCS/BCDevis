@@ -13,16 +13,16 @@ const workflow = read(".github/workflows/livrables.yml").replace(/\r\n?/g, "\n")
 const readme = read("devis-portable/README.md");
 const manual = read("devis-portable/MODE-D-EMPLOI.md");
 const quick = read("devis-portable/UTILISATION-RAPIDE.md");
-const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V7.md");
-const templateGuide = read("devis-portable/MODELE-DEVIS-V7.md");
+const shortcuts = read("devis-portable/RACCOURCIS-CLAVIER-V8.md");
+const templateGuide = read("devis-portable/MODELE-DEVIS-V8.md");
 const clientReadme = read("devis-portable/LIRE-MOI-ALEKSANDRA.txt");
-const template = readJSON("devis-portable/MODELE-DEVIS-V7.json");
+const template = readJSON("devis-portable/MODELE-DEVIS-V8.json");
 const serviceWorker = read("devis-portable/service-worker.js");
 const centralReadme = read("central-server/README.md");
 const centralSchema = read("central-server/schema.sql");
 const centralCompose = read("central-server/compose.yml");
 
-assert.equal(packageJson.version, "8.6.2", "La livraison doit annoncer la version 8.6.2");
+assert.equal(packageJson.version, "8.7.0", "La livraison doit annoncer la version 8.7.0");
 assert.match(packageJson.description, /Linux/);
 assert.equal(packageJson.scripts["docs:pdf"], "node scripts/run-electron-script.cjs scripts/generate-doc-pdfs.cjs");
 for (const scriptName of ["build:portable", "mac", "linux"]) {
@@ -30,7 +30,7 @@ for (const scriptName of ["build:portable", "mac", "linux"]) {
 }
 assert.ok(packageJson.devDependencies.marked, "Le générateur PDF doit disposer du moteur Markdown");
 assert.ok(packageJson.dependencies.pg, "PostgreSQL doit être une dépendance de production du serveur central");
-assert.match(serviceWorker, /bcdevis-pwa-v8\.6\.2-touch-ipad-smartphone-documents-help/, "Le cache PWA doit suivre la version tactile, les réglages documentaires et le centre d’aide");
+assert.match(serviceWorker, /bcdevis-pwa-v8\.7\.0-touch-ipad-smartphone-documents-help/, "Le cache PWA doit suivre la version tactile, les réglages documentaires et le centre d’aide");
 
 assert.match(workflow, /\n  linux:\n/);
 assert.match(workflow, /name: Linux AppImage[\s\S]*?runs-on: ubuntu-latest/);
@@ -41,7 +41,7 @@ assert.match(workflow, /BCDevis-\*-linux-x86_64\.AppImage/);
 assert.match(workflow, /\n  chromeos:\n[\s\S]*?Configurer la sandbox Electron sous Linux[\s\S]*?xvfb-run -a npm run chromeos/);
 
 for (const document of [readme, manual, quick, shortcuts, templateGuide, clientReadme]) {
-  assert.match(document, /8\.6\.2/, "Chaque document client doit annoncer la version 8.6.2");
+  assert.match(document, /8\.7\.0/, "Chaque document client doit annoncer la version 8.7.0");
 }
 assert.match(readme, /Windows[\s\S]*Linux[\s\S]*macOS[\s\S]*ChromeOS/);
 assert.match(manual, /\*\*Linux\*\*/);
@@ -55,13 +55,13 @@ assert.match(manual, /douze zones/);
 assert.match(manual, /captures\/04-corps-interactif\.png/);
 assert.match(manual, /\*\*Entreprise\*\*[\s\S]*préfixes des devis et factures[\s\S]*code poste commun[\s\S]*dossier local des devis PDF/);
 assert.match(manual, /\*\*Devis\*\* : conditions de paiement/);
-assert.match(quick, /BCDevis-8.6.2\.exe/);
-assert.match(quick, /BCDevis-8.6.2-linux-x86_64\.AppImage/);
-assert.match(quick, /BCDevis-8.6.2-chromeos\.zip/);
+assert.match(quick, /BCDevis-8.7.0\.exe/);
+assert.match(quick, /BCDevis-8.7.0-linux-x86_64\.AppImage/);
+assert.match(quick, /BCDevis-8.7.0-chromeos\.zip/);
 assert.match(quick, /adresse HTTPS/);
 assert.match(quick, /Réglages > Interface > Navigation/);
 assert.match(shortcuts, /ChromeOS/);
-assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-8.6.2-chromeos\.zip/);
+assert.match(clientReadme, /3-ChromeOS[\s\S]*BCDevis-8.7.0-chromeos\.zip/);
 assert.match(clientReadme, /Elle ne s'installe pas directement depuis le[\s\S]*fichier ZIP/);
 assert.match(manual, /\*\*Outlook Web\*\*[\s\S]*dossier configuré/);
 assert.match(clientReadme, /DEV-20260806A001[\s\S]*FAC-20260806A001[\s\S]*dossier\s+configuré/);
@@ -131,7 +131,7 @@ for (const label of expectedShortcutLabels) assert.match(shortcuts, new RegExp(l
 assert.equal(expectedShortcutLabels.length, 16);
 
 assert.equal(template.type, "atelier-devis-quote");
-assert.equal(template.version, 24);
+assert.equal(template.version, 25);
 assert.ok(Array.isArray(template.quote.lines));
 assert.equal(template.quote.lines.length, 0);
 for (const generatedField of ["id", "number", "date", "validUntil"]) {
@@ -141,8 +141,8 @@ for (const generatedField of ["id", "number", "date", "validUntil"]) {
 for (const pdfName of [
   "MODE-D-EMPLOI.pdf",
   "UTILISATION-RAPIDE.pdf",
-  "RACCOURCIS-CLAVIER-V7.pdf",
-  "MODELE-DEVIS-V7.pdf"
+  "RACCOURCIS-CLAVIER-V8.pdf",
+  "MODELE-DEVIS-V8.pdf"
 ]) {
   const pdfPath = path.join(projectRoot, "devis-portable", pdfName);
   assert.ok(fs.existsSync(pdfPath), `${pdfName} doit être livré`);

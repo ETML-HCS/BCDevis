@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld("bcdevisDesktop", {
     text: String(payload?.text || ""),
     filePath: String(payload?.filePath || "")
   }),
+  showPdfInFolder: (filePath) => ipcRenderer.invoke("bcdevis:show-pdf-in-folder", String(filePath || "")),
   openExternal: (url) => ipcRenderer.invoke("bcdevis:open-external", String(url || "")),
   getLaunchAtLogin: () => ipcRenderer.invoke("bcdevis:startup-get"),
   setLaunchAtLogin: (enabled) => ipcRenderer.invoke("bcdevis:startup-set", Boolean(enabled)),
