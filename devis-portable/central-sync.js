@@ -12,7 +12,7 @@
   // Sous la version minimale, la synchronisation est refusée : avant 7.1.0, le serveur ignore les contacts et
   // les factures, et renverrait un répertoire vide. Sous la version conseillée, elle fonctionne et un avis s'affiche.
   const MINIMUM_SERVER_VERSION = "7.1.0";
-  const RECOMMENDED_SERVER_VERSION = "8.7.0";
+  const RECOMMENDED_SERVER_VERSION = "8.7.1";
   const SHARED_SETTING_KEYS = [
     "companyName", "companySubtitle", "companyAddress", "companyPhone", "companyEmail", "companyUid",
     "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",

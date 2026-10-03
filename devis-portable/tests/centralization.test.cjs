@@ -92,9 +92,9 @@ async function main() {
   assert.deepEqual(mergeSnapshots(contactBase, contactLocal, contactRemote).conflicts, ["contacts.contact-1"]);
   assert.equal(mergeSnapshots(contactBase, contactLocal, contactRemote, { strategy: "local" }).snapshot.contacts["contact-1"].phone, "+41 79 111 11 11");
 
-  // 8.6.5 — version minimale du serveur : sous 7.1.0 la synchronisation est refusée, sous 8.7.0 elle est seulement signalée.
+  // 8.6.5 — version minimale du serveur : sous 7.1.0 la synchronisation est refusée, sous 8.7.1 elle est seulement signalée.
   assert.equal(centralClient.MINIMUM_SERVER_VERSION, "7.1.0");
-  assert.deepEqual(["7.0.2", "7.1.0", "8.0.0", "8.6.5", "8.7.0", "8.10.0", ""].map((version) => centralClient.assessServerVersion(version).level),
+  assert.deepEqual(["7.0.2", "7.1.0", "8.0.0", "8.6.5", "8.7.1", "8.10.0", ""].map((version) => centralClient.assessServerVersion(version).level),
     ["unsupported", "outdated", "outdated", "outdated", "current", "current", "unknown"], "Chaque version doit être classée bloquée, conseillée à mettre à jour, à jour ou inconnue");
   const contactsKept = { settings: {}, quoteCounters: {}, customServices: [], catalogOverrides: {}, contacts: { c1: { id: "c1", name: "Camille" } }, quotes: {} };
   const answerWithoutContacts = snapshot();

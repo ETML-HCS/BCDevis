@@ -1,15 +1,15 @@
-# BCDevis - version 8.7.0
+# BCDevis - version 8.7.1
 
 Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.6.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
 
-## Nouveautés 8.7.0
+## Nouveautés 8.7.1
 
 Version de production : elle réunit tout le travail de la série 8.6.x et devient la référence pour les postes et le serveur central.
 
 - **Écran « Quoi de neuf ? » redessiné** pour marquer cette version : bandeau sombre, chiffres clés, liste numérotée.
 - **Menu … du devis allégé :** il ne garde que **Dupliquer**, **Exporter**, **Importer** et **Vider**. La langue du PDF se choisit avec la pastille de la caisse ou **Ctrl+L** puis **1** à **8** ; l'aide a son propre bouton.
 - **Garde-fous sur le rabais personnalisé, devis en euros, PDF en huit langues, Mes devis (À faire / Tous les devis), WhatsApp plus fiable :** voir la section 8.6.5 ci-dessous, désormais livrée en production.
-- **Serveur central 8.7.0 :** même schéma que la 8.6.5 (aucune migration de données) ; les postes recommandent désormais ce numéro de version.
+- **Serveur central 8.7.1 :** même schéma que la 8.6.5 (aucune migration de données) ; les postes recommandent désormais ce numéro de version.
 
 ## Nouveautés 8.6.5
 
@@ -105,7 +105,7 @@ Aide et livrables de la version 8 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-8.7.0.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-8.7.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -212,7 +212,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-8.7.0-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-8.7.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -262,7 +262,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-8.7.0.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-8.7.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -272,7 +272,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.7.0-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.7.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -280,7 +280,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.7.0-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.7.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

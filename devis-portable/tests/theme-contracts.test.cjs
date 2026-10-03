@@ -41,11 +41,11 @@ assert.match(app, /lineDiscountConfirmed = false;\s*lineDiscountLineId = line\.i
 assert.match(app, /Aucun montant à réduire sur cette ligne/, "Une ligne sans montant payé ne doit pas ouvrir la fenêtre du rabais");
 assert.match(app, /"#lineDiscountValue"\)\?\.addEventListener\("wheel"[\s\S]*?preventDefault/, "La molette ne doit pas modifier le rabais par accident");
 assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
-assert.match(app, /const RELEASE_VERSION = "8\.7\.0";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "8\.7\.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "8.7.1";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8.7.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Version 8\.7\.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Version 8.7.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 5, "L’écran des nouveautés doit présenter les cinq familles de nouveautés livrées");
 assert.match(html, /<strong>PDF en huit langues<\/strong>[\s\S]*?<strong>Devis en euros<\/strong>[\s\S]*?<strong>Mes devis : À faire et Tous les devis<\/strong>[\s\S]*?<strong>WhatsApp plus fiable<\/strong>[\s\S]*?<strong>Une interface plus claire<\/strong>/, "Les nouveautés doivent résumer le PDF multilingue, Mes devis, WhatsApp et la mise à jour du serveur");

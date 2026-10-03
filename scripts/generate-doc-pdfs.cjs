@@ -9,7 +9,7 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const APP_ROOT = path.join(PROJECT_ROOT, "devis-portable");
 const TEMP_ROOT = path.join(PROJECT_ROOT, "tmp", "pdfs", "bcdevis-v8");
 const PDF_ARCHIVE_ROOT = path.join(PROJECT_ROOT, "output", "pdf");
-const VERSION_LABEL = "V8.7.0";
+const VERSION_LABEL = "V8.7.1";
 const DOCUMENTS = [
   {
     source: "MODE-D-EMPLOI.md",

@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v8.7.0-touch-ipad-smartphone-documents-help-contacts-conversion-login";
+const CACHE_NAME = "bcdevis-pwa-v8.7.1-touch-ipad-smartphone-documents-help-contacts-conversion-login";
 const APP_SHELL = [
   "./",
   "./index.html",
