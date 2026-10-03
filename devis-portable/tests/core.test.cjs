@@ -50,11 +50,15 @@ assert.equal(relatedDocumentNumber("DEV-20260806-A-001", "FAC"), "FAC-20260806-A
 // Garde-fous du rabais personnalisé : plafonnement signalé, avis puis confirmation selon l'ampleur.
 const guardQuote = { lines: [{ id: "a", price: 100, quantity: 2, offerType: "single" }, { id: "b", price: 50, quantity: 1, offerType: "single" }], discount: {}, tax: {} };
 const guard = (type, value, id = "a", quoteSource = guardQuote) => assessLineDiscount(quoteSource, id, { type, value });
-assert.deepEqual([DISCOUNT_GUARD.notice, DISCOUNT_GUARD.confirm, DISCOUNT_GUARD.quoteConfirm], [0.1, 0.3, 0.5], "Les seuils des garde-fous doivent rester explicites");
+assert.deepEqual([DISCOUNT_GUARD.notice, DISCOUNT_GUARD.confirm, DISCOUNT_GUARD.loss, DISCOUNT_GUARD.quoteConfirm], [0.1, 0.3, 0.51, 0.5], "Les seuils des garde-fous doivent rester explicites");
 assert.equal(guard("percent", 5).level, "", "Un rabais usuel ne doit rien signaler");
-assert.equal(guard("percent", 10).level, "", "Les tags habituels (jusqu'à 10 %) ne déclenchent aucun avis");
-assert.deepEqual([guard("percent", 15).level, guard("percent", 15).reasons], ["warn", ["notice"]], "Au-delà de 10 %, un avis s'affiche sans bloquer");
-assert.deepEqual([guard("percent", 30).level, guard("percent", 30).reasons], ["confirm", ["high"]], "À partir de 30 %, une confirmation est exigée");
+assert.equal(guard("percent", 10).level, "", "Les remises courantes (jusqu'à 10 %) ne déclenchent aucun avis");
+assert.deepEqual([guard("percent", 15).level, guard("percent", 15).reasons], ["warn", ["notice"]], "Au-delà de 10 %, un avis de marge réduite s'affiche sans bloquer");
+assert.deepEqual([guard("percent", 30).level, guard("percent", 30).reasons], ["confirm", ["high"]], "À partir de 30 %, la marge est très faible : une confirmation est exigée");
+assert.deepEqual([guard("percent", 50).level, guard("percent", 50).reasons], ["confirm", ["high"]], "À 50 %, la prestation n'est pas encore vendue à perte");
+assert.deepEqual([guard("percent", 51).level, guard("percent", 51).reasons], ["confirm", ["loss"]], "À partir de 51 %, la vente à perte est signalée");
+assert.deepEqual(guard("percent", 51, "s2", { lines: [{ id: "s2", price: 10.02, quantity: 1, offerType: "single" }], discount: {}, tax: {} }).reasons, ["loss"], "L'arrondi au centime ne masque pas le seuil de vente à perte");
+assert.deepEqual(guard("fixed", 102).reasons, ["loss"], "Un rabais en CHF de 51 % de la ligne est aussi une vente à perte");
 const free = guard("percent", 100);
 assert.deepEqual([free.level, free.reasons.includes("free"), free.amount, free.result], ["confirm", true, 200, 0], "Une ligne offerte exige une confirmation");
 const over = guard("percent", 150);

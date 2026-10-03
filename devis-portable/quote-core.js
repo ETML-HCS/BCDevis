@@ -62,8 +62,10 @@
   }
 
   // Garde-fous du rabais personnalisé. Seuils en part de la ligne (ou du devis pour le cumul) :
-  // au-delà de NOTICE un avis s'affiche ; à partir de CONFIRM (ou pour une ligne offerte), une confirmation est exigée.
-  const DISCOUNT_GUARD = { notice: 0.10, confirm: 0.30, quoteConfirm: 0.50 };
+  // au-delà de NOTICE un avis s'affiche (la marge se réduit) ; à partir de CONFIRM la marge devient très faible
+  // et une confirmation est exigée ; à partir de LOSS (ou pour une ligne offerte) la prestation est vendue à perte.
+  // Ces informations de rentabilité sont internes : elles ne doivent jamais apparaître sur le PDF client.
+  const DISCOUNT_GUARD = { notice: 0.10, confirm: 0.30, loss: 0.51, quoteConfirm: 0.50 };
 
   function assessLineDiscount(target, lineId, { type = "percent", value = 0 } = {}) {
     const lines = Array.isArray(target?.lines) ? target.lines : [];
@@ -80,6 +82,8 @@
     const draft = { ...line, customDiscount: applied > 0 ? { type: kind, value: applied } : undefined };
     const amount = customLineDiscount(draft, studentRate);
     const share = base > 0 ? amount / base : 0;
+    // Un rabais en % est jugé sur le taux saisi : l'arrondi au centime ne doit pas faire passer 51 % pour 50,99 %.
+    const rate = amount > 0 && kind === "percent" ? applied / 100 : share;
     const after = calculate({ ...target, lines: lines.map((item) => item === line ? draft : item) });
     // Part des rabais « au choix » (lignes + coupon) dans le montant restant après les offres automatiques (pack, étudiant).
     const discretionaryBase = Math.max(0, after.subtotal - after.packDiscount - after.studentDiscount);
@@ -89,14 +93,15 @@
     if (raw > limit) reasons.push(kind === "percent" ? "capped-percent" : "capped-amount");
     const free = amount > 0 && amount >= base;
     if (free) reasons.push("free");
-    else if (share >= DISCOUNT_GUARD.confirm) reasons.push("high");
-    else if (share > DISCOUNT_GUARD.notice) reasons.push("notice");
+    else if (rate >= DISCOUNT_GUARD.loss) reasons.push("loss");
+    else if (rate >= DISCOUNT_GUARD.confirm) reasons.push("high");
+    else if (rate > DISCOUNT_GUARD.notice) reasons.push("notice");
     // Le cumul n'est signalé que s'il existe d'autres rabais au choix (autres lignes, coupon) : seul, le rabais de la ligne est déjà annoncé.
     const otherDiscounts = roundMoney(after.lineDiscount - amount + after.discount);
     if (amount > 0 && otherDiscounts > 0 && quoteShare >= DISCOUNT_GUARD.quoteConfirm) reasons.push("quote-high");
-    const needsConfirmation = reasons.some((reason) => ["free", "high", "quote-high"].includes(reason));
+    const needsConfirmation = reasons.some((reason) => ["free", "loss", "high", "quote-high"].includes(reason));
     return {
-      base, applied, amount, share, quoteShare, reasons,
+      base, applied, amount, share, rate, quoteShare, reasons,
       result: roundMoney(Math.max(0, base - amount)),
       capped: applied !== raw,
       level: needsConfirmation ? "confirm" : reasons.length ? "warn" : ""

@@ -2593,16 +2593,23 @@
     return { line, base: assessment.base, value: assessment.applied, amount: assessment.amount, result: assessment.result, clamped: assessment.capped, assessment };
   }
 
+  // Messages internes de rentabilité : affichés uniquement dans la fenêtre du rabais, jamais sur le PDF client.
   function lineDiscountGuardMessages(assessment) {
     const percent = (share) => Math.round(share * 100);
+    const rate = percent(assessment.rate ?? assessment.share);
+    const quoteRate = percent(assessment.quoteShare);
+    const quoteAtLoss = assessment.quoteShare >= (window.QuoteCore.DISCOUNT_GUARD?.loss ?? 0.51);
     const text = {
       negative: "Une valeur négative est ignorée.",
       "capped-percent": "Plafonné à 100 %.",
       "capped-amount": `Plafonné au montant de la ligne (${money(assessment.base)}).`,
-      free: "Ligne offerte : le rabais couvre tout son montant.",
-      high: `Rabais élevé : ${percent(assessment.share)} % de la ligne.`,
-      notice: `Rabais de ${percent(assessment.share)} % de la ligne, au-delà des tags habituels.`,
-      "quote-high": `Avec les autres rabais, ${percent(assessment.quoteShare)} % du montant du devis est offert.`
+      free: "Prestation offerte : elle est entièrement vendue à perte.",
+      loss: `Vente à perte : remise de ${rate} %. À partir de 51 %, la prestation ne couvre plus nos coûts.`,
+      high: `Attention : remise de ${rate} %. Au-delà de 30 %, notre marge restante est très faible.`,
+      notice: `Remise de ${rate} % appliquée. Elle réduit notre marge commerciale.`,
+      "quote-high": quoteAtLoss
+        ? `Avec les autres rabais, ${quoteRate} % du devis est offert : le devis est vendu à perte.`
+        : `Avec les autres rabais, ${quoteRate} % du devis est offert : le devis est proche de notre seuil de rentabilité.`
     };
     return assessment.reasons.map((reason) => text[reason]).filter(Boolean);
   }
