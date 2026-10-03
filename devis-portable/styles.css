@@ -2431,20 +2431,14 @@ html[data-theme] .family-option-detail-toggle[aria-expanded="true"]{
 
 /* V5.2 — nouveautés affichées une seule fois après la mise à jour. */
 .release-notes-modal{display:grid;width:min(640px,100%);max-height:min(860px,calc(var(--app-viewport-height,100vh) - 24px));padding:0;overflow:hidden;grid-template-rows:auto minmax(0,1fr) auto;border-radius:16px}
-.release-notes-hero{position:relative;padding:22px 34px 0;color:#fff;background:radial-gradient(120% 140% at 100% 0%,rgba(180,169,150,.22) 0%,rgba(180,169,150,0) 55%),linear-gradient(160deg,#0b0b0b 0%,#1a1814 70%,#2c2820 100%);border-bottom:1px solid rgba(180,169,150,.55)}
+.release-notes-hero{position:relative;padding:22px 34px 26px;color:#fff;background:radial-gradient(120% 140% at 100% 0%,rgba(180,169,150,.22) 0%,rgba(180,169,150,0) 55%),linear-gradient(160deg,#0b0b0b 0%,#1a1814 70%,#2c2820 100%);border-bottom:1px solid rgba(180,169,150,.55)}
 .release-notes-hero::after{content:"8.7";position:absolute;top:34px;right:26px;color:rgba(180,169,150,.11);font-family:var(--serif);font-size:128px;font-weight:700;letter-spacing:-.06em;line-height:.8;pointer-events:none}
 .release-notes-brand{position:relative;z-index:1;display:flex;align-items:center;gap:10px}
 .release-notes-brand img{display:block;width:30px;height:30px;object-fit:contain;border-radius:8px}
 .release-notes-brand span{font-size:13px;font-weight:800;letter-spacing:.04em}
-.release-notes-brand b{margin-left:auto;padding:4px 10px;border:1px solid rgba(180,169,150,.6);border-radius:999px;color:var(--taupe);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .release-notes-version{position:relative;z-index:1;margin:26px 0 0;color:var(--taupe);font-size:11px;font-weight:850;letter-spacing:.2em;text-transform:uppercase}
 .release-notes-hero h2{position:relative;z-index:1;margin:8px 0 0;color:#fff;font-family:var(--serif);font-size:38px;font-weight:600;letter-spacing:-.035em;line-height:1.05}
 .release-notes-hero>p:not(.release-notes-version){position:relative;z-index:1;max-width:500px;margin:12px 0 0;color:#cfcac0;font-size:13.5px;line-height:1.55}
-.release-notes-figures{position:relative;z-index:1;display:grid;margin:24px -34px 0;padding:0;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(180,169,150,.28)}
-.release-notes-figures>div{min-width:0;padding:14px 16px 15px 34px;border-left:1px solid rgba(180,169,150,.2)}
-.release-notes-figures>div:first-child{border-left:0}
-.release-notes-figures dt{margin:0;color:#fff;font-family:var(--serif);font-size:22px;font-weight:650;letter-spacing:-.02em;white-space:nowrap}
-.release-notes-figures dd{margin:3px 0 0;color:#a29c90;font-size:11px;line-height:1.35}
 .release-notes-list{display:grid;margin:0;padding:8px 34px 6px;overflow-x:hidden;overflow-y:auto;list-style:none;counter-reset:release-item}
 .release-notes-list li{display:grid;min-width:0;padding:15px 0;align-items:start;border-top:1px solid var(--line);grid-template-columns:30px 40px minmax(0,1fr);gap:12px;counter-increment:release-item}
 .release-notes-list li:first-child{border-top:0}
@@ -2461,16 +2455,12 @@ html[data-theme] .release-notes-modal{border-color:var(--line);background:var(--
 html[data-theme] .release-notes-list li>span{color:#fff;background:#14120f}
 @media screen and (max-width:560px){
   .release-notes-modal{width:100%}
-  .release-notes-hero{padding:18px 18px 0}
+  .release-notes-hero{padding:18px 18px 20px}
   .release-notes-hero::after{top:44px;right:12px;font-size:92px}
   .release-notes-version{margin-top:18px}
   .release-notes-hero h2{font-size:30px}
   .release-notes-hero>p:not(.release-notes-version){font-size:12.5px}
-  .release-notes-figures{margin:16px -18px 0}
-  .release-notes-figures>div{padding:11px 8px 12px 18px}
-  .release-notes-figures dt{font-size:17px}
-  .release-notes-figures dd{font-size:10px}
-  .release-notes-list{padding:4px 18px 4px}
+          .release-notes-list{padding:4px 18px 4px}
   .release-notes-list li{padding:12px 0;grid-template-columns:24px 36px minmax(0,1fr);gap:9px}
   .release-notes-list li>span{width:36px;height:36px}
   .release-notes-list li::before{padding-top:9px;font-size:12px}
