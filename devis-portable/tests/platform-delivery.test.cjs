@@ -35,6 +35,21 @@ for (const helpFile of ["help.html", "help.css", "help.js"]) {
   assert.match(chromeosBuilder, new RegExp(`"${helpFile.replace(".", "\\.")}"`), `${helpFile} doit être copié dans le livrable ChromeOS`);
 }
 assert.match(chromeosBuilder, /"contact-core\.js"/, "Le moteur de contacts doit être copié dans le livrable ChromeOS");
+
+// Un script chargé par index.html mais absent du livrable web casserait l’application au démarrage : la liste de
+// l’assembleur ChromeOS et le précache hors ligne doivent couvrir chaque script et chaque police référencée.
+const serviceWorkerSource = read("devis-portable/service-worker.js");
+const loadedScripts = [...index.matchAll(/<script src="([^"]+\.js)"/g)].map((match) => match[1]);
+assert.ok(loadedScripts.includes("pdf-i18n.js") && loadedScripts.includes("app.js"), "index.html doit charger les scripts attendus");
+for (const script of loadedScripts) {
+  assert.match(chromeosBuilder, new RegExp(`"${script.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`), `${script} doit être copié dans le livrable ChromeOS`);
+  assert.ok(serviceWorkerSource.includes(`"./${script}"`), `${script} doit être précaché pour le mode hors ligne`);
+}
+for (const [, asset] of styles.matchAll(/url\("(assets\/[^"]+)"\)/g)) {
+  assert.ok(fs.existsSync(path.join(projectRoot, "devis-portable", asset)), `${asset} est référencé par styles.css mais absent`);
+  if (asset.endsWith(".woff2")) assert.ok(serviceWorkerSource.includes(`"./${asset}"`), `${asset} doit être précaché pour le mode hors ligne`);
+}
+assert.match(chromeosBuilder, /fetch\(new URL\("pdf-i18n\.js", url\)\)[\s\S]*?pdfI18n\.ok/, "L’assembleur ChromeOS doit vérifier les traductions du PDF livrées");
 assert.match(chromeosBuilder, /fetch\(new URL\("help\.html", url\)\)[\s\S]*?helpPage\.ok[\s\S]*?text\/html/, "L’assembleur ChromeOS doit vérifier le centre d’aide livré");
 assert.match(packageJson.scripts.mac, /require-build-platform\.cjs darwin/);
 assert.match(packageJson.scripts.linux, /require-build-platform\.cjs linux/);

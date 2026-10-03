@@ -28,6 +28,8 @@ const APP_FILES = [
   "help.js",
   "index.html",
   "manifest.webmanifest",
+  "currency-core.js",
+  "pdf-i18n.js",
   "quote-core.js",
   "service-worker.js",
   "site-migration.js",
@@ -90,7 +92,7 @@ async function copyApp() {
 async function verifyAssembledSite() {
   const { server, url } = await startPwaServer({ port: 0, root: SITE_ROOT });
   try {
-    const [page, manifest, serviceWorker, icon, bodyAnatomy, contactCore, trackingCore, siteMigration, helpPage, helpStyles, helpScript] = await Promise.all([
+    const [page, manifest, serviceWorker, icon, bodyAnatomy, contactCore, trackingCore, siteMigration, helpPage, helpStyles, helpScript, pdfI18n, cyrillicFont] = await Promise.all([
       fetch(url),
       fetch(new URL("manifest.webmanifest", url)),
       fetch(new URL("service-worker.js", url)),
@@ -101,9 +103,11 @@ async function verifyAssembledSite() {
       fetch(new URL("site-migration.js", url)),
       fetch(new URL("help.html", url)),
       fetch(new URL("help.css", url)),
-      fetch(new URL("help.js", url))
+      fetch(new URL("help.js", url)),
+      fetch(new URL("pdf-i18n.js", url)),
+      fetch(new URL("assets/roboto-cyrillic.woff2", url))
     ]);
-    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok || !bodyAnatomy.ok || !contactCore.ok || !trackingCore.ok || !siteMigration.ok || !helpPage.ok || !helpStyles.ok || !helpScript.ok) {
+    if (!page.ok || !manifest.ok || !serviceWorker.ok || !icon.ok || !bodyAnatomy.ok || !contactCore.ok || !trackingCore.ok || !siteMigration.ok || !helpPage.ok || !helpStyles.ok || !helpScript.ok || !pdfI18n.ok || !cyrillicFont.ok) {
       throw new Error("Le dossier ChromeOS assemblé contient une ressource inaccessible.");
     }
     if (!String(page.headers.get("content-type")).startsWith("text/html")) {

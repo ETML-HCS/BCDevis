@@ -387,16 +387,36 @@ async function copyFileToClipboard(filePath) {
   return false;
 }
 
-async function whatsappDesktopAvailable() {
-  if (process.platform === "win32") {
-    try {
-      await runExecutable(path.join(String(process.env.SystemRoot || "C:\\Windows"), "System32", "reg.exe"), ["query", "HKCR\\whatsapp", "/ve"], { windowsHide: true, timeout: 5000 });
-      return true;
-    } catch {
-      return false;
-    }
+function protocolHandlerName(url) {
+  try {
+    return String(app.getApplicationNameForProtocol(url) || "").trim();
+  } catch {
+    return "";
   }
-  return process.platform === "darwin";
+}
+
+// Nom de l'application qui gère whatsapp:// (« WhatsApp », « WhatsApp Beta »…), ou "" si aucune n'est installée.
+// L'API du système reste fiable même lorsque la clé de registre n'a pas de valeur par défaut.
+async function whatsappDesktopName() {
+  const name = protocolHandlerName("whatsapp://send");
+  if (name) return name;
+  if (process.platform !== "win32") return "";
+  try {
+    await runExecutable(path.join(String(process.env.SystemRoot || "C:\\Windows"), "System32", "reg.exe"), ["query", "HKCR\\whatsapp"], { windowsHide: true, timeout: 5000 });
+    return "WhatsApp";
+  } catch {
+    return "";
+  }
+}
+
+async function allowedSharedPdf(filePath) {
+  const target = path.resolve(String(filePath || ""));
+  const allowedDirectories = [app.getPath("downloads"), await configuredPdfDirectory()];
+  if (path.extname(target).toLowerCase() !== ".pdf" || !allowedDirectories.some((directory) => pathIsWithin(directory, target))) {
+    throw new Error("Fichier PDF non autorisé.");
+  }
+  if (!(await fs.stat(target)).isFile()) throw new Error("PDF introuvable.");
+  return target;
 }
 
 ipcMain.handle("bcdevis:whatsapp-prepare", async (_event, payload) => {
@@ -408,16 +428,27 @@ ipcMain.handle("bcdevis:whatsapp-prepare", async (_event, payload) => {
     try {
       if ((await fs.stat(filePath)).isFile()) clipboard = await copyFileToClipboard(filePath);
     } catch (error) {
+      // Ex. PowerShell bloqué par une stratégie de sécurité : l'interface propose alors le glisser-déposer.
       console.warn("PDF non copié dans le presse-papiers.", error?.message || error);
     }
   }
   const query = text ? `text=${encodeURIComponent(text)}` : "";
-  const desktop = await whatsappDesktopAvailable();
-  const target = desktop
+  const desktopName = await whatsappDesktopName();
+  // Sans application installée, WhatsApp Web s'ouvre directement sur la conversation (wa.me ajoute une page intermédiaire).
+  const target = desktopName
     ? `whatsapp://send?${phone ? `phone=${phone}&` : ""}${query}`
-    : `https://wa.me/${phone}${query ? `?${query}` : ""}`;
+    : `https://web.whatsapp.com/send?${phone ? `phone=${phone}&` : ""}${query}`;
   await shell.openExternal(target);
-  return { clipboard, client: desktop ? "desktop" : "web" };
+  return {
+    clipboard,
+    client: desktopName ? "desktop" : "web",
+    appName: desktopName || protocolHandlerName("https://web.whatsapp.com")
+  };
+});
+
+ipcMain.handle("bcdevis:show-pdf-in-folder", async (_event, filePath) => {
+  shell.showItemInFolder(await allowedSharedPdf(filePath));
+  return true;
 });
 
 ipcMain.handle("bcdevis:open-external", async (_event, url) => {

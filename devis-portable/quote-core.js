@@ -61,6 +61,48 @@
     return roundMoney(base * clamp(value, 0, 100) / 100);
   }
 
+  // Garde-fous du rabais personnalisé. Seuils en part de la ligne (ou du devis pour le cumul) :
+  // au-delà de NOTICE un avis s'affiche ; à partir de CONFIRM (ou pour une ligne offerte), une confirmation est exigée.
+  const DISCOUNT_GUARD = { notice: 0.10, confirm: 0.30, quoteConfirm: 0.50 };
+
+  function assessLineDiscount(target, lineId, { type = "percent", value = 0 } = {}) {
+    const lines = Array.isArray(target?.lines) ? target.lines : [];
+    const line = lines.find((item) => item?.id === lineId);
+    if (!line) return null;
+    const studentRate = calculate(target).studentRate;
+    const base = lineDiscountBase(line, studentRate);
+    const kind = type === "fixed" ? "fixed" : "percent";
+    const requested = Number(value);
+    const negative = Number.isFinite(requested) && requested < 0;
+    const raw = Number.isFinite(requested) && requested > 0 ? requested : 0;
+    const limit = kind === "percent" ? 100 : base;
+    const applied = Math.min(limit, raw);
+    const draft = { ...line, customDiscount: applied > 0 ? { type: kind, value: applied } : undefined };
+    const amount = customLineDiscount(draft, studentRate);
+    const share = base > 0 ? amount / base : 0;
+    const after = calculate({ ...target, lines: lines.map((item) => item === line ? draft : item) });
+    // Part des rabais « au choix » (lignes + coupon) dans le montant restant après les offres automatiques (pack, étudiant).
+    const discretionaryBase = Math.max(0, after.subtotal - after.packDiscount - after.studentDiscount);
+    const quoteShare = discretionaryBase > 0 ? (after.lineDiscount + after.discount) / discretionaryBase : 0;
+    const reasons = [];
+    if (negative) reasons.push("negative");
+    if (raw > limit) reasons.push(kind === "percent" ? "capped-percent" : "capped-amount");
+    const free = amount > 0 && amount >= base;
+    if (free) reasons.push("free");
+    else if (share >= DISCOUNT_GUARD.confirm) reasons.push("high");
+    else if (share > DISCOUNT_GUARD.notice) reasons.push("notice");
+    // Le cumul n'est signalé que s'il existe d'autres rabais au choix (autres lignes, coupon) : seul, le rabais de la ligne est déjà annoncé.
+    const otherDiscounts = roundMoney(after.lineDiscount - amount + after.discount);
+    if (amount > 0 && otherDiscounts > 0 && quoteShare >= DISCOUNT_GUARD.quoteConfirm) reasons.push("quote-high");
+    const needsConfirmation = reasons.some((reason) => ["free", "high", "quote-high"].includes(reason));
+    return {
+      base, applied, amount, share, quoteShare, reasons,
+      result: roundMoney(Math.max(0, base - amount)),
+      capped: applied !== raw,
+      level: needsConfirmation ? "confirm" : reasons.length ? "warn" : ""
+    };
+  }
+
   function calculate(target) {
     const lines = Array.isArray(target?.lines) ? target.lines : [];
     const subtotal = roundMoney(lines.reduce((sum, line) => sum + referenceLineTotal(line), 0));
@@ -97,5 +139,5 @@
     return { subtotal, packDiscount, studentDiscount, studentRate, lineDiscount, discount, totalDiscount, discounted, net, tax, total, rate };
   }
 
-  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, cleanDocumentPrefix, relatedDocumentNumber };
+  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, assessLineDiscount, DISCOUNT_GUARD, cleanDocumentPrefix, relatedDocumentNumber };
 });

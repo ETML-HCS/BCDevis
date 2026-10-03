@@ -4,6 +4,18 @@
   else root.BCDevisTracking = api;
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   const CONVERTED_STATUSES = new Set(["accepted", "invoiced"]);
+  const LOSS_REASONS = [
+    { key: "price", label: "Prix" },
+    { key: "timing", label: "Calendrier ou disponibilité" },
+    { key: "thinking", label: "Souhaite réfléchir" },
+    { key: "no-answer", label: "Ne répond plus" },
+    { key: "competitor", label: "Autre solution choisie" },
+    { key: "abandoned", label: "Projet abandonné" },
+    { key: "duplicate", label: "Doublon ou devis remplacé" },
+    { key: "other", label: "Autre" }
+  ];
+  const LOSS_REASON_KEYS = new Set(LOSS_REASONS.map((reason) => reason.key));
+  const PERIODS = ["month", "previous-month", "quarter", "year", "all"];
 
   function timestamp(value) {
     const time = Date.parse(value || "");
@@ -58,6 +70,25 @@
     return Number.isFinite(amount) && amount > 0 ? amount : 0;
   }
 
+  function lossReasonKey(value) {
+    return LOSS_REASON_KEYS.has(value) ? value : "";
+  }
+
+  function lossReasonLabel(value) {
+    return LOSS_REASONS.find((reason) => reason.key === value)?.label || "";
+  }
+
+  // Seules les relances confirmées comme effectuées comptent ; une date prévue n'est pas une relance.
+  function followUpCount(item) {
+    const events = Array.isArray(item?.tracking?.events) ? item.tracking.events : [];
+    return events.filter((event) => event?.type === "contact").length;
+  }
+
+  function sentChannel(item) {
+    const events = Array.isArray(item?.tracking?.events) ? item.tracking.events : [];
+    return String(events.find((event) => event?.type === "status" && event.status === "sent" && event.channel)?.channel || "");
+  }
+
   function consolidateOpportunities(quotes, { amountOf = () => 0 } = {}) {
     const groups = new Map();
     (Array.isArray(quotes) ? quotes : []).forEach((item) => {
@@ -79,6 +110,8 @@
       const acceptedVersion = latestVersionWith(versions, (item) => Boolean(milestoneDate(item, "acceptedAt", ["accepted"])) || CONVERTED_STATUSES.has(item?.tracking?.status));
       const sentVersion = latestVersionWith(versions, (item) => Boolean(milestoneDate(item, "sentAt", ["sent"])));
       const latestStatus = String(latest?.tracking?.status || "draft");
+      const lost = !converted && ["refused", "expired"].includes(latestStatus);
+      const pending = Boolean(sentAt) && !converted && !lost;
 
       return {
         id,
@@ -91,11 +124,20 @@
         refusedAt,
         converted,
         invoiced,
-        pending: Boolean(sentAt) && !converted && !["refused", "expired"].includes(latestStatus),
+        pending,
+        followUps: versions.reduce((total, item) => total + followUpCount(item), 0),
+        channel: versions.map(sentChannel).find(Boolean) || "",
+        lossReason: lost ? lossReasonKey(latest?.tracking?.lossReason) : "",
         sentAmount: safeAmount(amountOf, sentVersion || latest),
-        acceptedAmount: converted ? safeAmount(amountOf, acceptedVersion || latest) : 0
+        acceptedAmount: converted ? safeAmount(amountOf, acceptedVersion || latest) : 0,
+        pendingAmount: pending ? safeAmount(amountOf, latest) : 0
       };
     });
+  }
+
+  function inPeriod(opportunity, startDate, endDate) {
+    const sentDate = datePart(opportunity.sentAt);
+    return Boolean(sentDate) && (!startDate || sentDate >= startDate) && (!endDate || sentDate <= endDate);
   }
 
   function median(values) {
@@ -111,26 +153,107 @@
     return start === null || end === null || end < start ? null : (end - start) / 86400000;
   }
 
-  function summarizeConversion(quotes, { startDate = "", endDate = "", amountOf = () => 0 } = {}) {
-    const opportunities = consolidateOpportunities(quotes, { amountOf }).filter((item) => {
-      const sentDate = datePart(item.sentAt);
-      return sentDate && (!startDate || sentDate >= startDate) && (!endDate || sentDate <= endDate);
-    });
+  function summarizeOpportunities(opportunities) {
     const converted = opportunities.filter((item) => item.converted);
+    const lost = opportunities.filter((item) => !item.converted && ["refused", "expired"].includes(item.latestStatus));
     const total = (field) => opportunities.reduce((sum, item) => sum + Number(item[field] || 0), 0);
     const acceptanceDelays = converted.map((item) => daysBetween(item.sentAt, item.acceptedAt));
+    const reasonCounts = new Map();
+    lost.forEach((item) => {
+      const key = item.lossReason || "unspecified";
+      reasonCounts.set(key, (reasonCounts.get(key) || 0) + 1);
+    });
 
     return {
       sent: opportunities.length,
       converted: converted.length,
-      refused: opportunities.filter((item) => !item.converted && item.latestStatus === "refused").length,
-      expired: opportunities.filter((item) => !item.converted && item.latestStatus === "expired").length,
+      refused: lost.filter((item) => item.latestStatus === "refused").length,
+      expired: lost.filter((item) => item.latestStatus === "expired").length,
       pending: opportunities.filter((item) => item.pending).length,
       conversionRate: opportunities.length ? converted.length / opportunities.length : null,
       sentValue: total("sentAmount"),
       acceptedValue: total("acceptedAmount"),
-      medianAcceptanceDays: median(acceptanceDelays)
+      pendingValue: total("pendingAmount"),
+      medianAcceptanceDays: median(acceptanceDelays),
+      acceptedAfterFollowUp: converted.filter((item) => item.followUps > 0).length,
+      expiredWithoutFollowUp: lost.filter((item) => item.latestStatus === "expired" && item.followUps === 0).length,
+      lossReasons: [...reasonCounts.entries()]
+        .map(([key, count]) => ({ key, label: lossReasonLabel(key) || "Non renseigné", count }))
+        .sort((left, right) => right.count - left.count || (left.key === "unspecified") - (right.key === "unspecified"))
     };
+  }
+
+  function summarizeConversion(quotes, { startDate = "", endDate = "", amountOf = () => 0 } = {}) {
+    return summarizeOpportunities(consolidateOpportunities(quotes, { amountOf }).filter((item) => inPeriod(item, startDate, endDate)));
+  }
+
+  function shiftMonth(month, offset) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    const index = year * 12 + monthNumber - 1 + offset;
+    return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+  }
+
+  function lastDayOfMonth(month) {
+    const [year, monthNumber] = month.split("-").map(Number);
+    return `${month}-${String(new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()).padStart(2, "0")}`;
+  }
+
+  // Les cohortes sont toujours des mois calendaires complets, sauf le mois en cours qui s'arrête à aujourd'hui.
+  function periodRange(period, today) {
+    const month = String(today || "").slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(month)) return { startDate: "", endDate: "" };
+    if (period === "previous-month") {
+      const previous = shiftMonth(month, -1);
+      return { startDate: `${previous}-01`, endDate: lastDayOfMonth(previous) };
+    }
+    if (period === "quarter") return { startDate: `${shiftMonth(month, -2)}-01`, endDate: today };
+    if (period === "year") return { startDate: `${shiftMonth(month, -11)}-01`, endDate: today };
+    if (period === "all") return { startDate: "", endDate: today };
+    return { startDate: `${month}-01`, endDate: today };
+  }
+
+  function monthlyConversion(quotes, { endDate = "", months = 6, amountOf = () => 0 } = {}) {
+    const lastMonth = String(endDate || "").slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(lastMonth)) return [];
+    const opportunities = consolidateOpportunities(quotes, { amountOf });
+    const count = Math.max(1, Math.min(24, Number(months) || 6));
+    return Array.from({ length: count }, (_, index) => {
+      const month = shiftMonth(lastMonth, index - count + 1);
+      const summary = summarizeOpportunities(opportunities.filter((item) => inPeriod(item, `${month}-01`, lastDayOfMonth(month))));
+      return { month, sent: summary.sent, converted: summary.converted, pending: summary.pending, conversionRate: summary.conversionRate, sentValue: summary.sentValue, acceptedValue: summary.acceptedValue };
+    });
+  }
+
+  function csvCell(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? value.toFixed(2) : "";
+    // Une cellule commençant par =, +, - ou @ serait interprétée comme une formule par un tableur.
+    const text = String(value ?? "").replace(/^([=+\-@\t\r])/, "'$1");
+    return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  }
+
+  function exportConversionCSV(quotes, { startDate = "", endDate = "", amountOf = () => 0, statusLabel = (status) => status } = {}) {
+    const header = ["Devis", "Version", "Client", "Téléphone", "E-mail", "Statut", "Envoyé le", "Accepté le", "Refusé le", "Facturé le", "Canal", "Relances", "Motif de perte", "Montant envoyé CHF", "Montant accepté CHF"];
+    const rows = consolidateOpportunities(quotes, { amountOf })
+      .filter((item) => inPeriod(item, startDate, endDate))
+      .sort((left, right) => String(left.sentAt).localeCompare(String(right.sentAt)))
+      .map((item) => [
+        item.latest?.number || "",
+        `V${Number(item.latest?.revisionNumber) || 1}`,
+        item.latest?.client?.name || "",
+        item.latest?.client?.phone || "",
+        item.latest?.client?.email || "",
+        statusLabel(item.latestStatus),
+        datePart(item.sentAt),
+        datePart(item.acceptedAt),
+        datePart(item.refusedAt),
+        datePart(item.invoicedAt),
+        item.channel,
+        String(item.followUps),
+        lossReasonLabel(item.lossReason),
+        item.sentAmount,
+        item.acceptedAmount
+      ]);
+    return `﻿${[header, ...rows].map((row) => row.map(csvCell).join(";")).join("\r\n")}`;
   }
 
   function countAcceptedInMonth(quotes, month) {
@@ -141,5 +264,18 @@
     return (Array.isArray(quotes) ? quotes : []).filter((item) => item?.tracking?.status === "accepted").length;
   }
 
-  return { consolidateOpportunities, summarizeConversion, countAcceptedInMonth, countAwaitingInvoices };
+  return {
+    LOSS_REASONS,
+    PERIODS,
+    consolidateOpportunities,
+    summarizeConversion,
+    monthlyConversion,
+    periodRange,
+    exportConversionCSV,
+    followUpCount,
+    lossReasonKey,
+    lossReasonLabel,
+    countAcceptedInMonth,
+    countAwaitingInvoices
+  };
 });

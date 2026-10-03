@@ -19,7 +19,10 @@ const externalTargets = [];
 const openedPaths = [];
 const processRuns = [];
 const deletedFiles = [];
+const revealedPaths = [];
 let failOutlook = false;
+let failRegistry = false;
+const protocolHandlers = { "whatsapp://send": "WhatsApp", "https://web.whatsapp.com": "Firefox" };
 const originalLoad = Module._load;
 
 const fakeApp = {
@@ -34,6 +37,7 @@ const fakeApp = {
   whenReady() { return { then() { return { catch() {} }; } }; },
   on() {},
   requestSingleInstanceLock() { return false; },
+  getApplicationNameForProtocol(url) { return protocolHandlers[url] || ""; },
   quit() {}
 };
 
@@ -46,7 +50,8 @@ Module._load = function loadWithElectronMocks(request, parent, isMain) {
       ipcMain: { handle(channel, handler) { handlers.set(channel, handler); } },
       shell: {
         openExternal: async (target) => externalTargets.push(target),
-        openPath: async (target) => { openedPaths.push(target); return ""; }
+        openPath: async (target) => { openedPaths.push(target); return ""; },
+        showItemInFolder: (target) => revealedPaths.push(target)
       }
     };
   }
@@ -56,13 +61,18 @@ Module._load = function loadWithElectronMocks(request, parent, isMain) {
       access: async () => { const error = new Error("Missing"); error.code = "ENOENT"; throw error; },
       readFile: async () => Buffer.from("%PDF-email-fallback"),
       writeFile: async (filePath, contents) => writes.push({ filePath, contents }),
-      unlink: async (filePath) => deletedFiles.push(filePath)
+      unlink: async (filePath) => deletedFiles.push(filePath),
+      stat: async () => ({ isFile: () => true })
     };
   }
   if (request === "node:child_process") {
     return {
       execFile(file, args, options, callback) {
         processRuns.push({ file, args, options });
+        if (failRegistry && /reg\.exe$/i.test(file)) {
+          callback(new Error("Clé absente"), "", "");
+          return;
+        }
         callback(failOutlook ? new Error("Outlook indisponible") : null, "", "");
       }
     };
@@ -195,6 +205,26 @@ assert.doesNotMatch(
     handlers.get("bcdevis:open-external")(null, "file:///C:/Windows/System32"),
     /Lien externe non autorisé/
   );
+  // WhatsApp : l'application installée est détectée par le système et la conversation s'ouvre directement.
+  const sharedPdf = path.join(testDownloads, "DEV-20260806A001.pdf");
+  externalTargets.length = 0;
+  const desktopShare = await handlers.get("bcdevis:whatsapp-prepare")(null, { phone: "41791234567", text: "Bonjour", filePath: sharedPdf });
+  assert.deepEqual(desktopShare, { clipboard: true, client: "desktop", appName: "WhatsApp" });
+  assert.deepEqual(externalTargets, ["whatsapp://send?phone=41791234567&text=Bonjour"]);
+  assert.ok(processRuns.some((run) => run.options?.env?.BCDEVIS_CLIPBOARD_FILE === sharedPdf), "Le PDF doit être copié comme fichier");
+  // Sans application, WhatsApp Web s'ouvre sur la conversation, et le navigateur utilisé est nommé.
+  delete protocolHandlers["whatsapp://send"];
+  failRegistry = true;
+  externalTargets.length = 0;
+  const webShare = await handlers.get("bcdevis:whatsapp-prepare")(null, { phone: "41791234567", text: "Bonjour", filePath: sharedPdf });
+  assert.deepEqual(webShare, { clipboard: true, client: "web", appName: "Firefox" });
+  assert.deepEqual(externalTargets, ["https://web.whatsapp.com/send?phone=41791234567&text=Bonjour"]);
+  // « Afficher le PDF » : uniquement un PDF du dossier de téléchargement ou du dossier PDF configuré.
+  await handlers.get("bcdevis:show-pdf-in-folder")(null, sharedPdf);
+  assert.deepEqual(revealedPaths, [sharedPdf]);
+  await assert.rejects(handlers.get("bcdevis:show-pdf-in-folder")(null, path.join(testRoot, "outside", "secret.pdf")), /Fichier PDF non autorisé/);
+  await assert.rejects(handlers.get("bcdevis:show-pdf-in-folder")(null, path.join(testDownloads, "programme.exe")), /Fichier PDF non autorisé/);
+  assert.equal(revealedPaths.length, 1, "Un fichier refusé ne doit jamais être affiché");
   console.log("PDF_MAIN_TESTS_OK");
 })().then(restorePlatform).catch((error) => {
   restorePlatform();

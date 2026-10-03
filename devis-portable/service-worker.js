@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v8.6.2-touch-ipad-smartphone-documents-help-contacts-conversion-login";
+const CACHE_NAME = "bcdevis-pwa-v8.7.0-touch-ipad-smartphone-documents-help-contacts-conversion-login";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,8 @@ const APP_SHELL = [
   "./app.js",
   "./contact-core.js",
   "./tracking-core.js",
+  "./pdf-i18n.js",
+  "./currency-core.js",
   "./help.html",
   "./help.css",
   "./help.js",
@@ -30,6 +32,8 @@ const APP_SHELL = [
   "./assets/red-hat-display-black.ttf",
   "./assets/red-hat-display-italic-variable.ttf",
   "./assets/roboto-latin.woff2",
+  "./assets/roboto-cyrillic.woff2",
+  "./assets/roboto-slab-cyrillic.woff2",
   "./assets/roboto-slab-latin.woff2"
 ];
 

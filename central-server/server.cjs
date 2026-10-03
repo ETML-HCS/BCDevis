@@ -4,7 +4,7 @@ const http = require("node:http");
 const { CentralDatabase } = require("./database.cjs");
 const { duplicateQuoteNumbers, emptySnapshot, mergeSnapshots, normalizeSnapshot, same } = require("./sync-merge.cjs");
 
-const SERVER_VERSION = "8.0.0";
+const SERVER_VERSION = "8.7.0";
 const API_PREFIX = "/api/v1";
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_PDF_BYTES = 8 * 1024 * 1024;
@@ -147,7 +147,7 @@ function startCentralServer(options = {}) {
       const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
       if (request.method === "GET" && url.pathname === `${API_PREFIX}/health`) {
         if (!await database.health()) throw new Error("PostgreSQL n’a pas confirmé sa disponibilité.");
-        json(response, 200, { ok: true, service: "BCDevis Central", version: SERVER_VERSION, database: "ready", databaseEngine: "postgresql" }, corsHeaders);
+        json(response, 200, { ok: true, service: "BCDevis Central", version: SERVER_VERSION, database: "ready", databaseEngine: "postgresql", schemaVersion: await database.schemaVersion() }, corsHeaders);
         return;
       }
 

@@ -31,3 +31,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## Roboto et Roboto Slab (sous-ensembles latin et cyrillique)
+
+Les polices `assets/roboto-*.woff2` et `assets/roboto-slab-*.woff2` servent à l'interface et au PDF ; les sous-ensembles cyrilliques permettent le PDF en russe et en ukrainien. Elles proviennent de Google Fonts.
+
+- Roboto : Copyright 2011 The Roboto Project Authors (https://github.com/googlefonts/roboto), licence SIL Open Font License 1.1 (https://openfontlicense.org).
+- Roboto Slab : Copyright 2018 The Roboto Slab Project Authors (https://github.com/googlefonts/robotoslab), licence Apache 2.0 (http://www.apache.org/licenses/LICENSE-2.0).

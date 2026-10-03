@@ -92,6 +92,65 @@ async function main() {
   assert.deepEqual(mergeSnapshots(contactBase, contactLocal, contactRemote).conflicts, ["contacts.contact-1"]);
   assert.equal(mergeSnapshots(contactBase, contactLocal, contactRemote, { strategy: "local" }).snapshot.contacts["contact-1"].phone, "+41 79 111 11 11");
 
+  // 8.6.5 — version minimale du serveur : sous 7.1.0 la synchronisation est refusée, sous 8.7.0 elle est seulement signalée.
+  assert.equal(centralClient.MINIMUM_SERVER_VERSION, "7.1.0");
+  assert.deepEqual(["7.0.2", "7.1.0", "8.0.0", "8.6.5", "8.7.0", "8.10.0", ""].map((version) => centralClient.assessServerVersion(version).level),
+    ["unsupported", "outdated", "outdated", "outdated", "current", "current", "unknown"], "Chaque version doit être classée bloquée, conseillée à mettre à jour, à jour ou inconnue");
+  const contactsKept = { settings: {}, quoteCounters: {}, customServices: [], catalogOverrides: {}, contacts: { c1: { id: "c1", name: "Camille" } }, quotes: {} };
+  const answerWithoutContacts = snapshot();
+  delete answerWithoutContacts.contacts;
+  centralClient.applySharedSnapshot(contactsKept, answerWithoutContacts);
+  assert.equal(contactsKept.contacts.c1.name, "Camille", "Un serveur sans gestion des contacts ne doit pas vider le répertoire local");
+  centralClient.applySharedSnapshot(contactsKept, snapshot());
+  assert.deepEqual(contactsKept.contacts, {}, "Un répertoire central vide reste une information valide");
+
+  const healthPayload = (version) => ({ ok: true, service: "BCDevis Central", database: "ready", databaseEngine: "postgresql", ...(version ? { version } : {}) });
+  const stubServer = (version) => {
+    const calls = [];
+    const fetchImpl = async (url) => {
+      const route = String(url).split("/api/v1/")[1];
+      calls.push(route);
+      const payload = route === "health" ? healthPayload(version)
+        : route === "sync" ? { snapshot: snapshot(), revision: 1, synchronizedAt: "2026-10-03T08:00:00.000Z", changed: true }
+        : route === "auth/login" ? { token: "t".repeat(40), expiresAt: "2099-01-01T00:00:00.000Z", user: { role: "admin" }, organization: { name: "Clinique" }, device: { code: "P01", name: "Poste" } }
+        : {};
+      return { ok: true, status: 200, json: async () => payload };
+    };
+    return { calls, fetchImpl };
+  };
+  const storedSession = () => {
+    const storage = memoryStorage();
+    storage.setItem(centralClient.CONFIG_KEY, JSON.stringify({ enabled: true, endpoint: "https://central.example/", token: "s".repeat(40), tokenExpiresAt: "2099-01-01T00:00:00.000Z", deviceId: "device-stored-0001", userRole: "admin" }));
+    return storage;
+  };
+  const controllerFor = (storage, fetchImpl) => centralClient.createController({ storage, fetchImpl, getDatabase: () => ({ settings: {}, quoteCounters: {}, customServices: [], catalogOverrides: {}, contacts: {}, quotes: {} }), applySnapshot: () => {} });
+
+  const tooOld = stubServer("7.0.2");
+  await assert.rejects(controllerFor(memoryStorage(), tooOld.fetchImpl).connect({ endpoint: "https://central.example/", email: "admin@bellecour.test", password: "mot-de-passe-central-fort", deviceName: "Accueil" }), /trop ancien \(version minimale 7\.1\.0\)/);
+  assert.deepEqual(tooOld.calls, ["health"], "Un serveur trop ancien doit être refusé avant l’envoi du mot de passe");
+
+  const storedOld = stubServer("7.0.2");
+  const oldController = controllerFor(storedSession(), storedOld.fetchImpl);
+  const blocked = await oldController.sync();
+  assert.equal(blocked.unsupported, true, "Une session mémorisée sur un serveur trop ancien ne doit pas synchroniser");
+  assert.equal(blocked.minimumVersion, "7.1.0");
+  assert.equal(oldController.getState().status, "error");
+  assert.match(oldController.getState().message, /vos données restent sur ce poste/);
+  await oldController.sync();
+  assert.deepEqual(storedOld.calls, ["health"], "La version n’est contrôlée qu’une fois : ni envoi de données, ni nouvel appel de contrôle");
+
+  const outdated = stubServer("8.0.0");
+  const outdatedResult = await controllerFor(storedSession(), outdated.fetchImpl).sync();
+  assert.equal(outdatedResult.unsupported, undefined, "Un serveur compatible mais ancien doit continuer à synchroniser");
+  assert.deepEqual(outdated.calls, ["health", "sync"]);
+
+  const undeclared = stubServer("");
+  assert.deepEqual((await controllerFor(storedSession(), undeclared.fetchImpl).sync()).revision, 1, "Un serveur qui ne déclare pas sa version n’est pas bloqué à tort");
+
+  const unreachableController = controllerFor(storedSession(), async () => { throw new Error("réseau coupé"); });
+  await assert.rejects(unreachableController.sync(), /réseau coupé/, "Une panne réseau garde son comportement hors ligne habituel");
+  assert.equal(unreachableController.getState().status, "offline");
+
   const postgres = newDb({ autoCreateForeignKeyIndices: true });
   const { Pool } = postgres.adapters.createPg();
   const pool = new Pool();
@@ -107,6 +166,8 @@ async function main() {
     assert.equal(health.status, 200);
     assert.equal(health.payload.database, "ready");
     assert.equal(health.payload.databaseEngine, "postgresql");
+    assert.equal(health.payload.version, centralClient.RECOMMENDED_SERVER_VERSION, "Le serveur livré doit être à la version conseillée au client");
+    assert.equal(health.payload.schemaVersion, 3, "Le contrôle de santé doit annoncer la version du schéma");
 
     const failedLogin = await api(started.url, "auth/login", { method: "POST", body: { email: "admin@bellecour.test", password: "incorrect", deviceId: "device-a-0001", deviceName: "Accueil" } });
     assert.equal(failedLogin.status, 401);

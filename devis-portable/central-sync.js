@@ -9,17 +9,45 @@
   const CONFIG_KEY = "bcdevis-central-v1";
   const SCHEMA_VERSION = 1;
   const REQUEST_TIMEOUT_MS = 15000;
+  // Sous la version minimale, la synchronisation est refusée : avant 7.1.0, le serveur ignore les contacts et
+  // les factures, et renverrait un répertoire vide. Sous la version conseillée, elle fonctionne et un avis s'affiche.
+  const MINIMUM_SERVER_VERSION = "7.1.0";
+  const RECOMMENDED_SERVER_VERSION = "8.7.0";
   const SHARED_SETTING_KEYS = [
     "companyName", "companySubtitle", "companyAddress", "companyPhone", "companyEmail", "companyUid",
     "headerLogoDataUrl", "pdfLogoDataUrl", "quotePrefix", "invoicePrefix", "validityDays", "packPaidDefault", "packFreeDefault",
     "studentDiscount", "taxRate", "taxMode", "showTaxInformation", "visibleFamilies", "quoteDateEditable",
     "quoteTrackingEnabled", "trackingDefaultFollowUpDays", "trackingRemindersOnStartup", "trackingShowFilters",
-    "conditions", "studentConditions", "footerNote", "showSignatures", "pdfLanguage", "centralUniqueQuoteNumbers"
+    "conditions", "studentConditions", "footerNote", "showSignatures", "pdfLanguage", "centralUniqueQuoteNumbers",
+    "eurEnabled", "eurRate", "eurCommission", "eurAutoUpdate", "eurRateDate", "eurRateSource"
   ];
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const isRecord = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
   const identifier = () => globalThis.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  function compareVersions(left, right) {
+    const parts = (value) => String(value || "").split(".").map((part) => Number.parseInt(part, 10) || 0);
+    const a = parts(left);
+    const b = parts(right);
+    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+      const difference = (a[index] || 0) - (b[index] || 0);
+      if (difference) return Math.sign(difference);
+    }
+    return 0;
+  }
+
+  // "unknown" : un serveur qui ne déclare pas sa version (proxy, ancienne API) n'est pas bloqué à tort.
+  function assessServerVersion(version) {
+    if (!String(version || "").trim()) return { level: "unknown", version: "" };
+    if (compareVersions(version, MINIMUM_SERVER_VERSION) < 0) return { level: "unsupported", version: String(version) };
+    if (compareVersions(version, RECOMMENDED_SERVER_VERSION) < 0) return { level: "outdated", version: String(version) };
+    return { level: "current", version: String(version) };
+  }
+
+  function unsupportedServerMessage(version) {
+    return `Le serveur BCDevis ${version} est trop ancien (version minimale ${MINIMUM_SERVER_VERSION}). Mettez-le à jour : vos données restent sur ce poste.`;
+  }
 
   function normalizeEndpoint(value) {
     const input = String(value || "").trim();
@@ -112,7 +140,8 @@
     database.settings = { ...(database.settings || {}), ...source.settings };
     database.customServices = source.customServices;
     database.catalogOverrides = source.catalogOverrides;
-    database.contacts = source.contacts;
+    // Un serveur sans gestion des contacts ne renvoie pas ce champ : le répertoire local n'est alors pas vidé.
+    if (isRecord(snapshot.contacts)) database.contacts = source.contacts;
     database.quotes = source.quotes;
     return database;
   }
@@ -126,6 +155,8 @@
     let syncTimer = 0;
     let activeSync = null;
     let sessionGeneration = 0;
+    // Résultat du dernier contrôle de version, conservé en mémoire pour ne pas interroger le serveur à chaque synchronisation.
+    let serverAssessment = null;
     let state = {
       status: config.enabled ? (config.token ? "offline" : "disconnected") : "local",
       message: config.enabled ? (config.token ? "Connexion en attente" : "Identification requise") : "Données conservées uniquement sur cet appareil",
@@ -159,6 +190,7 @@
         email: patch.email === undefined ? config.email : String(patch.email || "").trim().toLowerCase().slice(0, 320),
         deviceName: patch.deviceName === undefined ? config.deviceName : String(patch.deviceName || "Poste BCDevis").trim().slice(0, 80) || "Poste BCDevis"
       };
+      if (config.endpoint !== previousEndpoint) serverAssessment = null;
       if (config.endpoint !== previousEndpoint || config.email !== previousEmail) {
         config.quoteNumberPool = [];
         config.deviceCode = "";
@@ -274,8 +306,11 @@
         const result = await request("health", { authenticated: false, endpoint });
         if (result.service !== "BCDevis Central") throw new Error("Ce serveur ne fournit pas le service BCDevis Central attendu.");
         if (result.database !== "ready" || result.databaseEngine !== "postgresql") throw new Error("La base PostgreSQL du serveur n’est pas prête.");
-        publish({ status: config.token ? "online" : "disconnected", message: `Serveur BCDevis ${result.version} disponible · PostgreSQL prêt` });
-        return result;
+        serverAssessment = assessServerVersion(result.version);
+        if (serverAssessment.level === "unsupported") throw Object.assign(new Error(unsupportedServerMessage(result.version)), { code: "SERVER_UNSUPPORTED" });
+        const outdated = serverAssessment.level === "outdated";
+        publish({ status: config.token ? "online" : "disconnected", message: `Serveur BCDevis ${result.version} disponible · PostgreSQL prêt${outdated ? ` · mise à jour du serveur conseillée (${RECOMMENDED_SERVER_VERSION})` : ""}` });
+        return { ...result, versionLevel: serverAssessment.level };
       } catch (error) {
         publish({ status: "error", message: error.message, conflicts: [] });
         throw error;
@@ -319,6 +354,21 @@
       }
     }
 
+    // Le contrôle a lieu une fois par chargement de l'application, à la première synchronisation (la session
+    // mémorisée ne passe pas par testConnection). Un échec réseau ne bloque rien : la synchronisation échouera
+    // d'elle-même et gardera les données locales. Seule une version trop ancienne est refusée.
+    async function serverSupportsSync() {
+      if (!serverAssessment) {
+        try {
+          const health = await request("health", { authenticated: false });
+          serverAssessment = assessServerVersion(health.version);
+        } catch {
+          return true;
+        }
+      }
+      return serverAssessment.level !== "unsupported";
+    }
+
     async function performSync(conflictStrategy = "conflict") {
       if (!config.enabled || !config.token) {
         publish({ status: config.enabled ? "disconnected" : "local", message: config.enabled ? "Identification requise" : "Mode local actif", conflicts: [] });
@@ -327,6 +377,10 @@
       if (globalThis.navigator && globalThis.navigator.onLine === false) {
         publish({ status: "offline", message: "Hors connexion · modifications conservées localement" });
         return { offline: true };
+      }
+      if (!await serverSupportsSync()) {
+        publish({ status: "error", message: unsupportedServerMessage(serverAssessment.version), conflicts: [] });
+        return { unsupported: true, serverVersion: serverAssessment.version, minimumVersion: MINIMUM_SERVER_VERSION };
       }
       const syncGeneration = sessionGeneration;
       publish({ status: "syncing", message: conflictStrategy === "conflict" ? "Synchronisation…" : "Résolution du conflit…" });
@@ -516,6 +570,10 @@
     CONFIG_KEY,
     SCHEMA_VERSION,
     SHARED_SETTING_KEYS,
+    MINIMUM_SERVER_VERSION,
+    RECOMMENDED_SERVER_VERSION,
+    assessServerVersion,
+    compareVersions,
     applySharedSnapshot,
     createController,
     loadConfig,

@@ -13,33 +13,50 @@ const app = text("app.js");
 const centralSync = text("central-sync.js");
 const catalog = text("catalog.js");
 
-// Le menu « ... » de la caisse propose le toggle en première position.
+// Le menu « … » ne double plus les boutons déjà présents : la langue est dans la caisse (pastille) et au clavier (Ctrl+L).
 const quoteMenu = html.match(/<div class="action-menu" id="quoteActionMenu"[\s\S]*?<\/div>/)?.[0] || "";
 assert.ok(quoteMenu, "Le menu des actions du devis doit être présent");
-const actionIndex = quoteMenu.indexOf('data-action="pdf-language"');
-const duplicateIndex = quoteMenu.indexOf('data-action="duplicate"');
-assert.ok(actionIndex >= 0 && actionIndex < duplicateIndex, "Le toggle PDF doit être la première action du menu");
-assert.match(quoteMenu, /data-action="pdf-language"[^>]*id="pdfLanguageMenuAction"/, "Le toggle doit exposer un identifiant dédié");
-assert.match(quoteMenu, /id="pdfLanguageMenuLabel">PDF : FR<\/span>/, "Le toggle doit démarrer en français");
-assert.equal((quoteMenu.match(/role="menuitem"/g) || []).length, 6, "Le menu doit proposer six actions");
+assert.doesNotMatch(quoteMenu, /pdf-language|pdfLanguageMenu/, "La langue du PDF ne doit plus figurer dans le menu des actions du devis");
+assert.equal((quoteMenu.match(/role="menuitem"/g) || []).length, 5, "Le menu doit proposer cinq actions : dupliquer, exporter, importer, aide contextuelle, vider");
 
 // Le réglage par défaut est le français.
 assert.match(app, /pdfLanguage: "fr"/, "Le PDF doit être en français par défaut");
 
-// Le rendu du PDF lit la langue configurée pour basculer en anglais.
-assert.match(app, /function pdfEnglish\(\)[\s\S]*?db\.settings\.pdfLanguage === "en"/, "Le rendu du PDF doit lire la langue configurée");
+// Le rendu du PDF lit la langue configurée, bornée aux huit langues proposées.
+assert.match(app, /function pdfLanguage\(\)[\s\S]*?PdfI18n\.normalizeLanguage\(db\.settings\.pdfLanguage\)/, "Le rendu du PDF doit lire la langue configurée");
+assert.match(html, /<script src="pdf-i18n\.js"><\/script>[\s\S]*?<script src="app\.js"><\/script>/, "Les traductions du PDF doivent être chargées avant l’application");
+assert.match(app, /function renderPrint\(\)[\s\S]*?const text = PdfI18n\.strings\(language\)/, "Tous les textes du PDF doivent venir du module de traduction");
+assert.doesNotMatch(app, /\ben \? "/, "Plus aucun texte du PDF ne doit dépendre d’une bascule français/anglais");
 
-// Le libellé du toggle alterne FR et EN.
-assert.match(app, /function syncPdfLanguageMenu\(\)[\s\S]*?PDF : \$\{english \? "EN" : "FR"\}/, "Le libellé du toggle doit alterner FR et EN");
+// La pastille de la caisse affiche le code de la langue choisie.
+assert.match(app, /function syncPdfLanguageMenu\(\)[\s\S]*?checkoutPdfLanguageCode"\)\.textContent = info\.short/, "La pastille de la caisse doit afficher la langue choisie");
+assert.doesNotMatch(app, /pdfLanguageMenu(?:Action|Label)/, "Le code ne doit plus piloter l’ancienne entrée de menu");
 
-// Un clic bascule la langue, la mémorise et resynchronise le libellé.
-assert.match(app, /db\.settings\.pdfLanguage = db\.settings\.pdfLanguage === "en" \? "fr" : "en"/, "Un clic doit basculer la langue du PDF");
-assert.match(app, /function togglePdfLanguage\(\)[\s\S]*?saveLocal\(\)[\s\S]*?syncPdfLanguageMenu\(\)/, "La bascule doit être factorisée en une fonction réutilisable");
-assert.match(app, /if \(action === "pdf-language"\) togglePdfLanguage\(\)/, "Le menu doit appeler la bascule factorisée");
-assert.match(app, /key === "l"\) \{ event\.preventDefault\(\); closeMenusForShortcut\(\); togglePdfLanguage\(\)/, "Le raccourci Ctrl+L doit basculer la langue du PDF");
+// Huit langues : un sélecteur remplace la bascule, au menu, à la caisse et au raccourci Ctrl+L.
+assert.match(html, /id="pdfLanguageLayer"[\s\S]*?role="dialog"[\s\S]*?id="pdfLanguageOptions"/, "Le sélecteur de langue doit être une fenêtre accessible");
+assert.match(html, /id="checkoutPdfLanguageButton"[^>]*aria-keyshortcuts="Control\+L Meta\+L"[\s\S]*?id="checkoutPrintButton"/, "La langue du PDF doit être visible dans la caisse, avant l’impression");
+assert.match(app, /function setPdfLanguage\(code\)[\s\S]*?saveLocal\(\)[\s\S]*?syncPdfLanguageMenu\(\)/, "Le choix doit être mémorisé puis reflété partout");
+assert.match(app, /\$\("#checkoutPdfLanguageButton"\)[\s\S]{0,80}openPdfLanguagePicker/, "La pastille de la caisse doit ouvrir le sélecteur");
+assert.match(app, /key === "l"\) \{ event\.preventDefault\(\); if \(!event\.repeat\) \{ closeMenusForShortcut\(\); openPdfLanguagePicker\(\); \}/, "Le raccourci Ctrl+L doit ouvrir le sélecteur de langue, sans clignoter si la touche reste enfoncée");
+assert.match(app, /Ctrl\+L puis un chiffre[\s\S]*?if \(!event\.altKey && !event\.shiftKey && \/\^\[1-9\]\$\/\.test\(event\.key\)\)/, "Ctrl+L puis 1 à 8 doit choisir la langue, Ctrl pouvant rester enfoncé");
+assert.match(app, /function handlePdfLanguageKeydown\(event\) \{\s*if \(event\.repeat\) return true;/, "Une touche maintenue ne doit pas enchaîner plusieurs choix");
+assert.match(html, /id="pdfLanguageIntro">[^<]*<kbd>Ctrl<\/kbd> <kbd>L<\/kbd> puis <kbd>1<\/kbd> à <kbd>8<\/kbd>/, "La fenêtre doit annoncer le raccourci Ctrl+L puis un chiffre");
+assert.match(html, /id="helpLayer"[\s\S]*?class="button secondary help-close"[^>]*data-close="helpLayer"[\s\S]*?<span>Fermer<\/span><kbd>Échap<\/kbd>/, "L’aide doit proposer un bouton Fermer lisible plutôt qu’une simple croix");
+assert.match(app, /function handlePdfLanguageKeydown\(event\)[\s\S]*?\/\^\[1-9\]\$\/[\s\S]*?ArrowDown: 2/, "Les touches 1 à 8 et les flèches doivent piloter le sélecteur");
+assert.match(app, /layer\?\.id === "pdfLanguageLayer" && !layer\.hidden && handlePdfLanguageKeydown\(event\)/, "Le clavier du sélecteur doit fonctionner malgré le blocage des raccourcis dans les fenêtres");
+assert.match(app, /PdfI18n\.languageFromName\(quote\.client\?\.language\)[\s\S]*?Langue du client/, "La langue renseignée sur le client doit être signalée");
+assert.match(html, /name="pdfLanguage">(?:<option value="(?:fr|en|de|it|es|pt|uk|ru)">[^<]+<\/option>){8}<\/select>/, "Les réglages doivent proposer les huit langues");
 
-// Le menu rafraîchit son libellé à chaque ouverture.
-assert.match(app, /function setQuoteMenuOpen\(open[\s\S]*?if \(open\) \{\s*syncPdfLanguageMenu\(\)/, "L’ouverture du menu doit rafraîchir le libellé de langue");
+// Le cyrillique dispose de sa propre police, chargée avant l’impression.
+const styles = text("styles.css");
+const serviceWorker = text("service-worker.js");
+assert.match(styles, /@font-face\{font-family:"Roboto";src:url\("assets\/roboto-cyrillic\.woff2"\)[^}]*unicode-range:U\+0301,U\+0400-045F/, "Roboto doit fournir le cyrillique au PDF");
+assert.match(styles, /\.print-quote\[data-pdf-script="cyrillic"\]\{--document-font:"Roboto"/, "Un PDF cyrillique doit garder une seule famille de caractères");
+assert.match(app, /async function waitForPdfLayout\(\) \{\s*await ensurePdfFonts\(\);/, "Le PDF doit attendre la police cyrillique");
+assert.match(app, /void ensurePdfFonts\(\)\.then\(\(\) => window\.setTimeout\(\(\) => window\.print\(\), 80\)\)/, "L’impression doit attendre la police cyrillique");
+for (const asset of ["./pdf-i18n.js", "./assets/roboto-cyrillic.woff2", "./assets/roboto-slab-cyrillic.woff2"]) {
+  assert.ok(serviceWorker.includes(`"${asset}"`), `${asset} doit être disponible hors ligne`);
+}
 
 // Le PDF en anglais traduit aussi les noms des soins.
 const englishNames = catalog.match(/window\.QUOTE_SERVICE_NAMES_EN = \{([\s\S]*?)\};/)?.[1] || "";
@@ -51,8 +68,8 @@ for (const id of serviceIds) {
 }
 assert.match(app, /function printServiceName\(line\)[\s\S]*?window\.QUOTE_SERVICE_NAMES_EN/, "Le rendu du PDF doit lire les noms anglais des soins");
 assert.match(app, /printServiceName\(line\)/, "Le tableau du PDF doit afficher le nom traduit du soin");
-assert.match(app, /function pdfMoney\(value\)[\s\S]*?Intl\.NumberFormat\("en-GB"[\s\S]*?currency: "CHF"/, "Le PDF en anglais doit formater les montants en CHF anglais");
-assert.match(app, /pdfEnglish\(\) \? printServiceName\(line\)/, "La mise en page du PDF doit tenir compte des noms de soins traduits");
+assert.match(app, /function pdfMoney\(value\)[\s\S]*?PdfI18n\.formatMoney\(value, language\)/, "Le PDF doit formater les montants en CHF selon la langue");
+assert.match(app, /String\(printServiceName\(line\) \|\| ""\)\.length > 44/, "La mise en page du PDF doit tenir compte des noms de soins traduits");
 
 // Le réglage est partagé entre les postes centralisés.
 assert.match(centralSync, /"pdfLanguage"/, "La langue du PDF doit être synchronisée avec la base centrale");

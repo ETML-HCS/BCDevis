@@ -8,6 +8,14 @@ const { normalizeSnapshot, same } = require("./sync-merge.cjs");
 const { MIGRATIONS } = require("./migrations.cjs");
 
 const now = () => new Date().toISOString();
+const DELETE_BATCH_SIZE = 500;
+const INSERT_BATCH_SIZE = 100;
+
+function chunks(items, size) {
+  const result = [];
+  for (let index = 0; index < items.length; index += size) result.push(items.slice(index, index + size));
+  return result;
+}
 const identifier = () => crypto.randomUUID();
 const tokenHash = (token) => crypto.createHash("sha256").update(String(token)).digest("hex");
 
@@ -51,6 +59,7 @@ class CentralDatabase {
   constructor(options = {}) {
     this.pool = databasePool(options);
     this.schemaPath = options.schemaPath || path.join(__dirname, "schema.sql");
+    this.migrations = Array.isArray(options.migrations) ? options.migrations : MIGRATIONS;
   }
 
   async ensureMigrationTable(client = this.pool) {
@@ -63,28 +72,36 @@ class CentralDatabase {
     }
     if (!exists && fs.existsSync(this.schemaPath)) {
       await client.query(fs.readFileSync(this.schemaPath, "utf8"));
+      // schema.sql décrit toujours le schéma le plus récent : sur une base neuve, les migrations
+      // sont seulement enregistrées, sans être rejouées.
+      this.baselineCreated = true;
     }
   }
 
   async getAppliedMigrations(client = this.pool) {
     await this.ensureMigrationTable(client);
-    const result = await client.query("SELECT version_id, name, applied_at FROM schema_migrations ORDER BY version_id ASC");
+    const result = await client.query("SELECT version_id, name, applied_at FROM schema_migrations");
+    // Tri numérique : un tri textuel placerait la version 10 avant la version 2.
     return result.rows.map((row) => ({
       version: isNaN(Number(row.version_id)) ? row.version_id : Number(row.version_id),
       name: row.name,
       applied_at: row.applied_at
-    }));
+    })).sort((left, right) => Number(left.version) - Number(right.version));
   }
 
+  // Sur une base existante, chaque migration en attente est exécutée puis enregistrée dans la même
+  // transaction : un échec ne laisse jamais une version marquée « appliquée » sans que son schéma existe.
   async migrate() {
     await this.ensureMigrationTable();
+    const fromBaseline = this.baselineCreated === true;
     const appliedRows = await this.getAppliedMigrations();
     const appliedVersions = new Set(appliedRows.map((r) => String(r.version)));
     const newlyApplied = [];
 
-    for (const migration of MIGRATIONS) {
+    for (const migration of [...this.migrations].sort((left, right) => left.version - right.version)) {
       if (!appliedVersions.has(String(migration.version))) {
         await this.withTransaction(async (client) => {
+          if (!fromBaseline) await migration.up(client);
           await client.query(
             "INSERT INTO schema_migrations (version_id, name, applied_at) VALUES ($1, $2, $3) ON CONFLICT (version_id) DO NOTHING",
             [String(migration.version), migration.name, now()]
@@ -93,13 +110,19 @@ class CentralDatabase {
         newlyApplied.push(migration.version);
       }
     }
-    return { applied: newlyApplied, total: MIGRATIONS.length };
+    this.baselineCreated = false;
+    return { applied: newlyApplied, total: this.migrations.length };
+  }
+
+  async schemaVersion() {
+    const applied = await this.getAppliedMigrations();
+    return applied.reduce((latest, row) => Math.max(latest, Number(row.version) || 0), 0);
   }
 
   async getMigrationStatus() {
     const appliedRows = await this.getAppliedMigrations();
     const appliedMap = new Map(appliedRows.map((r) => [String(r.version), r]));
-    return MIGRATIONS.map((m) => {
+    return this.migrations.map((m) => {
       const record = appliedMap.get(String(m.version));
       return {
         version: m.version,
@@ -254,28 +277,63 @@ class CentralDatabase {
     };
   }
 
-  async replaceSharedRows(client, organizationId, snapshot) {
-    for (const table of ["shared_settings", "quote_counters", "custom_services", "catalog_overrides", "contacts", "quotes"]) {
-      await client.query(`DELETE FROM ${table} WHERE organization_id = $1`, [organizationId]);
+  // Écrit uniquement les lignes qui ont changé. Les lignes modifiées sont supprimées puis réinsérées :
+  // deux devis qui échangent leurs numéros ne heurtent jamais la contrainte d'unicité en cours de route.
+  async syncKeyedRows(client, organizationId, { table, keyColumn, columns, current, next, values }) {
+    const changed = Object.keys(next).filter((key) => !Object.hasOwn(current, key) || !same(current[key], next[key]));
+    const removed = Object.keys(current).filter((key) => !Object.hasOwn(next, key));
+    const stale = [...removed, ...changed.filter((key) => Object.hasOwn(current, key))];
+    for (const batch of chunks(stale, DELETE_BATCH_SIZE)) {
+      const placeholders = batch.map((_, index) => `$${index + 2}`).join(", ");
+      await client.query(`DELETE FROM ${table} WHERE organization_id = $1 AND ${keyColumn} IN (${placeholders})`, [organizationId, ...batch]);
     }
-    for (const [key, value] of Object.entries(snapshot.settings)) {
-      await client.query("INSERT INTO shared_settings (organization_id, key, value) VALUES ($1, $2, $3::jsonb)", [organizationId, key, JSON.stringify(value)]);
+    for (const batch of chunks(changed, INSERT_BATCH_SIZE)) {
+      const parameters = [organizationId];
+      const tuples = batch.map((key) => {
+        const placeholders = values(key, next[key]).map(([value, cast]) => {
+          parameters.push(value);
+          return `$${parameters.length}${cast ? `::${cast}` : ""}`;
+        });
+        return `($1, ${placeholders.join(", ")})`;
+      });
+      await client.query(`INSERT INTO ${table} (organization_id, ${columns.join(", ")}) VALUES ${tuples.join(", ")}`, parameters);
     }
-    for (const [key, value] of Object.entries(snapshot.quoteCounters)) {
-      await client.query("INSERT INTO quote_counters (organization_id, key, value) VALUES ($1, $2, $3)", [organizationId, key, Number(value)]);
+    return { written: changed.length, removed: removed.length };
+  }
+
+  async writeSharedChanges(client, organizationId, current, next) {
+    const counts = {};
+    counts.settings = await this.syncKeyedRows(client, organizationId, {
+      table: "shared_settings", keyColumn: "key", columns: ["key", "value"], current: current.settings, next: next.settings,
+      values: (key, value) => [[key], [JSON.stringify(value), "jsonb"]]
+    });
+    counts.quoteCounters = await this.syncKeyedRows(client, organizationId, {
+      table: "quote_counters", keyColumn: "key", columns: ["key", "value"], current: current.quoteCounters, next: next.quoteCounters,
+      values: (key, value) => [[key], [Number(value)]]
+    });
+    // L'ordre des prestations personnalisées compte : la petite liste est réécrite dès qu'elle change.
+    if (!same(current.customServices, next.customServices)) {
+      await client.query("DELETE FROM custom_services WHERE organization_id = $1", [organizationId]);
+      const positioned = Object.fromEntries(next.customServices.map((service, position) => [String(position), service]));
+      await this.syncKeyedRows(client, organizationId, {
+        table: "custom_services", keyColumn: "id", columns: ["id", "position", "payload"], current: {}, next: positioned,
+        values: (position, service) => [[String(service.id)], [Number(position)], [JSON.stringify(service), "jsonb"]]
+      });
+      counts.customServices = { written: next.customServices.length, removed: current.customServices.length };
     }
-    for (const [position, service] of snapshot.customServices.entries()) {
-      await client.query("INSERT INTO custom_services (organization_id, id, position, payload) VALUES ($1, $2, $3, $4::jsonb)", [organizationId, String(service.id), position, JSON.stringify(service)]);
-    }
-    for (const [serviceId, payload] of Object.entries(snapshot.catalogOverrides)) {
-      await client.query("INSERT INTO catalog_overrides (organization_id, service_id, payload) VALUES ($1, $2, $3::jsonb)", [organizationId, serviceId, JSON.stringify(payload)]);
-    }
-    for (const [contactId, payload] of Object.entries(snapshot.contacts)) {
-      await client.query("INSERT INTO contacts (organization_id, id, payload, updated_at) VALUES ($1, $2, $3::jsonb, $4)", [organizationId, contactId, JSON.stringify(payload), payload.updatedAt || now()]);
-    }
-    for (const [quoteId, payload] of Object.entries(snapshot.quotes)) {
-      await client.query("INSERT INTO quotes (organization_id, id, number, payload, updated_at) VALUES ($1, $2, $3, $4::jsonb, $5)", [organizationId, quoteId, String(payload.number || ""), JSON.stringify(payload), payload.updatedAt || now()]);
-    }
+    counts.catalogOverrides = await this.syncKeyedRows(client, organizationId, {
+      table: "catalog_overrides", keyColumn: "service_id", columns: ["service_id", "payload"], current: current.catalogOverrides, next: next.catalogOverrides,
+      values: (serviceId, payload) => [[serviceId], [JSON.stringify(payload), "jsonb"]]
+    });
+    counts.contacts = await this.syncKeyedRows(client, organizationId, {
+      table: "contacts", keyColumn: "id", columns: ["id", "payload", "updated_at"], current: current.contacts, next: next.contacts,
+      values: (contactId, payload) => [[contactId], [JSON.stringify(payload), "jsonb"], [payload.updatedAt || now()]]
+    });
+    counts.quotes = await this.syncKeyedRows(client, organizationId, {
+      table: "quotes", keyColumn: "id", columns: ["id", "number", "payload", "updated_at"], current: current.quotes, next: next.quotes,
+      values: (quoteId, payload) => [[quoteId], [String(payload.number || "")], [JSON.stringify(payload), "jsonb"], [payload.updatedAt || now()]]
+    });
+    return counts;
   }
 
   async commitSync({ session, snapshot, previousRevision, action, details }) {
@@ -288,7 +346,7 @@ class CentralDatabase {
       const changed = !same(current.snapshot, normalized);
       const revision = changed ? Number(state.revision) + 1 : Number(state.revision);
       if (changed) {
-        await this.replaceSharedRows(client, session.organization_id, normalized);
+        await this.writeSharedChanges(client, session.organization_id, current.snapshot, normalized);
         await client.query("UPDATE workspace_state SET revision = $1, updated_at = $2 WHERE organization_id = $3", [revision, synchronizedAt, session.organization_id]);
       }
       await client.query("UPDATE devices SET last_revision = $1, last_snapshot = $2::jsonb, last_seen_at = $3 WHERE id = $4", [revision, JSON.stringify(normalized), synchronizedAt, session.device_id]);
@@ -396,6 +454,34 @@ class CentralDatabase {
     `, [organizationId, documentId])).rows[0];
     if (!row) return null;
     return { id: row.id, filename: row.filename, mimeType: row.mime_type, byteSize: Number(row.byte_size), sha256: row.sha256, content: Buffer.from(row.content) };
+  }
+
+  // Vue d'ensemble pour l'administration : schéma, volumes et dernière synchronisation.
+  async status(organizationId) {
+    const count = async (sql, parameters = [organizationId]) => Number((await this.pool.query(sql, parameters)).rows[0]?.count) || 0;
+    const [schemaVersion, users, devices, quotes, contacts, documents, invoices, state] = await Promise.all([
+      this.schemaVersion(),
+      count("SELECT COUNT(*)::int AS count FROM users WHERE organization_id = $1 AND active = TRUE"),
+      count("SELECT COUNT(*)::int AS count FROM devices WHERE organization_id = $1"),
+      count("SELECT COUNT(*)::int AS count FROM quotes WHERE organization_id = $1"),
+      count("SELECT COUNT(*)::int AS count FROM contacts WHERE organization_id = $1"),
+      count("SELECT COUNT(*)::int AS count FROM documents WHERE organization_id = $1 AND kind = 'document'"),
+      count("SELECT COUNT(*)::int AS count FROM documents WHERE organization_id = $1 AND kind = 'invoice'"),
+      this.pool.query("SELECT revision, updated_at FROM workspace_state WHERE organization_id = $1", [organizationId])
+    ]);
+    const workspace = state.rows[0];
+    return {
+      schemaVersion,
+      latestSchemaVersion: this.migrations.reduce((latest, migration) => Math.max(latest, migration.version), 0),
+      users,
+      devices,
+      quotes,
+      contacts,
+      documents,
+      invoices,
+      revision: Number(workspace?.revision) || 0,
+      updatedAt: workspace?.updated_at ? new Date(workspace.updated_at).toISOString() : null
+    };
   }
 
   async getPrimaryOrganization() {

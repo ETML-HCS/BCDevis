@@ -1,0 +1,17 @@
+# Instructions pour Cursor (.cursorrules)
+
+# Contexte du Projet BCDevis
+BCDevis est l'application de création de devis pour la Clinique Bellecour (Genève, CHF).
+Développée en Vanilla JavaScript et Vanilla CSS avec architecture Electron / PWA et serveur central PostgreSQL.
+
+# Règles pour l'IA
+1. Ne pas introduire de framework frontend (React, Vue, Tailwind, etc.). Maintenir le code Vanilla JS / CSS.
+2. Respecter la séparation des responsabilités :
+   - `devis-portable/quote-core.js` pour la logique de calcul financier (pur, sans DOM).
+   - `devis-portable/contact-core.js` pour les coordonnées et formats vCard/CSV.
+   - `devis-portable/tracking-core.js` pour le cycle de vie des opportunités commerciales.
+3. Toujours préserver la rétrocompatibilité des données `localStorage` ("bcdevis-v1").
+4. Cibles tactiles d'au moins 44×44 px sur mobile/iPad.
+5. Se référer à `types/bcdevis.d.ts` pour connaître la forme exacte des données.
+6. Se référer à `AGENTS.md` pour l'index complet des fonctions de `app.js`.
+7. Toujours valider avec `npm run check` ou `npm run check:fast` avant de terminer.

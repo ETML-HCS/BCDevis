@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Raccourcis clavier V8</h1>
   <p>Les 16 commandes rapides disponibles dans BCDevis.</p>
-  <p class="version">Version 8.6.2 - Windows, Linux, macOS et ChromeOS</p>
+  <p class="version">Version 8.7.0 - Windows, Linux, macOS et ChromeOS</p>
 </div>
 
 ## Catalogue
@@ -31,7 +31,7 @@
 | --- | --- |
 | `Ctrl + P` | Imprimer le devis |
 | `Ctrl + Maj + S` | Télécharger le PDF |
-| `Ctrl + L` | Basculer la langue du PDF (FR / EN) |
+| `Ctrl + L` | Choisir la langue du PDF (puis `1` à `8`) |
 | `Ctrl + Alt + W` | Préparer le devis via WhatsApp |
 
 ## Application

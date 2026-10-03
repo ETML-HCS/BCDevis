@@ -234,16 +234,16 @@ a {
   <p class="cover-kicker">CLINIQUE BELLECOUR</p>
   <h1>Mode d’emploi <span>BCDevis</span></h1>
   <p class="cover-subtitle">Guide utilisateur de l’application de création de devis, locale ou centralisée.</p>
-  <p class="cover-version">Version 8.6.2 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
+  <p class="cover-version">Version 8.7.0 - Windows - Linux - macOS - ChromeOS - iPadOS</p>
 </div>
 
 ## À retenir
 
 BCDevis fonctionne localement par défaut, sans compte ni serveur. La V7 permet aussi de relier plusieurs postes à une base PostgreSQL centrale depuis **Réglages > Données**. Dans les deux modes, l’application et les devis restent utilisables hors ligne ; la synchronisation reprend au retour du réseau.
 
-- **Windows** : lancez `BCDevis-8.6.2.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
-- **Linux** : rendez `BCDevis-8.6.2-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
-- **macOS** : ouvrez `BCDevis-8.6.2-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
+- **Windows** : lancez `BCDevis-8.7.0.exe`. Le dossier `data` créé à côté de l’EXE doit rester avec celui-ci.
+- **Linux** : rendez `BCDevis-8.7.0-linux-x86_64.AppImage` exécutable, puis ouvrez-le. Les données sont conservées dans le profil local de l’utilisateur.
+- **macOS** : ouvrez `BCDevis-8.7.0-mac.dmg`, puis glissez BCDevis dans Applications. Les données sont conservées dans le profil de l’utilisateur.
 - **ChromeOS** : ouvrez l’adresse HTTPS fournie, puis choisissez **Installer la page en tant qu’application** dans le menu Chrome. Les données sont conservées dans le profil Chrome.
 - **iPadOS** : ouvrez la même adresse HTTPS dans Safari, puis choisissez **Partager > Sur l’écran d’accueil**. Les données sont conservées localement sur l’iPad.
 
@@ -428,6 +428,17 @@ Avec le tarif Étudiant, seul un coupon en CHF peut être ajouté : le coupon en
 
 Le bouton **TVA** active ou masque les lignes fiscales du devis en cours. Le taux par défaut est de 8,1 % et le mode par défaut est **TVA incluse**. Le taux et le mode peuvent être modifiés dans **Réglages**.
 
+### Devis en euros
+
+Pour proposer un paiement en euros, activez **Réglages > Tarifs > Paiement en euros**, indiquez le **taux du marché** (nombre de francs suisses pour 1 €) et la **commission de change**. Un choix **CHF / EUR** apparaît alors au-dessus du total de la caisse.
+
+- **Calcul** : les prix restent établis en francs suisses. Le montant en euros vaut le prix en CHF ÷ taux × (1 + commission). Avec un taux de 0.9279 et 2,5 % de commission, 100 CHF deviennent 110.46 €. La caisse affiche le taux réellement appliqué au client (ici 1 € = 0.9053 CHF) et rappelle le total de référence en francs suisses.
+- **Commission** : 2 à 3 % sont conseillés. Elle protège la clinique : si l’euro perd de la valeur pendant la semaine qui suit l’encaissement, le montant reçu couvre encore le prix en francs. BCDevis avertit sous 2 % et au-delà de 3 %.
+- **Taux** : le bouton **Actualiser le taux (BCE)** reprend le taux de référence de la Banque centrale européenne ; la mise à jour automatique le fait une fois par jour à l’ouverture. Un taux saisi à la main désactive la mise à jour automatique. Un taux de plus de sept jours est signalé comme ancien.
+- **Devis figé** : le taux est enregistré dans le devis au moment du passage en euros. Un changement ultérieur ne modifie pas un devis déjà préparé ; **Mettre à jour le taux** le recalcule au besoin, et une copie ou une nouvelle version repart du taux du jour. Un devis verrouillé ne change plus de devise.
+- **Documents** : le PDF, les mensualités et le message WhatsApp ou e-mail sont en euros, avec une note indiquant le taux appliqué, la date du taux, les frais de change inclus et le total de référence en CHF.
+- **Ailleurs** : Mes devis, les statistiques et les exports restent en francs suisses (montant de référence).
+
 ### Paiement échelonné
 
 La simulation indicative apparaît automatiquement sous le total. Les options sont proposées selon le montant : 3, 4 et 6 mois sous 1’000 CHF ; 10 mois à partir de 1’000 CHF ; 12 mois à partir de 2’000 CHF. Ces montants restent indicatifs et soumis à l’accord du partenaire financier.
@@ -450,29 +461,34 @@ Sous Windows, **Application e-mail** utilise Outlook classique lorsqu’il est d
 
 Le PDF reprend le détail des soins, les quantités payées et offertes, les réductions, la TVA, le total, les modalités de paiement, la date de validité et les mentions configurées.
 
+**Langue du PDF** : huit langues sont proposées (français, anglais, allemand de Suisse, italien, espagnol, portugais, ukrainien, russe). Le bouton de langue à gauche des actions de la caisse affiche la langue en cours ; il ouvre le choix, comme **Ctrl+L** et le menu `…`. Dans la fenêtre, les touches **1** à **8** sélectionnent directement une langue, et celle indiquée sur la fiche du client est signalée. Les soins, les catégories, les libellés et les mentions livrées par défaut sont traduits ; une mention que vous avez modifiée dans les réglages reste telle que saisie. Ne change que le PDF, jamais l’interface.
+
 Le bouton `…` en haut du devis donne accès à **Dupliquer**, **Exporter**, **Importer** et **Vider**.
 
 ## 5. Consulter l’historique et sauvegarder les données
 
-Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**. Chaque carte affiche le numéro, le client, la date, le nombre de soins et le total. Cliquez sur une carte pour rouvrir le devis.
+Cliquez sur **Historique** dans l’en-tête du devis pour ouvrir **Mes devis**. Lorsque le suivi est actif, l’écran s’ouvre sur **À faire** ; sinon, sur **Tous les devis**, un tableau qui affiche pour chaque devis le client, la date, le numéro, le nombre de soins, le montant et le statut. Cliquez sur un en-tête de colonne pour trier (un second clic inverse l’ordre) et sur une ligne pour rouvrir le devis. Une recherche par client, numéro, téléphone ou e-mail porte toujours sur tous les devis. **Options & Sauvegarde > Affichage en cartes** remplace le tableau par des cartes.
 
 Le suivi commercial est facultatif. Pour l’activer, ouvrez **Réglages > Devis > Suivi des devis**, activez l’option, puis choisissez la validité par défaut, le délai de relance, les rappels au démarrage et l’affichage des compteurs. Enregistrez ensuite les réglages.
 
-Depuis **Mes devis**, ouvrez l’onglet **Suivi**, puis utilisez le triangle d’une carte pour faire progresser le devis dans son parcours : **Brouillon** → **Prêt à envoyer** → **Envoyé** → **Accepté**, **Refusé** ou **Expiré**. Les retours incohérents sont refusés. Vous pouvez ajouter une note interne et fixer la prochaine relance sans modifier le PDF remis au client. Lorsqu’il est actif :
+Depuis **Mes devis**, l’onglet **À faire** classe les devis par priorité : relances dues, devis acceptés à facturer, devis prêts à envoyer, puis brouillons anciens. Chaque ligne propose l’action attendue (**Relance faite**, **Accepté**, **Refusé**, **Marquer envoyé** ou **Facture envoyée**) et le bouton **⋯** ouvre les autres actions et la chronologie. Le parcours reste **Brouillon** → **Prêt à envoyer** → **Envoyé** → **Accepté**, **Refusé** ou **Expiré** ; les retours incohérents sont refusés. Vous pouvez ajouter une note interne et fixer la prochaine relance sans modifier le PDF remis au client. Lorsqu’il est actif :
 
-- l’onglet **Historique** conserve une liste compacte des devis et affiche uniquement leur dernier statut commercial lorsque le suivi est actif, sans tag « Enregistré » ni outils commerciaux ;
-- l’onglet **Suivi** regroupe les statuts, couleurs, filtres, relances, chronologies et actions commerciales des devis actifs ;
-- avec une souris, le bouton du détail apparaît au survol ou au focus ; sur écran tactile, touchez directement la fiche pour ouvrir ou refermer le détail ;
+- l’onglet **Tous les devis** est un tableau de tous les devis, avec leur dernier statut commercial et sans outils de suivi ;
+- l’onglet **À faire** regroupe les actions du jour ; chaque section montre cinq devis, les autres se déplient à la demande ;
+- le bouton **⋯** d’une ligne ouvre WhatsApp, l’appel, la copie du message de relance, la chronologie et la note interne ; **Options & Sauvegarde > Affichage détaillé du suivi** montre tout sur chaque ligne ;
 - dans le détail, **Ouvrir le devis** charge le devis dans la caisse ;
-- l’onglet **Suivi** filtre les devis brouillons, prêts à envoyer, envoyés, à relancer, acceptés, refusés ou expirés ;
-- le triangle d’une carte ouvre la chronologie complète, la prochaine relance et la zone de note interne ;
+- **Relance faite** enregistre une relance confirmée et reprogramme la suivante ; **Refusé** propose le motif en un clic, « Sans motif » compris ; une action peut être annulée depuis la notification ;
+- les **filtres avancés** facultatifs (Réglages) filtrent les devis brouillons, prêts à envoyer, envoyés, à relancer, acceptés, refusés ou expirés ;
+- la chronologie complète, la prochaine relance et la zone de note interne s’ouvrent depuis le bouton **⋯** ;
 - **À relancer** reste un indicateur orange calculé à partir de la date de relance, tandis que le dernier statut commercial demeure **Envoyé** ;
 - les compteurs résument les statuts et les relances dans la fenêtre **Mes devis** ;
 - les rappels au démarrage signalent les devis arrivés à leur date de relance ;
 - après la préparation d’un e-mail, d’un message WhatsApp ou d’Outlook Web, BCDevis demande si le devis doit être marqué comme envoyé ;
 - les nouveaux événements indiquent l’utilisateur et le poste disponibles ;
 - un devis accepté, refusé ou expiré devient non modifiable ; utilisez **Créer une V2** pour poursuivre sans écraser la version précédente ;
-- sur un devis accepté, **Importer la facture envoyée** archive le PDF sous un nom lié au devis, puis fait passer le devis à **Facture envoyée** : il quitte l’onglet **Suivi** et la facture apparaît dans **Factures**. Le statut seul ne fabrique jamais une facture.
+- sur un devis accepté, **Importer la facture envoyée** archive le PDF sous un nom lié au devis, puis fait passer le devis à **Facture envoyée** : il quitte la liste **À faire** et la facture apparaît dans **Factures**. Le statut seul ne fabrique jamais une facture.
+
+L’onglet **Statistiques** mesure la conversion des devis envoyés sur ce mois, le mois dernier ou 12 mois (3 mois et depuis le début en affichage détaillé), avec les motifs de perte et un export CSV de la période. Chaque chaîne de versions compte une seule fois, à la date de son premier envoi.
 
 La désactivation du suivi masque les onglets, les couleurs et les rappels sans supprimer la chronologie enregistrée. Les couleurs sont toujours accompagnées du nom du statut.
 
@@ -583,7 +599,7 @@ Pour revenir au fonctionnement strictement local, utilisez **Déconnecter ce pos
 | `?` | Ouvrir le centre d’aide sur les raccourcis |
 | `Échap` | Fermer une fenêtre ou la recherche |
 
-Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 8.6.2.
+Sur Mac, remplacez `Ctrl` par `⌘`. Utilisez les flèches pour parcourir les tarifs, thèmes, onglets et menus. Le bouton **Aide** ouvre le centre HTML embarqué, qui devient la référence à jour et reste disponible hors ligne sans Internet ni PostgreSQL. Sa fonction **Imprimer** fournit au besoin une version papier ; le PDF séparé reste seulement un livrable de secours de la version 8.7.0.
 
 ## 9. Utiliser le modèle de devis
 

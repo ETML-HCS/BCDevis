@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Utilisation rapide</h1>
   <p>Les gestes essentiels pour créer, enregistrer et transmettre un devis avec BCDevis.</p>
-  <p class="version">Version 8.6.2 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
+  <p class="version">Version 8.7.0 - Windows, Linux, macOS, ChromeOS et iPadOS</p>
 </div>
 
 <style>
@@ -28,7 +28,7 @@
 
 ### Windows
 
-Double-cliquez sur `BCDevis-8.6.2.exe`. Aucun programme d'installation n'est nécessaire.
+Double-cliquez sur `BCDevis-8.7.0.exe`. Aucun programme d'installation n'est nécessaire.
 
 Le dossier `data` est créé à côté de l'application au premier lancement. Gardez toujours l'EXE et ce dossier ensemble : ils contiennent les réglages, le brouillon et l'historique.
 
@@ -37,15 +37,15 @@ Le dossier `data` est créé à côté de l'application au premier lancement. Ga
 Rendez le fichier exécutable une seule fois, puis ouvrez-le :
 
 ```bash
-chmod +x BCDevis-8.6.2-linux-x86_64.AppImage
-./BCDevis-8.6.2-linux-x86_64.AppImage
+chmod +x BCDevis-8.7.0-linux-x86_64.AppImage
+./BCDevis-8.7.0-linux-x86_64.AppImage
 ```
 
 Les données sont conservées dans le profil local de l'utilisateur.
 
 ### ChromeOS
 
-La version ChromeOS est une PWA. L'archive `BCDevis-8.6.2-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
+La version ChromeOS est une PWA. L'archive `BCDevis-8.7.0-chromeos.zip` doit d'abord être décompressée et son dossier `site` publié sur une adresse HTTPS.
 
 Sur le Chromebook, ouvrez cette adresse dans Chrome, puis choisissez **Caster, enregistrer et partager > Installer la page en tant qu'application**. Les données restent dans le profil Chrome utilisé.
 
@@ -97,7 +97,11 @@ Le répertoire client se recherche par nom, téléphone, e-mail, société, vill
 
 L’indicateur discret de la caisse affiche seulement **Non archivé**, **À enregistrer** ou **Enregistré**. Les statuts commerciaux restent dans **Mes devis > Suivi** afin de ne pas surcharger la création du devis.
 
-Pour suivre les réponses des clients, activez **Réglages > Devis & suivi > Suivi des devis**. L’onglet **Historique** reste une liste compacte de tous les devis enregistrés avec leur tag de statut. L’onglet **Suivi** permet de filtrer les devis ; le triangle ouvre le parcours contrôlé **Brouillon > Prêt à envoyer > Envoyé > Accepté / Refusé / Expiré**, les notes et la prochaine relance. Un état terminal verrouille le devis ; **Créer une V2** permet de poursuivre sans l’écraser. Depuis **Accepté**, **Importer la facture envoyée** archive le PDF, retire le devis du suivi actif et place le fichier dans **Factures**.
+Pour suivre les réponses des clients, activez **Réglages > Devis & suivi > Suivi des devis**. **Mes devis** s'ouvre alors sur **À faire** : les relances dues, les devis à facturer, les devis prêts et les brouillons anciens, avec l'action attendue sur chaque ligne (**Relance faite**, **Accepté**, **Refusé**, **Marquer envoyé**, **Facture envoyée**) et un bouton **⋯** pour le reste. **Tous les devis** est un tableau triable pour retrouver un devis ; **Statistiques** mesure la conversion. Le parcours reste **Brouillon > Prêt à envoyer > Envoyé > Accepté / Refusé / Expiré** ; un état terminal verrouille le devis, et **Créer une V2** permet de poursuivre sans l’écraser. Depuis **Accepté**, **Importer la facture envoyée** archive le PDF, retire le devis de la liste **À faire** et place le fichier dans **Factures**.
+
+**Devis en euros** : activez **Réglages > Tarifs > Paiement en euros**, saisissez le taux du marché (ou actualisez-le avec le bouton BCE) et la commission de change (2 à 3 % conseillés). Le choix **CHF / EUR** apparaît dans la caisse : le PDF et le message d'envoi sont alors en euros, avec le taux appliqué et le total de référence en CHF.
+
+**Langue du PDF** : le bouton de langue (FR, EN, DE, IT, ES, PT, UA, RU) à gauche d'Imprimer, ou **Ctrl+L**, ouvre le choix des huit langues ; les touches 1 à 8 sélectionnent directement.
 
 Le fichier `MODELE-DEVIS-V8.json` fourni avec le livrable peut être importé depuis `...` > **Importer**. Il crée un nouveau devis vierge avec la date, la numérotation et les réglages actuels.
 
