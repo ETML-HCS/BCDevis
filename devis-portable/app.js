@@ -27,6 +27,14 @@
   const LOGO_UPLOAD_MAX_LENGTH = 800000;
   const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
   const MAX_PDF_ARCHIVE_BYTES = 8 * 1024 * 1024;
+  const MAX_INVOICE_BATCH_FILES = 30;
+  const INVOICE_MATCH_ISSUES = {
+    unmatched: "aucun devis reconnu dans le nom du fichier",
+    ambiguous: "plusieurs devis possibles",
+    duplicate: "même devis qu’un autre fichier",
+    "already-invoiced": "devis déjà facturé",
+    "not-accepted": "devis pas encore accepté"
+  };
   const MAX_LINE_QUANTITY = 999;
   const MAX_LINE_PRICE = 1000000;
   const MAX_CUSTOM_SERVICES = 500;
@@ -56,6 +64,7 @@
     followUpCount,
     lossReasonKey,
     lossReasonLabel,
+    matchInvoiceFiles,
     LOSS_REASONS: TRACKING_LOSS_REASONS = [],
     PERIODS: TRACKING_STATS_PERIODS = []
   } = window.BCDevisTracking || {};
@@ -636,8 +645,6 @@
   let historyQuery = "";
   let historySort = "date";
   let historySortDirection = "desc";
-  let selectedContactId = "";
-  let contactQuery = "";
   const expandedTrackingQuotes = new Set();
   const trackingContactChannels = new Map();
   let activeLayerId = "";
@@ -885,6 +892,30 @@
   const quoteNumberPattern = /^[A-Z0-9-]+-\d{8}[A-Z0-9]+\d{3,}$/;
   if (!db.quotes[quote.id] && !quoteNumberPattern.test(quote.number)) quote.number = nextQuoteNumber(quote.date);
 
+  const contactService = window.BCDevisContactService.createService({
+    getDatabase: () => db,
+    getQuote: () => quote,
+    persist: saveLocal,
+    sanitizeClientSnapshot,
+    emptyClientSnapshot,
+    idFactory: () => `contact-${uid()}`,
+    maxContacts: MAX_CONTACTS
+  });
+  const contactsController = window.BCDevisContactsController.createController({
+    document,
+    service: contactService,
+    canEditQuote: ensureQuoteEditable,
+    view: {
+      open: () => openLayer("clientLayer"),
+      close: () => closeLayer("clientLayer"),
+      clientChanged: () => { renderClient(); renderHeader(); },
+      toast,
+      downloadText
+    },
+    format: { escapeHTML, normalize, plural, todayISO },
+    maxImportBytes: MAX_IMPORT_BYTES
+  });
+
   function saveLocal(touchCurrent = true) {
     if (touchCurrent) quote.updatedAt = new Date().toISOString();
     db.current = clone(quote);
@@ -1129,7 +1160,8 @@
     $("#pdfLibraryIntro").textContent = invoices
       ? "Importez, retrouvez, téléchargez et imprimez les factures envoyées."
       : "Importez, retrouvez et consultez les PDF partagés avec les postes autorisés.";
-    $("#pdfLibraryImportButton").lastChild.textContent = invoices ? "Importer une facture" : "Importer un PDF";
+    $("#pdfLibraryImportButton").lastChild.textContent = invoices ? "Importer des factures" : "Importer un PDF";
+    $("#pdfLibraryInput").multiple = invoices;
     $("#pdfLibraryList").setAttribute("aria-label", invoices ? "Factures disponibles" : "Documents PDF disponibles");
     $$("[data-pdf-library-view]").forEach((button) => {
       const selected = button.dataset.pdfLibraryView === activeCentralDocumentView;
@@ -1273,6 +1305,78 @@
     } finally {
       button.disabled = false;
     }
+  }
+
+  function invoiceCandidates() {
+    return Object.values(db.quotes).map((item) => ({ id: item.id, number: item.number, status: item.tracking?.status || "", clientName: item.client?.name || "" }));
+  }
+
+  function invoiceMatchLine(match) {
+    return match.status === "ok"
+      ? `✓ ${match.filename} → ${match.clientName || "Client"} (${match.quoteNumber})${match.method === "client" ? " · reconnu par le nom du client" : ""}`
+      : `• ${match.filename} — ${INVOICE_MATCH_ISSUES[match.status] || "ignoré"}${match.quoteNumber ? ` (${match.quoteNumber})` : ""}`;
+  }
+
+  function limitedLines(lines, maximum = 10) {
+    return lines.length > maximum ? [...lines.slice(0, maximum), `… et ${lines.length - maximum} autres`] : lines;
+  }
+
+  // Import groupé : chaque facture rejoint son devis accepté d’après le nom du fichier, puis le devis sort du suivi.
+  // Rien n’est archivé sans confirmation et un fichier non reconnu n’est jamais rattaché par défaut.
+  async function importInvoiceBatch(fileList) {
+    const files = [...(fileList || [])];
+    if (!files.length) return { imported: [] };
+    if (files.length > MAX_INVOICE_BATCH_FILES) throw new Error(`Importez au maximum ${MAX_INVOICE_BATCH_FILES} factures à la fois.`);
+    const matches = matchInvoiceFiles(files.map((file) => file.name), invoiceCandidates());
+    const ready = matches.map((match, index) => ({ match, file: files[index] })).filter(({ match }) => match.status === "ok");
+    const skipped = matches.filter((match) => match.status !== "ok");
+    if (!ready.length) {
+      toast(files.length === 1
+        ? `Facture non rattachée : ${INVOICE_MATCH_ISSUES[skipped[0].status]}. Nommez le fichier avec la référence du devis (${cleanDocumentPrefix(db.settings.invoicePrefix, "FAC")}-…).`
+        : `Aucune facture rattachée sur ${files.length} : nommez les fichiers avec la référence du devis accepté.`, "error", { duration: 8000 });
+      return { imported: [] };
+    }
+    const message = [
+      `Rattacher ${plural(ready.length, "facture")} à ${ready.length === 1 ? "son devis" : "leurs devis"} ?`,
+      "",
+      ...limitedLines(ready.map(({ match }) => invoiceMatchLine(match))),
+      ...(skipped.length ? ["", `Fichiers ignorés (${skipped.length}) :`, ...limitedLines(skipped.map(invoiceMatchLine))] : []),
+      "",
+      ready.length === 1 ? "Le devis passera à « Facture envoyée »." : "Chaque devis passera à « Facture envoyée »."
+    ].join("\n");
+    if (!window.confirm(message)) return { imported: [] };
+    const imported = [];
+    const failures = [];
+    for (const { match, file } of ready) {
+      try {
+        const linkedQuote = db.quotes[match.quoteId];
+        if (linkedQuote?.tracking?.status !== "accepted") throw new Error("le devis n’est plus accepté");
+        const input = await readPdfArchiveFile(file);
+        const invoiceNumber = invoiceNumberForQuote(linkedQuote);
+        const result = await centralController.uploadDocument({
+          ...input,
+          filename: `${invoiceNumber}.pdf`,
+          title: invoiceNumber,
+          kind: "invoice",
+          quoteId: linkedQuote.id,
+          quoteNumber: linkedQuote.number,
+          clientName: linkedQuote.client?.name || ""
+        });
+        if (!updateQuoteTracking(linkedQuote, { status: "invoiced", note: `Facture ${invoiceNumber}.pdf envoyée` }) || !persistTrackedQuote(linkedQuote)) {
+          throw new Error("facture archivée, mais le devis n’a pas pu quitter le suivi");
+        }
+        imported.push(result.document);
+      } catch (error) {
+        console.error("Import de facture impossible", file.name, error);
+        failures.push(`${file.name} : ${error.message || "import impossible"}`);
+      }
+    }
+    renderCheckout();
+    renderHistory();
+    const done = `${plural(imported.length, "facture")} rattachée${imported.length === 1 ? "" : "s"}`;
+    if (failures.length) toast(`${done} · ${plural(failures.length, "échec")} — ${failures[0]}`, "error", { duration: 9000 });
+    else toast(`${done} · ${imported.length === 1 ? "devis sorti" : "devis sortis"} du suivi`);
+    return { imported };
   }
 
   function downloadSelectedCentralDocument() {
@@ -2794,135 +2898,6 @@
     next.click();
   }
 
-  function contactValues() {
-    return Object.values(isRecord(db.contacts) ? db.contacts : {}).sort((left, right) => String(left.name || "").localeCompare(String(right.name || ""), "fr", { sensitivity: "base" }));
-  }
-
-  function contactInitials(name) {
-    return String(name || "?").trim().split(/\s+/).slice(0, 2).map((part) => part[0] || "").join("").toUpperCase() || "?";
-  }
-
-  function fillContactForm(source = {}) {
-    const form = $("#clientForm");
-    const values = { ...emptyClientSnapshot(), country: "Suisse", ...source };
-    form.reset();
-    form.elements.contactId.value = safeLocalId(values.contactId || values.id);
-    CLIENT_SNAPSHOT_FIELDS.forEach((field) => { if (form.elements[field]) form.elements[field].value = values[field] || ""; });
-    const hasDetails = ["company", "address", "postalCode", "city", "birthDate", "language", "reference", "notes"].some((field) => Boolean(values[field]));
-    $("#contactMoreDetails").open = hasDetails;
-    $("#contactFormTitle").textContent = selectedContactId ? "Modifier le contact" : values.name ? "Client du devis" : "Nouveau contact";
-    $("#deleteContactButton").hidden = !selectedContactId || !db.contacts[selectedContactId];
-  }
-
-  function renderContactDirectory() {
-    const contacts = contactValues();
-    const query = normalize(contactQuery);
-    const visible = query ? contacts.filter((contact) => normalize([contact.name, contact.company, contact.phone, contact.email, contact.city, contact.reference].join(" ")).includes(query)) : contacts;
-    $("#contactCount").textContent = query ? `${visible.length} / ${plural(contacts.length, "contact")}` : plural(contacts.length, "contact");
-    $("#contactEmpty").hidden = visible.length > 0;
-    $("#contactEmpty").textContent = contacts.length ? "Aucun résultat." : "Aucun contact. Importez un fichier ou créez le premier.";
-    $("#contactList").innerHTML = visible.map((contact) => {
-      const detail = contact.company || contact.email || contact.phone || contact.city || "Aucune autre information";
-      return `<button class="contact-list-item" type="button" role="option" aria-selected="${contact.id === selectedContactId}" data-contact-id="${escapeHTML(contact.id)}"><span class="contact-list-initials" aria-hidden="true">${escapeHTML(contactInitials(contact.name))}</span><span class="contact-list-copy"><strong>${escapeHTML(contact.name)}</strong><small>${escapeHTML(detail)}</small></span></button>`;
-    }).join("");
-  }
-
-  function selectContact(contactId, { focusName = false } = {}) {
-    const contact = db.contacts?.[contactId];
-    if (!contact) return;
-    selectedContactId = contact.id;
-    fillContactForm(contact);
-    renderContactDirectory();
-    if (focusName) window.setTimeout(() => $("#clientForm").elements.name.focus(), 0);
-  }
-
-  function prepareNewContact({ focusName = true } = {}) {
-    selectedContactId = "";
-    fillContactForm({ country: "Suisse" });
-    renderContactDirectory();
-    if (focusName) window.setTimeout(() => $("#clientForm").elements.name.focus(), 0);
-  }
-
-  function openClient() {
-    if (!ensureQuoteEditable()) return;
-    contactQuery = "";
-    $("#contactSearch").value = "";
-    const linked = quote.client.contactId && db.contacts?.[quote.client.contactId];
-    selectedContactId = linked ? linked.id : "";
-    fillContactForm(linked || quote.client);
-    renderContactDirectory();
-    openLayer("clientLayer");
-    window.setTimeout(() => $("#contactSearch").focus(), 0);
-  }
-
-  function upsertContactFromForm(form) {
-    const data = Object.fromEntries(new FormData(form));
-    const requestedId = safeLocalId(data.contactId);
-    const current = requestedId ? db.contacts?.[requestedId] : null;
-    const candidate = sanitizeContactRecord({ ...data, id: requestedId, createdAt: current?.createdAt, updatedAt: new Date().toISOString() });
-    if (!candidate) throw new Error("Le nom du contact est requis.");
-    const duplicate = contactValues().find((contact) => contact.id !== requestedId && ContactCore.matchKey(contact) === ContactCore.matchKey(candidate));
-    if (duplicate) {
-      const merged = ContactCore.mergeContacts(duplicate, candidate);
-      db.contacts[duplicate.id] = merged;
-      if (requestedId && requestedId !== duplicate.id) delete db.contacts[requestedId];
-      return { contact: merged, merged: true };
-    }
-    db.contacts[candidate.id] = candidate;
-    return { contact: candidate, merged: false };
-  }
-
-  async function importContactsFromInput(input) {
-    const file = input.files?.[0];
-    input.value = "";
-    if (!file) return;
-    if (file.size > MAX_IMPORT_BYTES) throw new Error("Le fichier dépasse 10 Mo.");
-    const imported = ContactCore.parseContactFile(file.name, await file.text());
-    if (!imported.length) throw new Error("Aucun contact valide trouvé dans ce fichier.");
-    const previousContacts = clone(db.contacts);
-    let added = 0;
-    let merged = 0;
-    const matches = new Map(contactValues().map((contact) => [ContactCore.matchKey(contact), contact.id]).filter(([key]) => key));
-    imported.slice(0, MAX_CONTACTS).forEach((source) => {
-      const contact = sanitizeContactRecord(source);
-      if (!contact) return;
-      const match = ContactCore.matchKey(contact);
-      const existingId = matches.get(match);
-      if (existingId && db.contacts[existingId]) {
-        db.contacts[existingId] = ContactCore.mergeContacts(db.contacts[existingId], contact);
-        merged += 1;
-      } else if (Object.keys(db.contacts).length < MAX_CONTACTS) {
-        while (db.contacts[contact.id]) contact.id = `contact-${uid()}`;
-        db.contacts[contact.id] = contact;
-        if (match) matches.set(match, contact.id);
-        added += 1;
-      }
-    });
-    if (!saveLocal(false)) {
-      db.contacts = previousContacts;
-      return;
-    }
-    renderContactDirectory();
-    toast(`${plural(added, "contact")} ajouté${added === 1 ? "" : "s"}${merged ? ` · ${merged} fusionné${merged === 1 ? "" : "s"}` : ""}`);
-  }
-
-  function exportContacts(format) {
-    const contacts = contactValues();
-    if (!contacts.length) {
-      toast("Aucun contact à exporter.", "error");
-      return;
-    }
-    const exports = {
-      csv: { extension: "csv", type: "text/csv;charset=utf-8", content: ContactCore.toCsv(contacts) },
-      vcf: { extension: "vcf", type: "text/vcard;charset=utf-8", content: ContactCore.toVCard(contacts) },
-      json: { extension: "json", type: "application/json;charset=utf-8", content: ContactCore.toJson(contacts) }
-    };
-    const selected = exports[format];
-    if (!selected) return;
-    downloadText(`contacts-bcdevis-${todayISO()}.${selected.extension}`, selected.content, selected.type);
-    toast(`${plural(contacts.length, "contact")} exporté${contacts.length === 1 ? "" : "s"}`);
-  }
-
   function trackingEnabled() {
     return db.settings.quoteTrackingEnabled === true;
   }
@@ -3247,6 +3222,13 @@
     ];
   }
 
+  // Demandes reçues hors de BCDevis (export du site…) : elles restent dans « À faire » jusqu'au premier devis
+  // créé pour le contact, y compris le devis en cours, ou jusqu'à « Traitée ».
+  function openContactRequests() {
+    // Sans tri du répertoire : la file est recalculée à chaque affichage et triée par date de demande.
+    return ContactCore.pendingRequests(Object.values(isRecord(db.contacts) ? db.contacts : {}), [...Object.values(db.quotes || {}), quote]);
+  }
+
   function trackingCounts(items) {
     const counts = Object.fromEntries(TRACKING_FILTERS.map((filter) => [filter, 0]));
     counts.all = items.filter((item) => item.tracking?.status !== "invoiced").length;
@@ -3256,6 +3238,8 @@
       if (isFollowUpDue(item)) counts["follow-up"] += 1;
     });
     counts.today = trackingTodaySections(items).filter((section) => section.actionable).reduce((total, section) => total + section.items.length, 0);
+    counts.requests = openContactRequests().length;
+    counts.today += counts.requests;
     return counts;
   }
 
@@ -3524,10 +3508,12 @@
     });
     $("#historyList").setAttribute("aria-labelledby", activeHistoryView === "stats" ? "historyViewStatsTab" : activeHistoryView === "tracking" ? "historyViewTrackingTab" : "historyViewHistoryTab");
     const counts = trackingCounts(items);
+    const quotesToday = counts.today - counts.requests;
+    const workload = [counts.requests ? plural(counts.requests, "demande") : "", quotesToday ? plural(quotesToday, "devis", "devis") : ""].filter(Boolean).join(" et ");
     $("#historyWorkspaceDescription").textContent = activeHistoryView === "stats"
       ? "Mesurez la conversion des devis envoyés, comprenez les pertes et exportez la période choisie."
       : activeHistoryView === "tracking"
-        ? (counts.today ? `${plural(counts.today, "devis", "devis")} à traiter aujourd’hui.` : "Rien à faire aujourd’hui.")
+        ? (counts.today ? `${workload} à traiter aujourd’hui.` : "Rien à faire aujourd’hui.")
         : "Retrouvez un devis par client, numéro, téléphone ou e-mail, puis cliquez sur sa ligne pour l’ouvrir.";
     const dueBadge = $("#trackingDueCount");
     dueBadge.textContent = String(counts.today || "");
@@ -3697,9 +3683,13 @@
     const more = hiddenCount > 0
       ? `<button class="tracking-more-button" type="button" data-tracking-more="${section.key}">Afficher les ${hiddenCount} autres</button>`
       : (expandedTrackingSections.has(section.key) && section.items.length > TRACKING_SECTION_LIMIT ? `<button class="tracking-more-button" type="button" data-tracking-more="${section.key}">Réduire la liste</button>` : "");
+    // Plusieurs factures d’un coup : chacune rejoint son devis d’après le nom du fichier.
+    const batch = section.key === "accepted" && centralArchiveConnected()
+      ? `<button class="tracking-quick tracking-section-action" type="button" data-tracking-invoice-batch><svg aria-hidden="true"><use href="#icon-upload"></use></svg><span>Importer les factures</span></button>`
+      : "";
     if (detailed) {
       const total = section.items.reduce((sum, item) => sum + quoteAmount(item), 0);
-      return `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><span class="tracking-today-total">${money(total)}</span><strong>${section.items.length}</strong></header>${renderTrackingItems(visible, cardView)}${more}</section>`;
+      return `<section class="tracking-today-section tracking-today-section--${section.key}" aria-labelledby="tracking-today-${section.key}"><header><div><h3 id="tracking-today-${section.key}">${section.title}</h3><p>${section.description}</p></div><span class="tracking-today-total">${money(total)}</span>${batch}<strong>${section.items.length}</strong></header>${renderTrackingItems(visible, cardView)}${more}</section>`;
     }
     // Affichage simple : les devis en attente de réponse ne demandent rien aujourd'hui, ils restent repliés.
     const collapsible = !section.actionable;
@@ -3707,7 +3697,44 @@
     const title = collapsible
       ? `<button class="tracking-section-toggle" type="button" data-tracking-waiting-toggle aria-expanded="${open}" aria-controls="tracking-today-items-${section.key}"><svg aria-hidden="true"><use href="#icon-chevron"></use></svg><span id="tracking-today-${section.key}">${section.title}</span></button>`
       : `<h3 id="tracking-today-${section.key}">${section.title}</h3>`;
-    return `<section class="tracking-today-section tracking-today-section--${section.key} tracking-today-section--simple" aria-labelledby="tracking-today-${section.key}"><header>${title}<strong>${section.items.length}</strong></header><div id="tracking-today-items-${section.key}" ${open ? "" : "hidden"}>${open ? renderTrackingItems(visible, cardView) + more : ""}</div></section>`;
+    return `<section class="tracking-today-section tracking-today-section--${section.key} tracking-today-section--simple" aria-labelledby="tracking-today-${section.key}"><header>${title}${batch}<strong>${section.items.length}</strong></header><div id="tracking-today-items-${section.key}" ${open ? "" : "hidden"}>${open ? renderTrackingItems(visible, cardView) + more : ""}</div></section>`;
+  }
+
+  function renderRequestItem(contact) {
+    const received = localDateOf(contact.requestedAt);
+    const meta = [contact.source, contact.phone, contact.email].filter(Boolean).join(" · ");
+    return `<article class="history-item history-item--tracked history-item--simple history-item--request" data-request-contact="${escapeHTML(contact.id)}">
+      <div class="tracking-card-main">
+        <div class="history-item-summary">
+          <div class="history-item-open">
+            <span class="history-item-head"><strong>${escapeHTML(contact.name)}</strong><b>${received ? formatDate(received) : ""}</b></span>
+            <span class="history-item-client">${escapeHTML(contact.request || "Demande sans précision")}</span>
+            ${meta ? `<span class="history-item-request-meta">${escapeHTML(meta)}</span>` : ""}
+          </div>
+        </div>
+        <div class="tracking-quick-actions" role="group" aria-label="Actions pour la demande de ${escapeHTML(contact.name)}">
+          <span class="tracking-quick-main">
+            <button class="tracking-quick tracking-quick--primary" type="button" data-request-quote><svg aria-hidden="true"><use href="#icon-new-quote"></use></svg><span>Créer un devis</span></button>
+            <button class="tracking-quick" type="button" data-request-handled><svg aria-hidden="true"><use href="#icon-check"></use></svg><span>Traitée</span></button>
+          </span>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  // Premières demandes en tête de « Aujourd’hui » : un contact attend une réponse avant même d’avoir un devis.
+  function renderRequestSection(requests, detailed) {
+    if (!requests.length) return "";
+    const showAll = expandedTrackingSections.has("requests");
+    const visible = showAll ? requests : requests.slice(0, TRACKING_SECTION_LIMIT);
+    const hiddenCount = requests.length - visible.length;
+    const more = hiddenCount > 0
+      ? `<button class="tracking-more-button" type="button" data-tracking-more="requests">Afficher les ${hiddenCount} autres</button>`
+      : (showAll && requests.length > TRACKING_SECTION_LIMIT ? `<button class="tracking-more-button" type="button" data-tracking-more="requests">Réduire la liste</button>` : "");
+    const title = detailed
+      ? `<div><h3 id="tracking-today-requests">Nouvelles demandes</h3><p>Contacts à rappeler, sans devis pour le moment</p></div>`
+      : `<h3 id="tracking-today-requests">Nouvelles demandes</h3>`;
+    return `<section class="tracking-today-section tracking-today-section--requests ${detailed ? "" : "tracking-today-section--simple"}" aria-labelledby="tracking-today-requests"><header>${title}<strong>${requests.length}</strong></header><div class="tracking-today-items">${visible.map(renderRequestItem).join("")}</div>${more}</section>`;
   }
 
   function renderHistory() {
@@ -3731,16 +3758,17 @@
     list.classList.toggle("tracking-today-queue", todayQueue);
     list.classList.toggle("history-list--table", !cardView && !todayQueue);
     if (todayQueue) {
+      const requests = openContactRequests();
       const sections = trackingTodaySections(quotes).filter((section) => section.items.length);
-      if (!sections.length) {
-        list.innerHTML = `<div class="history-empty"><svg><use href="#icon-check"></use></svg><strong>Rien à faire pour le moment</strong><p>Les relances, factures à envoyer et devis prêts apparaîtront ici.</p></div>`;
+      if (!sections.length && !requests.length) {
+        list.innerHTML = `<div class="history-empty"><svg><use href="#icon-check"></use></svg><strong>Rien à faire pour le moment</strong><p>Les nouvelles demandes, relances, factures à envoyer et devis prêts apparaîtront ici.</p></div>`;
         return;
       }
-      const clear = sections.some((section) => section.actionable)
+      const clear = requests.length || sections.some((section) => section.actionable)
         ? ""
         : `<div class="tracking-today-clear" role="status"><svg aria-hidden="true"><use href="#icon-check"></use></svg><div><strong>Rien à faire aujourd’hui</strong><p>Les devis ci-dessous attendent une réponse : ils remonteront dans « À relancer » le jour prévu.</p></div></div>`;
       const detailed = trackingDetailedView();
-      list.innerHTML = clear + sections.map((section) => renderTrackingSection(section, cardView, detailed)).join("");
+      list.innerHTML = clear + renderRequestSection(requests, detailed) + sections.map((section) => renderTrackingSection(section, cardView, detailed)).join("");
       return;
     }
     if (queueView) {
@@ -3825,6 +3853,41 @@
     pendingRefusalQuoteId = "";
     afterTrackingChange(item);
     toast(message, "success", undoable ? { actionLabel: "Annuler", onAction: () => restoreTrackedQuote(before), duration: 6000 } : {});
+  }
+
+  // Un nouveau devis au nom du contact referme la demande : elle n’apparaît plus tant que ce devis existe.
+  function createQuoteFromRequest(contactId) {
+    const contact = db.contacts?.[contactId];
+    if (!contact) return;
+    const hasContent = quote.lines.length || quote.client.name;
+    if (hasContent && !db.quotes[quote.id] && !window.confirm("Le brouillon actuel n’est pas enregistré dans Mes devis et sera remplacé. Créer quand même le devis de cette demande ?")) return;
+    createNewQuote(true);
+    quote.client = sanitizeClientSnapshot({ ...contact, contactId: contact.id });
+    if (!saveLocal()) return;
+    closeLayer("historyLayer");
+    renderAll();
+    toast(`Nouveau devis pour ${contact.name} · ajoutez les soins demandés`);
+  }
+
+  function markContactRequestHandled(contactId) {
+    const contact = db.contacts?.[contactId];
+    if (!contact) return;
+    const previous = clone(contact);
+    const now = new Date().toISOString();
+    db.contacts[contactId] = { ...contact, requestHandledAt: now, updatedAt: now };
+    if (!saveLocal(false)) {
+      db.contacts[contactId] = previous;
+      return;
+    }
+    renderHistory();
+    toast(`Demande de ${contact.name} traitée`, "success", {
+      actionLabel: "Annuler",
+      duration: 6000,
+      onAction: () => {
+        db.contacts[contactId] = { ...previous, updatedAt: new Date().toISOString() };
+        if (saveLocal(false)) renderHistory();
+      }
+    });
   }
 
   function followUpMessage(item) {
@@ -5875,58 +5938,7 @@
   });
   $("#taxEnabled").addEventListener("change", (event) => { if (!ensureQuoteEditable()) return; quote.tax.enabled = event.target.checked; saveLocal(); renderCheckout(); });
 
-  $("#clientButton").addEventListener("click", openClient);
-  $("#clientForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!ensureQuoteEditable()) return;
-    const previousContacts = clone(db.contacts);
-    const previousClient = clone(quote.client);
-    try {
-      const result = upsertContactFromForm(event.currentTarget);
-      selectedContactId = result.contact.id;
-      quote.client = sanitizeClientSnapshot({ ...result.contact, contactId: result.contact.id });
-      if (!saveLocal()) {
-        db.contacts = previousContacts;
-        quote.client = previousClient;
-        return;
-      }
-      renderClient();
-      renderHeader();
-      closeLayer("clientLayer");
-      toast(result.merged ? "Contact fusionné et utilisé" : "Contact enregistré et utilisé");
-    } catch (error) {
-      db.contacts = previousContacts;
-      quote.client = previousClient;
-      toast(error.message || "Contact impossible à enregistrer", "error");
-    }
-  });
-  $("#clearClientButton").addEventListener("click", () => { if (!ensureQuoteEditable()) return; quote.client = emptyClientSnapshot(); saveLocal(); renderClient(); renderHeader(); closeLayer("clientLayer"); toast("Client retiré du devis"); });
-  $("#newContactButton").addEventListener("click", () => prepareNewContact());
-  $("#contactSearch").addEventListener("input", (event) => { contactQuery = event.target.value; renderContactDirectory(); });
-  $("#contactList").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-contact-id]");
-    if (button) selectContact(button.dataset.contactId);
-  });
-  $("#contactImportButton").addEventListener("click", () => $("#contactImportInput").click());
-  $("#contactImportInput").addEventListener("change", (event) => void importContactsFromInput(event.target).catch((error) => toast(error.message || "Import de contacts impossible", "error")));
-  $$('[data-contact-export]').forEach((button) => button.addEventListener("click", () => exportContacts(button.dataset.contactExport)));
-  $("#deleteContactButton").addEventListener("click", () => {
-    const contact = db.contacts?.[selectedContactId];
-    if (!contact || !window.confirm(`Supprimer ${contact.name} du répertoire ? Le devis conservera ses coordonnées.`)) return;
-    const previousContacts = clone(db.contacts);
-    const previousClient = clone(quote.client);
-    delete db.contacts[selectedContactId];
-    if (quote.client.contactId === selectedContactId) quote.client.contactId = "";
-    selectedContactId = "";
-    if (!saveLocal()) {
-      db.contacts = previousContacts;
-      quote.client = previousClient;
-      return;
-    }
-    prepareNewContact({ focusName: false });
-    renderClient();
-    toast("Contact supprimé du répertoire");
-  });
+  contactsController.bind();
 
   $("#customItemForm").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -6043,6 +6055,13 @@
       $("[data-tracking-waiting-toggle]", $("#historyList"))?.focus();
       return;
     }
+    const requestAction = event.target.closest("[data-request-quote], [data-request-handled]");
+    if (requestAction) {
+      const contactId = requestAction.closest("[data-request-contact]")?.dataset.requestContact || "";
+      if (requestAction.hasAttribute("data-request-quote")) createQuoteFromRequest(contactId);
+      else markContactRequestHandled(contactId);
+      return;
+    }
     const quickAction = event.target.closest("[data-tracking-quick]");
     if (quickAction) {
       runTrackingQuickAction(trackedItemFrom(quickAction), quickAction.dataset.trackingQuick);
@@ -6060,6 +6079,17 @@
       renderHistory();
       if (item.id === quote.id) renderCheckout();
       toast("Dernier changement de suivi annulé");
+      return;
+    }
+    if (event.target.closest("[data-tracking-invoice-batch]")) {
+      if (!centralController.getConfig().connected) {
+        closeLayer("historyLayer");
+        activeSettingsTab = "data";
+        openSettingsLayer();
+        toast("Connectez ce poste pour archiver les factures envoyées.", "error");
+        return;
+      }
+      $("#trackingInvoiceBatchInput").click();
       return;
     }
     const invoice = event.target.closest("[data-tracking-invoice]");
@@ -6540,8 +6570,18 @@
   });
   $("#pdfLibraryImportButton").addEventListener("click", () => $("#pdfLibraryInput").click());
   $("#pdfLibraryInput").addEventListener("change", async (event) => {
+    const files = [...(event.target.files || [])];
+    const button = $("#pdfLibraryImportButton");
     try {
-      await importCentralPdf(event.target.files?.[0], {
+      // Une facture qui cite un devis (référence ou nom du client) rejoint ce devis ; sans indice, le devis ouvert reste la cible.
+      const recognized = files.length > 1 || (files.length === 1 && matchInvoiceFiles([files[0].name], invoiceCandidates())[0].status !== "unmatched");
+      if (activeCentralDocumentView === "invoices" && recognized) {
+        button.disabled = true;
+        const { imported } = await importInvoiceBatch(files);
+        if (imported.length) await refreshCentralDocuments({ selectId: imported.at(-1)?.id || "" });
+        return;
+      }
+      await importCentralPdf(files[0], {
         quoteId: quote.id,
         completeWorkflow: activeCentralDocumentView === "invoices"
       });
@@ -6550,11 +6590,22 @@
       toast(error.message || "Le PDF n’a pas pu être importé.", "error");
       $("#pdfLibraryStatus").textContent = error.message || "Import impossible";
     } finally {
+      button.disabled = false;
       event.target.value = "";
     }
   });
   $("#pdfLibraryDownloadButton").addEventListener("click", downloadSelectedCentralDocument);
   $("#pdfLibraryPrintButton").addEventListener("click", printSelectedCentralDocument);
+  $("#trackingInvoiceBatchInput").addEventListener("change", async (event) => {
+    try {
+      await importInvoiceBatch(event.target.files);
+    } catch (error) {
+      console.error("Import des factures impossible", error);
+      toast(error.message || "Les factures n’ont pas pu être importées.", "error");
+    } finally {
+      event.target.value = "";
+    }
+  });
   $("#trackingInvoiceInput").addEventListener("change", async (event) => {
     const quoteId = pendingInvoiceQuoteId;
     pendingInvoiceQuoteId = "";

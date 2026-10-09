@@ -89,8 +89,8 @@ Voici le problème constaté : [décrire le bug].
 
 | Commande | Vitesse | Ce qu'elle vérifie |
 |---|---|---|
-| `npm run check:fast` | **~1 sec** | Vérification syntaxique de tous les 33 fichiers JS/CJS |
-| `npm run test:core` | **~200 ms** | Tests du cœur pur (calculs, contacts, suivi, whatsapp) |
+| `npm run check:fast` | Rapide | Vérification syntaxique des fichiers JS/CJS référencés |
+| `npm run test:core` | Rapide | Tests métier sans interface (calculs, contacts et service du répertoire, suivi, WhatsApp) |
 | `npm run test:central` | **~1 sec** | Tests de synchronisation et administration centrale |
-| `npm run check` | **~10 sec** | Vérification syntaxique complète + les 22 suites de tests |
-| `npm test` | **~8 sec** | Exécution des 22 suites de tests |
+| `npm run check` | Complète | Vérification syntaxique complète + les 27 suites de tests |
+| `npm test` | Complète | Exécution des 27 suites de tests |

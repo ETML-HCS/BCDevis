@@ -20,7 +20,7 @@ npm run check:fast
 npm run test:core
 ```
 
-### Vérification complète (syntaxe + 22 suites de tests)
+### Vérification complète (syntaxe + 27 suites de tests)
 ```powershell
 npm run check
 ```

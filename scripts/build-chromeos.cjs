@@ -22,6 +22,8 @@ const APP_FILES = [
   "body-anatomy.js",
   "catalog.js",
   "contact-core.js",
+  "contact-service.js",
+  "contacts-controller.js",
   "central-sync.js",
   "help.css",
   "help.html",

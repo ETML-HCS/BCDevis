@@ -264,6 +264,62 @@
     return (Array.isArray(quotes) ? quotes : []).filter((item) => item?.tracking?.status === "accepted").length;
   }
 
+  // Référence commune d’un devis et de sa facture : date, poste et séquence (DEV-20260806A001 → 20260806A001).
+  function documentReferenceKey(number) {
+    const source = String(number || "").trim().toUpperCase();
+    const suffix = source.match(/(?:^|-)(\d{8}[A-Z0-9-]*\d{3,})$/)?.[1] || "";
+    return suffix.replace(/[^A-Z0-9]/g, "");
+  }
+
+  function upperWords(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  }
+
+  // La référence doit être entière : « …A001 » ne correspond ni à « …A0012 » ni à « 1…A001 ».
+  function containsReference(compactName, key) {
+    for (let index = compactName.indexOf(key); index >= 0; index = compactName.indexOf(key, index + 1)) {
+      const before = compactName[index - 1] || "";
+      const after = compactName[index + key.length] || "";
+      if (!/\d/.test(before) && !/\d/.test(after)) return true;
+    }
+    return false;
+  }
+
+  // Rattache des factures PDF à leur devis d’après le nom du fichier : la référence du devis
+  // (FAC-20260806A001.pdf) d’abord, sinon le nom complet d’un client ayant un seul devis accepté.
+  // Seul un devis accepté reçoit sa facture ; tout autre cas est signalé, jamais deviné.
+  function matchInvoiceFiles(filenames, quotes) {
+    const items = (Array.isArray(quotes) ? quotes : []).filter((item) => item?.id);
+    const byReference = new Map();
+    items.forEach((item) => {
+      const key = documentReferenceKey(item.number);
+      if (key) byReference.set(key, [...(byReference.get(key) || []), item]);
+    });
+    const claimed = new Set();
+    return (Array.isArray(filenames) ? filenames : []).map((filename) => {
+      const name = String(filename || "");
+      const words = upperWords(name.replace(/\.pdf$/i, ""));
+      const compactName = words.join("");
+      let method = "reference";
+      let candidates = [...byReference].filter(([key]) => containsReference(compactName, key)).flatMap(([, list]) => list);
+      if (!candidates.length) {
+        method = "client";
+        const fileWords = new Set(words);
+        candidates = items.filter((item) => {
+          const clientWords = upperWords(item.clientName).filter((word) => word.length >= 2);
+          return item.status === "accepted" && clientWords.length >= 2 && clientWords.every((word) => fileWords.has(word));
+        });
+      }
+      const result = { filename: name, status: "unmatched", method: "", quoteId: "", quoteNumber: "", clientName: "" };
+      if (!candidates.length) return result;
+      if (candidates.length > 1) return { ...result, status: "ambiguous", method };
+      const [match] = candidates;
+      const status = claimed.has(match.id) ? "duplicate" : match.status === "accepted" ? "ok" : match.status === "invoiced" ? "already-invoiced" : "not-accepted";
+      if (status === "ok") claimed.add(match.id);
+      return { ...result, status, method, quoteId: match.id, quoteNumber: String(match.number || ""), clientName: String(match.clientName || "") };
+    });
+  }
+
   return {
     LOSS_REASONS,
     PERIODS,
@@ -276,6 +332,8 @@
     lossReasonKey,
     lossReasonLabel,
     countAcceptedInMonth,
-    countAwaitingInvoices
+    countAwaitingInvoices,
+    documentReferenceKey,
+    matchInvoiceFiles
   };
 });

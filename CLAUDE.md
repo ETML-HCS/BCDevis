@@ -7,6 +7,10 @@ BCDevis est une application médicale et esthétique de devis pour la Clinique B
 - Monnaie : CHF (Franc suisse).
 - Architecture : Electron (bureau portable) + PWA Web + Serveur PostgreSQL centralisé (`central-server/`).
 - Code source : Vanilla JS / CSS, modules UMD sans DOM (`quote-core.js`, `contact-core.js`, `tracking-core.js`, `pdf-i18n.js`).
+- Répertoire : opérations dans `contact-service.js`, interface dans `contacts-controller.js`. Lire [docs/PLAN-MODULARISATION.md](docs/PLAN-MODULARISATION.md) pour poursuivre le découpage progressif de `app.js`.
+
+## Reprise de travail
+Pour l’état des modifications récentes, les pièges et la suite recommandée, lire `../JOURNAL-DES-MODIFICATIONS.md` (racine du dossier de travail).
 
 ## Commandes Essentielles
 - Vérifier la syntaxe : `npm run check:fast`

@@ -3958,6 +3958,15 @@ html[data-display-mode="smartphone"] #historyList .tracking-contact{width:44px;h
 #historyList .tracking-section-toggle svg{width:14px;height:14px;transform:rotate(-90deg);transition:transform .16s ease}
 #historyList .tracking-section-toggle[aria-expanded="true"] svg{transform:rotate(0)}
 .tracking-today-section--waiting.tracking-today-section--simple{opacity:.92}
+/* Nouvelles demandes (contacts importés du site) : une fiche de contact, sans devis ni historique. */
+.history-item--request{--tracking-color:#0e7490}
+.history-item--request .history-item-open{cursor:default}
+.history-item--request .history-item-open:hover{background:transparent}
+.history-item--request .history-item-client{margin:4px 0 0;font-family:inherit;font-size:13px;font-weight:600;line-height:1.35}
+.history-item-request-meta{display:block;margin-top:5px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+/* Import groupé des factures, dans l’en-tête « Acceptés à facturer ». */
+#historyList .tracking-section-action{margin-left:auto}
+#historyList .tracking-today-total+.tracking-section-action{margin-left:0}
 .tracking-stats-more{border-top:1px solid var(--line);padding-top:12px}
 .tracking-stats-more summary{width:max-content;min-height:32px;color:var(--ink);font-size:11px;font-weight:750;line-height:32px;cursor:pointer}
 .tracking-stats-more-body{display:flex;margin-top:8px;flex-direction:column;gap:12px}

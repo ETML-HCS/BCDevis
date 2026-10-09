@@ -81,11 +81,12 @@ docker compose -f central-server/compose.yml --env-file central-server/.env.exam
 ### DT-06 — Renderer monolithique
 
 - **Priorité : moyenne**
-- **État : ouverte**
+- **État : ouverte ; premier lot extrait le 9 octobre 2026**
 - **Preuve :** `app.js` concentre persistance, migrations, catalogue, devis, historique, suivi, centralisation, PDF, partage, réglages et accessibilité.
 - **Impact :** régressions croisées, revues difficiles et tests unitaires plus coûteux.
 - **Traitement :** extraction progressive par domaine avec interfaces explicites et fonctions pures ; aucun changement de framework requis.
 - **Validation :** modules métier testables sans DOM ni Electron et réduction continue du fichier d’orchestration.
+- **Actualisation du 9 octobre 2026 :** `app.js` passe de 7 098 à 6 938 lignes avec `contact-service.js` et `contacts-controller.js`. Les opérations et événements du répertoire sont isolés ; le plan de suite et les limites sont dans [docs/PLAN-MODULARISATION.md](docs/PLAN-MODULARISATION.md). Les mesures du 7 août ci-dessus restent des références historiques.
 
 ### DT-07 — CSS réparti entre HTML et feuille globale
 

@@ -5,12 +5,18 @@
 }(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const CONTACT_FIELDS = ["name", "phone", "email", "company", "address", "postalCode", "city", "country", "birthDate", "language", "reference", "notes"];
-  const CSV_HEADERS = ["Nom", "Téléphone", "E-mail", "Société", "Adresse", "NPA", "Ville", "Pays", "Date de naissance", "Langue", "Référence", "Notes"];
+  const CONTACT_FIELDS = ["name", "phone", "email", "company", "address", "postalCode", "city", "country", "birthDate", "language", "reference", "notes", "source"];
+  const CSV_HEADERS = ["Nom", "Téléphone", "E-mail", "Société", "Adresse", "NPA", "Ville", "Pays", "Date de naissance", "Langue", "Référence", "Notes", "Provenance"];
+  // Demande reçue hors de BCDevis (site internet…) : ces champs ne sont pas saisis dans le formulaire,
+  // ils alimentent « À faire › Nouvelles demandes » jusqu'au premier devis ou au traitement de la demande.
+  const REQUEST_FIELDS = ["request", "requestedAt", "requestHandledAt"];
+  const REQUEST_CSV_HEADERS = ["Demande", "Date de la demande", "Demande traitée le"];
   const FIELD_ALIASES = {
     name: ["nom", "nomcomplet", "name", "fullname", "fn"],
-    phone: ["telephone", "tel", "phone", "mobile", "portable"],
-    email: ["email", "courriel", "mail"],
+    firstName: ["prenom", "firstname", "givenname", "first"],
+    lastName: ["nomdefamille", "lastname", "surname", "familyname", "last", "patronyme"],
+    phone: ["telephone", "tel", "phone", "mobile", "portable", "natel", "numerodetelephone", "telephonemobile", "telephoneportable", "mobilephone", "phonenumber"],
+    email: ["email", "courriel", "mail", "adresseemail", "emailaddress"],
     company: ["societe", "entreprise", "company", "organization", "organisation", "org"],
     address: ["adresse", "address", "street", "rue"],
     postalCode: ["npa", "codepostal", "postalcode", "zip", "zipcode"],
@@ -19,7 +25,11 @@
     birthDate: ["datedenaissance", "naissance", "birthdate", "birthday", "bday"],
     language: ["langue", "language", "lang"],
     reference: ["reference", "ref", "identifiant", "internalreference"],
-    notes: ["note", "notes", "commentaire", "commentaires", "comments"]
+    notes: ["note", "notes", "commentaire", "commentaires", "comments"],
+    source: ["provenance", "source", "origine", "canal"],
+    request: ["demande", "request", "soinsouhaite", "traitementsouhaite"],
+    requestedAt: ["datedelademande", "datededemande", "demandele", "requestedat", "requestdate"],
+    requestHandledAt: ["demandetraiteele", "traiteele", "requesthandledat"]
   };
 
   function clean(value, maximum = 500) {
@@ -50,11 +60,26 @@
     return Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== candidate ? "" : candidate;
   }
 
+  // Date d'une demande : ISO 8601 ou format suisse « 05.10.2026 14:30 » ; vide si absente ou invalide.
+  function optionalTimestamp(value) {
+    const text = clean(value, 40);
+    const swiss = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\d{1,2}):(\d{2}))?$/);
+    if (swiss) {
+      const [, day, month, year, hours = "12", minutes = "0"] = swiss;
+      const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes));
+      return parsed.getDate() === Number(day) && parsed.getMonth() === Number(month) - 1 ? parsed.toISOString() : "";
+    }
+    if (!/^\d{4}-\d{2}-\d{2}/.test(text)) return "";
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.valueOf()) ? "" : parsed.toISOString();
+  }
+
   function sanitizeContact(source, options = {}) {
     if (!source || typeof source !== "object" || Array.isArray(source)) return null;
     const now = timestamp(options.now, new Date().toISOString());
     const company = clean(source.company ?? source.organization ?? source.org, 240);
-    const name = clean(source.name ?? source.fullName ?? source.fn, 240) || company;
+    const personName = [source.firstName, source.lastName].map((part) => clean(part, 120)).filter(Boolean).join(" ");
+    const name = clean(source.name ?? source.fullName ?? source.fn, 240) || personName || company;
     if (!name) return null;
     const createId = typeof options.idFactory === "function" ? options.idFactory : generatedId;
     const id = safeId(source.id ?? source.contactId ?? source.uid) || safeId(createId()) || generatedId();
@@ -72,6 +97,10 @@
       language: clean(source.language ?? source.lang, 40),
       reference: clean(source.reference ?? source.ref, 80),
       notes: clean(source.notes ?? source.note, 2000),
+      source: clean(source.source ?? source.provenance, 80),
+      request: clean(source.request, 500),
+      requestedAt: optionalTimestamp(source.requestedAt),
+      requestHandledAt: optionalTimestamp(source.requestHandledAt),
       createdAt: timestamp(source.createdAt, now),
       updatedAt: timestamp(source.updatedAt, now)
     };
@@ -95,12 +124,42 @@
     const now = timestamp(options.now, new Date().toISOString());
     const merged = { ...current };
     CONTACT_FIELDS.forEach((field) => {
-      if (incoming[field]) merged[field] = incoming[field];
+      // La provenance garde le premier canal connu : c'est lui qui a amené le contact.
+      if (incoming[field] && !(field === "source" && current.source)) merged[field] = incoming[field];
     });
+    // La demande la plus récente l'emporte ; une date de traitement n'est jamais effacée par un import.
+    if (incoming.requestedAt && incoming.requestedAt >= current.requestedAt) {
+      merged.requestedAt = incoming.requestedAt;
+      merged.request = incoming.request || current.request;
+    }
+    if (incoming.requestHandledAt > current.requestHandledAt) merged.requestHandledAt = incoming.requestHandledAt;
     merged.id = current.id;
     merged.createdAt = current.createdAt;
     merged.updatedAt = now;
     return merged;
+  }
+
+  // Demande ouverte : reçue et non traitée depuis ; une nouvelle demande rouvre un contact déjà traité.
+  function hasOpenRequest(source) {
+    const requestedAt = optionalTimestamp(source?.requestedAt);
+    return Boolean(requestedAt) && requestedAt > optionalTimestamp(source?.requestHandledAt);
+  }
+
+  // Demandes à traiter, la plus ancienne d'abord. Un devis créé pour le contact après la demande
+  // la referme sans action : lien explicite au répertoire ou mêmes coordonnées dans le devis.
+  function pendingRequests(contacts, quotes = []) {
+    // La file est recalculée à chaque affichage : seuls les contacts porteurs d'une demande sont examinés.
+    const open = (contacts || []).filter((item) => item?.requestedAt).map((item) => sanitizeContact(item)).filter((contact) => contact && hasOpenRequest(contact));
+    if (!open.length) return [];
+    const quoteKeys = (quotes || []).filter((item) => item && typeof item === "object").map((item) => ({
+      contactId: clean(item.client?.contactId, 128),
+      key: matchKey(item.client),
+      createdAt: timestamp(item.createdAt, "")
+    }));
+    return open.filter((contact) => {
+      const key = matchKey(contact);
+      return !quoteKeys.some((item) => item.createdAt >= contact.requestedAt && ((item.contactId && item.contactId === contact.id) || (key && item.key === key)));
+    }).sort((left, right) => left.requestedAt.localeCompare(right.requestedAt));
   }
 
   function csvDelimiter(text) {
@@ -144,7 +203,10 @@
   function parseCsv(text) {
     const rows = parseDelimited(text);
     if (rows.length < 2) return [];
-    const fields = rows[0].map(fieldForHeader);
+    const headers = rows[0].map(normalize);
+    let fields = rows[0].map(fieldForHeader);
+    // Prénom et nom en colonnes séparées (agenda, caisse…) : « Nom » désigne alors le nom de famille.
+    if (fields.includes("firstName")) fields = fields.map((field, index) => (field === "name" && ["nom", "name"].includes(headers[index]) ? "lastName" : field));
     return rows.slice(1).map((row) => {
       const source = {};
       fields.forEach((field, index) => { if (field) source[field] = row[index] || ""; });
@@ -158,9 +220,9 @@
   }
 
   function toCsv(contacts) {
-    const rows = [CSV_HEADERS, ...(contacts || []).map((item) => {
+    const rows = [[...CSV_HEADERS, ...REQUEST_CSV_HEADERS], ...(contacts || []).map((item) => {
       const contact = sanitizeContact(item);
-      return contact ? CONTACT_FIELDS.map((field) => contact[field]) : [];
+      return contact ? [...CONTACT_FIELDS, ...REQUEST_FIELDS].map((field) => contact[field]) : [];
     }).filter((row) => row.length)];
     return `\uFEFF${rows.map((row) => row.map(csvCell).join(";")).join("\r\n")}`;
   }
@@ -189,7 +251,11 @@
         const property = line.slice(0, separator).split(";")[0].toUpperCase();
         const value = vcardUnescape(line.slice(separator + 1));
         if (property === "FN") source.name = value;
-        else if (property === "ORG") source.company = value.split(";")[0];
+        else if (property === "N") {
+          const parts = value.split(";");
+          source.lastName = parts[0] || "";
+          source.firstName = parts[1] || "";
+        } else if (property === "ORG") source.company = value.split(";")[0];
         else if (property === "TEL" && !source.phone) source.phone = value;
         else if (property === "EMAIL" && !source.email) source.email = value;
         else if (property === "ADR") {
@@ -202,6 +268,10 @@
         else if (property === "LANG") source.language = value;
         else if (property === "NOTE") source.notes = value;
         else if (property === "X-BCDEVIS-REFERENCE") source.reference = value;
+        else if (property === "X-BCDEVIS-SOURCE") source.source = value;
+        else if (property === "X-BCDEVIS-REQUEST") source.request = value;
+        else if (property === "X-BCDEVIS-REQUESTED-AT") source.requestedAt = value;
+        else if (property === "X-BCDEVIS-REQUEST-HANDLED-AT") source.requestHandledAt = value;
         else if (property === "UID") source.id = value;
       });
       return sanitizeContact(source);
@@ -224,6 +294,10 @@
       contact.language ? `LANG:${vcardEscape(contact.language)}` : "",
       contact.reference ? `X-BCDEVIS-REFERENCE:${vcardEscape(contact.reference)}` : "",
       contact.notes ? `NOTE:${vcardEscape(contact.notes)}` : "",
+      contact.source ? `X-BCDEVIS-SOURCE:${vcardEscape(contact.source)}` : "",
+      contact.request ? `X-BCDEVIS-REQUEST:${vcardEscape(contact.request)}` : "",
+      contact.requestedAt ? `X-BCDEVIS-REQUESTED-AT:${contact.requestedAt}` : "",
+      contact.requestHandledAt ? `X-BCDEVIS-REQUEST-HANDLED-AT:${contact.requestHandledAt}` : "",
       "END:VCARD"
     ].filter(Boolean).join("\r\n")).join("\r\n");
   }
@@ -258,5 +332,5 @@
     return /^\d{8,15}$/.test(digits) ? digits : "";
   }
 
-  return { CONTACT_FIELDS, whatsAppNumber, sanitizeContact, matchKey, mergeContacts, parseCsv, toCsv, parseVCard, toVCard, parseJson, toJson, parseContactFile };
+  return { CONTACT_FIELDS, REQUEST_FIELDS, whatsAppNumber, sanitizeContact, matchKey, mergeContacts, hasOpenRequest, pendingRequests, parseCsv, toCsv, parseVCard, toVCard, parseJson, toJson, parseContactFile };
 }));

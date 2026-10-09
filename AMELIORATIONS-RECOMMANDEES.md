@@ -8,6 +8,8 @@
 - **État :** feuille de route consolidée après la fermeture du workflow par facture envoyée, le verrouillage des devis terminaux, les V2, les réglages documentaires par poste et le centre d’aide HTML hors ligne
 - **Documents associés :** [Dette technique et optimisations](DETTE-TECHNIQUE-ET-OPTIMISATIONS.md), [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md) et [plan de protection de la PWA](PLAN-PROTECTION-ACCES-GITHUB-PAGES.md)
 
+> **Mise à jour du 5 octobre 2026.** Le corps de ce document décrit la version 7.1 ; la version de production est maintenant 8.7.1. Depuis cette analyse : le serveur central expose la liste des comptes et des appareils, la révocation d’appareils et l’état des migrations (A13, création de comptes non revérifiée), et le répertoire de contacts (A19) accepte les colonnes Prénom / Nom séparées, un champ **Provenance** et des **demandes du site** affichées dans « À faire ». Voir `JOURNAL-DES-MODIFICATIONS.md` (racine du dossier de travail) pour le détail et ce qui reste à vérifier. Les autres priorités ci-dessous n’ont pas été réexaminées.
+
 ## Résultat de l’analyse
 
 BCDevis 7.1.0 est fonctionnel et dispose d’un socle de validation sérieux pour une application JavaScript native :

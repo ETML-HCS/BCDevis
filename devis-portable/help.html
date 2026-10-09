@@ -80,15 +80,17 @@
         <div class="callout callout--warning"><strong>Devis verrouillé</strong><p>Un devis Accepté, Refusé, Expiré ou déjà lié à une facture envoyée ne peut plus être modifié. Utilisez <b>Créer une V2</b> pour poursuivre sans altérer la trace commerciale.</p></div>
       </article>
 
-      <article class="help-topic" id="contacts" data-help-topic data-search-terms="contacts clients répertoire carnet adresse téléphone email société import export csv vcard vcf json doublon fusion">
+      <article class="help-topic" id="contacts" data-help-topic data-search-terms="contacts clients répertoire carnet adresse téléphone email société import export csv vcard vcf json doublon fusion prénom provenance demande site internet salonkee">
         <p class="topic-kicker">Contacts</p>
         <h2>Gérer le répertoire clients</h2>
         <p>Ouvrez le bouton client du devis pour rechercher, créer ou modifier un contact. Le nom, le téléphone et l’e-mail restent immédiatement accessibles ; ouvrez <b>Plus d’informations</b> pour les autres champs.</p>
         <div class="two-columns">
-          <section><h3>Importer</h3><ul><li>CSV avec en-têtes en français ou en anglais.</li><li>vCard <code>.vcf</code> depuis un carnet d’adresses.</li><li>JSON BCDevis pour une sauvegarde complète.</li><li>Les doublons sont fusionnés par e-mail, téléphone, puis nom et adresse.</li></ul></section>
+          <section><h3>Importer</h3><ul><li>CSV avec en-têtes en français ou en anglais ; des colonnes <b>Prénom</b> et <b>Nom</b> séparées sont réunies en un nom complet.</li><li>vCard <code>.vcf</code> depuis un carnet d’adresses.</li><li>JSON BCDevis pour une sauvegarde complète.</li><li>Les doublons sont fusionnés par e-mail, téléphone, puis nom et adresse.</li></ul></section>
           <section><h3>Exporter</h3><ul><li>CSV pour Excel ou un autre logiciel.</li><li>vCard pour les téléphones et carnets d’adresses.</li><li>JSON pour restaurer ou transférer le répertoire.</li><li>L’export contient tous les contacts du répertoire.</li></ul></section>
         </div>
         <div class="callout"><strong>Coordonnées du devis</strong><p>Quand vous utilisez un contact, BCDevis copie ses coordonnées dans le devis. Les devis déjà enregistrés conservent leur contenu même si le contact change ensuite.</p></div>
+        <div class="callout callout--soft"><strong>Demandes du site internet</strong><p>Dans l’administration du site, <b>Rendez-vous</b> ou <b>Messages</b> → <b>Exporter pour BCDevis</b> produit un CSV à importer ici. Chaque contact apparaît dans <b>Mes devis → À faire → Nouvelles demandes</b> jusqu’à la création de son devis ou au bouton <b>Traitée</b>. Réimporter le même fichier ne rouvre pas une demande traitée. Le message libre du site n’est pas importé. La liste À faire n’existe que si le suivi est activé dans <b>Réglages → Devis &amp; suivi</b>.</p></div>
+        <div class="callout callout--soft"><strong>Provenance</strong><p>Le champ <b>Provenance</b> (Plus d’informations) indique d’où vient le contact : site internet, Google Ads, Salonkee, bouche-à-oreille… Le premier canal connu est conservé lors des fusions.</p></div>
       </article>
 
       <article class="help-topic" id="tracking" data-help-topic data-search-terms="suivi commercial historique statut brouillon prêt envoyé accepté refusé expiré relance auteur version v2 verrouillé whatsapp téléphone motif perte statistiques conversion période export csv facture">
@@ -105,13 +107,13 @@
           <section><h3>Garde-fous</h3><ul><li>Les rétrogradations sont refusées.</li><li>Annuler le dernier changement reste disponible avant un état terminal.</li><li>Les états terminaux verrouillent le devis.</li><li>Créer une V2 conserve le lien avec la version précédente.</li></ul></section>
         </div>
         <div class="two-columns">
-          <section><h3>Actions rapides</h3><ul><li>Chaque fiche affiche le client, le montant, l’échéance et l’action attendue : Terminer le devis, Marquer envoyé, Relance faite, Accepté, Refusé ou Facture envoyée.</li><li>Le bouton ⋯ regroupe WhatsApp, l’appel, la copie du message, la chronologie et la modification du suivi.</li><li>Refusé propose le motif en un clic, « Sans motif » compris.</li><li>Une action peut être annulée depuis la notification ; Facture envoyée demande une confirmation.</li><li><b>Options &amp; Sauvegarde → Affichage détaillé du suivi</b> réaffiche numéros, statuts, totaux et contacts sur chaque fiche.</li></ul></section>
+          <section><h3>Actions rapides</h3><ul><li><b>Nouvelles demandes</b>, en tête de À faire, liste les contacts importés du site sans devis : <b>Créer un devis</b> l’ouvre à leur nom, <b>Traitée</b> les retire.</li><li>Chaque fiche affiche le client, le montant, l’échéance et l’action attendue : Terminer le devis, Marquer envoyé, Relance faite, Accepté, Refusé ou Facture envoyée.</li><li>Le bouton ⋯ regroupe WhatsApp, l’appel, la copie du message, la chronologie et la modification du suivi.</li><li>Refusé propose le motif en un clic, « Sans motif » compris.</li><li>Une action peut être annulée depuis la notification ; Facture envoyée demande une confirmation.</li><li><b>Options &amp; Sauvegarde → Affichage détaillé du suivi</b> réaffiche numéros, statuts, totaux et contacts sur chaque fiche.</li></ul></section>
           <section><h3>Statistiques</h3><ul><li>Choisissez la période : ce mois, mois dernier ou 12 mois (3 mois et depuis le début en affichage détaillé).</li><li>Plus de détails déplie la tendance, les motifs de perte et l’export.</li><li>Un devis compte dans la période de son premier envoi, une seule fois pour toutes ses versions.</li><li>Les motifs de perte et les expirations sans relance montrent où les devis se perdent.</li><li>L’export CSV contient les noms et coordonnées des clients : conservez-le en lieu sûr.</li></ul></section>
         </div>
         <details><summary>Que fait l’expiration automatique ?</summary><p>À l’ouverture du suivi, un devis Prêt à envoyer ou Envoyé dont la date de validité est dépassée passe à Expiré. Cette action est ajoutée à sa chronologie.</p></details>
       </article>
 
-      <article class="help-topic" id="invoices" data-help-topic data-search-terms="facture envoyé import archive téléchargement imprimer accepté workflow fac postgresql">
+      <article class="help-topic" id="invoices" data-help-topic data-search-terms="facture envoyé import archive téléchargement imprimer accepté workflow fac postgresql plusieurs groupé rattachement automatique">
         <p class="topic-kicker">Factures</p>
         <h2>Archiver une facture envoyée</h2>
         <p>BCDevis ne transforme pas automatiquement un devis en facture lorsque son statut change. Il archive le PDF d’une facture déjà créée et envoyée.</p>
@@ -121,6 +123,7 @@
           <li><span>3</span><div><strong>Retrouvez-la dans Factures</strong><p>Après un import réussi, le devis quitte le suivi actif et le PDF rejoint la vue Factures pour consultation, téléchargement et impression.</p></div></li>
         </ol>
         <div class="callout"><strong>Nommage cohérent</strong><p>Le préfixe facture est configurable, <code>FAC</code> par défaut. La date, le code machine et la séquence restent identiques à ceux du devis associé : <code>DEV-20260806A001</code> devient <code>FAC-20260806A001</code>.</p></div>
+        <div class="callout callout--soft"><strong>Plusieurs factures d’un coup</strong><p>Dans <b>Factures → Importer des factures</b>, ou avec <b>Importer les factures</b> en tête de « Acceptés à facturer », sélectionnez plusieurs PDF. Chaque fichier rejoint son devis accepté d’après son nom : la référence (<code>FAC-20260806A001.pdf</code> ou <code>20260806A001</code>), sinon le nom complet du client s’il n’a qu’un devis accepté. Une confirmation liste les rattachements et les fichiers ignorés avant tout archivage.</p></div>
       </article>
 
       <article class="help-topic" id="central" data-help-topic data-search-terms="base centrale postgresql serveur api connexion synchronisation conflit documents factures partage hors ligne compte appareil">

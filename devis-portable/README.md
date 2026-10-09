@@ -2,6 +2,15 @@
 
 Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.6.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
 
+## Évolutions locales non publiées (après 8.7.1)
+
+Ces changements sont dans le code mais n’ont pas de numéro de version ni de livrable : voir `JOURNAL-DES-MODIFICATIONS.md` à la racine du dossier de travail.
+
+- **Contacts :** import des colonnes Prénom / Nom séparées, nouveaux intitulés de colonnes, champ **Provenance**.
+- **Nouvelles demandes :** section en tête de **Mes devis > À faire** pour les contacts importés du site (export « Exporter pour BCDevis » de l’administration du site).
+- **Factures :** import groupé de PDF, rattachés à leur devis accepté d’après la référence ou le nom du client, avec confirmation.
+- **Postes à jour ensemble :** avec la base centrale, mettre à jour tous les postes en même temps (un ancien poste ignore les nouveaux champs de contact).
+
 ## Nouveautés 8.7.1
 
 Version de production : elle réunit tout le travail de la série 8.6.x et devient la référence pour les postes et le serveur central.

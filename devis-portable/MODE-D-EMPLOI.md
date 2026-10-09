@@ -259,6 +259,8 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 - **Confort iPad et Smartphone** : les actions tactiles sont agrandies ; un balayage vers la gauche révèle la suppression et **Annuler** restaure immédiatement la dernière ligne retirée.
 - **Catalogue personnalisable** : l’éditeur des tuiles permet de rechercher un soin, prévisualiser et enregistrer son nom, son pictogramme, sa durée ou son tarif.
 - **Travail multi-postes facultatif** : PostgreSQL synchronise les devis, leur suivi et les réglages métier, réserve des numéros uniques et permet de continuer hors ligne.
+- **Demandes du site et provenance** : importez l’export du site pour retrouver chaque nouvelle demande dans **À faire > Nouvelles demandes** ; le champ **Provenance** d’un contact garde son canal d’origine.
+- **Import groupé des factures** : plusieurs PDF d’un coup, chacun relié à son devis accepté d’après la référence ou le nom du client, avec confirmation avant archivage.
 - **Documents partagés et Factures partagées** : après connexion au serveur central, deux pictogrammes distincts donnent accès aux documents généraux et aux factures envoyées, avec import, aperçu, téléchargement et impression.
 
 ![Écran principal BCDevis](captures/01-devis-en-cours.png)
@@ -385,6 +387,10 @@ Dans **Devis**, cliquez sur le pictogramme client. Recherchez un contact existan
 
 Le répertoire accepte les imports CSV, vCard (`.vcf`) et JSON, et propose les trois formats en export. Les doublons sont fusionnés par e-mail, téléphone, puis nom et adresse. **Retirer du devis** enlève le destinataire sans supprimer le contact ; la corbeille supprime le contact du répertoire. Chaque devis conserve une copie de ses coordonnées : modifier le contact plus tard ne réécrit pas les devis déjà enregistrés.
 
+À l’import d’un fichier CSV issu d’un agenda ou d’une caisse, des colonnes **Prénom** et **Nom** séparées sont réunies en un nom complet ; « Natel », « Adresse e-mail » et les intitulés usuels sont reconnus. Le champ **Provenance** (dans **Plus d’informations** : site internet, Google Ads, Salonkee, bouche-à-oreille…) indique d’où vient le contact ; le premier canal connu est conservé quand deux fiches sont fusionnées.
+
+**Demandes du site internet.** Dans l’administration du site, les pages **Rendez-vous** et **Messages** proposent **Exporter pour BCDevis** (demandes en attente, ou sélection). Importez ce fichier dans le répertoire : chaque contact apparaît dans **Mes devis > À faire > Nouvelles demandes** (le suivi doit être activé) jusqu’à la création de son devis ou au bouton **Traitée**. Réimporter le même fichier ne rouvre pas une demande traitée ; le message libre du site n’est pas exporté.
+
 ### Étape 5 : Vérifier la date
 
 La date du devis est celle du jour par défaut. Elle peut être choisie jusqu’à 14 jours à l’avance. La date de validité est calculée automatiquement à 30 jours calendaires et apparaît dans le document final.
@@ -475,6 +481,7 @@ Depuis **Mes devis**, l’onglet **À faire** classe les devis par priorité : r
 
 - l’onglet **Tous les devis** est un tableau de tous les devis, avec leur dernier statut commercial et sans outils de suivi ;
 - l’onglet **À faire** regroupe les actions du jour ; chaque section montre cinq devis, les autres se déplient à la demande ;
+- **Nouvelles demandes**, en tête de **À faire**, liste les contacts importés du site qui n’ont pas encore de devis : **Créer un devis** ouvre un devis à leur nom, **Traitée** les retire (annulable) ;
 - le bouton **⋯** d’une ligne ouvre WhatsApp, l’appel, la copie du message de relance, la chronologie et la note interne ; **Options & Sauvegarde > Affichage détaillé du suivi** montre tout sur chaque ligne ;
 - dans le détail, **Ouvrir le devis** charge le devis dans la caisse ;
 - **Relance faite** enregistre une relance confirmée et reprogramme la suivante ; **Refusé** propose le motif en un clic, « Sans motif » compris ; une action peut être annulée depuis la notification ;
@@ -557,6 +564,8 @@ Après connexion du poste au serveur central, les boutons **Documents partagés*
 - utiliser **Imprimer** pour lancer l’impression du PDF sélectionné.
 
 Lors d’un import, le devis et le client actuellement ouverts sont associés au document pour faciliter la recherche. Une facture importée depuis un devis accepté est renommée avec le préfixe facture et la référence du devis, puis clôt son suivi actif seulement après la réussite de l’archivage. Par exemple, `DEV-20260806A001` donne `FAC-20260806A001.pdf` avec les réglages par défaut. Les PDF sont conservés dans PostgreSQL et ne sont chargés qu’à la demande par l’API sécurisée. La liste et l’aperçu exigent donc une connexion active ; ils ne font pas partie de la réserve hors ligne.
+
+**Plusieurs factures d’un coup.** Dans **Factures > Importer des factures**, ou avec **Importer les factures** en tête de la section **Acceptés à facturer**, sélectionnez jusqu’à 30 PDF. Chaque fichier rejoint son devis accepté d’après son nom : la référence (`FAC-20260806A001.pdf`), sinon le nom complet du client s’il n’a qu’un seul devis accepté. Une confirmation liste les rattachements et les fichiers ignorés (devis non accepté, déjà facturé, ambigu, doublon) avant tout archivage ; un fichier non reconnu n’est jamais rattaché par défaut. Un PDF seul dont le nom ne cite aucun devis reste associé au devis ouvert, comme avant.
 
 Le brouillon actuellement ouvert, le thème, la police, la navigation, le confort iPad, l’affichage des prix et le lancement automatique restent propres à chaque appareil.
 

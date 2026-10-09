@@ -99,6 +99,7 @@ export interface QuoteTracking {
 
 export interface ClientData {
   id?: string;
+  contactId?: string;
   name?: string;
   company?: string;
   phone?: string;
@@ -138,8 +139,38 @@ export interface Quote {
 
 export interface Contact extends ClientData {
   id: string;
+  /** Provenance : premier canal connu (site internet, Google Ads…), conservé lors des fusions. */
+  source?: string;
+  /** Demande reçue hors de BCDevis (export du site) : ouverte si `requestedAt` > `requestHandledAt` et sans devis créé depuis. */
+  request?: string;
+  requestedAt?: string;
+  requestHandledAt?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Opérations du répertoire, sans DOM. Les accès à l'état sont relus à chaque opération. */
+export interface ContactServiceOptions {
+  getDatabase: () => DatabaseState;
+  getQuote: () => Quote;
+  persist: (touchCurrent?: boolean) => boolean;
+  sanitizeClientSnapshot: (source: Partial<Contact> & { contactId?: string }) => ClientData;
+  emptyClientSnapshot: () => ClientData;
+  idFactory?: () => string;
+  maxContacts?: number;
+}
+
+export interface ContactService {
+  list(): Contact[];
+  get(id: string): Contact | undefined;
+  client(): ClientData;
+  /** null si l'écriture échoue ; conserve alors le répertoire et le client précédents. */
+  save(data: Partial<Contact>): { contact: Contact; merged: boolean } | null;
+  importContacts(contacts: Partial<Contact>[]): { added: number; merged: number } | null;
+  importFile(filename: string, text: string): { added: number; merged: number } | null;
+  remove(id: string): boolean;
+  clearClient(): boolean;
+  exportFile(format: string): { extension: string; type: string; content: string; count: number } | null;
 }
 
 export interface PrestationCategory {

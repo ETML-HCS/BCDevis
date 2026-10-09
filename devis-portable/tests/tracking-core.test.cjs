@@ -10,7 +10,9 @@ const {
   exportConversionCSV,
   followUpCount,
   countAcceptedInMonth,
-  countAwaitingInvoices
+  countAwaitingInvoices,
+  documentReferenceKey,
+  matchInvoiceFiles
 } = require("../tracking-core.js");
 
 const quote = ({
@@ -125,5 +127,49 @@ assert.match(csvLines[0], /^Devis;Version;Client;/);
 assert.ok(csvLines.some((line) => line.includes('"Client ; test"')), "Les cellules contenant le séparateur sont protégées");
 assert.ok(csvLines.some((line) => line.includes(`"'=HYPERLINK(""x"")"`)), "Une formule de tableur est neutralisée");
 assert.ok(csvLines.some((line) => line.startsWith("refused;V1;") && line.includes(";Prix;300.00;0.00")), "Le motif et les montants sont exportés");
+
+// Import groupé des factures : rattachement par la référence du devis, puis par le nom complet du client.
+assert.equal(documentReferenceKey("DEV-20261005A001"), "20261005A001");
+assert.equal(documentReferenceKey("DEV-CL-20261005P01007"), "20261005P01007", "Un préfixe composé ne fait pas partie de la référence");
+assert.equal(documentReferenceKey("DEV-20261005-A-001"), "20261005A001", "Les anciens numéros gardent la même référence");
+assert.equal(documentReferenceKey("Brouillon"), "");
+const invoiceQuotes = [
+  { id: "q1", number: "DEV-20261005A001", status: "accepted", clientName: "Marie Dupont" },
+  { id: "q2", number: "DEV-20261005A002", status: "accepted", clientName: "Léa Roux" },
+  { id: "q3", number: "DEV-20261005A003", status: "sent", clientName: "Paul Martin" },
+  { id: "q4", number: "DEV-20261004A001", status: "invoiced", clientName: "Ana Silva" },
+  { id: "q5", number: "DEV-20261005A0012", status: "accepted", clientName: "Jean Morel" },
+  { id: "q6", number: "DEV-20261006A001", status: "accepted", clientName: "Marie Dupont" },
+  { id: "q7", number: "DEV-20261006A002", status: "accepted", clientName: "Marie Dupont" }
+];
+const invoiceMatches = matchInvoiceFiles([
+  "FAC-20261005A001.pdf",
+  "facture fac 20261005 A002 Roux.PDF",
+  "Facture_Roux_Léa_octobre.pdf",
+  "FAC-20261005A003.pdf",
+  "FAC-20261004A001.pdf",
+  "FAC-20261005A001 (copie).pdf",
+  "Facture Dupont Marie.pdf",
+  "scan-0042.pdf",
+  "FAC-20261005A00.pdf"
+], invoiceQuotes);
+assert.deepEqual(invoiceMatches.map((item) => [item.status, item.method, item.quoteId]), [
+  ["ok", "reference", "q1"],
+  ["ok", "reference", "q2"],
+  ["duplicate", "client", "q2"],
+  ["not-accepted", "reference", "q3"],
+  ["already-invoiced", "reference", "q4"],
+  ["duplicate", "reference", "q1"],
+  ["ambiguous", "client", ""],
+  ["unmatched", "", ""],
+  ["unmatched", "", ""]
+], "Chaque facture est rattachée, signalée ou ignorée sans deviner");
+assert.equal(invoiceMatches[0].quoteNumber, "DEV-20261005A001");
+assert.equal(invoiceMatches[0].clientName, "Marie Dupont");
+assert.equal(matchInvoiceFiles(["FAC-20261005A0012.pdf"], invoiceQuotes)[0].quoteId, "q5", "La référence la plus longue n’est pas confondue avec une plus courte");
+assert.deepEqual(matchInvoiceFiles(["Facture_Roux_Lea.pdf"], invoiceQuotes).map((item) => [item.status, item.method, item.quoteId]), [["ok", "client", "q2"]], "Un client avec un seul devis accepté est reconnu par son nom");
+assert.equal(matchInvoiceFiles(["Facture Roux.pdf"], invoiceQuotes)[0].status, "unmatched", "Un nom incomplet ne suffit pas");
+assert.equal(matchInvoiceFiles(["Facture Martin Paul.pdf"], invoiceQuotes)[0].status, "unmatched", "Le nom seul ne vise que les devis acceptés");
+assert.deepEqual(matchInvoiceFiles(["FAC-20261005A001.pdf"], [...invoiceQuotes, { id: "legacy", number: "DEV-20261005-A-001", status: "accepted", clientName: "X Y" }]).map((item) => item.status), ["ambiguous"], "Deux devis de même référence ne sont jamais départagés au hasard");
 
 console.log("TRACKING_CORE_TESTS_OK");

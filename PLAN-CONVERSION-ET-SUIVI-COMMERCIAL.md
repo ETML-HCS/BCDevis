@@ -8,6 +8,26 @@
 - **Objectif produit :** augmenter la part des devis envoyés qui aboutissent, tout en réduisant les oublis et le temps administratif
 - **Documents associés :** [Nouvelles fonctionnalités](NOUVELLES-FONCTIONNALITES.md) et [Améliorations recommandées](AMELIORATIONS-RECOMMANDEES.md)
 
+## État d’avancement au 5 octobre 2026
+
+Relevé fait dans le code de BCDevis 8.7.1 (lecture du code et tests, pas d’essai en production).
+
+| Élément du plan | État |
+| --- | --- |
+| File d’action « À faire » : À relancer, Acceptés à facturer, Prêts à envoyer, Brouillons de plus de 7 jours, En attente de réponse | **Livré** |
+| Onglet Statistiques (conversion mensuelle, délai médian), export CSV de la conversion | **Livré** |
+| Motifs de perte structurés (8 motifs) | **Livré** |
+| Recherche (numéro, client, téléphone, e-mail) et tris | **Livré** |
+| **Nouvelles demandes** (contacts importés du site, avant tout devis), non prévu au plan initial | **Livré, local** |
+| **Import groupé des factures**, rattachées à leur devis accepté par la référence ou le nom du client (prolonge « Devis accepté → facture envoyée ») | **Livré, local** ; parcours avec serveur central à essayer sur un poste connecté |
+| **Provenance** du contact (site, Google Ads, Salonkee…), préalable à une conversion par canal d’origine | **Champ livré** ; pas encore d’indicateur par provenance dans les statistiques |
+| Report d’une action hors relance, avec nouvelle date | Non trouvé |
+| Export anonymisé | Non trouvé |
+| Comparaison V1/V2 | Non trouvé |
+| Séquences de relance (J+3, J+7, J+14) | Non trouvé |
+
+Suite recommandée : l’indicateur de conversion par provenance, puis le report d’action et l’export anonymisé.
+
 ## Proposition directrice
 
 ### « Aucun devis ne se perd »

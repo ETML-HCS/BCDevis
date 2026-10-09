@@ -2861,6 +2861,7 @@
         </details>
       </div>
       <input id="trackingInvoiceInput" type="file" accept="application/pdf,.pdf" hidden>
+      <input id="trackingInvoiceBatchInput" type="file" accept="application/pdf,.pdf" multiple hidden>
     </aside>
   </div>
 
@@ -2898,6 +2899,7 @@
               <label><span>Date de naissance</span><input name="birthDate" type="date" autocomplete="bday"></label>
               <label><span>Langue</span><select name="language"><option value="">Non précisée</option><option value="Français">Français</option><option value="Anglais">Anglais</option><option value="Allemand">Allemand</option><option value="Italien">Italien</option><option value="Espagnol">Espagnol</option><option value="Portugais">Portugais</option><option value="Ukrainien">Ukrainien</option><option value="Russe">Russe</option></select></label>
               <label><span>Référence interne</span><input name="reference" type="text" autocomplete="off"></label>
+              <label><span>Provenance</span><input name="source" type="text" list="contactSourceOptions" maxlength="80" autocomplete="off" placeholder="Ex. Site internet"><datalist id="contactSourceOptions"><option value="Site internet"><option value="Google Ads"><option value="Salonkee"><option value="Instagram"><option value="Bouche-à-oreille"><option value="Patient·e existant·e"></datalist></label>
               <label class="full-field"><span>Notes</span><textarea name="notes" rows="3" placeholder="Informations utiles pour le suivi"></textarea></label>
             </div>
           </details>
@@ -3369,6 +3371,8 @@
   <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
   <section class="print-quote" id="printQuote" aria-hidden="true"></section>
   <script src="contact-core.js"></script>
+  <script src="contact-service.js"></script>
+  <script src="contacts-controller.js"></script>
   <script src="quote-core.js"></script>
   <script src="tracking-core.js"></script>
   <script src="catalog.js"></script>

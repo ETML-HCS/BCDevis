@@ -43,6 +43,7 @@ Chaque devis peut posséder un état de suivi :
 
 ## 3. Gestion des Contacts (`ContactCore`)
 
-- **Champs principaux :** `name`, `phone`, `email`, `company`, `address`, `postalCode`, `city`, `country`, `birthDate`, `language`, `reference`, `notes`.
+- **Champs principaux :** `name`, `phone`, `email`, `company`, `address`, `postalCode`, `city`, `country`, `birthDate`, `language`, `reference`, `notes`, `source` (provenance, premier canal conservé).
+- **Demandes reçues :** `request`, `requestedAt`, `requestHandledAt` (hors formulaire). `pendingRequests()` alimente « À faire › Nouvelles demandes » : une demande reste ouverte tant qu'elle n'est pas traitée et qu'aucun devis du contact n'a été créé depuis.
 - **Dédoublonnage :** Basé sur la normalisation des noms, numéros de téléphone et adresses e-mail.
 - **Formats supportés :** Export/import CSV avec entêtes français, vCard 3.0 / 4.0, et JSON natif.
