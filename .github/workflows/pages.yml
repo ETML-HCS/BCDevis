@@ -1,13 +1,10 @@
 name: Publier BCDevis Web pour iPad
 
-# Publication volontairement manuelle et réservée au tag stable `v7.1.7`.
-# La branche `newFeatures` (branche par défaut) porte la V8, alors que le site web
-# doit continuer à servir la version utilisée par la clinique. Aucun push ne doit
-# donc republier le site tout seul.
-# Pour publier : Actions > « Publier BCDevis Web pour iPad » > Run workflow,
-# puis choisir le tag souhaité (v7.1.7). L’environnement `github-pages` n’autorise
-# que ce tag ; un déclenchement depuis une branche est refusé par la protection
-# d’environnement.
+# Publication volontairement manuelle : aucun push ne republie le site tout seul.
+# Pour publier : Actions > « Publier BCDevis Web pour iPad » > Run workflow, puis
+# choisir le tag de la version (par exemple v8.8.0). L’environnement `github-pages`
+# n’accepte que les tags déclarés dans ses règles de déploiement : ajouter le tag de
+# chaque nouvelle version avant de lancer la publication.
 
 on:
   workflow_dispatch:

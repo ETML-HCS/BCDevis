@@ -6,7 +6,7 @@ Ce document fournit aux agents d'intelligence artificielle (Antigravity, Claude 
 
 ## 1. Contexte & Identité du Projet
 
-- **Produit :** BCDevis (version 8.7.1 + évolutions locales non publiées : voir `../JOURNAL-DES-MODIFICATIONS.md`)
+- **Produit :** BCDevis (version 8.8.0 ; évolutions locales éventuelles : voir `../JOURNAL-DES-MODIFICATIONS.md`)
 - **Entreprise :** Clinique Bellecour (Genève, Suisse — Rue du Mont-Blanc 20)
 - **Domaine métier :** Devis médicaux et esthétiques (épilation laser, électrolyse, injections, peelings, etc.).
 - **Devise monétaire :** Franc suisse (**CHF**), format suisse (`fr-CH` avec espaces insécables ou standard).

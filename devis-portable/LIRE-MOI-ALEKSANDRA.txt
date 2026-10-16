@@ -1,9 +1,30 @@
-BCDevis 8.7.1 - Livrable pour Aleksandra
+BCDevis 8.8.0 - Livrable pour Aleksandra
 Clinique Bellecour
 
-NOUVEAUTES 8.7.1
+NOUVEAUTES 8.8.0
 
 Version de production : elle remplace toutes les versions precedentes.
+
+- Prix special SIF combine : sur la ligne SIF, la fenetre du rabais propose
+  le bouton "SIF combine a 62 CHF". Le soin garde son prix normal et le
+  rabais en % ramene la seance a 62 CHF : le client voit son avantage.
+- Coupon : son code figure sur le PDF quand le coupon reduit le devis. La
+  croix en haut a droite referme la zone Coupon ; un coupon saisi est
+  retire, et Annuler le retablit pendant quelques secondes.
+- Mannequin redessine : 23 zones precises, aisselles et epaules distinctes,
+  visages Femme et Homme differencies, SIF et pictogrammes plus lisibles.
+- Demandes du site : elles apparaissent dans Mes devis > A faire, avec Creer
+  un devis et Traitee. L'import des contacts reconnait Prenom, Nom et
+  Provenance.
+- Factures : importez jusqu'a 30 factures PDF d'un coup ; chacune rejoint
+  son devis accepte, apres confirmation.
+- Rabais personnalise : un avis signale une marge reduite au-dela de 10 %,
+  une confirmation est demandee a partir de 30 % et la vente a perte est
+  signalee a partir de 51 %.
+- La version web s'ouvre toujours sans identifiant ni base centrale : les
+  devis restent sur l'appareil.
+
+DEJA DISPONIBLE EN 8.7.1
 
 - L'ecran Quoi de neuf ? est redessine pour marquer cette version.
 - Le menu ... du devis ne garde que Dupliquer, Exporter, Importer et Vider :
@@ -63,18 +84,18 @@ DEJA DISPONIBLE (8.6.2 et avant)
   disponible hors ligne sans Internet ni PostgreSQL.
 - Provisoire : la version web s'ouvre sans connexion tant que le serveur
   central n'est pas en service. Les devis restent sur l'appareil.
-- Cet ecran de nouveautes apparait une seule fois pour la version 8.7.1.
+- Cet ecran de nouveautes apparait une seule fois pour la version 8.8.0.
 
 CONTENU
 
 1-Windows
-  BCDevis-8.7.1.exe
+  BCDevis-8.8.0.exe
 
 2-Linux
-  BCDevis-8.7.1-linux-x86_64.AppImage
+  BCDevis-8.8.0-linux-x86_64.AppImage
 
 3-ChromeOS
-  BCDevis-8.7.1-chromeos.zip
+  BCDevis-8.8.0-chromeos.zip
 
 4-Documentation
   Centre d'aide intégré au logiciel (source principale)
@@ -88,7 +109,7 @@ CONTENU
 
 INSTALLATION WINDOWS
 
-Double-cliquer sur BCDevis-8.7.1.exe. L'application est portable et ne
+Double-cliquer sur BCDevis-8.8.0.exe. L'application est portable et ne
 demande pas d'installation.
 
 Au premier lancement, un dossier data est créé à côté de l'EXE. Toujours
@@ -102,14 +123,14 @@ INSTALLATION LINUX X64
 
 Dans un terminal placé dans le dossier du fichier :
 
-  chmod +x BCDevis-8.7.1-linux-x86_64.AppImage
-  ./BCDevis-8.7.1-linux-x86_64.AppImage
+  chmod +x BCDevis-8.8.0-linux-x86_64.AppImage
+  ./BCDevis-8.8.0-linux-x86_64.AppImage
 
 Les données sont enregistrées dans le profil local de l'utilisateur.
 
 INSTALLATION CHROMEOS
 
-L'archive BCDevis-8.7.1-chromeos.zip contient la PWA statique à publier
+L'archive BCDevis-8.8.0-chromeos.zip contient la PWA statique à publier
 sur un hébergement HTTPS. Elle ne s'installe pas directement depuis le
 fichier ZIP.
 

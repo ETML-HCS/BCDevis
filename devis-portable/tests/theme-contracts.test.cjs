@@ -48,14 +48,14 @@ assert.match(app, /"#couponClose"\)\.addEventListener\("click"[\s\S]*?couponOpen
 assert.match(styles, /\.coupon-close::before\{content:"";position:absolute;inset:-6px\}/, "La croix du coupon doit offrir une cible tactile de 44 px");
 assert.match(app, /\$\{couponCode \? `<tr class="coupon-code"><td>\$\{text\.couponCode\}<\/td><td>\$\{escapeHTML\(couponCode\)\}<\/td><\/tr>` : ""\}/, "Le code coupon doit être imprimé sous le rabais total, échappé");
 assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
-assert.match(app, /const RELEASE_VERSION = "8.7.1";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "8.7.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "8.8.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8.8.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Version 8.7.1[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Version 8.8.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
 assert.equal((releaseNotesList.match(/<li>/g) || []).length, 5, "L’écran des nouveautés doit présenter les cinq familles de nouveautés livrées");
-assert.match(html, /<strong>PDF en huit langues<\/strong>[\s\S]*?<strong>Devis en euros<\/strong>[\s\S]*?<strong>Mes devis : À faire et Tous les devis<\/strong>[\s\S]*?<strong>WhatsApp plus fiable<\/strong>[\s\S]*?<strong>Une interface plus claire<\/strong>/, "Les nouveautés doivent résumer le PDF multilingue, Mes devis, WhatsApp et la mise à jour du serveur");
+assert.match(html, /<strong>Prix spécial SIF combiné<\/strong>[\s\S]*?<strong>Coupon plus pratique<\/strong>[\s\S]*?<strong>Mannequin redessiné<\/strong>[\s\S]*?<strong>Demandes du site<\/strong>[\s\S]*?<strong>Factures et marges<\/strong>/, "Les nouveautés 8.8.0 doivent résumer le SIF combiné, le coupon, le mannequin, les demandes du site, les factures et les marges");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
