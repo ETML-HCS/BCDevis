@@ -40,6 +40,13 @@ assert.match(app, /draft\.assessment\.level === "confirm" && !lineDiscountConfir
 assert.match(app, /lineDiscountConfirmed = false;\s*lineDiscountLineId = line\.id/, "La confirmation doit repartir de zéro à chaque ouverture");
 assert.match(app, /Aucun montant à réduire sur cette ligne/, "Une ligne sans montant payé ne doit pas ouvrir la fenêtre du rabais");
 assert.match(app, /"#lineDiscountValue"\)\?\.addEventListener\("wheel"[\s\S]*?preventDefault/, "La molette ne doit pas modifier le rabais par accident");
+assert.match(html, /<button class="discount-preset-tag line-discount-target" type="button" id="lineDiscountTarget" aria-pressed="false" hidden><\/button>/, "Le prix spécial doit être un bouton de la fenêtre du rabais, masqué par défaut");
+assert.match(app, /const TARGET_PRICE_OFFERS = \{ 49: \{ label: "SIF combiné", price: 62 \} \};/, "Le SIF combiné doit rester à 62 CHF et calculer le rabais à partir du prix normal");
+assert.match(app, /"#lineDiscountTarget"\)\?\.addEventListener\("click"[\s\S]*?renderLineDiscountPreview\(\);/, "Le prix spécial doit remplir le rabais en % puis passer par l’aperçu et la confirmation");
+assert.match(app, /const couponCode = totals\.discount > 0 \? String\(quote\.discount\?\.code \|\| ""\)\.trim\(\) : "";/, "Le code coupon ne doit figurer sur le PDF que si le coupon réduit le devis");
+assert.match(app, /"#couponClose"\)\.addEventListener\("click"[\s\S]*?couponOpen = false;[\s\S]*?quote\.discount\.value = 0;[\s\S]*?actionLabel: "Annuler"/, "Fermer le coupon doit retirer un coupon saisi, avec possibilité d’annuler");
+assert.match(styles, /\.coupon-close::before\{content:"";position:absolute;inset:-6px\}/, "La croix du coupon doit offrir une cible tactile de 44 px");
+assert.match(app, /\$\{couponCode \? `<tr class="coupon-code"><td>\$\{text\.couponCode\}<\/td><td>\$\{escapeHTML\(couponCode\)\}<\/td><\/tr>` : ""\}/, "Le code coupon doit être imprimé sous le rabais total, échappé");
 assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
 assert.match(app, /const RELEASE_VERSION = "8.7.1";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /const RELEASE_NOTES_REVISION = "8.7.1";/, "La présentation doit réapparaître une fois pour la nouvelle version");

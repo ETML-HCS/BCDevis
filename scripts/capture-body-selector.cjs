@@ -58,6 +58,7 @@ async function main() {
   try {
     await window.loadFile(APP_PATH);
     await window.webContents.executeJavaScript(`document.fonts.ready`);
+    await window.webContents.executeJavaScript(`document.querySelector('#releaseNotesLayer:not([hidden]) [data-initial-focus]')?.click()`);
     const front = await window.webContents.executeJavaScript(`(() => {
       document.querySelector("#settingsButton").click();
       const form = document.querySelector("#settingsForm");
@@ -312,7 +313,7 @@ async function main() {
       || faceDetail.regions !== 12
       || faceDetail.initialServices !== 13
       || faceDetail.model !== "male"
-      || faceDetail.anatomySource !== "user-reference"
+      || faceDetail.anatomySource !== "bcdevis-face-models"
       || faceDetail.viewBox !== "260 45 505 740"
       || !faceDetail.figureTransformAbsent
       || faceDetail.figure.ratio < .55
@@ -323,7 +324,7 @@ async function main() {
       || faceDetail.pairedRegions.cheeks.length !== 2
       || Math.abs(faceDetail.pairedRegions.brows[0].width - faceDetail.pairedRegions.brows[1].width) > 3
       || Math.abs(faceDetail.pairedRegions.cheeks[0].width - faceDetail.pairedRegions.cheeks[1].width) > 3
-      || faceDetail.accessibleTitle !== "Détail du visage neutre"
+      || faceDetail.accessibleTitle !== "Détail du visage masculin"
       || faceDetail.cheeks.title !== "Joues"
       || faceDetail.cheeks.ids.join(",") !== "26"
       || !faceDetail.backButton

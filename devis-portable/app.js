@@ -55,7 +55,7 @@
     document.documentElement.classList.add("bcdevis-window-mac");
   }
   const clone = (value) => JSON.parse(JSON.stringify(value));
-  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, assessLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
+  const { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, percentToReachUnitPrice, assessLineDiscount, cleanDocumentPrefix, relatedDocumentNumber } = window.QuoteCore;
   const {
     summarizeConversion,
     monthlyConversion,
@@ -1937,7 +1937,8 @@
     const quoted = zone.serviceIds.some((serviceId) => quotedIds.has(Number(serviceId)));
     const label = escapeHTML(zone.title);
     const interactive = enabled ? `data-body-zone="${zone.id}" role="button" tabindex="0" aria-label="${label}${quoted ? " · déjà au devis" : ""}" aria-pressed="${active}"` : "";
-    return `<g class="body-zone${active ? " active" : ""}${quoted ? " in-quote" : ""}" ${interactive}><title>${label}</title>${bodyAnatomyPaths(paths)}</g>`;
+    const hitarea = `<g class="body-zone-hitarea" aria-hidden="true">${paths.map((path) => `<path d="${path}"/>`).join("")}</g>`;
+    return `<g class="body-zone${active ? " active" : ""}${quoted ? " in-quote" : ""}" ${interactive}><title>${label}</title>${hitarea}${bodyAnatomyPaths(paths)}</g>`;
   }
 
   function bodyRegionMarkup(regionId, shapes, visibleIds, quotedIds = new Set()) {
@@ -1966,12 +1967,14 @@
   // Icône « localisateur » : silhouette du mannequin courant avec la zone surlignée, tracée depuis les mêmes
   // données anatomiques que la carte (cohérente entre toutes les zones, et Femme/Homme).
   function bodyZoneLocatorIcon(side, regionKey, segments) {
-    const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
+    if (segments?.includes("armpits")) return '<svg class="body-zone-symbol-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-map-armpits"></use></svg>';
+    const geometry = bodyModelGeometry(side);
     const region = geometry?.regions?.[regionKey];
     if (!region) return "";
     const paths = segments ? segments.flatMap((segment) => region[segment] || []) : Object.values(region).flat();
     if (!paths.length) return "";
-    return `<svg class="body-zone-chip-icon" viewBox="${geometry.viewBox}" aria-hidden="true" focusable="false"><use href="#zoneLocatorOutline-${side}" class="zone-locator-body"></use><path class="zone-locator-zone" d="${paths.join(" ")}"></path></svg>`;
+    // Chaque tracé garde son origine : concaténer des « m » relatifs déforme les miniatures féminines.
+    return `<svg class="body-zone-chip-icon" viewBox="${geometry.viewBox}" data-locator-center="${geometry.head.cx}" data-locator-paired="${["bras", "jambes"].includes(regionKey)}" aria-hidden="true" focusable="false"><use href="#zoneLocatorOutline-${side}" class="zone-locator-body"></use><g class="zone-locator-zone">${paths.map((path) => `<path d="${path}"/>`).join("")}</g></svg>`;
   }
 
   // Cadre chaque icône sur sa zone : l’outil de mesure du navigateur n’est disponible qu’une fois le SVG affiché.
@@ -1980,9 +1983,17 @@
       const zone = svg.querySelector(".zone-locator-zone");
       if (!zone) return;
       try {
-        const box = zone.getBBox();
+        const center = Number(svg.dataset.locatorCenter);
+        const parts = [...zone.querySelectorAll("path")].map((path) => path.getBBox());
+        const leftParts = parts.filter((box) => box.x + box.width / 2 < center);
+        const framed = svg.dataset.locatorPaired === "true" && leftParts.length ? leftParts : parts;
+        const xMin = Math.min(...framed.map((box) => box.x));
+        const yMin = Math.min(...framed.map((box) => box.y));
+        const box = { x: xMin, y: yMin,
+          width: Math.max(...framed.map((box) => box.x + box.width)) - xMin,
+          height: Math.max(...framed.map((box) => box.y + box.height)) - yMin };
         if (!box.width || !box.height) return;
-        const size = Math.max(Math.max(box.width, box.height) * 1.7, 260);
+        const size = Math.max(Math.max(box.width, box.height) * 1.5, 160);
         const x = box.x + box.width / 2 - size / 2;
         const y = box.y + box.height / 2 - size / 2;
         svg.setAttribute("viewBox", [x, y, size, size].map((value) => Math.round(value)).join(" "));
@@ -2007,27 +2018,89 @@
     </div>`;
   }
 
+  function faceModelGeometry(model = activeBodyModel) {
+    const female = model === "female";
+    // Tracés absolus dans un même repère : la tête du mannequin et le détail utilisent le même modèle.
+    const mirror = (path) => path.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${1024 - Number(x)} ${y}`);
+    const leftBrow = female
+      ? "M379 350Q416 332 456 345L458 357Q418 347 383 365Z"
+      : "M365 348Q410 330 455 342L460 361Q410 349 372 369Z";
+    const leftEar = female
+      ? "M345 350C328 333 311 344 314 369L328 440C333 463 343 473 353 461L348 417Z"
+      : "M322 352C302 329 281 342 285 373L300 444C305 467 318 480 333 466L329 423Z";
+    const leftCheek = female
+      ? "M370 418Q407 402 443 417C454 444 451 477 434 505Q413 533 390 525C372 510 361 481 360 451Q359 430 370 418Z"
+      : "M361 415Q405 396 448 413C462 445 455 482 434 512Q414 541 387 532C366 515 354 481 353 451Q351 429 361 415Z";
+    const leftTemple = female
+      ? "M360 286C348 309 345 343 351 377Q362 394 374 377C381 344 379 310 370 291Q366 283 360 286Z"
+      : "M339 283C326 306 322 343 329 380Q342 397 356 380C363 344 360 310 350 288Q345 279 339 283Z";
+    const leftEye = female ? "M386 383Q419 365 452 383Q419 399 386 383Z" : "M375 383Q416 361 457 383Q416 403 375 383Z";
+    return {
+      outline: female
+        ? "M512 72C408 72 340 153 340 269L346 390C348 467 365 528 397 574C429 620 470 653 512 660C554 653 595 620 627 574C659 528 676 467 678 390L684 269C684 153 616 72 512 72Z"
+        : "M512 72C392 72 312 156 312 275L319 402C321 459 334 509 356 550L397 605Q417 630 449 643L480 654Q512 664 544 654L575 643Q607 630 627 605L668 550C690 509 703 459 705 402L712 275C712 156 632 72 512 72Z",
+      neck: female
+        ? "M400 588L400 654Q392 666 369 680C401 732 452 767 512 771C572 767 623 732 655 680Q632 665 624 654L624 588C590 631 552 655 512 660C472 655 434 631 400 588Z"
+        : "M374 571L374 651Q356 671 339 680C379 739 443 771 512 771C581 771 645 739 685 680Q668 671 650 651L650 571C611 623 571 658 512 660C453 658 413 623 374 571Z",
+      leftBrow, rightBrow: mirror(leftBrow), leftEar, rightEar: mirror(leftEar), leftCheek, rightCheek: mirror(leftCheek),
+      temples: `${leftTemple} ${mirror(leftTemple)}`,
+      nose: female
+        ? "M502 356C497 386 498 409 488 432C479 449 475 463 484 474Q494 482 503 480Q512 490 521 480Q530 482 540 474C549 463 545 449 536 432C526 409 527 386 522 356Q512 350 502 356Z"
+        : "M499 350C491 374 491 400 481 425C471 443 464 461 474 475Q489 487 501 486Q512 497 523 486Q537 487 550 475C560 461 553 443 543 425C533 400 533 374 525 350Q512 343 499 350Z",
+      upperLip: female
+        ? "M472 537Q495 524 512 530Q529 524 552 537Q512 554 472 537Z"
+        : "M464 537Q489 520 512 528Q535 520 560 537Q512 558 464 537Z",
+      upperLipZone: female
+        ? "M476 501Q494 490 512 498Q530 490 548 501L562 522Q538 511 525 513Q517 511 512 515Q507 511 499 513Q486 511 462 522Z"
+        : "M466 500Q489 487 512 496Q535 487 558 500L574 521Q547 512 534 510Q522 507 512 512Q502 507 490 510Q477 512 450 521Z",
+      glabella: female ? "M495 347Q512 337 529 347L527 389Q512 406 497 389Z" : "M490 345Q512 331 534 345L530 390Q512 409 494 390Z",
+      chin: female ? "M477 586Q512 579 547 586Q558 598 553 614Q539 638 512 643Q485 638 471 614Q466 598 477 586Z" : "M460 584Q512 575 564 584L573 615Q556 642 512 647Q468 642 451 615Z",
+      lowerFace: female
+        ? "M371 505C386 565 430 635 512 660C594 635 638 565 653 505Q596 564 512 564Q428 564 371 505Z"
+        : "M355 505C369 551 397 606 449 643Q512 676 575 643C627 606 655 551 669 505Q600 566 512 566Q424 566 355 505Z",
+      beardLine: female ? "M371 505C385 552 414 597 462 635M653 505C639 552 610 597 562 635" : "M355 505C369 551 396 600 444 633M669 505C655 551 628 600 580 633",
+      eyeLandmarks: `${leftEye} ${mirror(leftEye)}`,
+      facialLandmarks: female
+        ? "M512 359Q507 409 511 447M490 472Q512 485 534 472M472 537Q512 541 552 537M488 611Q512 621 536 611"
+        : "M512 353Q505 408 510 449M484 474Q512 490 540 474M464 537Q512 542 560 537M480 615Q512 627 544 615"
+    };
+  }
+
   function anonymousBodyHeadMarkup(side, headGeometry) {
-    const cx = headGeometry.cx;
-    const headMarkup = `<path class="body-region-shape body-anonymous-head" d="M${cx} 140C${cx - 27} 140 ${cx - 43} 158 ${cx - 43} 185L${cx - 42} 210C${cx - 40} 239 ${cx - 23} 260 ${cx} 269C${cx + 23} 260 ${cx + 40} 239 ${cx + 42} 210L${cx + 43} 185C${cx + 43} 158 ${cx + 27} 140 ${cx} 140Z"/>`;
-    const ears = `<path class="body-region-shape body-anonymous-ear" d="M${cx - 42} 184C${cx - 53} 183 ${cx - 55} 198 ${cx - 50} 215C${cx - 48} 222 ${cx - 44} 225 ${cx - 39} 220M${cx + 42} 184C${cx + 53} 183 ${cx + 55} 198 ${cx + 50} 215C${cx + 48} 222 ${cx + 44} 225 ${cx + 39} 220"/>`;
-    if (side === "back") {
-      const backDetails = `<path class="body-region-detail body-head-landmarks" d="M${cx - 28} 236Q${cx} 250 ${cx + 28} 236M${cx} 247v18"/>`;
-      return `${headMarkup}${ears}${backDetails}`;
-    }
-    const neck = `<path class="body-region-shape body-anonymous-neck" d="M${cx - 26} 250C${cx - 24} 270 ${cx - 29} 285 ${cx - 39} 297Q${cx} 323 ${cx + 39} 297C${cx + 29} 285 ${cx + 24} 270 ${cx + 26} 250C${cx + 18} 262 ${cx + 9} 268 ${cx} 269C${cx - 9} 268 ${cx - 18} 262 ${cx - 26} 250Z"/>`;
-    const faceDetails = `<path class="body-region-detail body-face-landmarks" d="M${cx - 28} 187Q${cx - 18} 181 ${cx - 8} 187M${cx + 8} 187Q${cx + 18} 181 ${cx + 28} 187M${cx - 27} 196Q${cx - 18} 189 ${cx - 9} 196Q${cx - 18} 202 ${cx - 27} 196M${cx + 9} 196Q${cx + 18} 189 ${cx + 27} 196Q${cx + 18} 202 ${cx + 9} 196M${cx} 194Q${cx - 5} 208 ${cx} 215M${cx - 15} 233Q${cx} 235 ${cx + 15} 233"/><circle class="body-region-detail-fill body-face-pupil" cx="${cx - 18}" cy="196" r="2.4"/><circle class="body-region-detail-fill body-face-pupil" cx="${cx + 18}" cy="196" r="2.4"/>`;
-    return `${headMarkup}${ears}${neck}${faceDetails}`;
+    const geometry = faceModelGeometry();
+    const scale = .22;
+    const transform = `translate(${headGeometry.cx - 512 * scale} ${140 - 72 * scale}) scale(${scale})`;
+    const headMarkup = `<path class="body-region-shape body-anonymous-head" d="${geometry.outline}"/>`;
+    const ears = `<path class="body-region-shape body-anonymous-ear" d="${geometry.leftEar}"/><path class="body-region-shape body-anonymous-ear" d="${geometry.rightEar}"/>`;
+    const neck = side === "front" ? `<path class="body-region-shape body-anonymous-neck" d="${geometry.neck}"/>` : "";
+    const details = side === "back"
+      ? '<path class="body-region-detail body-head-landmarks" d="M444 550Q512 588 580 550M512 588V642"/>'
+      : `<path class="body-region-detail body-face-landmarks" d="${geometry.eyeLandmarks} ${geometry.facialLandmarks}"/><circle class="body-region-detail-fill body-face-pupil" cx="417" cy="383" r="5"/><circle class="body-region-detail-fill body-face-pupil" cx="607" cy="383" r="5"/>`;
+    return `<g data-head-model="${activeBodyModel}" transform="${transform}">${neck}${headMarkup}${ears}${details}</g>`;
   }
 
   function bodyModelGeometry(side) {
     const geometry = window.BCDEVIS_BODY_ANATOMY?.[activeBodyModel]?.[side];
     if (!geometry) throw new Error(`Géométrie corporelle indisponible : ${activeBodyModel}/${side}`);
     const { cx, cy } = geometry.focus[side === "front" ? "maillot" : "sif"];
+    // Le sillon suit le bord médian des fessiers propres à chaque mannequin.
+    const sif = activeBodyModel === "female" ? { top: 634, bottom: 724 } : { top: 640, bottom: 772 };
+    const sifCenterY = (sif.top + sif.bottom) / 2;
+    const female = activeBodyModel === "female";
+    const axillaY = female ? 370 : 387;
+    const axillaOffset = female ? 102 : 110;
+    const armpits = [-1, 1].map((sign) => {
+      const x = (offset) => geometry.head.cx + sign * offset;
+      return `M${x(axillaOffset)} ${axillaY - 18}C${x(axillaOffset + 14)} ${axillaY - 3} ${x(axillaOffset + 12)} ${axillaY + 20} ${x(axillaOffset + 4)} ${axillaY + 35}Q${x(axillaOffset - 9)} ${axillaY + 12} ${x(axillaOffset)} ${axillaY - 18}Z`;
+    });
+    const regions = { ...geometry.regions, bras: { ...geometry.regions.bras, armpits } };
+    // Les adducteurs appartiennent aux cuisses ; le maillot reste limité au bassin.
+    if (side === "front") regions.jambes = { ...regions.jambes, adductors: geometry.regions.maillot.adductors };
+    const pubisY = female ? 684 : cy;
     const focus = side === "front"
-      ? `<ellipse class="body-region-hitarea" cx="${cx}" cy="${cy}" rx="74" ry="70"/><path class="body-region-focus body-region-maillot" d="M${cx - 68} ${cy - 40}Q${cx} ${cy - 4} ${cx + 68} ${cy - 40}L${cx + 48} ${cy + 30}Q${cx} ${cy + 54} ${cx - 48} ${cy + 30}Z"/>`
-      : `<ellipse class="body-region-hitarea" cx="${cx}" cy="${cy}" rx="48" ry="70"/><path class="body-region-focus body-region-sif" d="M${cx} ${cy - 38}v76"/><ellipse class="body-region-target" cx="${cx}" cy="${cy}" rx="13" ry="27"/>`;
-    return { ...geometry, focusMarkup: focus };
+      ? `<ellipse class="body-region-hitarea" cx="${cx}" cy="${pubisY}" rx="74" ry="70"/><path class="body-region-focus body-region-maillot" d="M${cx - 64} ${pubisY - 34}Q${cx} ${pubisY - 17} ${cx + 64} ${pubisY - 34}Q${cx + 39} ${pubisY + 6} ${cx} ${pubisY + 45}Q${cx - 39} ${pubisY + 6} ${cx - 64} ${pubisY - 34}Z"/>`
+      : `<ellipse class="body-region-hitarea" cx="${cx}" cy="${sifCenterY}" rx="48" ry="70"/><path class="body-region-target body-region-sif" d="M${cx} ${sif.top}C${cx - 3} ${sif.top + 24} ${cx + 3} ${sif.bottom - 24} ${cx} ${sif.bottom}"/>`;
+    return { ...geometry, regions, focusMarkup: focus };
   }
 
   function setBodyModel(model, focusSelector) {
@@ -2044,7 +2117,7 @@
     const [viewX, viewY, viewWidth, viewHeight] = geometry.viewBox.split(" ").map(Number);
     const headCx = geometry.head.cx;
     const headMaskId = `body-head-mask-${side}`;
-    const headMask = `<defs><mask id="${headMaskId}" maskUnits="userSpaceOnUse"><rect x="${viewX}" y="${viewY}" width="${viewWidth}" height="${viewHeight}" fill="#fff"/><rect x="${headCx - 80}" y="130" width="160" height="145" rx="36" fill="#000"/></mask></defs>`;
+    const headMask = `<defs><mask id="${headMaskId}" maskUnits="userSpaceOnUse"><rect x="${viewX}" y="${viewY}" width="${viewWidth}" height="${viewHeight}" fill="#fff"/><rect x="${headCx - 90}" y="${viewY}" width="180" height="170" fill="#000"/></mask></defs>`;
     const outline = `<path class="body-anatomy-outline" d="${geometry.outline}" mask="url(#${headMaskId})"/>`;
     const modelLabel = activeBodyModel === "female" ? "féminin" : "masculin";
     if (side === "back") {
@@ -2053,11 +2126,11 @@
         <desc id="bodyMapBackDescription">Silhouette anatomique ${modelLabel} et anonyme vue de dos. Choisissez une zone du corps pour afficher les soins correspondants.</desc>
         ${headMask}
         <g class="body-figure">${outline}
-          ${region("back-scalp", anonymousBodyHeadMarkup("back", geometry.head))}
           ${region("back-dos", geometry.regions.dos)}
           ${region("back-bras", geometry.regions.bras)}
           ${region("back-jambes", geometry.regions.jambes)}
           ${region("back-sif", geometry.focusMarkup)}
+          ${region("back-scalp", anonymousBodyHeadMarkup("back", geometry.head))}
         </g>
       </svg>`;
     }
@@ -2066,11 +2139,11 @@
       <desc id="bodyMapFrontDescription">Silhouette anatomique ${modelLabel} et anonyme vue de face, sans traits identifiables. Choisissez une zone du corps pour afficher les soins correspondants.</desc>
       ${headMask}
       <g class="body-figure">${outline}
-        ${region("front-visage", anonymousBodyHeadMarkup("front", geometry.head))}
         ${region("front-torse", geometry.regions.torse)}
         ${region("front-bras", geometry.regions.bras)}
-        ${region("front-maillot", `${bodyAnatomyPaths(geometry.regions.maillot)}${geometry.focusMarkup}`)}
         ${region("front-jambes", geometry.regions.jambes)}
+        ${region("front-maillot", geometry.focusMarkup)}
+        ${region("front-visage", anonymousBodyHeadMarkup("front", geometry.head))}
       </g>
     </svg>`;
   }
@@ -2089,31 +2162,19 @@
     if (!region) return "";
     const active = activeFaceRegion === region.id;
     const label = escapeHTML(region.title);
-    return `<g class="face-region${active ? " active" : ""}" data-face-region="${region.id}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${active}"><title>${label}</title>${shapes}</g>`;
+    const onDemand = ["face-beard", "face-beard-line", "face-upper-lip", "face-chin"].includes(region.id);
+    return `<g class="face-region${onDemand ? " face-region-on-demand" : ""}${active ? " active" : ""}" data-face-region="${region.id}" role="button" tabindex="0" aria-label="${label}" aria-pressed="${active}"><title>${label}</title>${shapes}</g>`;
   }
 
   function faceMapMarkup() {
     const region = faceRegionMarkup;
     const shape = (path, className = "") => `<path class="face-region-shape${className ? ` ${className}` : ""}" d="${path}"/>`;
-    const outline = "M514.056 652.765c-28.412 0-67.844-16.379-92.111-32.558-13.708-9.139-45.81-30.541-62.448-65.169-5.675-11.81-15.35-47.194-18.09-85.63-.29-4.069-.495-8.08-.607-11.922-.274-9.376-3.123-19.927-6.422-32.144-3.444-12.755-7.348-27.213-9.387-44.124-.969-8.038-1.765-16.48-2.432-25.808-1.542-21.57-1.957-42.199-2.29-58.774-.19-9.457-.354-17.623-.692-23.372-3.423-58.177 14.383-106.018 54.436-146.256 36.168-36.335 84.873-56.346 137.143-56.346 43.758 0 85.271 14.057 120.05 40.652 38.865 29.72 81.522 90.577 73.834 164.28-1.931 18.5-1.99 36.226-2.048 53.369-.025 7.847-.051 15.258-.248 22.647-.271 10.174-.824 18.381-1.739 25.829-1.09 8.863-4.618 22.422-8.355 36.778-3.633 13.96-7.39 28.396-9.105 39.386-.664 4.26-1.181 9.035-1.625 15.027-.284 3.852-.506 7.722-.74 11.819-1.312 22.953-2.8 48.969-16.56 75.994-18.783 36.888-49.904 58.926-66.624 70.766-24.674 17.465-51.346 25.586-83.99 25.586Z";
-    const leftBrow = "M371 354c24-17 58-19 86-7 8 4 9 10 2 14-28-8-54-6-78 5-8 0-13-5-10-12Z";
-    const rightBrow = "M653 354c-24-17-58-19-86-7-8 4-9 10-2 14 28-8 54-6 78 5 8 0 13-5 10-12Z";
-    const nose = "M514.056 490.604c-4.832 0-6.798-1.266-8.88-2.607-1.683-1.084-3.424-2.204-6.67-2.593-1.265-.151-2.431-.273-3.524-.387-6.463-.673-10.364-1.079-17.179-6.053-18.687-13.636-2.639-41.618 3.402-52.152 7.061-12.311 12.616-35.182 13.49-46.159.088-1.103.169-2.442.26-3.96.805-13.329 2.481-41.064 17.351-41.064 16.174 0 16.758 26.771 17.038 39.637l.03 1.36c.13 5.488 1.449 33.789 14.708 52.02 9.169 12.609 13.909 19.98 12.939 36.982-.521 9.123-8.172 18.369-21.786 18.392-5.01.008-7.9 1.698-10.696 3.333-2.857 1.672-5.558 3.251-10.483 3.251Z";
-    const upperLip = "M517.8 562.713c-23.091 0-46.144-4.977-53.186-9.625-6.114-4.035-12.474-6.153-18.084-8.022-7.564-2.52-13.028-4.339-12.946-9.437.031-1.99 5.54-4.238 12.514-7.084 6.607-2.696 14.831-6.052 22.75-10.832 9.405-5.676 17.952-8.554 25.402-8.554 3.461 0 6.686.636 9.585 1.89 3.196 1.382 7.283 2.175 11.213 2.175 2.677 0 4.979-.383 6.315-1.05 1.432-.714 6.615-3.044 13.207-3.044 4.723 0 8.954 1.192 12.578 3.545 12.461 8.084 23.856 12.158 32.178 15.134 8.441 3.018 13.537 4.841 13.421 8.396-.076 2.353-6.081 5.345-13.683 9.132-3.431 1.709-7.317 3.646-11.284 5.833-7.819 4.311-24.712 11.543-49.98 11.543Z";
-    const leftEar = "M327.71 476.145c-6.098-.001-11.23-3.516-13.074-8.954-2.574-7.593-7.644-19.347-10.26-24.899-7.952-16.881-14.059-37.302-18.152-60.694-4.024-23 .868-43.01 11.38-46.544 1.578-.531 3.091-.8 4.497-.8 7.423 0 11.507 7.412 15.457 14.58 1.343 2.438 2.612 4.742 4.013 6.784.666 9.292 1.46 17.706 2.426 25.721 2.048 16.982 5.962 31.477 9.415 44.265 3.282 12.156 6.117 22.654 6.388 31.912.112 3.801.313 7.768.598 11.792-2.936 4.348-7.55 6.838-12.688 6.837Z";
-    const rightEar = "M696.681 476.502c-4.153 0-8.778-2.696-13.748-8.016.439-5.862.947-10.548 1.6-14.729 1.708-10.941 5.458-25.353 9.085-39.288 3.744-14.389 7.281-27.979 8.379-36.908.908-7.387 1.461-15.511 1.736-25.542 3.563-.971 5.176-4.579 6.881-8.392 2.309-5.163 4.696-10.503 12.129-10.548 3.175 0 6.085 1.632 8.475 4.72 7.001 9.047 8.563 28.2 3.799 46.576-1.434 5.53-2.263 10.367-3.141 15.489-2.032 11.848-4.133 24.099-14.073 46.438-.883 1.984-1.873 4.477-2.922 7.115-1.983 4.99-4.232 10.647-6.26 14.074-3.536 5.979-7.554 9.011-11.94 9.011Z";
-    const leftCheek = "M367 417c20-16 52-18 79-5 12 26 10 62-4 91-11 23-30 39-47 33-19-7-32-28-37-56-5-27-2-50 9-63Z";
-    const rightCheek = "M657 417c-20-16-52-18-79-5-12 26-10 62 4 91 11 23 30 39 47 33 19-7 32-28 37-56 5-27 2-50-9-63Z";
-    const chin = "M515.387 644.44c-20.101 0-34.128-7.148-42.355-13.144-9.333-6.802-15.8-15.651-16.476-22.546-.784-7.991.757-14.181 4.579-18.396 4.63-5.107 12.754-7.589 24.835-7.589 6.615 0 13.548.715 19.664 1.347 4.604.475 8.954.924 12.413.983.562.01 1.123.014 1.685.014 7.036 0 14.084-.715 20.899-1.406 6.177-.626 12.011-1.218 17.289-1.218 12.363 0 23.804 2.835 23.804 23.4.001 23.062-34.3 38.555-66.337 38.555Z";
-    const neck = "M512.406 771.61c-35.609-.003-70.226-8.836-100.107-25.543-31.472-17.597-56.233-43.341-71.633-74.471 8.085-5.842 14.546-11.482 19.21-16.766l.12-.137.005-.182c.127-4.836.254-9.316.374-13.546.802-28.232 1.293-45.506-.699-83.309 17.027 33.589 48.228 54.389 61.714 63.38 24.393 16.263 64.055 32.727 92.666 32.727 32.861 0 59.718-8.179 84.518-25.739 16.449-11.648 46.781-33.127 65.773-68.89-2.146 24.711-4.435 60.412-1.344 94.409l.01.108.054.095c2.816 4.929 9.55 11.089 20.015 18.313-16.669 31.791-41.94 57.704-73.103 74.954-29.067 16.091-62.801 24.596-97.554 24.596Z";
-    const temples = "M350 284c-16 23-21 61-12 102 9 13 22 11 31-3 8-30 9-64 0-90-6-8-13-12-19-9Zm324 0c16 23 21 61 12 102-9 13-22 11-31-3-8-30-9-64 0-90 6-8 13-12 19-9Z";
-    const glabella = "M490 346c7-6 15-9 22-9s15 3 22 9l-4 43c-6 8-12 12-18 12s-12-4-18-12l-4-43Z";
-    const lowerFace = "M369 505c14 65 54 122 145 148 91-26 131-83 145-148-25 36-74 63-145 63s-120-27-145-63Z";
-    const eyeLandmarks = "M378 382Q417 360 456 382Q417 401 378 382ZM646 382Q607 360 568 382Q607 401 646 382Z";
-    const facialLandmarks = "M512 352C507 387 506 418 510 447M488 478Q512 493 536 478M492 525Q512 517 532 525M466 548Q512 570 558 548M482 611Q512 623 542 611";
-    return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="user-reference" viewBox="260 45 505 740" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="faceMapTitle faceMapDescription">
-      <title id="faceMapTitle">Détail du visage neutre</title>
-      <desc id="faceMapDescription">Schéma médical neutre et anonyme, sans cheveux ni identité reconnaissable. Choisissez une zone anatomique pour filtrer le soin correspondant.</desc>
+    const geometry = faceModelGeometry();
+    const { outline, neck, leftBrow, rightBrow, nose, upperLip, leftEar, rightEar, leftCheek, rightCheek, chin, temples, glabella, upperLipZone, lowerFace, eyeLandmarks, facialLandmarks } = geometry;
+    const modelLabel = activeBodyModel === "female" ? "féminin" : "masculin";
+    return `<svg class="interactive-face-map face-model-${activeBodyModel}" data-body-model="${activeBodyModel}" data-anatomy-source="bcdevis-face-models" viewBox="260 45 505 740" preserveAspectRatio="xMidYMid meet" role="group" aria-labelledby="faceMapTitle faceMapDescription">
+      <title id="faceMapTitle">Détail du visage ${modelLabel}</title>
+      <desc id="faceMapDescription">Schéma anatomique ${modelLabel} anonyme, sans cheveux ni identité reconnaissable. Choisissez une zone anatomique pour filtrer le soin correspondant.</desc>
       <g class="face-figure">
         <path class="face-anatomy-base face-anatomy-neck-base" d="${neck}"/>
         <path class="face-anatomy-base" d="${outline}"/>
@@ -2126,15 +2187,21 @@
         ${region("face-glabella", shape(glabella))}
         ${region("face-cheeks", `${shape(leftCheek)}${shape(rightCheek)}`)}
         ${region("face-nose", shape(nose))}
-        ${region("face-upper-lip", shape(upperLip))}
-        ${region("face-beard-line", '<path class="face-region-hitarea" d="M369 505c14 65 54 122 95 135m195-135c-14 65-54 122-95 135"/><path class="face-region-stroke" d="M369 505c14 65 54 122 95 135m195-135c-14 65-54 122-95 135"/>')}
+        ${region("face-upper-lip", shape(upperLipZone))}
+        ${region("face-beard-line", `<path class="face-region-hitarea" d="${geometry.beardLine}"/><path class="face-region-stroke" d="${geometry.beardLine}"/>`)}
         ${region("face-chin", shape(chin))}
         <path class="face-anatomy-landmark face-eye-landmark" d="${eyeLandmarks}"/>
         <circle class="face-anatomy-pupil" cx="417" cy="382" r="5"/>
         <circle class="face-anatomy-pupil" cx="607" cy="382" r="5"/>
         <path class="face-anatomy-landmark face-feature-landmark" d="${facialLandmarks}"/>
+        <path class="face-anatomy-landmark face-mouth-landmark" d="${upperLip}"/>
       </g>
     </svg>`;
+  }
+
+  function faceZoneTrailMarkup() {
+    const icons = { "face-full": "face", "face-temples": "temples", "face-brows": "eyebrows", "face-glabella": "glabella", "face-nose": "nose", "face-cheeks": "cheeks", "face-upper-lip": "upper-lip", "face-beard": "beard", "face-beard-line": "beard-line", "face-chin": "chin", "face-ears": "ears", "face-neck": "neck" };
+    return `<div class="body-zone-trail face-zone-trail" role="group" aria-label="Zones du visage">${[...FACE_REGION_DEFINITIONS.values()].map((region) => `<button type="button" data-face-choice="${region.id}" aria-pressed="${activeFaceRegion === region.id}"><svg class="face-zone-chip-icon" aria-hidden="true"><use href="${prestationIconHref(icons[region.id])}"></use></svg>${escapeHTML(region.title)}</button>`).join("")}</div>`;
   }
 
   function renderBodySelector() {
@@ -2191,7 +2258,7 @@
     const mapMarkup = faceDetailActive ? faceMapMarkup() : bodyMapMarkup(activeBodySide, visibleIds);
     const modelToggle = `<div class="body-model-toggle" role="group" aria-label="Morphologie du corps"><button type="button" data-body-model-choice="female" aria-pressed="${activeBodyModel === "female"}"><svg aria-hidden="true"><use href="#icon-venus"></use></svg>Femme</button><button type="button" data-body-model-choice="male" aria-pressed="${activeBodyModel === "male"}"><svg aria-hidden="true"><use href="#icon-mars"></use></svg>Homme</button></div>`;
     const mapHint = faceDetailActive
-      ? '<p class="body-map-hint"><svg aria-hidden="true"><use href="#icon-body"></use></svg>Sélectionnez une zone précise du visage ou revenez au corps complet.</p>'
+      ? faceZoneTrailMarkup()
       : bodyZoneTrailMarkup(selectedRegion);
     const options = services.length
       ? `<div class="family-options body-service-options" role="group" aria-label="Soins ${escapeHTML(resultTitle)}">${services.map(familyServiceOption).join("")}</div>`
@@ -2201,11 +2268,12 @@
       <div class="body-selector-layout">
         <section class="body-map-card" aria-label="Sélecteur des zones corporelles">
           <div class="body-map-card-head">
-            ${faceDetailActive ? '<button class="body-detail-back" type="button" data-body-detail="body"><svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg>Corps complet</button>' : modelToggle}
+            ${modelToggle}
             <div class="body-map-head-actions">
               <div class="body-map-controls"><div class="body-side-toggle" role="group" aria-label="Orientation du corps"><button type="button" data-body-side="front" aria-pressed="${activeBodySide === "front"}"><svg aria-hidden="true"><use href="#icon-body-front"></use></svg>Face</button><button type="button" data-body-side="back" aria-pressed="${activeBodySide === "back"}"><svg aria-hidden="true"><use href="#icon-body-back"></use></svg>Dos</button></div></div>
             </div>
           </div>
+          ${faceDetailActive ? '<div class="body-detail-toolbar"><button class="body-detail-back" type="button" data-body-detail="body"><svg aria-hidden="true"><use href="#icon-arrow-left"></use></svg>Corps complet</button></div>' : ""}
           <div class="body-map-stage${faceDetailActive ? " face-detail-active" : ""}">${mapMarkup}</div>
           ${mapHint}
         </section>
@@ -2642,6 +2710,10 @@
     $("#couponToggle").disabled = locked;
     $("#couponToggle").setAttribute("aria-expanded", String(couponOpen));
     $("#couponEditor").hidden = !couponOpen;
+    const couponCloseLabel = quote.discount.code || Number(quote.discount.value) > 0 ? "Retirer le coupon" : "Fermer le coupon";
+    $("#couponClose").setAttribute("aria-label", couponCloseLabel);
+    $("#couponClose").title = couponCloseLabel;
+    $("#couponClose").disabled = locked;
     $("#couponCode").value = quote.discount.code || "";
     $("#discountValue").value = Number(quote.discount.value) || 0;
     $("#discountSuffix").textContent = quote.discount.type === "percent" ? "%" : "CHF";
@@ -2683,6 +2755,14 @@
     return line.customDiscount.type === "percent"
       ? `−${Number(line.customDiscount.value).toLocaleString("fr-CH", { maximumFractionDigits: 2 })} %`
       : `− ${money(amount)}`;
+  }
+
+  // Prix spécial convenu : le soin garde son prix normal, et le rabais en % ramène la séance au prix cible.
+  const TARGET_PRICE_OFFERS = { 49: { label: "SIF combiné", price: 62 } };
+  function targetPriceOffer(line) {
+    const offer = line && TARGET_PRICE_OFFERS[Number(line.serviceId)];
+    const percent = offer ? percentToReachUnitPrice(line, offer.price) : 0;
+    return percent > 0 ? { ...offer, percent } : null;
   }
 
   let lineDiscountLineId = "";
@@ -2738,6 +2818,7 @@
     if (!draft) return;
     $("#lineDiscountResult").textContent = moneyValue(draft.result);
     $("#lineDiscountSaving").textContent = draft.amount > 0 ? `(-${moneyValue(draft.amount)})` : "";
+    renderLineDiscountTarget(draft);
     renderLineDiscountGuard(draft);
     $("#lineDiscountSuffix").textContent = lineDiscountType === "percent" ? "%" : "CHF";
     $$("[data-line-discount-type]").forEach((button) => {
@@ -2755,6 +2836,18 @@
         btn.setAttribute("aria-pressed", String(isSelected));
       });
     }
+  }
+
+  // Le prix spécial n’est proposé qu’avec un rabais en % ; le bouton reste enfoncé tant que ce rabais est saisi.
+  function renderLineDiscountTarget(draft) {
+    const button = $("#lineDiscountTarget");
+    if (!button) return;
+    const offer = targetPriceOffer(draft.line);
+    const selected = Boolean(offer) && lineDiscountType === "percent" && draft.value === offer.percent;
+    button.hidden = !offer || lineDiscountType !== "percent";
+    button.textContent = offer ? `${offer.label} à ${money(offer.price)}` : "";
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-pressed", String(selected));
   }
 
   function openLineDiscountLayer(line) {
@@ -4802,6 +4895,8 @@
     const totals = calculateQuote(quote);
     const taxEnabled = taxInformationEnabled(quote);
     const settings = db.settings;
+    // Le code du coupon n’apparaît sur le PDF que si le coupon réduit réellement le devis.
+    const couponCode = totals.discount > 0 ? String(quote.discount?.code || "").trim() : "";
     const language = pdfLanguage();
     const text = PdfI18n.strings(language);
     const fx = quoteFx();
@@ -4854,7 +4949,7 @@
         <table class="print-table"><thead><tr><th>${text.thTreatment}</th><th>${text.thQuantity}</th><th>${text.thUnitPrice}</th><th>${text.thTotal}</th></tr></thead><tbody>${rows}</tbody></table>
       </section>
       <div class="print-closing">
-        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${text.totalBeforeOffers}</td><td>${pdfMoney(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${text.totalDiscount}</td><td>− ${pdfMoney(totals.totalDiscount)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${text.netExclVat}</td><td>${pdfMoney(totals.net)}</td></tr><tr><td>${text.vat} ${totals.rate} %${quote.tax.mode === "included" ? text.vatIncluded : ""}</td><td>${pdfMoney(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${pdfMoney(totals.total)}</td></tr></table>${fx ? `<p class="print-fx-note">${escapeHTML(text.fxNote(language === "fr" ? CurrencyCore.effectiveRate(fx).toFixed(4) : PdfI18n.formatNumber(CurrencyCore.effectiveRate(fx), language, { minimumFractionDigits: 4, maximumFractionDigits: 4 }), formatDate(fx.date), PdfI18n.formatMoney(totals.total, language)))}</p>` : ""}</div>
+        <div class="print-summary print-summary-totals-only"><table class="print-totals"><tr><td>${text.totalBeforeOffers}</td><td>${pdfMoney(totals.subtotal)}</td></tr>${totals.totalDiscount > 0 ? `<tr class="discount"><td>${text.totalDiscount}</td><td>− ${pdfMoney(totals.totalDiscount)}</td></tr>` : ""}${couponCode ? `<tr class="coupon-code"><td>${text.couponCode}</td><td>${escapeHTML(couponCode)}</td></tr>` : ""}${taxEnabled ? `<tr><td>${text.netExclVat}</td><td>${pdfMoney(totals.net)}</td></tr><tr><td>${text.vat} ${totals.rate} %${quote.tax.mode === "included" ? text.vatIncluded : ""}</td><td>${pdfMoney(totals.tax)}</td></tr>` : ""}<tr class="total"><td>${totalLabel}</td><td>${pdfMoney(totals.total)}</td></tr></table>${fx ? `<p class="print-fx-note">${escapeHTML(text.fxNote(language === "fr" ? CurrencyCore.effectiveRate(fx).toFixed(4) : PdfI18n.formatNumber(CurrencyCore.effectiveRate(fx), language, { minimumFractionDigits: 4, maximumFractionDigits: 4 }), formatDate(fx.date), PdfI18n.formatMoney(totals.total, language)))}</p>` : ""}</div>
         <section class="print-followup">
           ${totals.total > 0 ? `<div class="print-section-heading"><div><strong>${text.paymentTerms}</strong></div></div><p class="print-installment-intro">${text.installmentIntro}</p><div class="print-installments">${months.map((month) => `<div class="print-installment"><b>${month} ${text.months(month)}</b><span>${pdfInstallment(totals.total, month)}</span><small>${text.indicativeInstallment}</small></div>`).join("")}</div>` : ""}
           <div class="print-legal-block">
@@ -5536,16 +5631,17 @@
       window.setTimeout(() => $(`[data-body-side="${activeBodySide}"]`)?.focus(), 0);
       return;
     }
-    const faceRegion = event.target.closest("[data-face-region]");
+    const faceRegion = event.target.closest("[data-face-region], [data-face-choice]");
     if (faceRegion) {
-      const nextFaceRegion = faceRegionDefinition(faceRegion.dataset.faceRegion);
+      const nextFaceRegion = faceRegionDefinition(faceRegion.dataset.faceRegion || faceRegion.dataset.faceChoice);
       if (!nextFaceRegion) return;
       activeFaceRegion = nextFaceRegion.id;
       searchQuery = "";
       $("#catalogSearch").value = "";
       setCatalogSearchOpen(false, { clear: false });
+      const focusAttribute = faceRegion.hasAttribute("data-face-choice") ? "data-face-choice" : "data-face-region";
       renderCatalog();
-      window.setTimeout(() => $(`[data-face-region="${nextFaceRegion.id}"]`)?.focus(), 0);
+      window.setTimeout(() => $(`[${focusAttribute}="${nextFaceRegion.id}"]`)?.focus(), 0);
       return;
     }
     const bodyZone = event.target.closest("[data-body-zone], [data-body-zone-clear]");
@@ -5859,6 +5955,16 @@
     renderLineDiscountPreview();
     $("#lineDiscountValue").focus();
   }));
+  $("#lineDiscountTarget")?.addEventListener("click", () => {
+    const line = quote.lines.find((item) => item.id === lineDiscountLineId);
+    const offer = line && targetPriceOffer(line);
+    if (!offer) return;
+    lineDiscountType = "percent";
+    lineDiscountConfirmed = false;
+    $("#lineDiscountValue").value = offer.percent;
+    renderLineDiscountPreview();
+    $("#lineDiscountValue").focus();
+  });
   $("#lineDiscountValue")?.addEventListener("input", () => { lineDiscountConfirmed = false; renderLineDiscountPreview(); });
   // La molette ne doit jamais modifier un rabais par accident pendant que le champ a le focus.
   $("#lineDiscountValue")?.addEventListener("wheel", (event) => { if (document.activeElement === event.currentTarget) event.preventDefault(); }, { passive: false });
@@ -5935,6 +6041,33 @@
     couponOpen = true;
     renderCheckout();
     window.setTimeout(() => $("#couponCode").focus(), 0);
+  });
+  // La croix referme la zone du coupon ; un coupon déjà saisi est retiré, avec « Annuler » pour revenir en arrière.
+  $("#couponClose").addEventListener("click", () => {
+    if (!ensureQuoteEditable()) return;
+    const previous = { ...quote.discount };
+    const quoteId = quote.id;
+    const hadCoupon = Boolean(previous.code || Number(previous.value) > 0);
+    couponOpen = false;
+    if (hadCoupon) {
+      quote.discount.code = "";
+      quote.discount.value = 0;
+      saveLocal();
+    }
+    renderCheckout();
+    $("#couponToggle").focus();
+    if (!hadCoupon) return;
+    toast("Coupon retiré", "success", {
+      actionLabel: "Annuler",
+      duration: 6000,
+      onAction: () => {
+        if (quote.id !== quoteId || !ensureQuoteEditable()) return;
+        Object.assign(quote.discount, previous);
+        couponOpen = true;
+        saveLocal();
+        renderCheckout();
+      }
+    });
   });
   $("#taxEnabled").addEventListener("change", (event) => { if (!ensureQuoteEditable()) return; quote.tax.enabled = event.target.checked; saveLocal(); renderCheckout(); });
 

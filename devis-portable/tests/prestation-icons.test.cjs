@@ -120,8 +120,8 @@ for (const icon of normalizedReferenceIcons) {
 }
 assert.match(
   html,
-  /<symbol id="icon-map-armpits"[^>]*>[\s\S]*?<circle class="anatomy-zone" cx="7\.7" cy="8\.4"[\s\S]*?<circle class="anatomy-zone" cx="16\.3" cy="8\.4"/,
-  "Les deux aisselles doivent être explicitement mises en évidence"
+  /<symbol id="icon-map-armpits"[^>]*>[\s\S]*?<use href="#bodymap-armpits"[\s\S]*?<ellipse class="anatomy-zone" cx="8\.2" cy="10\.8"[\s\S]*?<ellipse class="anatomy-zone" cx="15\.8" cy="10\.8"/,
+  "Les deux aisselles doivent être mises en évidence sur un buste aux bras levés"
 );
 assert.match(
   html,
@@ -135,7 +135,7 @@ assert.match(
 );
 assert.match(
   html,
-  /<symbol id="icon-map-upper-lip"[^>]*>[\s\S]*?<use href="#bodymap-face"[\s\S]*?M9\.4 12\.8c1\.7\.7/,
+  /<symbol id="icon-map-upper-lip"[^>]*>[\s\S]*?<use href="#bodymap-face"[\s\S]*?M9\.1 13\.3Q12 12\.5/,
   "La zone située au-dessus de la lèvre supérieure doit être lisible de face"
 );
 assert.match(
@@ -192,7 +192,7 @@ assert.match(
 );
 assert.match(
   html,
-  /<symbol id="icon-map-torso"[^>]*>[\s\S]*?<use href="#bodymap-upper-front"[\s\S]*?class="anatomy-zone"/,
+  /<symbol id="icon-map-torso"[^>]*>[\s\S]*?<use href="#bodymap-upper-front"[\s\S]*?class="anatomy-zone-soft"/,
   "Le torse doit associer la carte du haut du corps à une poitrine pleine"
 );
 assert.match(
@@ -227,8 +227,8 @@ assert.match(
 );
 assert.match(
   html,
-  /<symbol id="icon-map-sif"[^>]*>[\s\S]*?M12 12\.7v7" stroke-width="2\.5"/,
-  "Le SIF doit être plus fortement marqué que la silhouette générale des fesses"
+  /<symbol id="icon-map-sif"[^>]*>[\s\S]*?class="anatomy-focus" d="M12 9\.2c-\.2 2\.2\.2 5\.1 0 7\.4" stroke-width="2\.2"/,
+  "Le SIF doit montrer un sillon centré entre les fesses, sans marquer les cuisses"
 );
 assert.match(
   html,

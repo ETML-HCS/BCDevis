@@ -12,6 +12,12 @@ export interface CustomDiscount {
   value: number;
 }
 
+/** Coupon du devis : rabais global, appliqué après les offres et les rabais de ligne. */
+export interface QuoteCoupon extends CustomDiscount {
+  /** Majuscules, chiffres, « _ » et « - », 24 caractères au plus ; imprimé sur le PDF quand le coupon réduit le devis. */
+  code?: string;
+}
+
 export type TaxMode = "included" | "excluded";
 
 export interface TaxConfig {
@@ -121,7 +127,7 @@ export interface Quote {
   validUntil: string;
   client: ClientData;
   lines: QuoteLine[];
-  discount?: CustomDiscount;
+  discount?: QuoteCoupon;
   studentDiscount?: number;
   tax?: TaxConfig;
   conditions?: string;

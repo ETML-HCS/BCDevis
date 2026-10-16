@@ -76,6 +76,7 @@ assert.match(app, /function currentQuoteSaveState\(\)[\s\S]*?quoteSaveFingerprin
 assert.match(app, /delete comparable\.status;[\s\S]*?delete comparable\.updatedAt;/, "La comparaison d’archivage doit ignorer les métadonnées techniques");
 assert.match(app, /function saveQuote\(\) \{[\s\S]*?if \(!quote\.lines\.length\) \{[\s\S]*?Ajoutez une prestation avant d’enregistrer/, "Enregistrer doit répondre explicitement quand le devis est vide");
 assert.match(html, /id="couponToggle"[^>]*aria-label="Ajouter un coupon"[\s\S]*?<span>Coupon<\/span>/, "Le coupon doit garder une action complète avec un nom court");
+assert.match(html, /<button class="coupon-close" id="couponClose" type="button" aria-label="Fermer le coupon"/, "La zone du coupon doit pouvoir se refermer, y compris au clavier");
 assert.doesNotMatch(html, /Objet sur mesure|objet sur mesure/, "L’ancien libellé Objet sur mesure ne doit plus apparaître");
 assert.doesNotMatch(html, />Application<\/p>|data-app-action="settings"|data-app-action="shortcuts"/, "Les utilitaires Application ne doivent plus rester dans le menu principal");
 assert.match(html, /class="topbar-utility-button" id="settingsButton"[^>]*aria-label="Ouvrir les réglages"[^>]*aria-keyshortcuts="Control\+Comma Meta\+Comma"[^>]*data-tooltip="Réglages"/, "Le bouton Réglages doit rester documenté");

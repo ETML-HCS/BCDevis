@@ -1,5 +1,5 @@
 const assert = require("node:assert/strict");
-const { calculate, customLineDiscount, assessLineDiscount, DISCOUNT_GUARD, lineDiscountBase, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = require("../quote-core.js");
+const { calculate, customLineDiscount, percentToReachUnitPrice, assessLineDiscount, DISCOUNT_GUARD, lineDiscountBase, installmentMonths, referenceLineTotal, cleanDocumentPrefix, relatedDocumentNumber } = require("../quote-core.js");
 
 const base = {
   lines: [{ price: 122, quantity: 7 }, { price: 322, quantity: 7 }, { price: 222, quantity: 7 }],
@@ -39,6 +39,18 @@ assert.equal(calculate({ lines: [{ ...studentLine, customDiscount: { type: "perc
 assert.equal(calculate({ lines: [{ ...studentLine, customDiscount: { type: "fixed", value: 10 } }], ...noExtras }).total, 40, "Le rabais de ligne en CHF s’applique après la remise étudiante");
 assert.equal(lineDiscountBase(studentLine, 50), 50, "La base du rabais d’une ligne étudiante est le montant après remise étudiante");
 assert.equal(calculate({ lines: [{ price: 33.33, quantity: 3, customDiscount: { type: "percent", value: 15 } }], ...noExtras }).lineDiscount, 15, "Les arrondis restent au centime");
+// Prix spécial (SIF combiné à 62 CHF) : le rabais en % ramène la séance au prix cible, le prix normal reste affiché.
+const sifLine = { price: 92, quantity: 1, offerType: "single" };
+const sifPercent = percentToReachUnitPrice(sifLine, 62);
+assert.equal(sifPercent, 32.61, "Un soin à 92 CHF ramené à 62 CHF demande un rabais de 32,61 %");
+assert.equal(calculate({ lines: [{ ...sifLine, customDiscount: { type: "percent", value: sifPercent } }], ...noExtras }).total, 62, "Le rabais en % donne exactement le prix cible pour une séance");
+const twoSessions = { ...sifLine, quantity: 2 };
+assert.equal(calculate({ lines: [{ ...twoSessions, customDiscount: { type: "percent", value: percentToReachUnitPrice(twoSessions, 62) } }], ...noExtras }).total, 124, "Deux séances restent à 62 CHF chacune");
+const packSif = { price: 92, quantity: 6, freeQuantity: 1, offerType: "pack" };
+const packSifTotal = calculate({ lines: [{ ...packSif, customDiscount: { type: "percent", value: percentToReachUnitPrice(packSif, 62) } }], ...noExtras }).total;
+assert.ok(Math.abs(Math.round((packSifTotal - 372) * 100)) <= 1, "Pack 6 + 1 : au plus un centime d’écart, car le pourcentage est arrondi au centime de pour-cent");
+assert.equal(percentToReachUnitPrice({ ...sifLine, offerType: "student" }, 62), 0, "Le tarif étudiant n’accepte pas de rabais en %");
+assert.equal(percentToReachUnitPrice({ ...sifLine, price: 60 }, 62), 0, "Un soin déjà sous le prix cible ne reçoit aucun rabais");
 assert.deepEqual(installmentMonths(999.99), [3, 4, 6], "Sous CHF 1’000, seules les options 3, 4 et 6 mois sont proposées");
 assert.deepEqual(installmentMonths(1000), [3, 4, 6, 10], "Dès CHF 1’000, l’option 10 mois est ajoutée");
 assert.deepEqual(installmentMonths(1999.99), [3, 4, 6, 10], "Sous CHF 2’000, l’option 12 mois reste masquée");

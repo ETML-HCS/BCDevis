@@ -252,7 +252,7 @@ Le livrable client contient également une fiche **Utilisation rapide**, la fich
 ### Fonctions récentes à connaître
 
 - **Rabais personnalisé par ligne** : double-cliquez sur n’importe quelle prestation du devis pour ouvrir la modale concise et discrète. Choisissez un pourcentage (%) ou un montant fixe (CHF), ou cliquez sur les tags rapides **2 %**, **3 %**, **5 %** ou **10 %** pour un réglage instantané avec prévisualisation directe du prix net.
-- **Corps interactif et 21 sous-zones anatomiques** : la navigation corporelle découpe chaque région en zones précises (avant-bras, mains, genoux, pieds, haut et bas du dos, etc.) avec pastilles tactiles sous la silhouette. Les zones contenant déjà des soins dans le devis restent teintées sur le mannequin.
+- **Corps interactif et 23 sous-zones anatomiques** : la navigation corporelle distingue notamment les épaules des aisselles et le maillot des cuisses. Les pastilles sous la silhouette permettent de sélectionner les zones du corps et du visage, au toucher ou au clavier. Les zones contenant déjà des soins dans le devis restent teintées sur le mannequin.
 - **Suivi commercial des devis** : activez-le dans **Réglages > Devis & suivi** pour utiliser les statuts, les filtres, la chronologie, les notes, les prochaines relances, les compteurs et les rappels au démarrage.
 - **Workflow contrôlé et V2** : les statuts suivent un ordre précis ; un devis accepté, refusé, expiré ou facturé est verrouillé et peut être repris dans une nouvelle version liée.
 - **Affichage Auto, Mobile ou Bureau** : ouvrez le menu **Catalogue**, puis choisissez la vue adaptée à votre écran. Le choix reste mémorisé uniquement sur ce poste.
@@ -418,17 +418,20 @@ Double-cliquez sur n’importe quelle ligne de soin dans la caisse (ou cliquez s
 - **Saisie libre en % ou CHF** : saisissez un pourcentage ou un montant fixe personnalisé selon vos besoins de négociation.
 - **Prévisualisation directe** : la modale affiche en temps réel le calcul transparent (montant brut, déduction calculée et prix net résultant).
 - **Retirer le rabais** : le bouton dédié permet de réinitialiser la ligne à son tarif de base en un clic.
+- **Prix spécial SIF combiné** : sur la ligne du SIF, la fenêtre du rabais propose le bouton « SIF combiné à 62 CHF ». Il calcule le rabais en % qui ramène la séance à ce prix (par exemple 32,61 % sur un soin à 92 CHF) : le soin garde son prix normal, et le client voit le rabais sur le PDF. La confirmation habituelle s’affiche au-delà de 30 %.
 - **Règles d'application** : le rabais porte sur les séances payées (les séances offertes d’un pack restent gratuites), s'applique avant tout coupon global éventuel, et n'autorise que le montant en CHF avec le tarif Étudiant pour éviter le cumul de deux pourcentages.
 - **Visibilité complète** : le rabais apparaît directement sous le libellé de la ligne, dans la décomposition du total et sur le PDF officiel remis au patient.
 
 ### Coupon
 
-Cliquez sur **Coupon**, puis saisissez le code et la valeur de la réduction.
+Cliquez sur **Coupon**, puis saisissez le code et la valeur de la réduction. La croix en haut à droite referme la zone ; si un coupon est saisi, elle le retire, et **Annuler** le rétablit pendant quelques secondes.
 
 - `%` applique une réduction en pourcentage ;
 - `CHF` applique une réduction fixe.
 
 Avec le tarif Étudiant, seul un coupon en CHF peut être ajouté : le coupon en pourcentage n’est pas cumulable avec le rabais étudiant.
+
+Quand le coupon réduit le devis, son code figure sur le PDF, sous **Rabais total**. Sans code, ou si le coupon ne réduit rien, le PDF n’ajoute aucune ligne.
 
 ### TVA
 

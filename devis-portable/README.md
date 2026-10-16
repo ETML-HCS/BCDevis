@@ -47,10 +47,11 @@ Version de production : elle réunit tout le travail de la série 8.6.x et devie
 
 ## Nouveautés 8.5.0
 
-- Le mode Corps interactif découpe chaque région en sous-zones précises (poitrine, abdomen, épaules, bras, avant-bras, mains, cuisses, genoux, bas de jambe, pieds, nuque, haut et bas du dos, fesses). Un clic filtre uniquement les soins concernés ; des pastilles tactiles offrent le même accès.
+- Le mode Corps interactif propose 23 sous-zones, dont des aisselles distinctes des épaules et des cuisses séparées du maillot. Un clic filtre les soins concernés ; des boutons d’au moins 44 px offrent le même accès, y compris pour les douze zones du visage. Les miniatures suivent la morphologie choisie et gardent leurs tracés SVG séparés.
+- Les têtes Femme et Homme utilisent des tracés distincts, communs au mannequin et au visage détaillé. Le sélecteur reste disponible dans le détail et conserve la zone choisie.
 - Les zones dont un soin figure déjà dans le devis restent teintées sur la silhouette et marquées dans les pastilles.
 - Les boutons du mode Corps (Femme/Homme, Face/Dos, sous-zones, retour au corps complet) reçoivent des icônes SVG.
-- Un double-clic sur une ligne du devis ouvre une modale concise et discrète de rabais personnalisé (% ou CHF). Des tags rapides (2 %, 3 %, 5 %, 10 %) permettent une saisie instantanée en un clic avec prévisualisation du prix net. Le rabais porte sur les séances payées, s’applique avant le coupon global, n’accepte que le CHF avec le tarif Étudiant, et figure sur la ligne, dans le total et sur le PDF.
+- Un double-clic sur une ligne du devis ouvre une modale concise et discrète de rabais personnalisé (% ou CHF). Des tags rapides (2 %, 3 %, 5 %, 10 %) permettent une saisie instantanée en un clic avec prévisualisation du prix net. Le rabais porte sur les séances payées, s’applique avant le coupon global, n’accepte que le CHF avec le tarif Étudiant, et figure sur la ligne, dans le total et sur le PDF. Sur la ligne SIF, le bouton « SIF combiné à 62 CHF » remplit le rabais en % qui ramène la séance à ce prix.
 - **Provisoire :** le login de la version web est suspendu (constante `ACCESS_GATE_SUSPENDED` dans `app.js`) ; `?authGate=1` permet de tester l’écran de connexion.
 - Avant une restauration ou un import de transfert, un instantané des données actuelles est téléchargé et le contenu de la sauvegarde est annoncé dans la confirmation.
 
@@ -159,7 +160,7 @@ Aide et livrables de la version 8 :
 - Suivi commercial facultatif avec transitions contrôlées, couleurs accessibles, filtres, chronologie attribuée, dates de relance, verrouillage terminal et V2 liée.
 - Centralisation PostgreSQL facultative avec compte, appareil identifié, numéros uniques en option, synchronisation différée hors ligne, révisions et résolution explicite des conflits.
 - Bibliothèques **Documents partagés** et **Factures partagées** centrales avec import, recherche, aperçu, téléchargement et impression des documents de 8 Mo maximum.
-- Impression ou création d’un PDF A4 avec le détail séance/pack/étudiant et le code coupon appliqué.
+- Impression ou création d’un PDF A4 avec le détail séance/pack/étudiant et, si un coupon réduit le devis, son code.
 
 ## Données et portabilité
 

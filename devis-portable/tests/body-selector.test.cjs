@@ -34,7 +34,7 @@ assert.match(app, /class="body-model-toggle"[\s\S]*?data-body-model-choice="fema
 assert.match(app, /function setBodyModel\(model, focusSelector\)/, "Le sélecteur explicite doit choisir directement la morphologie demandée");
 assert.doesNotMatch(app, /toggleBodyModel|data-body-model-toggle|bodyModelToggleArea/, "L’espace autour du corps ne doit plus changer implicitement de morphologie");
 assert.match(app, /function faceMapMarkup\(\)/, "Le visage doit disposer d’une carte anatomique dédiée");
-assert.match(app, /Détail du visage neutre/, "Le schéma facial doit être décrit comme neutre");
+assert.match(app, /Détail du visage \$\{modelLabel\}/, "Le titre du visage doit annoncer la morphologie affichée");
 assert.match(app, /sans cheveux ni identité reconnaissable/, "Le schéma facial doit annoncer son anonymat");
 assert.match(app, /activeBodyModel === "female" \? "féminin" : "masculin"/, "L’intitulé accessible doit suivre le modèle réellement affiché");
 assert.match(app, /data-body-detail="body"/, "Le détail du visage doit permettre de revenir au corps complet");
@@ -45,8 +45,8 @@ assert.match(
 );
 assert.match(
   styles,
-  /\.body-map-card-head\{display:flex;align-items:center;justify-content:space-between;gap:12px\}/,
-  "Les sélecteurs Femme/Homme et Face/Dos doivent partager la même ligne"
+  /\.body-map-card-head\{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px\}/,
+  "Les sélecteurs Femme/Homme et Face/Dos doivent partager l’en-tête et revenir à la ligne si nécessaire"
 );
 assert.doesNotMatch(app, /Choisir une zone|Navigation corporelle|Autres prestations|zones? sur cette vue/, "Les libellés évidents ne doivent pas alourdir la navigation corporelle");
 assert.doesNotMatch(app, /body-results-head|bodyResultsTitle/, "L’en-tête redondant des prestations doit être entièrement supprimé");
@@ -122,7 +122,7 @@ assert.deepEqual(Array.from(servicesForRegion(regions.find((region) => region.id
 assert.deepEqual(Array.from(servicesForRegion(regions.find((region) => region.id === "back-sif")), (service) => service.id), [49], "Le SIF ne doit afficher que le sillon interfessier");
 
 const bodyZones = catalogContext.window.QUOTE_BODY_ZONES;
-assert.equal(bodyZones.length, 21, "Le mannequin doit exposer vingt et une sous-zones précises");
+assert.equal(bodyZones.length, 23, "Le mannequin doit exposer vingt-trois sous-zones, avec les aisselles distinctes des épaules");
 assert.equal(new Set(bodyZones.map((zone) => zone.id)).size, bodyZones.length, "Chaque sous-zone doit avoir un identifiant unique");
 for (const zone of bodyZones) {
   const region = regions.find((candidate) => candidate.id === zone.regionId);
@@ -200,7 +200,7 @@ assert.match(app, /function anonymousBodyHeadMarkup\(side, headGeometry\)/, "La 
 assert.match(app, /class="body-region-shape body-anonymous-head"/, "La tête anonyme doit rester une zone interactive");
 assert.match(app, /class="body-region-detail body-face-landmarks"/, "Le visage du mannequin doit conserver des repères anatomiques neutres");
 assert.match(app, /const headMaskId = `body-head-mask-\$\{side\}`/, "La tête d’origine doit être masquée sans rectangle visible");
-assert.match(app, /data-anatomy-source="user-reference" viewBox="260 45 505 740"/, "Le visage doit reprendre le tracé anatomique de référence dans un repère naturel");
+assert.match(app, /data-anatomy-source="bcdevis-face-models" viewBox="260 45 505 740"/, "Les deux modèles du visage doivent partager un repère naturel sans déformation");
 assert.match(app, /<g class="face-figure">/, "Le visage doit disposer d’un groupe anatomique mesurable");
 assert.doesNotMatch(app, /class="face-figure" transform=/, "Le visage ne doit subir aucune déformation corrective");
 assert.match(app, /sans cheveux ni identité reconnaissable/, "Le visage doit rester neutre et anonyme");
@@ -212,7 +212,7 @@ assert.match(styles, /\.interactive-body-map\{[^}]*height:clamp\(540px,65vh,620p
 assert.match(styles, /\.body-anatomy-outline\{[^}]*fill:#353431;stroke:none/, "Le fond continu doit réunifier les segments sans dessiner de contour extérieur");
 assert.match(styles, /\.body-anonymous-head,\.body-anonymous-neck\{[^}]*stroke:none/, "La tête et le cou ne doivent pas recréer un contour extérieur séparé");
 assert.match(styles, /html\[data-theme\] \.body-anatomy-outline\{[^}]*stroke:none/, "Aucun thème ne doit réintroduire le contour extérieur");
-assert.match(styles, /\.body-anatomy-segment\{[^}]*stroke:#706c65;stroke-width:\.65;opacity:\.64/, "Les mains, les pieds et les détails musculaires doivent rester lisibles sans concurrencer la zone active");
+assert.match(styles, /\.body-anatomy-segment\{[^}]*stroke:#908a80;stroke-width:\.7;opacity:\.9/, "Les mains, les pieds et les détails musculaires doivent rester lisibles sans concurrencer la zone active");
 assert.match(styles, /\.body-region\.active \.body-anatomy-segment\{[^}]*opacity:1/, "La zone active doit retrouver toute sa lisibilité");
 assert.match(styles, /\.interactive-face-map\{[^}]*height:clamp\(410px,52vh,510px\)/, "Le visage détaillé doit rester lisible");
 assert.match(styles, /\.face-anatomy-base\{[^}]*pointer-events:none/, "Le fond anatomique continu ne doit pas intercepter les zones du visage");
@@ -231,19 +231,43 @@ const anatomyContext = { window: {} };
 vm.createContext(anatomyContext);
 vm.runInContext(anatomySource, anatomyContext);
 const anatomy = anatomyContext.window.BCDEVIS_BODY_ANATOMY;
+const faceFunction = app.match(/  function faceModelGeometry\(model = activeBodyModel\) \{[\s\S]*?\n  \}/)?.[0];
+assert.ok(faceFunction, "La tête du mannequin et le visage détaillé doivent disposer de deux géométries propres");
+vm.runInContext(faceFunction, anatomyContext);
+const maleFace = anatomyContext.faceModelGeometry("male");
+const femaleFace = anatomyContext.faceModelGeometry("female");
+for (const feature of ["outline", "neck", "leftBrow", "nose", "upperLip", "leftEar", "leftCheek", "chin", "lowerFace", "beardLine"]) {
+  assert.notEqual(maleFace[feature], femaleFace[feature], `Le tracé ${feature} doit être distinct sur les deux modèles`);
+}
+const headFunction = app.match(/  function anonymousBodyHeadMarkup\(side, headGeometry\) \{[\s\S]*?\n  \}/)?.[0];
+vm.runInContext(headFunction, anatomyContext);
+for (const model of ["male", "female"]) {
+  anatomyContext.activeBodyModel = model;
+  const face = anatomyContext.faceModelGeometry(model);
+  for (const side of ["front", "back"]) {
+    const head = anatomyContext.anonymousBodyHeadMarkup(side, { cx: 512 });
+    assert.ok(head.includes(`d="${face.outline}"`), `La tête ${model}/${side} doit utiliser le même contour que son visage détaillé`);
+    assert.equal((head.match(/class="body-region-shape body-anonymous-head"/g) || []).length, 1, "Une seule tête doit être dessinée par mannequin");
+  }
+}
+const geometryFunction = app.match(/  function bodyModelGeometry\(side\) \{[\s\S]*?\n  \}/)?.[0];
+assert.ok(geometryFunction, "La géométrie affichée doit pouvoir être contrôlée sur les deux modèles");
+vm.runInContext(geometryFunction, anatomyContext);
 assert.deepEqual(Array.from(Object.keys(anatomy)), ["male", "female"], "Les deux anatomies homme et femme doivent être livrées");
 for (const model of ["male", "female"]) {
   assert.ok(anatomy?.[model]?.front && anatomy?.[model]?.back, `Les vues Face et Dos du modèle ${model} doivent être livrées`);
   for (const side of ["front", "back"]) {
     const figure = anatomy[model][side];
+    anatomyContext.activeBodyModel = model;
+    const rendered = anatomyContext.bodyModelGeometry(side);
     assert.ok(figure.outline.length > 8000, `Le contour ${model}/${side} ne doit pas être une approximation simplifiée`);
     const segmentPaths = Object.values(figure.regions).flatMap((segments) => Object.values(segments).flat());
     assert.ok(segmentPaths.length >= 60, `Les zones ${model}/${side} doivent rester anatomiquement détaillées`);
     for (const zone of bodyZones.filter((candidate) => candidate.regionId.startsWith(`${side}-`))) {
-      const segments = figure.regions[zone.regionId.slice(side.length + 1)];
+      const segments = rendered.regions[zone.regionId.slice(side.length + 1)];
       assert.ok(zone.segments.some((segment) => segments?.[segment]?.length), `La sous-zone ${zone.id} doit être dessinée sur le modèle ${model}`);
     }
-    for (const [regionKey, segments] of Object.entries(figure.regions)) {
+    for (const [regionKey, segments] of Object.entries(rendered.regions)) {
       const zones = bodyZones.filter((zone) => zone.regionId === `${side}-${regionKey}`);
       if (!zones.length) continue;
       const covered = new Set(zones.flatMap((zone) => zone.segments));

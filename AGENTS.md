@@ -59,7 +59,7 @@ Ne **JAMAIS** mélanger la logique de calcul ou de validation métier avec les m
 Le projet suit une séparation stricte :
 
 1. **`quote-core.js` (`window.QuoteCore`) :**
-   - Fonctions pures : `calculate(quote)`, `installmentMonths(total)`, `referenceLineTotal(line)`, `customLineDiscount(line, studentRate)`.
+   - Fonctions pures : `calculate(quote)`, `installmentMonths(total)`, `referenceLineTotal(line)`, `customLineDiscount(line, studentRate)`, `percentToReachUnitPrice(line, prixCible)` (rabais en % d’un prix spécial, ex. SIF combiné à 62 CHF).
    - Tout changement dans les formules de calcul **doit** être testé via `devis-portable/tests/core.test.cjs`.
 
 2. **`contact-core.js` (`window.BCDevisContacts`) :**

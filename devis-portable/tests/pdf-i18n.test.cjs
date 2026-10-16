@@ -30,6 +30,7 @@ for (const code of i18n.CODES) {
 // Le PDF français reprend exactement les libellés de la caisse.
 assert.equal(i18n.strings("fr").totalBeforeOffers, "Total avant offres");
 assert.equal(i18n.strings("fr").totalDiscount, "Rabais total");
+assert.equal(i18n.strings("fr").couponCode, "Code coupon");
 assert.equal(i18n.strings("fr").totalToPay, "Total à payer");
 
 // Tous les soins et toutes les catégories du catalogue sont traduits (l’anglais reste dans catalog.js).

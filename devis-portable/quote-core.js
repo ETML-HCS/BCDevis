@@ -61,6 +61,26 @@
     return roundMoney(base * clamp(value, 0, 100) / 100);
   }
 
+  // Rabais en % qui ramène une séance à un prix cible (ex. SIF combiné à 62 CHF) : le soin garde son prix normal.
+  // Le pourcentage est arrondi au centime de pour-cent ; on retient celui qui donne le montant le plus proche de (prix − cible) × quantité.
+  function percentToReachUnitPrice(line, targetUnitPrice) {
+    const price = referenceUnitPrice(line);
+    const target = roundMoney(targetUnitPrice);
+    const sessions = Math.max(0, Number(line?.quantity) || 0);
+    if (line?.offerType === "student" || price <= 0 || target < 0 || target >= price || sessions <= 0) return 0;
+    const paid = paidLineAmount(line);
+    const expected = roundMoney((price - target) * sessions);
+    const exact = roundMoney((price - target) / price * 100);
+    let best = exact;
+    let bestGap = Infinity;
+    for (const candidate of [exact, roundMoney(exact - 0.01), roundMoney(exact + 0.01)]) {
+      const percent = clamp(candidate, 0, 100);
+      const gap = Math.abs(roundMoney(paid * percent / 100) - expected);
+      if (gap < bestGap) { best = percent; bestGap = gap; }
+    }
+    return best;
+  }
+
   // Garde-fous du rabais personnalisé. Seuils en part de la ligne (ou du devis pour le cumul) :
   // au-delà de NOTICE un avis s'affiche (la marge se réduit) ; à partir de CONFIRM la marge devient très faible
   // et une confirmation est exigée ; à partir de LOSS (ou pour une ligne offerte) la prestation est vendue à perte.
@@ -144,5 +164,5 @@
     return { subtotal, packDiscount, studentDiscount, studentRate, lineDiscount, discount, totalDiscount, discounted, net, tax, total, rate };
   }
 
-  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, assessLineDiscount, DISCOUNT_GUARD, cleanDocumentPrefix, relatedDocumentNumber };
+  return { roundMoney, clamp, calculate, installmentMonths, referenceLineTotal, lineDiscountBase, customLineDiscount, percentToReachUnitPrice, assessLineDiscount, DISCOUNT_GUARD, cleanDocumentPrefix, relatedDocumentNumber };
 });
