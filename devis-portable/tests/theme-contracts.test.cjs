@@ -48,7 +48,7 @@ assert.match(app, /"#couponClose"\)\.addEventListener\("click"[\s\S]*?couponOpen
 assert.match(styles, /\.coupon-close::before\{content:"";position:absolute;inset:-6px\}/, "La croix du coupon doit offrir une cible tactile de 44 px");
 assert.match(app, /\$\{couponCode \? `<tr class="coupon-code"><td>\$\{text\.couponCode\}<\/td><td>\$\{escapeHTML\(couponCode\)\}<\/td><\/tr>` : ""\}/, "Le code coupon doit être imprimé sous le rabais total, échappé");
 assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
-assert.match(app, /const RELEASE_VERSION = "8.8.0";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_VERSION = "8.8.1";/, "L’écran de nouveautés doit suivre la version livrée");
 assert.match(app, /const RELEASE_NOTES_REVISION = "8.8.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
