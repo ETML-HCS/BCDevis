@@ -223,4 +223,9 @@ assert.match(
   /@media screen and \(max-width:1180px\)\{[\s\S]*?\.toast-region\{top:auto;bottom:88px\}/,
   "Sur tablette, la notification doit rester au-dessus de la navigation du bas"
 );
+assert.match(
+  styles,
+  /html\.checkout-focus \.toast-region\{top:auto;right:calc\(var\(--checkout-panel-width,440px\) \+ 40px\);bottom:20px\}/,
+  "Sur grand écran, la notification doit se placer au bas du catalogue, contre le volet du devis, sans recouvrir coupon ni totaux"
+);
 console.log("KEYBOARD_ACCESSIBILITY_TESTS_OK");

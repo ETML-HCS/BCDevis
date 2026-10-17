@@ -676,6 +676,8 @@ html[data-ipad-layout="optimized"] .cart-line-main{padding-block:14px}
 /* V4.11 — notifications utiles, une à la fois */
 .receipt-meta{display:flex;align-items:end}
 .toast-region{position:fixed;z-index:320;top:66%;right:16px;bottom:auto;display:flex;width:min(340px,calc(100vw - 32px));min-width:0;flex-direction:column;gap:0;pointer-events:none}
+/* V8.8.1 — grand écran : la notification se place au bas du catalogue, contre le volet du devis, sans masquer coupon, totaux ni actions. */
+html.checkout-focus .toast-region{top:auto;right:calc(var(--checkout-panel-width,440px) + 40px);bottom:20px}
 .toast{display:grid;min-width:0;padding:9px 10px;align-items:center;border:1px solid #dfdfda;border-radius:12px;color:#222;background:rgba(255,255,255,.97);box-shadow:0 14px 34px rgba(0,0,0,.16);font-size:12px;font-weight:700;line-height:1.3;grid-template-columns:20px minmax(0,1fr) 22px;gap:8px;pointer-events:auto;animation:toast-in-soft .2s ease both}
 .toast-symbol{display:grid;width:20px;height:20px;place-items:center;border-radius:50%;color:#fff;background:#222;font-size:12px;font-weight:900}
 .toast-copy{min-width:0}

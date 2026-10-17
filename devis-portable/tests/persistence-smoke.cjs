@@ -194,6 +194,9 @@ async function run() {
       if (document.querySelector("#saveButton").disabled) throw new Error("Enregistrer reste impossible à cliquer quand le devis est vide");
       document.querySelector("#saveButton").click();
       if (!/Ajoutez une prestation avant d’enregistrer/.test(document.querySelector("#toastRegion").textContent)) throw new Error("Enregistrer un devis vide n’explique pas l’action attendue");
+      const desktopToastRect = document.querySelector("#toastRegion .toast").getBoundingClientRect();
+      const desktopCheckoutRect = document.querySelector("#checkoutPanel").getBoundingClientRect();
+      if (desktopToastRect.right > desktopCheckoutRect.left - 24 || desktopToastRect.bottom > innerHeight || desktopToastRect.top < 0 || desktopToastRect.left < 0) throw new Error("Sur grand écran, la notification recouvre la caisse ou sort de l’écran");
       document.querySelector(".toast-close")?.click();
       const windowControlsRect = document.querySelector("#windowControls").getBoundingClientRect();
       const receiptHeadRect = document.querySelector(".receipt-head").getBoundingClientRect();
