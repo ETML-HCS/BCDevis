@@ -14,17 +14,20 @@
   <link rel="stylesheet" href="styles.css">
   <style>
   /* === Système de thèmes (5 palettes) === */
-  /* Thème 1 — Blanc : pur et lumineux, accents champagne */
+  /* Thème 1 — Bellecour (identifiant « white ») : l’univers du site cliniquebellecour.ch.
+     Blanc et ivoire, encre presque noire pour les actions, gris chaud pour les repères, bronze pour les icônes.
+     Les sélections se remplissent d’un gris léger (--select-bg) : les pictogrammes gardent leurs couleurs. */
   html[data-theme="white"]{
-    --black:#171512;--black-2:#f6f2eb;--black-3:#f0ebe2;
-    --paper:#ffffff;--soft:#f4f1eb;--line:#e4dfd4;--line-dark:#8a8172;
-    --taupe:#b69c78;--taupe-light:#f2ebde;--taupe-dark:#6e5942;--taupe-active:#ecdfc9;
-    --ink:#191714;--muted:#6f6a60;
-    --topbar-bg:#ffffff;--topbar-fg:#191714;--topbar-border:#e6e0d4;
-    --panel-bg:#ffffff;--panel-border:#e9e3d8;
-    --accent:#b69c78;--accent-ink:#211b14;--contrast:#171512;--contrast-ink:#fffdf8;
-    --action:#171512;--action-ink:#fffdf8;
-    --surface:#ffffff;--surface-raised:#ffffff;--surface-soft:#f7f4ee;
+    --black:#16150f;--black-2:#fbfaf8;--black-3:#f0ede5;
+    --paper:#ffffff;--soft:#f7f5f2;--line:#e6e3dc;--line-dark:#8f8b7f;
+    --taupe:#8b7558;--taupe-light:#f5f2ec;--taupe-dark:#7a5c3a;--taupe-active:#ece8df;
+    --ink:#16150f;--muted:#57544b;
+    --topbar-bg:#ffffff;--topbar-fg:#16150f;--topbar-border:#e6e3dc;
+    --panel-bg:#ffffff;--panel-border:#e6e3dc;
+    --accent:#8f8b7f;--accent-ink:#16150f;--contrast:#16150f;--contrast-ink:#fdfdfb;
+    --action:#16150f;--action-ink:#fdfdfb;
+    --surface:#ffffff;--surface-raised:#ffffff;--surface-soft:#fbfaf8;
+    --select-bg:#ebe7df;--select-hover:#f3f0ea;
     --settings-bar-bg:var(--surface);--settings-bar-border:var(--line);
   }
   /* Thème 2 — Lumière : crème chaud, encre et champagne */
@@ -91,8 +94,8 @@
   /* Swatch Blanc */
   .theme-card-swatch.white{background:#ffffff}
   .theme-card-swatch.white .ts-top{background:#ffffff}
-  .theme-card-swatch.white .ts-panel{background:#ffffff;border-right:1px solid #e9e3d8}
-  .theme-card-swatch.white .ts-accent{background:#b69c78}
+  .theme-card-swatch.white .ts-panel{background:#ffffff;border-right:1px solid #e6e3dc}
+  .theme-card-swatch.white .ts-accent{background:#8f8b7f}
   /* Swatch Lumière */
   .theme-card-swatch.light{background:#f4f1eb}
   .theme-card-swatch.light .ts-top{background:#171512}
@@ -131,6 +134,7 @@
   .font-card-check{display:none;width:18px;height:18px;place-items:center;color:var(--taupe-dark)}
   .font-card-check svg{width:15px;height:15px;stroke-width:2.4}
   .font-card[aria-checked="true"] .font-card-check{display:grid}
+  .font-card[data-font="dm-sans"] .font-card-sample{font-family:"DM Sans","Roboto",Arial,sans-serif}
   .font-card[data-font="red-hat"] .font-card-sample{font-family:"Red Hat Display","Roboto",Arial,sans-serif}
   .font-card[data-font="roboto"] .font-card-sample{font-family:"Roboto","Red Hat Display",Arial,sans-serif}
   .font-card[data-font="roboto-slab"] .font-card-sample{font-family:"Roboto Slab","Roboto",serif}
@@ -1199,10 +1203,15 @@
     box-shadow:inset 0 0 0 1.5px var(--accent),0 4px 12px rgba(0,0,0,.08);
   }
   @media screen and (min-width:1451px){
-    .topbar{grid-template-columns:180px minmax(360px,1fr) auto 48px;gap:16px}
+    .topbar{grid-template-columns:228px minmax(360px,1fr) auto 48px;gap:16px}
   }
   @media screen and (min-width:1181px) and (max-width:1450px){
-    .topbar{grid-template-columns:160px minmax(300px,1fr) auto 48px;gap:12px}
+    .topbar{grid-template-columns:208px minmax(300px,1fr) auto 48px;gap:12px}
+  }
+  /* Juste au-dessus du format tablette, le sélecteur de tarif a besoin de toute la place : pas de marque à arches. */
+  @media screen and (min-width:1181px) and (max-width:1260px){
+    .topbar{grid-template-columns:160px minmax(300px,1fr) auto 48px}
+    .topbar .brand-mark{display:none}
   }
   @media screen and (max-width:1180px){
     .topbar{gap:8px}
@@ -2262,7 +2271,7 @@
   @media screen and (max-width:700px){
     html[data-ipad-layout="optimized"] .topbar-context .offer-mode-selector button small{display:none}
   }
-  /* === Thème Blanc : sélection contrastée et surfaces pures === */
+  /* === Thème Bellecour (« white ») : sélection contrastée et surfaces pures === */
   html[data-theme="white"] .family-head{border-bottom-color:var(--line)}
   html[data-theme="white"] .family-search{background:var(--surface-soft);border-color:var(--line)}
   html[data-theme="white"] .family-search input{color:var(--ink)}
@@ -2272,9 +2281,9 @@
   html[data-theme="white"] .family-button{color:var(--ink)}
   html[data-theme="white"] .family-button small{color:var(--muted)}
   html[data-theme="white"] .family-button-icon{color:var(--taupe-dark)}
-  /* Les creux anatomiques des icônes de tuiles reprennent la couleur de la tuile (champagne), pas le blanc */
-  html[data-theme="white"] .anatomy-negative{fill:color-mix(in srgb,var(--taupe-light) 88%,transparent)}
-  html[data-theme="white"] .anatomy-negative-line{stroke:color-mix(in srgb,var(--taupe-light) 88%,transparent)}
+  /* Les creux anatomiques des icônes de tuiles reprennent la couleur de la tuile (ivoire), pas le blanc */
+  html[data-theme="white"] .anatomy-negative{fill:var(--icon-ground,color-mix(in srgb,var(--taupe-light) 88%,transparent))}
+  html[data-theme="white"] .anatomy-negative-line{stroke:var(--icon-ground,color-mix(in srgb,var(--taupe-light) 88%,transparent))}
   html[data-theme="white"] .family-option{color:var(--ink)}
   html[data-theme="white"] .family-option:hover small,
   html[data-theme="white"] .family-option:active small,
@@ -2285,7 +2294,7 @@
   html[data-theme="white"] .topbar-context .offer-mode-selector button .offer-mode-copy small,
   html[data-theme="white"] .topbar-context .offer-mode-selector button.active .offer-mode-copy small{color:var(--muted)}
   html[data-theme="white"] .topbar-context .offer-mode-selector button .offer-mode-symbol{color:var(--taupe-dark)}
-  /* Survol des tuiles non sélectionnées : champagne doux et lisible */
+  /* Survol des tuiles non sélectionnées : ivoire doux et lisible */
   html[data-theme="white"] .family-button:hover,
   html[data-theme="white"] .family-button:focus-visible{color:var(--ink);border-color:var(--accent);background:var(--taupe-light)}
   html[data-theme="white"] .family-button:hover small,
@@ -2348,10 +2357,66 @@
   html[data-display-mode="smartphone"][data-theme] .topbar-context #offerModeSelector button .offer-mode-symbol{width:24px;height:24px;flex-basis:24px}
   html[data-display-mode="smartphone"][data-theme] .topbar-context #offerModeSelector button .offer-mode-symbol svg{width:24px;height:24px}
   html[data-display-mode="smartphone"][data-theme] .topbar-context #offerModeSelector button .offer-mode-copy{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+  /* === Univers Bellecour (thème « white ») : formes et typographie du site cliniquebellecour.ch ===
+     Repères repris du site : boutons en pilule, libellés en capitales espacées, titres en graisse 600
+     au tracking serré. Le noir reste aux actions (Enregistrer, PDF) ; une sélection se signale par un gris
+     léger et un repère gris chaud, sans inverser les couleurs des pictogrammes. Les autres thèmes ne sont pas concernés. */
+  html[data-theme="white"] .eyebrow,
+  html[data-theme="white"] .section-kicker{color:var(--taupe-dark);font-weight:600;letter-spacing:.2em}
+  html[data-theme="white"] .brand-block .eyebrow{letter-spacing:.16em;white-space:nowrap}
+  /* Pictogrammes des soins en bronze, comme les icônes du site, y compris une fois le soin ajouté. */
+  html[data-theme="white"] .service-zone-icon{color:var(--taupe-dark);border-color:color-mix(in srgb,var(--taupe) 30%,var(--panel-border));background:radial-gradient(circle at 40% 30%,color-mix(in srgb,var(--taupe) 12%,var(--surface-soft)) 0%,color-mix(in srgb,var(--panel-bg) 88%,transparent) 100%)}
+  html[data-theme="white"] .family-option:hover .service-zone-icon,
+  html[data-theme="white"] .family-option:focus-visible .service-zone-icon{color:var(--taupe-dark);border-color:var(--taupe);background:radial-gradient(circle at 40% 30%,color-mix(in srgb,var(--taupe) 20%,var(--surface-soft)) 0%,color-mix(in srgb,var(--panel-bg) 82%,transparent) 100%);box-shadow:0 6px 16px color-mix(in srgb,var(--taupe) 24%,transparent),inset 0 1px 0 rgba(255,255,255,.2)}
+  html[data-theme="white"] .family-button.active,
+  html[data-theme="white"] .family-button.active:hover,
+  html[data-theme="white"] .family-button.active:focus-visible{border-color:var(--line-dark)}
+  html[data-theme="white"] :is(.brand-block h1,.panel-heading h2,.family-title-row h2,.checkout-panel h2,.modal-head h2){font-weight:600;letter-spacing:-.025em}
+  html[data-theme="white"] :is(.button,.round-button,.topbar-utility-button,.app-menu-trigger){border-radius:999px}
+  html[data-theme="white"] .topbar-context #offerModeSelector{border-radius:999px;background:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
+  html[data-theme="white"] .topbar-context #offerModeSelector button{border-radius:999px;color:var(--muted)}
+  html[data-theme="white"] .topbar-context #offerModeSelector button:hover{color:var(--ink);background:var(--taupe-active);box-shadow:none}
+  html[data-theme="white"] .topbar-context #offerModeSelector button .offer-mode-symbol{color:var(--taupe-dark)}
+  html[data-theme="white"] .topbar-context #offerModeSelector button.active,
+  html[data-theme="white"] .topbar-context #offerModeSelector button.active:hover{color:var(--ink);background:var(--surface);box-shadow:0 1px 3px rgba(22,21,15,.12),inset 0 0 0 1px var(--line)}
+  html[data-theme="white"] .topbar-context #offerModeSelector button.active .offer-mode-symbol{color:var(--taupe-dark)}
+  html[data-theme="white"] .topbar-context #offerModeSelector button.active .offer-mode-copy small{color:var(--muted)}
+  /* Sélections remplies : gris léger, texte en encre ; les icônes conservent leur couleur habituelle. */
+  html[data-theme="white"] :is(.offer-mode-selector button.active,.family-search-toggle[aria-expanded="true"],.student-discount-button.active,.mobile-tabs button.active,.body-side-toggle button[aria-pressed="true"],.body-model-toggle button[aria-pressed="true"],.body-zone-trail button[aria-pressed="true"],.body-auxiliary button.active,.family-option-detail-toggle[aria-expanded="true"],.history-tabs button[aria-selected="true"],.tracking-filters button.active,.segmented-control button.active),
+  html[data-theme="white"] #historyList .tracking-period button.active,
+  html[data-theme="white"] #currencySwitch .segmented-control button.active{color:var(--ink);border-color:var(--accent);background:var(--select-bg);box-shadow:none}
+  html[data-theme="white"] :is(.family-search-toggle,.student-discount-button,.body-detail-back,.body-auxiliary button,.family-option-detail-toggle,.pack-offer-action):is(:hover,:focus-visible):not(.active):not([aria-expanded="true"]){color:var(--ink);background:var(--select-hover)}
+  html[data-theme="white"] :is(.student-promise,.offer-student .cart-line-offer,.settings-offer-block.student .settings-offer-tag,.student-discount-control output,.pdf-language-option.is-current .pdf-language-key,.tile-catalog-customized-filter[aria-pressed="true"]>span){color:var(--ink);background:var(--select-bg)}
+  html[data-theme="white"] .mobile-tabs strong{color:var(--ink)}
+  html[data-theme="white"] .catalog-mode-card:has(input:checked){border-color:var(--accent);box-shadow:none;background:var(--select-bg)}
+  html[data-theme="white"] .catalog-mode-card:has(input:checked) .catalog-mode-visual{color:var(--taupe-dark);border-color:var(--line);background:var(--surface)}
+  html[data-theme="white"] .family-button.active .family-button-icon,
+  html[data-theme="white"] .family-button.active:hover .family-button-icon,
+  html[data-theme="white"] .family-button.active:focus-visible .family-button-icon{color:var(--taupe-dark);background:var(--surface)}
+  html[data-theme="white"] .family-button.active,
+  html[data-theme="white"] .family-button.active:hover,
+  html[data-theme="white"] .family-button.active:focus-visible{box-shadow:inset 3px 0 0 var(--taupe)}
+  html[data-theme="white"] .settings-tabs button[aria-selected="true"] .settings-tab-icon,
+  html[data-theme="white"] .settings-toggle-card:has(.settings-toggle-input:checked) .settings-toggle-icon{color:var(--taupe-dark)!important;border-color:var(--accent);background:var(--select-bg)}
+  /* Soin ajouté : fond gris léger et anneau bronze, le dessin de la zone reste lisible. */
+  html[data-theme="white"] .family-option:active .service-zone-icon,
+  html[data-theme="white"] .family-option.added .service-zone-icon{color:var(--taupe-dark);border-color:var(--taupe);background:var(--select-bg);box-shadow:0 0 0 2px color-mix(in srgb,var(--taupe) 28%,transparent)}
+  /* Les creux des pictogrammes prennent toujours la couleur du fond de leur pastille. */
+  html[data-theme="white"] .service-zone-icon{--icon-ground:color-mix(in srgb,var(--taupe) 12%,var(--surface-soft))}
+  html[data-theme="white"] :is(.family-option.added,.family-option:active) .service-zone-icon{--icon-ground:var(--select-bg)}
+  html[data-theme="white"] .family-button-icon{--icon-ground:var(--black-3)}
+  html[data-theme="white"] .family-button.active .family-button-icon{--icon-ground:var(--surface)}
+  /* Mannequin et visage : la zone choisie se colore en bronze (et non en gris, qui ressemble à un état désactivé). */
+  html[data-theme="white"] :is(.interactive-body-map,.interactive-face-map){--accent:var(--taupe);--accent-ink:#fdfdfb}
+  html[data-theme="white"] .body-zone-quoted-dot{background:var(--taupe);box-shadow:0 0 0 2px color-mix(in srgb,var(--taupe) 25%,transparent)}
+  html[data-theme="white"] .body-zone-trail button[aria-pressed="true"] .body-zone-quoted-dot{background:var(--taupe-dark)}
+  /* Marque à arches du logo, devant « Clinique Bellecour · BCDevis » (tous les thèmes, couleur de l’en-tête). */
+  .brand-mark{display:block;width:36px;height:36px;flex:0 0 36px;margin-right:12px;color:currentColor}
   </style>
 </head>
 <body>
   <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="icon-bellecour-arches" viewBox="0 0 24 24"><g stroke-width="1.35"><path d="M0.8 21.072V9.984c0-4.424 2.24-7.056 5.152-7.056s5.152 2.632 5.152 7.056v11.088"></path><path d="M6.848 21.072V9.984c0-4.424 2.24-7.056 5.152-7.056s5.152 2.632 5.152 7.056v11.088"></path><path d="M12.896 21.072V9.984c0-4.424 2.24-7.056 5.152-7.056s5.152 2.632 5.152 7.056v11.088"></path></g></symbol>
     <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
     <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
     <symbol id="icon-new-quote" viewBox="0 0 24 24" data-design="file-plus-v1"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"></path><path d="M14 3v5h5"></path><path d="M12 11.5v5M9.5 14h5"></path></symbol>
@@ -2541,7 +2606,7 @@
     <symbol id="icon-map-lower-legs" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><path class="anatomy-zone" d="M7.3 10h3.9l-.3 11.1H7.8L7.3 10Zm5.5 0h3.9l-.5 11.1h-3.1L12.8 10Z"></path><circle class="anatomy-zone" cx="9.2" cy="10.2" r="1.65"></circle><circle class="anatomy-zone" cx="14.8" cy="10.2" r="1.65"></circle><path class="anatomy-zone" d="M7.4 20.2h3.8v1.7H6.5c-.5 0-.7-.7-.2-1l1.1-.7Zm9.2 0h-3.8v1.7h4.7c.5 0 .7-.7.2-1l-1.1-.7Z"></path></symbol>
     <symbol id="icon-map-knees" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><circle class="anatomy-zone" cx="9.2" cy="10.2" r="1.8"></circle><circle class="anatomy-zone" cx="14.8" cy="10.2" r="1.8"></circle></symbol>
     <symbol id="icon-map-leg-zone" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-legs"></use><rect class="anatomy-patch" x="12.4" y="12.5" width="4.7" height="6.2" rx="2"></rect></symbol>
-    <symbol id="icon-map-feet" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-feet"></use><path class="anatomy-zone-soft" d="M7.6 7.2c1.4-.2 2.3.8 2.5 2.4l.7 5c.5 3.5-.8 5.9-3.5 5.9-2 0-3.1-1.3-3-3.2l.5-6.2c.2-2.4 1.2-3.7 2.8-3.9Zm8.8 0c-1.4-.2-2.3.8-2.5 2.4l-.7 5c-.5 3.5.8 5.9 3.5 5.9 2 0 3.1-1.3 3-3.2l-.5-6.2c-.2-2.4-1.2-3.7-2.8-3.9Z"></path><path class="anatomy-negative-line" d="M5.4 10.5c1.3-.7 3.2-.8 4.4-.1m8.8.1c-1.3-.7-3.2-.8-4.4-.1"></path></symbol>
+    <symbol id="icon-map-feet" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-feet"></use><path class="anatomy-zone-soft" d="M7.6 7.2c1.4-.2 2.3.8 2.5 2.4l.7 5c.5 3.5-.8 5.9-3.5 5.9-2 0-3.1-1.3-3-3.2l.5-6.2c.2-2.4 1.2-3.7 2.8-3.9Zm8.8 0c-1.4-.2-2.3.8-2.5 2.4l-.7 5c-.5 3.5.8 5.9 3.5 5.9 2 0 3.1-1.3 3-3.2l-.5-6.2c-.2-2.4-1.2-3.7-2.8-3.9Z"></path><path class="anatomy-negative-line" d="M5.4 10.5c1.3-.7 3.2-.8 4.4-.1m8.8.2c-1.3-.7-3.2-.8-4.4-.1"></path></symbol>
     <symbol id="icon-map-toes" viewBox="0 0 24 24" data-design="body-map-v3"><use href="#bodymap-feet"></use><circle class="anatomy-zone" cx="4.3" cy="5.1" r=".62"></circle><circle class="anatomy-zone" cx="5.4" cy="3.9" r=".7"></circle><circle class="anatomy-zone" cx="6.7" cy="3.2" r=".79"></circle><circle class="anatomy-zone" cx="8.2" cy="2.8" r=".9"></circle><circle class="anatomy-zone" cx="9.9" cy="2.9" r="1.14"></circle><circle class="anatomy-zone" cx="19.7" cy="5.1" r=".62"></circle><circle class="anatomy-zone" cx="18.6" cy="3.9" r=".7"></circle><circle class="anatomy-zone" cx="17.3" cy="3.2" r=".79"></circle><circle class="anatomy-zone" cx="15.8" cy="2.8" r=".9"></circle><circle class="anatomy-zone" cx="14.1" cy="2.9" r="1.14"></circle><path class="anatomy-negative-line" d="M9.35 2.95c.35-.25.75-.25 1.1 0m4.2 0c-.35-.25-.75-.25-1.1 0" stroke-width=".65"></path></symbol>
 
     <symbol id="icon-map-electrolysis" viewBox="0 0 24 24" data-design="body-map-v3"><path class="anatomy-base" d="M3.5 15.5c5.2-1.7 11.8-1.7 17 0v5H3.5v-5Z"></path><path class="anatomy-focus" d="m20.5 3.5-7.4 11"></path><circle class="anatomy-zone-soft" cx="12.8" cy="15.1" r="2"></circle><path class="anatomy-detail" d="M10.6 14.5c.3-3.2.2-5.7-.4-7.6"></path></symbol>
@@ -2651,11 +2716,12 @@
   <div class="app-shell" id="appShell" inert aria-hidden="true">
     <header class="topbar">
       <div class="brand-block">
+        <svg class="brand-mark" aria-hidden="true"><use href="#icon-bellecour-arches"></use></svg>
         <div>
           <p class="eyebrow">Clinique Bellecour</p>
           <div class="brand-title-row">
             <h1>BCDevis</h1>
-            <span class="app-version-badge" id="appVersionBadge">v8.8.1</span>
+            <span class="app-version-badge" id="appVersionBadge">v8.8.2</span>
           </div>
         </div>
       </div>
@@ -3007,7 +3073,7 @@
                   <div class="settings-section-head"><h3>Apparence</h3></div>
                   <p class="settings-subheading">Thème</p>
                   <div class="theme-picker" id="themePicker" role="radiogroup" aria-label="Choix du thème">
-                    <button class="theme-card" type="button" data-theme="white" role="radio" aria-checked="false"><span class="theme-card-swatch white"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Blanc</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
+                    <button class="theme-card" type="button" data-theme="white" role="radio" aria-checked="false"><span class="theme-card-swatch white"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Bellecour</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="light" role="radio" aria-checked="false"><span class="theme-card-swatch light"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Lumière</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="night" role="radio" aria-checked="false"><span class="theme-card-swatch night"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Nuit</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="theme-card" type="button" data-theme="forest" role="radio" aria-checked="false"><span class="theme-card-swatch forest"><span class="ts-top"></span><span class="ts-panel"></span><span class="ts-accent"></span></span><span class="theme-card-copy"><strong>Forêt</strong></span><span class="theme-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
@@ -3015,6 +3081,7 @@
                   </div>
                   <p class="settings-subheading">Police</p>
                   <div class="font-picker" id="fontPicker" role="radiogroup" aria-label="Choix de la police">
+                    <button class="font-card" type="button" data-font="dm-sans" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>DM Sans</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="font-card" type="button" data-font="red-hat" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Red Hat Display</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="font-card" type="button" data-font="roboto" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
                     <button class="font-card" type="button" data-font="roboto-slab" role="radio" aria-checked="false"><span class="font-card-sample" aria-hidden="true">Aa</span><span class="font-card-copy"><strong>Roboto Slab</strong></span><span class="font-card-check" aria-hidden="true"><svg><use href="#icon-check"></use></svg></span></button>
@@ -3353,18 +3420,16 @@
     <section class="modal-card compact-modal release-notes-modal" role="dialog" aria-modal="true" aria-labelledby="releaseNotesTitle" aria-describedby="releaseNotesIntro">
       <div class="release-notes-hero">
         <div class="release-notes-brand"><img src="assets/bcdevis-app-icon.png" alt="" aria-hidden="true"><span>BCDevis</span></div>
-        <p class="release-notes-version">Version 8.8.0</p>
+        <p class="release-notes-version">Version 8.8.2</p>
         <h2 id="releaseNotesTitle">Quoi de neuf&nbsp;?</h2>
         <p id="releaseNotesIntro">Voici ce qui change dans cette version.</p>
       </div>
       <ul class="release-notes-list">
-        <li><span><svg aria-hidden="true"><use href="#icon-percent"></use></svg></span><div><strong>Prix spécial SIF combiné</strong><p>Sur la ligne SIF, la fenêtre du rabais propose « SIF combiné à 62 CHF » : le prix normal reste affiché et le rabais en % ramène la séance à 62 CHF.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-pdf"></use></svg></span><div><strong>Coupon plus pratique</strong><p>Le code du coupon figure sur le PDF quand le coupon réduit le devis. Une croix referme la zone Coupon, avec Annuler en cas d’erreur.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-navigation-body"></use></svg></span><div><strong>Mannequin redessiné</strong><p>23 zones précises, aisselles et épaules distinctes, visages Femme et Homme différenciés, SIF et pictogrammes plus lisibles.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-user-plus"></use></svg></span><div><strong>Demandes du site</strong><p>Elles apparaissent dans Mes devis &gt; À faire, avec Créer un devis et Traitée. L’import des contacts reconnaît Prénom, Nom et Provenance.</p></div></li>
-        <li><span><svg aria-hidden="true"><use href="#icon-invoice"></use></svg></span><div><strong>Factures et marges</strong><p>Importez jusqu’à 30 factures PDF d’un coup : chacune rejoint son devis accepté. Les rabais élevés affichent un avis de marge.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-palette"></use></svg></span><div><strong>Univers Bellecour</strong><p>Le thème par défaut reprend les tons du site de la clinique, avec des sélections lisibles, des pictogrammes colorés et des touches bronze.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-type"></use></svg></span><div><strong>DM Sans par défaut</strong><p>La police du site est intégrée pour l’interface et les PDF. Les postes restés sur l’ancienne police par défaut sont mis à jour une fois.</p></div></li>
+        <li><span><svg aria-hidden="true"><use href="#icon-bellecour-arches"></use></svg></span><div><strong>Marque et aide harmonisées</strong><p>Les arches Bellecour apparaissent dans l’en-tête ; le centre d’aide reprend la même typographie et les mêmes tons.</p></div></li>
       </ul>
-      <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis 8.8.0</button><small>Vos devis et vos réglages sont conservés.</small></div>
+      <div class="release-notes-actions"><button class="button primary" type="button" data-close="releaseNotesLayer" data-initial-focus>Découvrir BCDevis 8.8.2</button><small>Vos devis et vos réglages sont conservés.</small></div>
     </section>
   </div>
 

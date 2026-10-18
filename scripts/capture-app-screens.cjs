@@ -187,7 +187,8 @@ function buildDatabase({ mode = "tiles", withClient = false, withHistory = false
     quoteCounters: {},
     settings: {
       theme: "night",
-      fontFamily: "red-hat",
+      fontFamily: "dm-sans",
+      appearanceRevision: 1,
       catalogMode: mode,
       quoteTrackingEnabled: false,
       trackingRemindersOnStartup: false,
@@ -294,7 +295,7 @@ async function captureSettings(window) {
       overflow: document.documentElement.scrollWidth > innerWidth + 1
     };
   })()`);
-  if (!audit.open || audit.themeCards !== 5 || audit.fonts !== 4 || audit.navigation.join(",") !== "Tuiles,Corps interactif" || audit.ipadOptions !== 3 || !audit.contained || audit.overflow) {
+  if (!audit.open || audit.themeCards !== 5 || audit.fonts !== 5 || audit.navigation.join(",") !== "Tuiles,Corps interactif" || audit.ipadOptions !== 3 || !audit.contained || audit.overflow) {
     throw new Error(`Écran des réglages invalide : ${JSON.stringify(audit)}`);
   }
   await settle(window, 200);

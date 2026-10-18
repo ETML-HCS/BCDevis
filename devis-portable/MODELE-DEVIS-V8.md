@@ -2,7 +2,7 @@
   <p class="kicker">CLINIQUE BELLECOUR</p>
   <h1>Modèle de devis V8</h1>
   <p>Importer le modèle vierge fourni avec le livrable client.</p>
-  <p class="version">BCDevis 8.8.1</p>
+  <p class="version">BCDevis 8.8.2</p>
 </div>
 
 <style>
@@ -17,7 +17,7 @@
 
 ## Fichier fourni
 
-Le fichier `MODELE-DEVIS-V8.json` est un devis vierge compatible avec BCDevis 8.8.1.
+Le fichier `MODELE-DEVIS-V8.json` est un devis vierge compatible avec BCDevis 8.8.2.
 
 Il ne contient volontairement ni numéro, ni date, ni tarif imposé. Lors de l'import :
 

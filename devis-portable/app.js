@@ -2,8 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "bcdevis-v1";
-  const RELEASE_VERSION = "8.8.1";
-  const RELEASE_NOTES_REVISION = "8.8.0";
+  const RELEASE_VERSION = "8.8.2";
+  const RELEASE_NOTES_REVISION = "8.8.2";
   const RELEASE_NOTES_SEEN_KEY = "bcdevis-release-notes-last-seen";
   const CART_SWIPE_HINT_SEEN_KEY = "bcdevis-cart-swipe-hint-seen-v1";
   const ACCESS_GATE_FORCED = new URLSearchParams(window.location.search).get("authGate") === "1";
@@ -135,7 +135,9 @@
     return Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== candidate ? fallback : candidate;
   };
   const validTimestamp = (value, fallback = new Date().toISOString()) => Number.isNaN(Date.parse(value)) ? fallback : new Date(value).toISOString();
-  const KNOWN_FONTS = ["red-hat", "roboto", "roboto-slab", "system"];
+  const KNOWN_FONTS = ["dm-sans", "red-hat", "roboto", "roboto-slab", "system"];
+  // Révision de l’apparence : 1 = alignement sur le site (DM Sans), octobre 2026.
+  const APPEARANCE_REVISION = 1;
   const IPAD_LAYOUT_MODES = ["auto", "always", "off"];
   const DISPLAY_MODE_PREFERENCES = ["auto", "smartphone", "full"];
   const SMARTPHONE_LAYOUT_MAX_WIDTH = 600;
@@ -178,7 +180,8 @@
     invoicePrefix: "FAC",
     machineName: "A",
     theme: "white",
-    fontFamily: "red-hat",
+    fontFamily: "dm-sans",
+    appearanceRevision: APPEARANCE_REVISION,
     validityDays: QUOTE_VALIDITY_DAYS,
     packPaidDefault: 6,
     packFreeDefault: 1,
@@ -445,6 +448,15 @@
     return database;
   }
 
+  // Les postes restés sur l’ancienne police par défaut passent une seule fois à DM Sans,
+  // la police du site ; un autre choix, ou un retour ultérieur à Red Hat Display, est conservé.
+  function alignAppearanceWithSite(settings, storedSettings) {
+    if (Number(storedSettings?.appearanceRevision) >= APPEARANCE_REVISION) return settings;
+    if (!storedSettings?.fontFamily || storedSettings.fontFamily === "red-hat") settings.fontFamily = "dm-sans";
+    settings.appearanceRevision = APPEARANCE_REVISION;
+    return settings;
+  }
+
   function migrateDatabase(database, sourceVersion) {
     const version = Number(sourceVersion || 0);
     if (version < 4) removeExampleQuote(database);
@@ -472,6 +484,7 @@
       };
       database.settings.headerLogoDataUrl = safeLogoDataUrl(database.settings.headerLogoDataUrl);
       database.settings.pdfLogoDataUrl = safeLogoDataUrl(database.settings.pdfLogoDataUrl);
+      alignAppearanceWithSite(database.settings, parsed.settings);
       return migrateDatabase(database, parsed.version);
     } catch (error) {
       console.warn("Sauvegarde locale illisible", error);
@@ -2611,9 +2624,9 @@
     document.documentElement.setAttribute("data-theme", value);
     $("#themeColorMeta")?.setAttribute("content", THEME_BROWSER_COLORS[value]);
   }
-  function currentFont() { return KNOWN_FONTS.includes(db.settings.fontFamily) ? db.settings.fontFamily : "red-hat"; }
+  function currentFont() { return KNOWN_FONTS.includes(db.settings.fontFamily) ? db.settings.fontFamily : "dm-sans"; }
   function applyFont(font) {
-    const value = KNOWN_FONTS.includes(font) ? font : "red-hat";
+    const value = KNOWN_FONTS.includes(font) ? font : "dm-sans";
     document.documentElement.setAttribute("data-font", value);
     if ($("#familyList")?.children.length) scheduleTileDensityAnalysis();
   }
@@ -6828,7 +6841,10 @@
       ...freshDatabase(),
       ...payload.database,
       version: APP_VERSION,
-      settings: { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
+      settings: alignAppearanceWithSite(
+        { ...defaultSettings, ...(isRecord(payload.database.settings) ? payload.database.settings : {}) },
+        isRecord(payload.database.settings) ? payload.database.settings : {}
+      ),
       quoteCounters: isRecord(payload.database.quoteCounters) ? payload.database.quoteCounters : {},
       customServices: sanitizeCustomServices(payload.database.customServices),
       catalogOverrides: sanitizeCatalogOverrides(payload.database.catalogOverrides),

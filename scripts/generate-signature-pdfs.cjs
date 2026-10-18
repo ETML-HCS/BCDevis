@@ -18,9 +18,9 @@ async function loadVariation(window, url, label) {
     (async () => {
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Service worker indisponible")), 10000));
       await Promise.race([navigator.serviceWorker.ready, timeout]);
-      await document.fonts.load('400 16px "Red Hat Display"');
-      await document.fonts.load('600 16px "Red Hat Display"');
-      await document.fonts.load('800 16px "Red Hat Display"');
+      await document.fonts.load('400 16px "DM Sans"');
+      await document.fonts.load('600 16px "DM Sans"');
+      await document.fonts.load('800 16px "DM Sans"');
       window.print = () => {};
       const printButton = document.querySelector("#checkoutPrintButton, #printButton");
       if (!printButton) throw new Error("Action d’impression introuvable");
@@ -34,9 +34,9 @@ async function loadVariation(window, url, label) {
         durationMetaCount: [...document.querySelectorAll("#printQuote .print-item-meta")]
           .filter((item) => /\\b\\d+\\s*min\\b/i.test(item.textContent || "")).length,
         officialLogoLoaded: Boolean(document.querySelector("#printQuote .print-logo-official")?.naturalWidth),
-        font400: document.fonts.check('400 16px "Red Hat Display"'),
-        font600: document.fonts.check('600 16px "Red Hat Display"'),
-        font800: document.fonts.check('800 16px "Red Hat Display"'),
+        font400: document.fonts.check('400 16px "DM Sans"'),
+        font600: document.fonts.check('600 16px "DM Sans"'),
+        font800: document.fonts.check('800 16px "DM Sans"'),
         userAgent: navigator.userAgent
       };
     })()

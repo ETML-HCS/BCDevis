@@ -15,6 +15,8 @@ for (const relativePath of [
   "assets/clinique-bellecour-logo-officiel.jpeg",
   "assets/clinique-bellecour-logo-officiel.png",
   "assets/icon-save.svg",
+  "assets/dm-sans-latin.woff2",
+  "assets/dm-sans-latin-ext.woff2",
   "assets/red-hat-display-regular.ttf",
   "assets/red-hat-display-medium.ttf",
   "assets/red-hat-display-semibold.ttf",
@@ -40,6 +42,7 @@ const manifest = JSON.parse(text("manifest.webmanifest"));
 const serviceWorker = text("service-worker.js");
 const packageJson = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"));
 
+assert.match(styles, /font-family:"DM Sans"/);
 assert.match(styles, /font-family:"Red Hat Display"/);
 assert.match(styles, /font-family:"Roboto"/);
 assert.match(styles, /font-family:"Roboto Slab"/);
@@ -74,10 +77,12 @@ assert.match(serviceWorker, /clinique-bellecour-logo-officiel\.png/);
 assert.match(serviceWorker, /\.\/body-anatomy\.js/);
 assert.match(serviceWorker, /\.\/contact-core\.js/);
 assert.match(serviceWorker, /\.\/site-migration\.js/);
+assert.match(serviceWorker, /dm-sans-latin\.woff2/);
+assert.match(serviceWorker, /dm-sans-latin-ext\.woff2/);
 assert.match(serviceWorker, /red-hat-display-extrabold\.ttf/);
 assert.match(serviceWorker, /roboto-latin\.woff2/);
 assert.match(serviceWorker, /roboto-slab-latin\.woff2/);
-assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models"`), "Le cache PWA doit changer pour livrer les nouveaux SVG du SIF");
+assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models-site-universe"`), "Le cache PWA doit changer pour livrer DM Sans et l’univers du site");
 assert.match(serviceWorker, /"\.\/tracking-core\.js"/, "Le moteur de conversion doit être disponible hors ligne");
 assert.match(saveIcon, /stroke="currentColor"[^>]*stroke-width="2\.15"/, "L’icône Enregistrer livrée doit rester nette et adaptable au thème");
 assert.equal((saveIcon.match(/<path\b/g) || []).length, 3, "L’icône Enregistrer doit conserver ses trois tracés lisibles");
@@ -95,13 +100,14 @@ function get(url) {
 (async () => {
   const { server, url } = await startPwaServer({ port: 0 });
   try {
-    const [page, webmanifest, font, roboto, robotoSlab, logo] = await Promise.all([
+    const [page, webmanifest, font, roboto, robotoSlab, logo, dmSans] = await Promise.all([
       get(url),
       get(new URL("manifest.webmanifest", url)),
       get(new URL("assets/red-hat-display-extrabold.ttf", url)),
       get(new URL("assets/roboto-latin.woff2", url)),
       get(new URL("assets/roboto-slab-latin.woff2", url)),
-      get(new URL("assets/clinique-bellecour-logo-officiel.png", url))
+      get(new URL("assets/clinique-bellecour-logo-officiel.png", url)),
+      get(new URL("assets/dm-sans-latin.woff2", url))
     ]);
     assert.equal(page.status, 200);
     assert.match(page.headers["content-type"], /^text\/html/);
@@ -114,6 +120,9 @@ function get(url) {
     assert.equal(robotoSlab.status, 200);
     assert.equal(robotoSlab.headers["content-type"], "font/woff2");
     assert.equal(logo.status, 200);
+    assert.equal(dmSans.status, 200);
+    assert.equal(dmSans.headers["content-type"], "font/woff2");
+    assert.equal(dmSans.body.length, (await fsp.stat(path.join(appRoot, "assets", "dm-sans-latin.woff2"))).size);
     assert.equal(logo.headers["content-type"], "image/png");
     assert.equal(font.body.length, (await fsp.stat(path.join(appRoot, "assets", "red-hat-display-extrabold.ttf"))).size);
     assert.equal(roboto.body.length, (await fsp.stat(path.join(appRoot, "assets", "roboto-latin.woff2"))).size);

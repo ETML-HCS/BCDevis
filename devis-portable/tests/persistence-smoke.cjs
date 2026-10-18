@@ -630,7 +630,7 @@ async function run() {
       document.querySelector('[data-font="roboto"]').click();
       document.querySelector('#settingsLayer .modal-head [data-close="settingsLayer"]').click();
       if (document.documentElement.dataset.theme !== "white") throw new Error("L’annulation des réglages doit restaurer le thème enregistré");
-      if (document.documentElement.dataset.font !== "red-hat") throw new Error("L’annulation des réglages doit restaurer la police enregistrée");
+      if (document.documentElement.dataset.font !== "dm-sans") throw new Error("L’annulation des réglages doit restaurer la police enregistrée");
 
       document.querySelector("#settingsButton").click();
       for (const theme of ["white", "light", "night", "forest", "bordeaux"]) {
@@ -658,6 +658,7 @@ async function run() {
         }
       }
       for (const [font, family] of [
+        ["dm-sans", "DM Sans"],
         ["red-hat", "Red Hat Display"],
         ["roboto", "Roboto"],
         ["roboto-slab", "Roboto Slab"],

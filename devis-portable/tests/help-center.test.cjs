@@ -58,7 +58,7 @@ assert.match(app, /event\.key === "\?"[\s\S]*?openHelp\("shortcuts"\)/, "Le racc
 assert.match(app, /activeCentralDocumentView === "invoices" \? "invoices" : "central"/, "La bibliothèque doit proposer l’aide adaptée à sa vue");
 
 for (const asset of ["./help.html", "./help.css", "./help.js"]) assert.match(serviceWorker, new RegExp(asset.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `${asset} doit faire partie du cache hors ligne`);
-assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models"`), "Le cache PWA doit être invalidé pour les nouveaux SVG du SIF et conserver les ressources du centre d’aide");
+assert.match(serviceWorker, new RegExp(`CACHE_NAME = "bcdevis-pwa-v${packageJson.version.replaceAll(".", "\\.")}-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models-site-universe"`), "Le cache PWA doit être invalidé pour l’univers du site et conserver les ressources du centre d’aide");
 assert.match(serviceWorker, /caches\.match\(request\)[\s\S]*?cached \|\| caches\.match\("\.\/index\.html"\)/, "Une navigation directe vers l’aide doit retrouver sa propre page hors ligne");
 assert.ok(packageJson.build.files.includes("devis-portable/**"), "Le packaging Electron doit inclure le centre d’aide");
 

@@ -39,3 +39,10 @@ Les polices `assets/roboto-*.woff2` et `assets/roboto-slab-*.woff2` servent à l
 
 - Roboto : Copyright 2011 The Roboto Project Authors (https://github.com/googlefonts/roboto), licence SIL Open Font License 1.1 (https://openfontlicense.org).
 - Roboto Slab : Copyright 2018 The Roboto Slab Project Authors (https://github.com/googlefonts/robotoslab), licence Apache 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+
+
+## DM Sans (sous-ensembles latin et latin étendu)
+
+Les polices `assets/dm-sans-latin.woff2` et `assets/dm-sans-latin-ext.woff2` (variables : graisse et taille optique) sont la police du site de la clinique, utilisée par défaut pour l'interface et le PDF. Elles proviennent du paquet npm `@fontsource-variable/dm-sans` 5.3.0 (fichiers Google Fonts v17).
+
+- DM Sans : Copyright 2014 The DM Sans Project Authors (https://github.com/googlefonts/dm-fonts), licence SIL Open Font License 1.1 (https://openfontlicense.org).

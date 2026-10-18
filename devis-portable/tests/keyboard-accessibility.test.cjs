@@ -90,8 +90,13 @@ assert.ok(
 );
 assert.match(
   html,
-  /grid-template-columns:180px minmax\(360px,1fr\) auto 48px/,
+  /grid-template-columns:228px minmax\(360px,1fr\) auto 48px/,
   "Le header large doit conserver le menu principal dans sa colonne de droite"
+);
+assert.match(
+  html,
+  /@media screen and \(min-width:1181px\) and \(max-width:1260px\)\{\s*\.topbar\{grid-template-columns:160px minmax\(300px,1fr\) auto 48px\}\s*\.topbar \.brand-mark\{display:none\}/,
+  "Juste au-dessus du format tablette, la marque à arches doit laisser toute la place au sélecteur de tarif"
 );
 assert.doesNotMatch(html, />Devis<\/p>[\s\S]*?id="newQuoteButton"/, "Les actions essentielles du devis ne doivent plus être dupliquées dans le menu principal");
 assert.match(html, /id="familyPriceToggle"[^>]*title="Afficher ou masquer les prix \(Alt\+P\)"[^>]*aria-keyshortcuts="Alt\+P"/, "Le basculement compact des prix doit annoncer Alt+P sans afficher une touche supplémentaire");
@@ -199,7 +204,7 @@ assert.match(html, /role="radiogroup" aria-label="Tarif appliqué aux soins"/, "
 assert.match(html, /id="themePicker" role="radiogroup" aria-label="Choix du thème"/, "Les thèmes doivent être annoncés comme un groupe de choix");
 assert.equal((html.match(/class="theme-card"/g) || []).length, 5, "Les cinq thèmes doivent rester accessibles au clavier");
 assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la police"/, "Les polices doivent être annoncées comme un groupe de choix");
-assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les quatre polices doivent rester accessibles au clavier");
+assert.equal((html.match(/class="font-card"/g) || []).length, 5, "Les cinq polices doivent rester accessibles au clavier");
 assert.match(app, /moveRadioSelection\(event\.currentTarget, "\.font-card"/, "Les polices doivent accepter les flèches du clavier");
 assert.match(html, /id="settingsTabs" role="tablist" aria-label="Catégories de personnalisation"/, "Les groupes de réglages doivent être annoncés comme des onglets");
 assert.equal((html.match(/id="settingsTab[^"]*" type="button" role="tab" aria-selected=/g) || []).length, 5, "Les cinq onglets de Personnalisation doivent exposer leur état");

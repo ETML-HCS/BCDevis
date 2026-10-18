@@ -1,6 +1,6 @@
 "use strict";
 
-const CACHE_NAME = "bcdevis-pwa-v8.8.1-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models";
+const CACHE_NAME = "bcdevis-pwa-v8.8.2-touch-ipad-smartphone-documents-help-contacts-conversion-login-modules-body-map-head-models-site-universe";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -26,6 +26,8 @@ const APP_SHELL = [
   "./assets/icon-save.svg",
   "./assets/pwa-icon-192.png",
   "./assets/pwa-icon-512.png",
+  "./assets/dm-sans-latin.woff2",
+  "./assets/dm-sans-latin-ext.woff2",
   "./assets/red-hat-display-regular.ttf",
   "./assets/red-hat-display-medium.ttf",
   "./assets/red-hat-display-semibold.ttf",

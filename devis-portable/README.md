@@ -1,12 +1,13 @@
-# BCDevis - version 8.8.1
+# BCDevis - version 8.8.2
 
 Application de création de devis pour Clinique Bellecour. Les applications Windows, Linux et macOS restent utilisables localement. La connexion BCDevis Central de la PWA ChromeOS et iPadOS reste prête dans le code, mais elle est provisoirement suspendue en 8.6.0 : la version web s’ouvre sans identifiant tant que le serveur central n’est pas en service.
 
-## Nouveautés 8.8.1
+## Nouveautés 8.8.2
 
-Correctif d’ergonomie de la 8.8.0, sans changement de données ni de calcul. La version web reste sans identifiant ni base centrale.
-
-- **Notifications :** sur grand écran, elles s’affichent en bas du catalogue, contre le volet du devis, au lieu de recouvrir le coupon, les totaux et les actions. Sur tablette et téléphone, leur place ne change pas.
+- **Thème Bellecour**, thème par défaut (anciennement « Blanc ») : les couleurs du site de la clinique (blanc, ivoire, encre presque noire, touches bronze), des boutons en pilule et des actions en noir, comme « Prendre rendez-vous » sur le site. Une sélection se marque par un gris léger, sans changer les couleurs des pictogrammes ; sur le mannequin, la zone choisie est en bronze. Les autres thèmes ne changent pas.
+- **DM Sans**, la police du site, devient la police par défaut de l’interface et du PDF. Un poste resté sur Red Hat Display passe une fois à DM Sans ; un autre choix est conservé, et Red Hat Display reste proposée dans Réglages > Interface.
+- **Arches du logo** dans l’en-tête, à côté de « Clinique Bellecour · BCDevis », dans tous les thèmes.
+- Le centre d’aide reprend la même police et les mêmes neutres.
 
 ## Nouveautés 8.8.0
 
@@ -125,7 +126,7 @@ Aide et livrables de la version 8 :
 
 ## Lancer l’application sous Windows
 
-- Distribuer uniquement `BCDevis-8.8.1.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
+- Distribuer uniquement `BCDevis-8.8.2.exe`, généré dans `dist`. C’est l’unique fichier à lancer : aucun navigateur ni installation ne sont nécessaires.
 - Au premier lancement, l’application crée un dossier `data` à côté de l’EXE. Il contient uniquement le profil local de BCDevis : préférences, brouillon et historique restent disponibles après redémarrage.
 - Pour déplacer l’application, copier l’EXE **et** son dossier `data`. Le dossier est nécessaire afin de conserver les données déjà créées.
 
@@ -216,7 +217,7 @@ Dans `Réglages` > `Mentions légales`, l’option `Afficher les zones de signat
 
 ## Chrome OS, iPadOS / PWA
 
-Le dossier `devis-portable` constitue aussi une PWA installable. Le logo officiel et la famille Red Hat Display sont embarqués : aucun chargement de ressource externe n’est nécessaire pour l’affichage ou l’impression.
+Le dossier `devis-portable` constitue aussi une PWA installable. Le logo officiel et les polices DM Sans (police du site) et Red Hat Display sont embarqués : aucun chargement de ressource externe n’est nécessaire pour l’affichage ou l’impression.
 
 Pour la contrôler localement depuis la racine du projet :
 
@@ -232,7 +233,7 @@ Pour assembler l’archive ChromeOS à remettre :
 npm run chromeos
 ```
 
-Le livrable est `devis-portable/dist/chromeos/BCDevis-8.8.1-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
+Le livrable est `devis-portable/dist/chromeos/BCDevis-8.8.2-chromeos.zip`. Il contient le dossier statique `site` à publier sur un hébergement HTTPS et une notice d’installation.
 
 Le contrôle automatisé Chrome OS (agent utilisateur CrOS, fenêtre 1365 × 768, PWA, polices, logo et impression A4) se lance avec :
 
@@ -282,7 +283,7 @@ Sous Windows, pour l’EXE portable :
 npm run exe
 ```
 
-Le fichier à remettre est `devis-portable/dist/BCDevis-8.8.1.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
+Le fichier à remettre est `devis-portable/dist/BCDevis-8.8.2.exe`. Ne pas distribuer le dossier `win-unpacked`, qui ne sert qu’à la fabrication.
 
 L’EXE est actuellement non signé afin que sa génération reste possible sans certificat de distribution. Windows peut donc demander une confirmation au premier lancement ; pour une diffusion large, configurer un certificat de signature avant de réactiver cette étape.
 
@@ -292,7 +293,7 @@ Sous macOS, pour un DMG universel compatible Mac Intel et Apple Silicon :
 npm run mac
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.8.1-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.8.2-mac.dmg`. Cette commande doit être exécutée depuis un Mac ou un runner CI macOS ; elle est volontairement bloquée sous Windows et Linux. Une signature et une notarisation Apple sont nécessaires avant une diffusion large pour éviter les alertes Gatekeeper.
 
 Sous Linux x64, pour une application portable AppImage :
 
@@ -300,7 +301,7 @@ Sous Linux x64, pour une application portable AppImage :
 npm run linux
 ```
 
-Le fichier à distribuer est `devis-portable/dist/BCDevis-8.8.1-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
+Le fichier à distribuer est `devis-portable/dist/BCDevis-8.8.2-linux-x86_64.AppImage`. Cette commande doit être exécutée depuis Linux ou un runner CI Linux ; elle est volontairement bloquée sous Windows et macOS. Une fois généré, le fichier doit être rendu exécutable avec `chmod +x` avant son premier lancement.
 
 Le workflow `.github/workflows/livrables.yml` exécute les builds sur les systèmes natifs et publie quatre artefacts séparés : `BCDevis-Windows`, `BCDevis-Linux`, `BCDevis-macOS` et `BCDevis-ChromeOS`.
 

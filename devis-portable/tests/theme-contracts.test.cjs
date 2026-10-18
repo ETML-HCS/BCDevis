@@ -3,13 +3,14 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const vm = require("node:vm");
 
-const app = fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
+const app =fs.readFileSync(path.join(__dirname, "..", "app.js"), "utf8");
 const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const styles = fs.readFileSync(path.join(__dirname, "..", "styles.css"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "manifest.webmanifest"), "utf8"));
 const themes = ["white", "light", "night", "forest", "bordeaux"];
-const fonts = ["red-hat", "roboto", "roboto-slab", "system"];
+const fonts = ["dm-sans", "red-hat", "roboto", "roboto-slab", "system"];
 const requiredTokens = [
   "--paper",
   "--soft",
@@ -48,14 +49,14 @@ assert.match(app, /"#couponClose"\)\.addEventListener\("click"[\s\S]*?couponOpen
 assert.match(styles, /\.coupon-close::before\{content:"";position:absolute;inset:-6px\}/, "La croix du coupon doit offrir une cible tactile de 44 px");
 assert.match(app, /\$\{couponCode \? `<tr class="coupon-code"><td>\$\{text\.couponCode\}<\/td><td>\$\{escapeHTML\(couponCode\)\}<\/td><\/tr>` : ""\}/, "Le code coupon doit être imprimé sous le rabais total, échappé");
 assert.match(styles, /\.line-discount-guard\[data-level="confirm"\]\{border-left-color:var\(--danger\)/, "Un rabais à confirmer doit se distinguer d’un simple avis");
-assert.match(app, /const RELEASE_VERSION = "8.8.1";/, "L’écran de nouveautés doit suivre la version livrée");
-assert.match(app, /const RELEASE_NOTES_REVISION = "8.8.0";/, "La présentation doit réapparaître une fois pour la nouvelle version");
+assert.match(app, /const RELEASE_VERSION = "8.8.2";/, "L’écran de nouveautés doit suivre la version livrée");
+assert.match(app, /const RELEASE_NOTES_REVISION = "8.8.2";/, "La présentation doit réapparaître une fois pour la nouvelle version");
 assert.match(app, /RELEASE_NOTES_SEEN_KEY[\s\S]*?showReleaseNotesOnce\(\)/, "L’écran de nouveautés doit mémoriser la version déjà présentée");
 assert.equal((html.match(/id="releaseNotesLayer"/g) || []).length, 1, "L’écran de nouveautés doit être unique");
-assert.match(html, /Version 8.8.0[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
+assert.match(html, /Version 8.8.2[\s\S]*?Quoi de neuf/, "L’écran de nouveautés doit annoncer clairement la version");
 const releaseNotesList = html.match(/<ul class="release-notes-list">([\s\S]*?)<\/ul>/)?.[1] || "";
-assert.equal((releaseNotesList.match(/<li>/g) || []).length, 5, "L’écran des nouveautés doit présenter les cinq familles de nouveautés livrées");
-assert.match(html, /<strong>Prix spécial SIF combiné<\/strong>[\s\S]*?<strong>Coupon plus pratique<\/strong>[\s\S]*?<strong>Mannequin redessiné<\/strong>[\s\S]*?<strong>Demandes du site<\/strong>[\s\S]*?<strong>Factures et marges<\/strong>/, "Les nouveautés 8.8.0 doivent résumer le SIF combiné, le coupon, le mannequin, les demandes du site, les factures et les marges");
+assert.equal((releaseNotesList.match(/<li>/g) || []).length, 3, "L’écran des nouveautés doit résumer les trois changements de l’univers Bellecour");
+assert.match(html, /<strong>Univers Bellecour<\/strong>[\s\S]*?<strong>DM Sans par défaut<\/strong>[\s\S]*?<strong>Marque et aide harmonisées<\/strong>/, "Les nouveautés 8.8.2 doivent résumer le thème, la police, la marque et l’aide");
 assert.match(styles, /\.release-notes-modal\{[^}]*grid-template-rows:auto minmax\(0,1fr\) auto/, "L’écran de nouveautés complet doit conserver une zone centrale défilable");
 assert.match(styles, /\.release-notes-list\{[^}]*overflow-y:auto/, "La liste des nouveautés doit rester consultable sur un écran bas");
 assert.match(html, /<symbol id="icon-pdf"[^>]*>[\s\S]*?class="pdf-page"[\s\S]*?class="pdf-badge"[\s\S]*?class="pdf-letters"[\s\S]*?<use href="#icon-pdf">/, "Le téléchargement doit utiliser un document PDF explicite et contrasté");
@@ -87,12 +88,34 @@ assert.match(
 );
 assert.match(
   app,
-  /const KNOWN_FONTS = \["red-hat", "roboto", "roboto-slab", "system"\]/,
-  "La liste applicative doit rester limitée aux quatre polices prévues"
+  /const KNOWN_FONTS = \["dm-sans", "red-hat", "roboto", "roboto-slab", "system"\]/,
+  "La liste applicative doit rester limitée aux cinq polices prévues"
 );
-assert.match(app, /fontFamily: "red-hat"/, "Red Hat Display doit rester la police par défaut");
-assert.match(app, /theme: "white"/, "Le thème Blanc doit être le thème par défaut des réglages");
-assert.match(html, /<html lang="fr" data-theme="white" class="auth-pending">/, "Le thème Blanc doit être défini pendant le verrouillage initial");
+assert.match(app, /fontFamily: "dm-sans"/, "DM Sans, la police du site, doit être la police par défaut");
+assert.match(app, /theme: "white"/, "Le thème Bellecour (« white ») doit être le thème par défaut des réglages");
+assert.match(html, /<html lang="fr" data-theme="white" class="auth-pending">/, "Le thème Bellecour doit être défini pendant le verrouillage initial");
+assert.match(html, /data-theme="white" role="radio".*<strong>Bellecour<\/strong>/, "Le thème par défaut doit porter le nom de la clinique, comme le site");
+assert.match(html, /id="fontPicker"[^>]*>\s*<button class="font-card" type="button" data-font="dm-sans"/, "DM Sans, la police du site, doit être proposée en premier");
+assert.match(styles, /:root\{[^}]*--sans:"DM Sans","Roboto",Arial,sans-serif/, "Le premier affichage doit déjà utiliser DM Sans");
+assert.match(styles, /@font-face\{font-family:"DM Sans";src:url\("assets\/dm-sans-latin\.woff2"\)/, "DM Sans doit être livrée avec l’application");
+assert.match(styles, /@font-face\{font-family:"DM Sans";src:url\("assets\/dm-sans-latin-ext\.woff2"\)/, "Les accents étendus de DM Sans doivent être livrés");
+assert.match(app, /alignAppearanceWithSite\(database\.settings, parsed\.settings\)/, "Le chargement doit aligner une seule fois l’apparence sur le site");
+assert.match(app, /settings: alignAppearanceWithSite\(/, "La restauration d’une sauvegarde doit suivre la même règle");
+
+// Bascule unique vers DM Sans : seuls les postes restés sur l’ancienne police par défaut changent.
+const alignSource = app.match(/  function alignAppearanceWithSite\(settings, storedSettings\) \{[\s\S]*?\n  \}/)?.[0];
+assert.ok(alignSource, "La règle d’alignement sur le site doit exister");
+const alignContext = { APPEARANCE_REVISION: Number(app.match(/const APPEARANCE_REVISION = (\d+);/)?.[1]) };
+assert.equal(alignContext.APPEARANCE_REVISION, 1, "La révision d’apparence du site doit valoir 1");
+vm.createContext(alignContext);
+vm.runInContext(alignSource, alignContext);
+const aligned = (stored) => alignContext.alignAppearanceWithSite({ theme: "white", fontFamily: "dm-sans", appearanceRevision: 1, ...stored }, stored);
+assert.equal(aligned({ fontFamily: "red-hat" }).fontFamily, "dm-sans", "Un poste resté sur Red Hat Display passe à DM Sans");
+assert.equal(aligned({ fontFamily: "red-hat" }).appearanceRevision, 1, "La bascule doit être mémorisée");
+assert.equal(aligned({}).fontFamily, "dm-sans", "Un poste sans police enregistrée prend DM Sans");
+assert.equal(aligned({ fontFamily: "roboto" }).fontFamily, "roboto", "Un autre choix de police doit être conservé");
+assert.equal(aligned({ fontFamily: "system", theme: "night" }).theme, "night", "Le thème choisi n’est jamais modifié");
+assert.equal(aligned({ fontFamily: "red-hat", appearanceRevision: 1 }).fontFamily, "red-hat", "Un retour volontaire à Red Hat Display après la bascule doit être conservé");
 assert.match(app, /function startApplication\(\)[\s\S]*?applyTheme\(currentTheme\(\)\)/, "Le thème enregistré doit être appliqué après authentification");
 
 for (const theme of themes) {
@@ -147,7 +170,7 @@ assert.match(
   "Le sélecteur doit rester compact sur tablette"
 );
 assert.match(html, /id="fontPicker" role="radiogroup" aria-label="Choix de la police"/);
-assert.equal((html.match(/class="font-card"/g) || []).length, 4, "Les réglages doivent proposer exactement quatre polices");
+assert.equal((html.match(/class="font-card"/g) || []).length, 5, "Les réglages doivent proposer exactement cinq polices");
 for (const font of fonts) {
   assert.match(html, new RegExp(`data-font="${font}" role="radio"`), `Choix de police absent : ${font}`);
   assert.match(styles, new RegExp(`html\\[data-font="${font}"\\]`), `Variables typographiques absentes : ${font}`);

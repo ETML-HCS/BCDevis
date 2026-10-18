@@ -8,8 +8,12 @@
 @font-face{font-family:"Roboto";src:url("assets/roboto-latin.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 900}
 @font-face{font-family:"Roboto Slab";src:url("assets/roboto-slab-latin.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 900}
 @font-face{font-family:"BCDevis Fallback";src:url("assets/roboto-latin.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 900}
+/* DM Sans : police du site cliniquebellecour.ch (variable : graisse et taille optique). */
+@font-face{font-family:"DM Sans";src:url("assets/dm-sans-latin.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 1000;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"DM Sans";src:url("assets/dm-sans-latin-ext.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 1000;unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[role="radio"]:focus-visible{outline:3px solid var(--taupe-dark);outline-offset:3px}
-:root{--black:#0e0e0e;--black-2:#171717;--black-3:#242424;--white:#fff;--paper:#f5f5f3;--soft:#ececea;--line:#deded9;--line-dark:#333;--taupe:#b4a996;--taupe-light:#eeeae3;--taupe-dark:#756b5a;--ink:#111;--muted:#74746f;--danger:#9d4039;--success:#365c4d;--shadow:0 20px 60px rgba(0,0,0,.12);--sans:"Red Hat Display","Roboto",Arial,sans-serif;--serif:"Red Hat Display","Roboto",Arial,sans-serif;--document-font:"Red Hat Display","Roboto",Arial,sans-serif}
+:root{--black:#0e0e0e;--black-2:#171717;--black-3:#242424;--white:#fff;--paper:#f5f5f3;--soft:#ececea;--line:#deded9;--line-dark:#333;--taupe:#b4a996;--taupe-light:#eeeae3;--taupe-dark:#756b5a;--ink:#111;--muted:#74746f;--danger:#9d4039;--success:#365c4d;--shadow:0 20px 60px rgba(0,0,0,.12);--sans:"DM Sans","Roboto",Arial,sans-serif;--serif:"DM Sans","Roboto",Arial,sans-serif;--document-font:"DM Sans","Roboto",Arial,sans-serif}
+html[data-font="dm-sans"]{--sans:"DM Sans","Roboto",Arial,sans-serif;--serif:"DM Sans","Roboto",Arial,sans-serif;--document-font:"DM Sans","Roboto",Arial,sans-serif}
 html[data-font="red-hat"]{--sans:"Red Hat Display","Roboto",Arial,sans-serif;--serif:"Red Hat Display","Roboto",Arial,sans-serif;--document-font:"Red Hat Display","Roboto",Arial,sans-serif}
 html[data-font="roboto"]{--sans:"Roboto","Red Hat Display",Arial,sans-serif;--serif:"Roboto","Red Hat Display",Arial,sans-serif;--document-font:"Roboto","Red Hat Display",Arial,sans-serif}
 html[data-font="roboto-slab"]{--sans:"Roboto Slab","Roboto","Red Hat Display",serif;--serif:"Roboto Slab","Roboto","Red Hat Display",serif;--document-font:"Roboto Slab","Roboto","Red Hat Display",serif}
@@ -1274,10 +1278,10 @@ html[data-theme] .family-visibility-icon svg{
 .app-menu-catalog-group>button strong{font-size:12px}
 .app-menu-catalog-group>button small{font-size:9px}
 @media screen and (min-width:1451px){
-  .topbar{padding-right:480px;grid-template-columns:180px auto minmax(360px,1fr)}
+  .topbar{padding-right:480px;grid-template-columns:228px auto minmax(360px,1fr)}
 }
 @media screen and (min-width:1181px) and (max-width:1450px){
-  .topbar{padding-right:450px;grid-template-columns:160px auto minmax(300px,1fr)}
+  .topbar{padding-right:450px;grid-template-columns:208px auto minmax(300px,1fr)}
 }
 @media screen and (max-width:1180px){
   .app-menu-trigger{min-width:40px;width:40px;height:40px;padding:0}
@@ -4078,7 +4082,7 @@ html[data-theme="night"] .history-item--tracked .history-follow-up--late{color:#
    reçoivent leur sous-ensemble cyrillique, déclaré après le latin pour être choisi en priorité. */
 @font-face{font-family:"Roboto";src:url("assets/roboto-cyrillic.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 900;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
 @font-face{font-family:"Roboto Slab";src:url("assets/roboto-slab-cyrillic.woff2") format("woff2");font-display:swap;font-style:normal;font-weight:100 900;unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
-/* Un PDF en russe ou en ukrainien garde une seule famille de caractères : Roboto remplace Red Hat Display. */
+/* Un PDF en russe ou en ukrainien garde une seule famille de caractères : Roboto remplace DM Sans ou Red Hat Display, sans cyrillique. */
 html:not([data-font="roboto-slab"]):not([data-font="system"]) .print-quote[data-pdf-script="cyrillic"]{--document-font:"Roboto",Arial,sans-serif}
 .pdf-language-modal{width:min(560px,calc(100vw - 32px))}
 .pdf-language-intro{margin:0 0 14px;color:var(--muted);font-size:12px;line-height:1.45}

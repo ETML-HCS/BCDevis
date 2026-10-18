@@ -6,7 +6,7 @@ Ce document fournit aux agents d'intelligence artificielle (Antigravity, Claude 
 
 ## 1. Contexte & Identité du Projet
 
-- **Produit :** BCDevis (version 8.8.1 ; évolutions locales éventuelles : voir `../JOURNAL-DES-MODIFICATIONS.md`)
+- **Produit :** BCDevis (version 8.8.2 ; évolutions locales éventuelles : voir `../JOURNAL-DES-MODIFICATIONS.md`)
 - **Entreprise :** Clinique Bellecour (Genève, Suisse — Rue du Mont-Blanc 20)
 - **Domaine métier :** Devis médicaux et esthétiques (épilation laser, électrolyse, injections, peelings, etc.).
 - **Devise monétaire :** Franc suisse (**CHF**), format suisse (`fr-CH` avec espaces insécables ou standard).
@@ -79,7 +79,7 @@ Le projet suit une séparation stricte :
 4. **`pdf-i18n.js` (`window.BCDevisPdfI18n`) :**
    - Langues du PDF : `fr`, `en`, `de` (Suisse), `it`, `es`, `pt`, `uk`, `ru`. Tout texte du PDF vient de `strings(langue)` ; aucun `en ? "…" : "…"` dans `renderPrint()`.
    - Ajouter une langue : l'entrée de `LANGUAGES`, ses `STRINGS`, `CATEGORY_NAMES`, `SERVICE_NAMES` (tous les identifiants de `catalog.js`) et `DEFAULT_TEXTS`, puis l'option du réglage `pdfLanguage` dans `index.html`. Le test `pdf-i18n.test.cjs` signale les oublis.
-   - Le cyrillique n'existe pas dans Red Hat Display : `uk` et `ru` utilisent Roboto (`assets/roboto-cyrillic.woff2`).
+   - Le cyrillique n'existe ni dans DM Sans (police par défaut) ni dans Red Hat Display : `uk` et `ru` utilisent Roboto (`assets/roboto-cyrillic.woff2`).
    - Tout nouveau script chargé par `index.html` doit être ajouté à `scripts/build-chromeos.cjs` (`APP_FILES`) et au précache de `service-worker.js` ; `platform-delivery.test.cjs` le vérifie.
 
 ---
@@ -119,6 +119,7 @@ Le projet suit une séparation stricte :
    - Toutes les cibles tactiles sur smartphone et iPad doivent mesurer **au moins 44×44 px**.
    - Pas de survol exclusif (hover) : toute action doit rester accessible au tap / clavier.
    - Les contrats de thème et de contraste sont vérifiés par `tests/theme-contracts.test.cjs`.
+   - **Univers du site :** le thème par défaut `white` s'affiche « Bellecour » et reprend les couleurs de site-crm (`cliniquebellecour.ch`) ; la couche « Univers Bellecour » à la fin du `<style>` de `index.html` (pilules, pictogrammes bronze) ne vise que ce thème. Dans ce thème, `--accent` est un gris chaud (`#8f8b7f`) pour les cadres, anneaux et pastilles ; les sélections remplies utilisent `--select-bg` (gris léger) avec un texte en encre, et les icônes gardent leur couleur ; le mannequin et le visage redéfinissent `--accent` en bronze. Le noir (`--action`, `--contrast`) reste réservé aux actions. DM Sans (`assets/dm-sans-*.woff2`) est la police par défaut. `alignAppearanceWithSite()` fait passer une seule fois à DM Sans les postes restés sur Red Hat Display (`appearanceRevision`, sans changer le schéma 25). La marque à arches de l'en-tête (`#icon-bellecour-arches`, `.brand-mark`) suit `currentColor` et se masque entre 1181 et 1260 px, où le sélecteur de tarif a besoin de la place.
 3. **Absence de Framework externe dans le frontend :**
    - Pas de React, pas de Vue, pas de Tailwind. Vanilla JavaScript + Vanilla CSS avec variables personnalisées (`:root { --font-main: ... }`).
 4. **Langue de l'interface vs Documents :**
